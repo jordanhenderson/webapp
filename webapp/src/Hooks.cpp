@@ -154,8 +154,7 @@ Session* GetRawSession(RequestBase* worker, Request* request)
 /* Script API */
 webapp_str_t* CompileScript(const char* file)
 {
-	if(file != NULL)
-		return app->CompileScript(file);
+	return app->CompileScript(file);
 }
 
 

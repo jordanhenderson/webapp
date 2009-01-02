@@ -103,12 +103,14 @@ template <class T, class C> class ArenaAllocator {
   void deallocate(pointer p, size_type n) {
     arena_->Free(p, n * sizeof(T));
   }
+#if !defined(_LIBCPP_VERSION)
   void construct(pointer p, const T & val) {
     new(reinterpret_cast<void*>(p)) T(val);
   }
   void construct(pointer p) {
     new(reinterpret_cast<void*>(p)) T();
   }
+#endif
   void destroy(pointer p) { p->~T(); }
 
   C* arena(void) const { return arena_; }
