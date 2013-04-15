@@ -1,6 +1,7 @@
 #include "Logging.h"
 using namespace std;
 Logging::Logging(tstring logPath) {
+	logFile = NULL;
 	//Open a file for writing.
 	setFile(logPath);
 	
@@ -16,7 +17,8 @@ Logging::Logging() {
 }
 
 void Logging::setFile(tstring logPath) {
-	
+	if(logFile) 
+		FileSystem::Close(logFile);
 	logFile = FileSystem::Open(logPath, _T("w"));
 
 }
