@@ -6,7 +6,8 @@
 #include "FileSystem.h"
 #include <thread>
 
-
+#define LOGGER_STATUS_PROCESS 0
+#define LOGGER_STATUS_FINISHED 1
 class Logging : Internal {
 	std::thread logger;
 	tbb::concurrent_queue<tstring> queue;
@@ -20,6 +21,7 @@ public:
 	void _tprintf(tstring format, ...);
 	void log(tstring msg);
 	inline void setFile(tstring file);
+	void finish();
 	
 
 };

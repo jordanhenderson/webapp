@@ -1,15 +1,22 @@
 #include "FileSystem.h"
 
-File* FileSystem::Open(tstring fileName, tstring flags) {
+File* FileSystem::Open(const TCHAR* fileName, const TCHAR* flags) {
 	File* tmpFile = new File;
-	tmpFile->pszFile = _tfopen(fileName.c_str(), flags.c_str());
+	//ensure file is opened in binary mode
+	int flen = _tcslen(flags);
+	TCHAR* actualFlag = new TCHAR[flen + 2];
+	if(flags[flen] != 'b') {
+		_tcscpy(actualFlag, flags);
+		_tcscat(actualFlag, "b");
+	}
+	tmpFile->pszFile = _tfopen(fileName, flags);
 	tmpFile->fileName = fileName;
-	tmpFile->flags = flags;
-	tstring errType = _T("");
+	tmpFile->flags = actualFlag;
+	TCHAR* errType = _T("");
 	if(tmpFile->pszFile == NULL) {
-		if(flags.compare(_T("w")) == 0 || flags.compare(_T("a")) == 0 || flags.compare(_T("+")) == 0)
+		if(flags[0] == 'w' || flags[0] == 'a' || flags[1] == '+')
 			errType = _T("writing");
-		else if(flags.compare(_T("r")) == 0)
+		else if(flags[0] == 'r')
 			errType = _T("reading");
 		//Debug Message: File Access error: $fileName could not be opened for $errType.
 		return NULL;
@@ -20,39 +27,58 @@ File* FileSystem::Open(tstring fileName, tstring flags) {
 }
 
 tstring FileSystem::Read(File* file) {
+	if(file == NULL || file->pszFile == NULL)
+		return NULL;
 	return Process(file, NULL, NULL);
 }
 
 void FileSystem::Close(File* file) {
+	if(file == NULL || file->pszFile == NULL)
+		return;
 	fclose(file->pszFile);
 }
 
-tstring FileSystem::Process(File* file, void* userdata, ...) {
+long FileSystem::Size(File* file) {
+	int old = ftell(file->pszFile);
+	fseek(file->pszFile, 0L, SEEK_END);
+	int sz = ftell(file->pszFile);
+	//restore previous position
+	fseek(file->pszFile, 0L, old);
+	return sz;
+}
+
+TCHAR* FileSystem::Process(File* file, void* userdata, ...) {
+	if(file == NULL || file->pszFile == NULL)
+		return NULL;
 	FILE* tmpFile = file->pszFile;
-	TCHAR* tmpString = NULL;
-	int count = 4096;
+	TCHAR* tmpString = (TCHAR*)malloc(4096 * sizeof(TCHAR));
 	while(!feof(tmpFile)) {
-		tmpString = (TCHAR*)realloc(tmpString, count * sizeof(TCHAR));
-		_fgetts((tmpString + count - 4096), 4096, tmpFile);
+		_fgetts(tmpString, 4096, tmpFile);
 		int* pos = (int*)&userdata+1;
 
 		if(*pos != NULL) {
 			FILE_LINE_CALLBACK callbackFn = (FILE_LINE_CALLBACK)(*pos);
-			callbackFn(userdata, (tmpString + count - 4096));
+			callbackFn(userdata, tmpString);
 		}
-		count += 4096;
 	}
-	return tstring(tmpString);
+	return tmpString;
 }
 
 void FileSystem::Write(File* file, tstring buffer) {
+	if(file == NULL || file->pszFile == NULL)
+		return;
 	_fputts(buffer.c_str(), file->pszFile);
 	fflush(file->pszFile);
 }
 
+void FileSystem::WriteLine(File* file, tstring buffer) {
+	tstring tmp = tstring(buffer);
+	Write(file, tmp.append(ENV_NEWLINE));
+}
 //Returns true if the specified path exists and can be read.
 int FileSystem::Exists(tstring path) {
 	struct _stat buf;
+	
 	if(_tstat(path.c_str(), &buf) == 0)
 		return 1;
 	return 0;
