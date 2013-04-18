@@ -2,7 +2,6 @@
 #include "Gallery.h"
 #include "Server.h"
 #include "fcgiapp.h"
-#include <winsock.h>
 using namespace std;
 void Server::run(int nThread, int sock) {
 	FCGX_Request request;

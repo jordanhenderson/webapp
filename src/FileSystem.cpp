@@ -5,7 +5,7 @@ File* FileSystem::Open(const TCHAR* fileName, const TCHAR* flags) {
 	//ensure file is opened in binary mode
 	int flen = _tcslen(flags);
 	TCHAR* actualFlag = new TCHAR[flen + 2];
-	if(flags[flen] != 'b') {
+	if(flags[flen-1] != 'b') {
 		_tcscpy(actualFlag, flags);
 		_tcscat(actualFlag, "b");
 	}
@@ -26,7 +26,7 @@ File* FileSystem::Open(const TCHAR* fileName, const TCHAR* flags) {
 	return tmpFile;
 }
 
-tstring FileSystem::Read(File* file) {
+TCHAR* FileSystem::Read(File* file) {
 	if(file == NULL || file->pszFile == NULL)
 		return NULL;
 	return Process(file, NULL, NULL);
@@ -47,19 +47,29 @@ long FileSystem::Size(File* file) {
 	return sz;
 }
 
-TCHAR* FileSystem::Process(File* file, void* userdata, ...) {
+
+TCHAR* FileSystem::Process(File* file, void* userdata, void* callback) {
 	if(file == NULL || file->pszFile == NULL)
 		return NULL;
+	int baseBytes = 0;
+	int oldBaseBytes = 0;
+
+	//Seek to the beginning.
+	fseek(file->pszFile, 0L, SEEK_SET);
 	FILE* tmpFile = file->pszFile;
 	TCHAR* tmpString = (TCHAR*)malloc(4096 * sizeof(TCHAR));
+	int count = 0;
 	while(!feof(tmpFile)) {
-		_fgetts(tmpString, 4096, tmpFile);
-		int* pos = (int*)&userdata+1;
-
-		if(*pos != NULL) {
-			FILE_LINE_CALLBACK callbackFn = (FILE_LINE_CALLBACK)(*pos);
-			callbackFn(userdata, tmpString);
+		oldBaseBytes = ftell(tmpFile);
+		_fgetts(tmpString + baseBytes, 4096, tmpFile);
+		baseBytes += ftell(tmpFile) - oldBaseBytes;
+		tmpString = (TCHAR*)realloc(tmpString, 4096 + baseBytes + 1);
+		if(callback != NULL) {
+			FILE_LINE_CALLBACK callbackFn = (FILE_LINE_CALLBACK)(callback);
+			callbackFn(userdata, tmpString + (oldBaseBytes-count));
 		}
+		baseBytes--;
+		count = 1;
 	}
 	return tmpString;
 }

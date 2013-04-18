@@ -56,6 +56,9 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>include;</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
+      <InterproceduralOptimization>MultiFile</InterproceduralOptimization>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -74,6 +77,8 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>include;</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

@@ -19,14 +19,9 @@ const int Parameters::getDigit(tstring param) {
 }
 
 void Parameters::set(tstring param, tstring value) {
-	params->emplace(std::make_pair(param, value));
+	params->insert(std::make_pair(param, value));
 }
 
-//Takes a buffer of parameters (name = value\n etc) and 
-//converts it into parameters.
-void Parameters::parseBuffer(tstring paramBuffer) {
-
-}
 
 Parameters::Parameters() {
 	//Create new parameter map

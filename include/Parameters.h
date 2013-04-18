@@ -8,7 +8,16 @@ public:
 	tstring get(tstring param);
 	const int getDigit(tstring param);
 	void set(tstring param, tstring value);
-	void parseBuffer(tstring paramStr);
+	inline static void parseBuffer(void* params, TCHAR* paramBuffer) {
+		Parameters* t = static_cast<Parameters*>(params);
+		TCHAR* val = _tcschr(paramBuffer, '=');
+		TCHAR* key = paramBuffer;
+		if(!val)
+			return;
+		val++;
+		*(val - 1) = '\0';
+		t->set(key, val);
+	}
 	size_t getSize();
 	Parameters();
 	~Parameters();
