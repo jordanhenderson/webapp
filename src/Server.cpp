@@ -1,26 +1,29 @@
 #include "Logging.h"
 #include "Gallery.h"
 #include "Server.h"
-#include "fcgiapp.h"
+
 using namespace std;
 void Server::run(int nThread, int sock) {
 	FCGX_Request request;
 	int rc = 0;
-	char* server_name = NULL;
+
+
 
 	FCGX_InitRequest(&request, sock, 0);
 	for(;;) {
+		
 		rc = FCGX_Accept_r(&request);
+		
 		if(rc < 0)
 			break;
 
-		//server_name = FCGX_GetParam("SERVER_NAME", request.envp);
-
+		char* uri = FCGX_GetParam("REQUEST_URI", request.envp);
+		printf("Thread ID: %i, URL: %s\n", nThread, uri);
 		if(handler != NULL)
-			FCGX_PutS(handler->process(request.envp).c_str(), request.out); 
+			handler->process(&request); 
 		
-		
-		std::this_thread::sleep_for(std::chrono::milliseconds(2));
+
+		//std::this_thread::sleep_for(std::chrono::seconds(2));
 		FCGX_Finish_r(&request);
 	}
 	

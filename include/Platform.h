@@ -44,4 +44,6 @@ protected: int nError;
 public:
 	int GetLastError();
 };
+
+bool endsWith(const tstring &a, const tstring &b);
 #endif

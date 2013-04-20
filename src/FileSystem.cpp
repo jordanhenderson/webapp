@@ -26,12 +26,6 @@ File* FileSystem::Open(const TCHAR* fileName, const TCHAR* flags) {
 	return tmpFile;
 }
 
-TCHAR* FileSystem::Read(File* file) {
-	if(file == NULL || file->pszFile == NULL)
-		return NULL;
-	return Process(file, NULL, NULL);
-}
-
 void FileSystem::Close(File* file) {
 	if(file == NULL || file->pszFile == NULL)
 		return;
@@ -48,30 +42,42 @@ long FileSystem::Size(File* file) {
 }
 
 
-TCHAR* FileSystem::Process(File* file, void* userdata, void* callback) {
+FileData* FileSystem::Process(File* file, void* userdata, void* callback) {
 	if(file == NULL || file->pszFile == NULL)
 		return NULL;
 	int baseBytes = 0;
 	int oldBaseBytes = 0;
-
+	
 	//Seek to the beginning.
-	fseek(file->pszFile, 0L, SEEK_SET);
+	
 	FILE* tmpFile = file->pszFile;
-	TCHAR* tmpString = (TCHAR*)malloc(4096 * sizeof(TCHAR));
+	rewind(file->pszFile);
 	int count = 0;
-	while(!feof(tmpFile)) {
-		oldBaseBytes = ftell(tmpFile);
-		_fgetts(tmpString + baseBytes, 4096, tmpFile);
-		baseBytes += ftell(tmpFile) - oldBaseBytes;
-		tmpString = (TCHAR*)realloc(tmpString, 4096 + baseBytes + 1);
+	int size = Size(file);
+	FileData* fdata = new FileData;
+	fdata->data = new char[size * sizeof(char) + 1];
+
 		if(callback != NULL) {
-			FILE_LINE_CALLBACK callbackFn = (FILE_LINE_CALLBACK)(callback);
-			callbackFn(userdata, tmpString + (oldBaseBytes-count));
+			while(!feof(tmpFile)) {
+				//Read files line by line
+		
+					oldBaseBytes = ftell(tmpFile);
+					_fgetts(fdata->data + baseBytes, 4096, tmpFile);
+					baseBytes += ftell(tmpFile) - oldBaseBytes;
+					FILE_LINE_CALLBACK callbackFn = (FILE_LINE_CALLBACK)(callback);
+					callbackFn(userdata, fdata->data + (oldBaseBytes-count));
+				} 
+				baseBytes--;
+				count = 1;
 		}
-		baseBytes--;
-		count = 1;
-	}
-	return tmpString;
+		else {
+			//Simply read the entire file. Hopefully improve performance.
+
+			size_t nRead = fread(fdata->data, sizeof(char), size, tmpFile);
+			fdata->data[++nRead] = '\0';
+		}
+	fdata->size = size;
+	return fdata;
 }
 
 void FileSystem::Write(File* file, tstring buffer) {

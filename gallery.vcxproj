@@ -95,6 +95,7 @@
     <ClCompile Include="src\Internal.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\os_win32.c" />
+    <ClCompile Include="src\Platform.cpp" />
     <ClCompile Include="src\Server.cpp" />
     <ClCompile Include="src\Logging.cpp" />
     <ClCompile Include="src\Parameters.cpp" />

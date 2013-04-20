@@ -2,11 +2,11 @@
 #define HTTPSERVER_H
 
 class Gallery; 
-
-#define SERVER_THREADS 1
+#include "fcgiapp.h"
+#define SERVER_THREADS 20
 class ServerHandler {
 public:
-	virtual tstring process(char** request) = 0;
+	virtual void process(FCGX_Request* request) = 0;
 };
 
 class Server : Internal {

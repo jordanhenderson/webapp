@@ -17,7 +17,6 @@ int _tmain(int argc, _TCHAR* argv[]) {
 		params->set(_T("basepath"), _T("gallery"));
 	}
 	
-	params->get("basepath");
 	//Create logging instance
 	Logging* logger = new Logging(params->get(_T("logfile")));
 

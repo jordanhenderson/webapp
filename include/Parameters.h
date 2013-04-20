@@ -1,8 +1,9 @@
 #ifndef PARAMETERS_H
 #define PARAMETERS_H
 #include "Platform.h"
+#include "tbb/concurrent_unordered_map.h"
 //Dynamic parameter class
-typedef std::unordered_map<tstring, tstring> paramMap;
+typedef tbb::concurrent_unordered_map<tstring, tstring> paramMap;
 class Parameters : Internal {
 public:
 	tstring get(tstring param);
@@ -18,6 +19,7 @@ public:
 		*(val - 1) = '\0';
 		t->set(key, val);
 	}
+	bool hasParam(tstring param);
 	size_t getSize();
 	Parameters();
 	~Parameters();

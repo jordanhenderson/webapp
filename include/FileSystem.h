@@ -8,6 +8,11 @@ struct File {
 	const TCHAR* flags;
 };
 
+struct FileData {
+	size_t size;
+	char* data;
+};
+
 typedef void (*FILE_LINE_CALLBACK)(void*, TCHAR*);
 
 class FileSystem {
@@ -16,10 +21,12 @@ public:
 	static File* Open(const TCHAR* fileName, const TCHAR* flags);
 	//Read an entire file, returning a char* of it's contents.
 	//Same as calling ProcessFile with null callback.
-	static TCHAR* Read(File* file);
+	inline static FileData* Read(File* file) {
+		return Process(file, NULL, NULL);
+	}
 	
 	//Process a file, using a callback function to process each line.
-	static TCHAR* Process(File* file, void* userdata, void* function);
+	static FileData* Process(File* file, void* userdata, void* function);
 	//Closes the file.
 	static void Close(File* file);
 	static void Write(File* file, tstring buffer);

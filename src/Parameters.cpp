@@ -22,7 +22,14 @@ void Parameters::set(tstring param, tstring value) {
 	params->insert(std::make_pair(param, value));
 }
 
-
+bool Parameters::hasParam(tstring param) {
+	try {
+		tstring val = params->at(param);
+		return true;
+	} catch(const std::out_of_range&) {
+		return false;
+	}
+}
 Parameters::Parameters() {
 	//Create new parameter map
 	params = new paramMap();
