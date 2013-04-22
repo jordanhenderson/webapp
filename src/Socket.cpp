@@ -1,6 +1,6 @@
 #include "Socket.h"
-
-int Socket::ResolveAddress(tstring address, tstring port) {
+using namespace std;
+int Socket::ResolveAddress(string address, string port) {
 	struct addrinfo *result = NULL,
 					*ptr = NULL,
 					hints;
@@ -19,7 +19,7 @@ int Socket::ResolveAddress(tstring address, tstring port) {
 	return retVal;
 }
 
-int Socket::Connect(tstring address, tstring port) {
+int Socket::Connect(string address, string port) {
 	int retVal = this->ResolveAddress(address, port);
 	if(retVal || lastaddrinfo == NULL)
 		return retVal;

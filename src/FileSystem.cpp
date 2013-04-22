@@ -1,23 +1,31 @@
 #include "FileSystem.h"
-
-File* FileSystem::Open(const TCHAR* fileName, const TCHAR* flags) {
+#include <codecvt>
+using namespace std;
+File* FileSystem::Open(const char* fileName, const char* flags) {
 	File* tmpFile = new File;
+	locale loc;
 	//ensure file is opened in binary mode
-	int flen = _tcslen(flags);
-	TCHAR* actualFlag = new TCHAR[flen + 2];
+	int flen = strlen(flags);
+	char* actualFlag = new char[flen + 2];
 	if(flags[flen-1] != 'b') {
-		_tcscpy(actualFlag, flags);
-		_tcscat(actualFlag, "b");
+		strcpy(actualFlag, flags);
+		strcat(actualFlag, "b");
 	}
-	tmpFile->pszFile = _tfopen(fileName, flags);
+	
+#ifdef WIN32
+	std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> conv;
+	tmpFile->pszFile = _wfopen(conv.from_bytes(fileName).c_str(), conv.from_bytes(flags).c_str());
+#else
+	tmpFile->pszFile = fopen(fileName, flags);
+#endif
 	tmpFile->fileName = fileName;
 	tmpFile->flags = actualFlag;
-	TCHAR* errType = _T("");
+	char* errType = "";
 	if(tmpFile->pszFile == NULL) {
 		if(flags[0] == 'w' || flags[0] == 'a' || flags[1] == '+')
-			errType = _T("writing");
+			errType = "writing";
 		else if(flags[0] == 'r')
-			errType = _T("reading");
+			errType = "reading";
 		//Debug Message: File Access error: $fileName could not be opened for $errType.
 		return NULL;
 	}
@@ -62,7 +70,7 @@ FileData* FileSystem::Process(File* file, void* userdata, void* callback) {
 				//Read files line by line
 		
 					oldBaseBytes = ftell(tmpFile);
-					_fgetts(fdata->data + baseBytes, 4096, tmpFile);
+					fgets(fdata->data + baseBytes, 4096, tmpFile);
 					baseBytes += ftell(tmpFile) - oldBaseBytes;
 					FILE_LINE_CALLBACK callbackFn = (FILE_LINE_CALLBACK)(callback);
 					callbackFn(userdata, fdata->data + (oldBaseBytes-count));
@@ -80,22 +88,22 @@ FileData* FileSystem::Process(File* file, void* userdata, void* callback) {
 	return fdata;
 }
 
-void FileSystem::Write(File* file, tstring buffer) {
+void FileSystem::Write(File* file, string buffer) {
 	if(file == NULL || file->pszFile == NULL)
 		return;
-	_fputts(buffer.c_str(), file->pszFile);
+	fputs(buffer.c_str(), file->pszFile);
 	fflush(file->pszFile);
 }
 
-void FileSystem::WriteLine(File* file, tstring buffer) {
-	tstring tmp = tstring(buffer);
+void FileSystem::WriteLine(File* file, string buffer) {
+	string tmp = string(buffer);
 	Write(file, tmp.append(ENV_NEWLINE));
 }
 //Returns true if the specified path exists and can be read.
-int FileSystem::Exists(tstring path) {
-	struct _stat buf;
+int FileSystem::Exists(const char* path) {
+	struct stat buf;
 	
-	if(_tstat(path.c_str(), &buf) == 0)
+	if(stat(path, &buf) == 0)
 		return 1;
 	return 0;
 }

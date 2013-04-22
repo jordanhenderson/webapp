@@ -1,30 +1,29 @@
 #include "Parameters.h"
 
-
-tstring Parameters::get(tstring param) {
-	tstring retVal;
+using namespace std;
+string Parameters::get(string param) {
+	string retVal;
 	try {
 		retVal = params->at(param);
 		//param does not exist
 	}
 	catch(const std::out_of_range&) {
-		retVal = _T("");
+		retVal = "";
 	}
 	return retVal;
 }
 
-const int Parameters::getDigit(tstring param) {
-	tstring str = get(param);
-	return _ttoi(str.c_str());
+const int Parameters::getDigit(string param) {
+	return stoi(get(param));
 }
 
-void Parameters::set(tstring param, tstring value) {
+void Parameters::set(string param, string value) {
 	params->insert(std::make_pair(param, value));
 }
 
-bool Parameters::hasParam(tstring param) {
+bool Parameters::hasParam(string param) {
 	try {
-		tstring val = params->at(param);
+		string val = params->at(param);
 		return true;
 	} catch(const std::out_of_range&) {
 		return false;

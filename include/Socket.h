@@ -17,8 +17,8 @@
 
 class Socket {
 public:
-	int ResolveAddress(tstring address, tstring port);
-	int Connect(tstring address, tstring port);
+	int ResolveAddress(std::string address, std::string port);
+	int Connect(std::string address, std::string port);
 	void CloseSocket();
 	int GetStatus();
 	Socket();

@@ -4,8 +4,8 @@
 #include "Platform.h"
 struct File {
 	FILE* pszFile;
-	const TCHAR* fileName;
-	const TCHAR* flags;
+	const char* fileName;
+	const char* flags;
 };
 
 struct FileData {
@@ -13,12 +13,12 @@ struct FileData {
 	char* data;
 };
 
-typedef void (*FILE_LINE_CALLBACK)(void*, TCHAR*);
+typedef void (*FILE_LINE_CALLBACK)(void*, char*);
 
 class FileSystem {
 public:
 	//Load a file, returning a File* to the handle.
-	static File* Open(const TCHAR* fileName, const TCHAR* flags);
+	static File* Open(const char* fileName, const char* flags);
 	//Read an entire file, returning a char* of it's contents.
 	//Same as calling ProcessFile with null callback.
 	inline static FileData* Read(File* file) {
@@ -29,9 +29,9 @@ public:
 	static FileData* Process(File* file, void* userdata, void* function);
 	//Closes the file.
 	static void Close(File* file);
-	static void Write(File* file, tstring buffer);
-	static void WriteLine(File* file, tstring buffer);
-	static int Exists(tstring path);
+	static void Write(File* file, std::string buffer);
+	static void WriteLine(File* file, std::string buffer);
+	static int Exists(const char* path);
 	static long Size(File* file);
 	FileSystem() {};
 	~FileSystem() {};

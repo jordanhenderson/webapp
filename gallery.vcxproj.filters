@@ -13,6 +13,21 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\sqlite">
+      <UniqueIdentifier>{7818dd87-d3a0-472e-bbc9-ccc1eaf9dddb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\fastcgi">
+      <UniqueIdentifier>{9473f955-6f68-4a66-99df-49d83a720606}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\rapidjson">
+      <UniqueIdentifier>{b6575db0-38f7-4f0c-9f25-29525809e809}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\sqlite">
+      <UniqueIdentifier>{7608f7b6-5834-4e75-b4f0-c0564cf38952}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\fastcgi">
+      <UniqueIdentifier>{ef0c2b2f-dd7e-4f44-b097-d1604ecd8341}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Logging.cpp">
@@ -33,12 +48,6 @@
     <ClCompile Include="src\Server.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\fcgiapp.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\os_win32.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Internal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -47,6 +56,15 @@
     </ClCompile>
     <ClCompile Include="src\Platform.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\fastcgi\fcgiapp.c">
+      <Filter>Source Files\fastcgi</Filter>
+    </ClCompile>
+    <ClCompile Include="src\fastcgi\os_win32.c">
+      <Filter>Source Files\fastcgi</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sqlite\sqlite3.c">
+      <Filter>Source Files\sqlite</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -71,19 +89,46 @@
     <ClInclude Include="include\Server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\fcgi_config.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="include\fastcgi\fastcgi.h">
+      <Filter>Header Files\fastcgi</Filter>
     </ClInclude>
-    <ClInclude Include="include\fastcgi.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="include\fastcgi\fcgi_config.h">
+      <Filter>Header Files\fastcgi</Filter>
     </ClInclude>
-    <ClInclude Include="include\fcgiapp.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="include\fastcgi\fcgiapp.h">
+      <Filter>Header Files\fastcgi</Filter>
     </ClInclude>
-    <ClInclude Include="include\fcgimisc.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="include\fastcgi\fcgimisc.h">
+      <Filter>Header Files\fastcgi</Filter>
     </ClInclude>
-    <ClInclude Include="include\fcgios.h">
+    <ClInclude Include="include\fastcgi\fcgios.h">
+      <Filter>Header Files\fastcgi</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rapidjson\document.h">
+      <Filter>Header Files\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rapidjson\filestream.h">
+      <Filter>Header Files\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rapidjson\prettywriter.h">
+      <Filter>Header Files\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rapidjson\rapidjson.h">
+      <Filter>Header Files\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rapidjson\stringbuffer.h">
+      <Filter>Header Files\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rapidjson\writer.h">
+      <Filter>Header Files\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rapidjson\reader.h">
+      <Filter>Header Files\rapidjson</Filter>
+    </ClInclude>
+    <ClInclude Include="include\sqlite\sqlite3.h">
+      <Filter>Header Files\sqlite</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Database.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

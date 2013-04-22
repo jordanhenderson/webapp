@@ -33,10 +33,10 @@ void Server::run(int nThread, int sock) {
 Server::Server( Logging* logging, ServerHandler* handler) {
 	this->logger = logging;
 	if(FCGX_IsCGI()) {
-		logger->log(_T("Running as CGI Server."));
+		logger->log("Running as CGI Server.");
 	}
 	this->handler = handler;
-	logger->log(_T("Server Initialised. Creating FastCGI sockets..."));
+	logger->log("Server Initialised. Creating FastCGI sockets...");
 	FCGX_Init();
 	int sock = FCGX_OpenSocket(":5000", 0);
 	for(int n = 0; n < SERVER_THREADS; n++) {

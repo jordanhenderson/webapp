@@ -10,17 +10,17 @@
 #define LOGGER_STATUS_FINISHED 1
 class Logging : Internal {
 	std::thread logger;
-	tbb::concurrent_queue<tstring> queue;
+	tbb::concurrent_queue<std::string> queue;
 	void process();
 	File* logFile;
 	int status;
 public:
-	Logging(tstring logPath);
+	Logging(std::string logPath);
 	Logging();
 	~Logging(){};
-	void _tprintf(tstring format, ...);
-	void log(tstring msg);
-	inline void setFile(tstring file);
+	void printf(std::string format, ...);
+	void log(std::string msg);
+	inline void setFile(std::string file);
 	void finish();
 	
 
