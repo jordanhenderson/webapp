@@ -89,6 +89,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Database.cpp" />
     <ClCompile Include="src\fastcgi\fcgiapp.c" />
     <ClCompile Include="src\fastcgi\os_win32.c" />
     <ClCompile Include="src\FileSystem.cpp" />
@@ -96,6 +97,7 @@
     <ClCompile Include="src\Internal.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Platform.cpp" />
+    <ClCompile Include="src\Serializer.cpp" />
     <ClCompile Include="src\Server.cpp" />
     <ClCompile Include="src\Logging.cpp" />
     <ClCompile Include="src\Parameters.cpp" />
@@ -118,6 +120,7 @@
     <ClInclude Include="include\rapidjson\reader.h" />
     <ClInclude Include="include\rapidjson\stringbuffer.h" />
     <ClInclude Include="include\rapidjson\writer.h" />
+    <ClInclude Include="include\Serializer.h" />
     <ClInclude Include="include\Server.h" />
     <ClInclude Include="include\Logging.h" />
     <ClInclude Include="include\Parameters.h" />

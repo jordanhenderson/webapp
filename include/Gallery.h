@@ -3,11 +3,9 @@
 #include "Platform.h"
 #include "Parameters.h"
 #include "Server.h"
-#define HTML_HEADER "Content-type: text/html\r\n\r\n"
-#define CSS_HEADER "Content-type: text/css; charset=UTF-8\r\n\r\n"
-#define JSON_HEADER "Content-type: application/json\r\n\r\n"
-#define JS_HEADER "Content-type: application/javascript\r\n\r\n"
-#define HTML_404 "Status: 404 Not Found\r\n\r\nThe page you requested cannot be found (404)."
+#include "Database.h"
+#include "rapidjson.h"
+#include "document.h"
 
 #define TEMPLATE_VIDEO "video.html"
 #define TEMPLATE_IMAGE "image.html"
@@ -20,33 +18,39 @@
 #define ALBUM_RANDOM 1
 #define SLIDESHOW_SET_PR 1
 #define SLIDESHOW_RAND_PR 9
-#define NO_ALBUMS_LINK "<h1>You do not have any albums. <a href='../manage/'>Add some!</a></h1>"
-#define NO_ALBUMS_POPUP "<h1>You do not have any albums. <a href='#' class='popup' data-form='addalbum_f'>Add some!</a></h1>"
+
 #define DUPLICATE_ALBUM "An album with the specified name or path already exists. Please try again."
 #define ALBUM_ADDED_SUCCESS "Album added successfully!"
 #define ALBUMS_ADDED_SUCCESS "Albums added successfully!"
 #define MISSING_FIELD "Please ensure all required fields are entered correctly."
 #define ALBUM_NOT_EXISTS "The album path specified does not exist. Please try again."
 #define THUMB_EXTENSIONS (".png", ".gif", ".jpg", ".jpeg")
-#define RESPONSE_TYPE_FULLMSG 0
-#define RESPONSE_TYPE_SMLMSG 1
-#define RESPONSE_TYPE_DATA 2
-#define RESPONSE_TYPE_TABLE 3
+#define RESPONSE_TYPE_DATA 0
+#define RESPONSE_TYPE_TABLE 1
 
+typedef enum  {
+	INDEX,
+	SLIDESHOW,
+	MANAGE
+} page_id;
 
-
-
+typedef std::unordered_map<std::string, std::string> RequestVars;
 class Logging;
 class Gallery : public ServerHandler, Internal {
+private:
 	Logging* logger;
 	Parameters* params;
 	Parameters* filecache;
-	std::string getIndex();
+	std::string getPage(page_id);
 	std::string loadFile(char* file);
-	std::string response(char* data, int type, int close=0);
+	Database* database;
+	RequestVars parseRequestVariables(char* vars);
+	std::string processVars(RequestVars&);
 public:
 	Gallery::Gallery(Parameters* params, Logging* logger);
+	Gallery::~Gallery();
 	void process(FCGX_Request* request);
+	std::string getAlbums();
 };
 
 #endif

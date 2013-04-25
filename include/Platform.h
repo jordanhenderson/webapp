@@ -22,6 +22,14 @@
 
 #define ERROR_FILE_NOT_FOUND 1
 #define ERROR_SOCKET_FAILED 2
+#define ERROR_DB_FAILED 3
+
+#define HTML_HEADER "Content-type: text/html\r\n\r\n"
+#define CSS_HEADER "Content-type: text/css; charset=UTF-8\r\n\r\n"
+#define JSON_HEADER "Content-type: application/json\r\n\r\n"
+#define JS_HEADER "Content-type: application/javascript\r\n\r\n"
+#define HTML_404 "Status: 404 Not Found\r\n\r\nThe page you requested cannot be found (404)."
+
 class Internal {
 protected: int nError;
 public:
@@ -29,4 +37,5 @@ public:
 };
 
 bool endsWith(const std::string &a, const std::string &b);
+bool is_number(const std::string &a);
 #endif

@@ -7,7 +7,7 @@
 #include "document.h"
 #include "prettywriter.h"
 #include "stringbuffer.h"
-#include "sqlite3.h"
+#include "Serializer.h"
 
 using namespace rapidjson;
 using namespace std;
@@ -15,10 +15,21 @@ Gallery::Gallery(Parameters* params, Logging* logger) {
 	this->logger = logger;
 	this->params = params;
 	this->filecache = new Parameters();
+	this->database = new Database("gallery.sqlite");
 }
 
-string Gallery::getIndex() {
-	return loadFile("/templates/index.html");
+Gallery::~Gallery() {
+	delete filecache;
+	delete database;
+}
+
+string Gallery::getPage(page_id id) {
+	if(id == SLIDESHOW) 
+		return loadFile("/templates/slideshow.html");
+	else if(id == MANAGE) 
+		return loadFile("/templates/manage.html");
+	else 
+		return loadFile("/templates/index.html");
 }
 
 string Gallery::loadFile(char* uri) {
@@ -39,24 +50,55 @@ string Gallery::loadFile(char* uri) {
 			delete filedata;
 			delete f;
 		} else {
-			
 			data.append(HTML_404);
 		}
 	
 	return data;
 }
 
-string Gallery::response(char* data, int type, int close) {
-	Document document;
-	document.SetObject();
+string Gallery::getAlbums() {
+	Query* query = database->select("SELECT COUNT(*) FROM albums;");
+	string final;
+	
+	int nAlbums = std::stoi(((*query->response)[0][0]));
+	delete query;
+	Serializer* serializer = new Serializer();
+	query = database->select("SELECT id, name, added, lastedited, path, type, rating, recursive FROM albums;");
+	serializer->append(*query->response);
+	final = serializer->get(RESPONSE_TYPE_DATA);
+	
+	
+	return final;
+}
 
-	document.AddMember("type", type, document.GetAllocator());
-	document.AddMember("data", data, document.GetAllocator());
-	document.AddMember("close", close, document.GetAllocator());
-	StringBuffer buffer;
-	PrettyWriter<StringBuffer> writer(buffer);
-	document.Accept(writer);
-	return JSON_HEADER + std::string(buffer.GetString(), buffer.Size());
+RequestVars parseRequestVars(char* vars) {
+	char* key = NULL;
+	char* val = NULL;
+	std::unordered_map<std::string, std::string> varmap;
+	int i;
+	for(i = 0; vars[i] != '\0'; i++) {
+		if(vars[i] == '?') {
+			key = vars + i + 1;
+		}
+		if(key != NULL && vars[i] == '=') {
+			//Terminate the string at the = for key.
+			*(vars + i) = '\0';
+			val = vars + i + 1;
+		}
+		if(val != NULL && vars[i] == '&') {
+			//Terminate the string at the & for val.
+			*(vars + i) = '\0';
+			//Copy the key and val into our unordered map.
+			varmap[key] = val;
+			key = NULL;
+			val = NULL;
+		}
+	}
+	if(vars[i] == '\0' && key != NULL && val != NULL) {
+		//Copy the key and val into our unordered map.
+		varmap[key] = val;
+	}
+	return varmap;
 }
 
 void Gallery::process(FCGX_Request* request) {
@@ -65,18 +107,42 @@ void Gallery::process(FCGX_Request* request) {
 	std::string final;
 	if(strcmp(method, "GET") == 0) {
 		if(strcmp(uri, "/") == 0) {
-			final = getIndex();
-		} else if(strcmp(uri, "/load") == 0) {
-			final = response(NO_ALBUMS_LINK, RESPONSE_TYPE_FULLMSG);
-			
+			final = getPage(INDEX);
+		} else if(strcmp(uri, "/manage") == 0) {
+			final = getPage(MANAGE);
+		} else if(strcmp(uri, "/slideshow") == 0) {
+			final = getPage(SLIDESHOW);
+		} else if(strstr(uri, "/api") == uri) {
+			//Create an unordered map containing ?key=var pairs.
+			RequestVars v = parseRequestVars(uri + 4);
+			final = processVars(v);
 		} else {
 			//Return the file if it exists. Else return 404.
 			final = loadFile(uri);
 		}
 	} else if(strcmp(method, "POST") == 0) {
-		final = "BLAH";
+		//Read data from the input stream. (allocated using CONTENT_LENGTH)
+		char* strlength = FCGX_GetParam("HTTP_CONTENT_LENGTH", request->envp);
+		if(strlength == NULL)
+			return;
+		int len = atoi(strlength);
+		char* postdata = new char[len + 1];
+		FCGX_GetStr(postdata, len, request->in);
+		//End the string.
+		postdata[len] = '\0';
+		RequestVars v = parseRequestVars(postdata);
+		final = processVars(v);
+		
 	}
 
 	FCGX_PutStr(final.c_str(), final.length(), request->out);
 }
 
+string Gallery::processVars(RequestVars& vars) {
+	string a = vars["t"];
+	if(vars["t"] == "albums") {
+		return getAlbums();
+	} else {
+		return JSON_HEADER + string("{}");
+	}
+}

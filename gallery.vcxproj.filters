@@ -66,6 +66,12 @@
     <ClCompile Include="src\sqlite\sqlite3.c">
       <Filter>Source Files\sqlite</Filter>
     </ClCompile>
+    <ClCompile Include="src\Database.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Serializer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Logging.h">
@@ -129,6 +135,9 @@
       <Filter>Header Files\sqlite</Filter>
     </ClInclude>
     <ClInclude Include="include\Database.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Serializer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

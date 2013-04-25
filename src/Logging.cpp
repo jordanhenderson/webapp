@@ -30,7 +30,6 @@ void Logging::process() {
 		string msg = "";
 		if(queue.try_pop(msg))  {
 			FileSystem::WriteLine(logFile, msg);
-			delete &msg;
 		}
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
@@ -54,7 +53,7 @@ void Logging::printf(string format, ...) {
 	buffer = new char[sz + 1];
 	snprintf(buffer, sz + 1, format.c_str(), args);
 	va_end(args);
-	this->log(buffer);
+	this->log(string(buffer, sz));
 }
 
 void Logging::finish() {
