@@ -5,14 +5,14 @@ using namespace rapidjson;
 Serializer::Serializer() {
 	data.SetObject();
 	Value d(kArrayType);
-	allocator = data.GetAllocator();
 	
-	data.AddMember("data", d, allocator);
+	data.AddMember("data", d, data.GetAllocator());
 }
+
 
 std::string Serializer::get(int type) {
 	Writer<StringBuffer> writer(buffer);
-	data.AddMember("type", type, allocator);
+	data.AddMember("type", type, data.GetAllocator());
 	data.Accept(writer);
 	
 	return JSON_HEADER + string(buffer.GetString(), buffer.Size());
@@ -21,16 +21,16 @@ std::string Serializer::get(int type) {
 void Serializer::append(string& str) {
 	Value& d = data["data"];
 	if(is_number(str))
-		d.PushBack(stoi(str), allocator);
+		d.PushBack(stoi(str), data.GetAllocator());
 	else
-		d.PushBack(str.c_str(), allocator);
+		d.PushBack(str.c_str(), data.GetAllocator());
 }
 
 void Serializer::append(string& str, Value& value) {
 	if(is_number(str))
-		value.PushBack(stoi(str), allocator);
+		value.PushBack(stoi(str), data.GetAllocator());
 	else
-		value.PushBack(str.c_str(), allocator);
+		value.PushBack(str.c_str(), data.GetAllocator());
 }
 
 void Serializer::append(unordered_map<string, string>& map) {
@@ -39,18 +39,19 @@ void Serializer::append(unordered_map<string, string>& map) {
 	m.SetObject();
 	for (unordered_map<string, string>::const_iterator it = map.begin(); 
 		it != map.end(); ++it) {
-		m.AddMember(it->first.c_str(), it->second.c_str(), allocator);
+		m.AddMember(it->first.c_str(), it->second.c_str(), data.GetAllocator());
 	}
-	d.PushBack(m, allocator);
+	d.PushBack(m, data.GetAllocator());
 }
 
 void Serializer::append(vector<string>& vector) {
+	Value&d = data["data"];
 	Value v;
 	v.SetArray();
 	for(int i = 0; i < vector.size(); i++) {
 		append(vector[i], v);
 	}
-	data.PushBack(v, allocator);
+	d.PushBack(v, data.GetAllocator());
 	
 }
 
@@ -65,7 +66,7 @@ void Serializer::append(vector<vector<string>>& vector) {
 			for(int j = 0; j < vector[i].size(); j++) {
 				append(vector[i][j], r);
 			}
-			v.PushBack(r, allocator);
+			v.PushBack(r, data.GetAllocator());
 		}
-	d.PushBack(v, allocator);
+	d.PushBack(v, data.GetAllocator());
 }

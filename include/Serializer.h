@@ -11,7 +11,7 @@ class Serializer {
 private:
 	rapidjson::Document data;
 	rapidjson::StringBuffer buffer;
-	rapidjson::Document::AllocatorType allocator;
+	
 	inline void append(std::string&, rapidjson::Value&);
 public:
 	void append(std::vector<std::string>&);

@@ -28,11 +28,6 @@
 #define RESPONSE_TYPE_DATA 0
 #define RESPONSE_TYPE_TABLE 1
 
-typedef enum  {
-	INDEX,
-	SLIDESHOW,
-	MANAGE
-} page_id;
 
 typedef std::unordered_map<std::string, std::string> RequestVars;
 class Logging;
@@ -41,16 +36,20 @@ private:
 	Logging* logger;
 	Parameters* params;
 	Parameters* filecache;
-	std::string getPage(page_id);
-	std::string loadFile(char* file);
+	std::string getPage(const char* page);
+	std::string loadFile(const char* file);
 	Database* database;
 	RequestVars parseRequestVariables(char* vars);
 	std::string processVars(RequestVars&);
+	std::string user;
+	std::string pass;
+	int auth;
 public:
 	Gallery::Gallery(Parameters* params, Logging* logger);
 	Gallery::~Gallery();
 	void process(FCGX_Request* request);
 	std::string getAlbums();
+	std::string getAlbumsTable();
 };
 
 #endif

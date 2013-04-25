@@ -16,6 +16,14 @@ Gallery::Gallery(Parameters* params, Logging* logger) {
 	this->params = params;
 	this->filecache = new Parameters();
 	this->database = new Database("gallery.sqlite");
+	//Check authentication
+	user = params->get("username");
+	pass = params->get("pass");
+	if(!user.empty() && !pass.empty()) {
+		auth = 1;
+	} else
+		auth = 0;
+
 }
 
 Gallery::~Gallery() {
@@ -23,16 +31,25 @@ Gallery::~Gallery() {
 	delete database;
 }
 
-string Gallery::getPage(page_id id) {
-	if(id == SLIDESHOW) 
-		return loadFile("/templates/slideshow.html");
-	else if(id == MANAGE) 
-		return loadFile("/templates/manage.html");
-	else 
-		return loadFile("/templates/index.html");
+string Gallery::getPage(const char* page) {
+	string pageuri = params->get("basepath") +  "/templates/" + string(page) + ".html";
+
+	if(FileSystem::Exists(pageuri.c_str())) {
+		string data = HTML_HEADER;
+		File* f = FileSystem::Open(pageuri.c_str(), "rb");
+		FileData* filedata = FileSystem::Read(f);
+		data.append(filedata->data, filedata->size);
+		FileSystem::Close(f);
+		delete filedata;
+		delete f;
+		return data;
+	} else {
+		return loadFile(page);
+	}
+
 }
 
-string Gallery::loadFile(char* uri) {
+string Gallery::loadFile(const char* uri) {
 	std::string fileuri = params->get("basepath") + uri;
 	std::string data;
 
@@ -63,13 +80,47 @@ string Gallery::getAlbums() {
 	int nAlbums = std::stoi(((*query->response)[0][0]));
 	delete query;
 	Serializer* serializer = new Serializer();
-	query = database->select("SELECT id, name, added, lastedited, path, type, rating, recursive FROM albums;");
-	serializer->append(*query->response);
+	query = database->select("SELECT id, name, added, lastedited, path, type, rating, recursive, (SELECT thumbpath FROM thumbs WHERE id = albums.thumbid) AS thumb FROM albums;", 1);
+	std::vector<unordered_map<string,string>*> maplist;
+	for(vector<string> row: *query->response) {
+		unordered_map<string, string>* rowmap = new unordered_map<string,string>();
+		maplist.push_back(rowmap);
+		if(!FileSystem::Exists(row[8].c_str())) {
+			row[8] = DEFAULT_THUMB;
+		}
+		for(int i = 0; i < query->description->size(); i++) {
+			(*rowmap)[(*query->description)[i]] =  row[i];
+		}
+		serializer->append(*rowmap);
+	}
+
+
 	final = serializer->get(RESPONSE_TYPE_DATA);
-	
-	
+	for(unordered_map<string,string>* map : maplist) {
+		delete map;
+	}
+
+	delete serializer;
 	return final;
 }
+
+string Gallery::getAlbumsTable() {
+	Query* query = database->select("SELECT id, name, added, lastedited, path, type, rating, recursive, (SELECT thumbpath FROM thumbs WHERE id = albums.thumbid) AS thumb FROM albums;", 1);
+
+	unordered_map<string, string> tableData;
+	tableData["THUMBS_PATH"] = THUMBS_PATH;
+	tableData["thumb"] = "img";
+	
+	Serializer* serializer = new Serializer();
+	serializer->append(tableData);
+	serializer->append(*query->description);
+	
+	return serializer->get(RESPONSE_TYPE_TABLE);
+
+	delete query;
+	delete serializer;
+}
+
 
 RequestVars parseRequestVars(char* vars) {
 	char* key = NULL;
@@ -90,7 +141,7 @@ RequestVars parseRequestVars(char* vars) {
 			*(vars + i) = '\0';
 			//Copy the key and val into our unordered map.
 			varmap[key] = val;
-			key = NULL;
+			key = vars + i + 1;
 			val = NULL;
 		}
 	}
@@ -104,21 +155,24 @@ RequestVars parseRequestVars(char* vars) {
 void Gallery::process(FCGX_Request* request) {
 	char* method = FCGX_GetParam("REQUEST_METHOD", request->envp);
 	char* uri = FCGX_GetParam("REQUEST_URI", request->envp);
+
+	if(auth) {
+		char* remoteUser = FCGX_GetParam("REMOTE_USER", request->envp);
+		
+		
+	}
+
 	std::string final;
 	if(strcmp(method, "GET") == 0) {
-		if(strcmp(uri, "/") == 0) {
-			final = getPage(INDEX);
-		} else if(strcmp(uri, "/manage") == 0) {
-			final = getPage(MANAGE);
-		} else if(strcmp(uri, "/slideshow") == 0) {
-			final = getPage(SLIDESHOW);
-		} else if(strstr(uri, "/api") == uri) {
+		if(strstr(uri, "/api") == uri) {
 			//Create an unordered map containing ?key=var pairs.
 			RequestVars v = parseRequestVars(uri + 4);
 			final = processVars(v);
+		} else if(strcmp(uri, "/") == 0) {
+			final = getPage("index");
 		} else {
 			//Return the file if it exists. Else return 404.
-			final = loadFile(uri);
+			final = getPage(uri);
 		}
 	} else if(strcmp(method, "POST") == 0) {
 		//Read data from the input stream. (allocated using CONTENT_LENGTH)
@@ -141,8 +195,11 @@ void Gallery::process(FCGX_Request* request) {
 string Gallery::processVars(RequestVars& vars) {
 	string a = vars["t"];
 	if(vars["t"] == "albums") {
+		if(vars["f"] == "table")
+			return getAlbumsTable();
 		return getAlbums();
 	} else {
 		return JSON_HEADER + string("{}");
 	}
 }
+
