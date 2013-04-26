@@ -71,9 +71,10 @@ FileData* FileSystem::Process(File* file, void* userdata, void* callback) {
 		
 					oldBaseBytes = ftell(tmpFile);
 					fgets(fdata->data + baseBytes, 4096, tmpFile);
-					baseBytes += ftell(tmpFile) - oldBaseBytes;
+					int nBytesRead = ftell(tmpFile) - oldBaseBytes;
+					baseBytes += nBytesRead;
 					FILE_LINE_CALLBACK callbackFn = (FILE_LINE_CALLBACK)(callback);
-					callbackFn(userdata, fdata->data + (oldBaseBytes-count));
+					callbackFn(userdata, fdata->data + (oldBaseBytes-count), nBytesRead);
 				} 
 				baseBytes--;
 				count = 1;

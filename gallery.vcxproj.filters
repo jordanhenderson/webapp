@@ -28,6 +28,12 @@
     <Filter Include="Source Files\fastcgi">
       <UniqueIdentifier>{ef0c2b2f-dd7e-4f44-b097-d1604ecd8341}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\b64">
+      <UniqueIdentifier>{6933669d-6f6a-469d-9741-1e97f6d1a036}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\b64">
+      <UniqueIdentifier>{bcfbdaf8-bc49-46ae-a35e-ff2bbe754fb7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Logging.cpp">
@@ -71,6 +77,9 @@
     </ClCompile>
     <ClCompile Include="src\Serializer.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\b64\cdecode.c">
+      <Filter>Source Files\b64</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -139,6 +148,12 @@
     </ClInclude>
     <ClInclude Include="include\Serializer.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\b64\cdecode.h">
+      <Filter>Header Files\b64</Filter>
+    </ClInclude>
+    <ClInclude Include="include\b64\decode.h">
+      <Filter>Header Files\b64</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

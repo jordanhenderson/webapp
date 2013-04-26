@@ -8,9 +8,11 @@
 #include "prettywriter.h"
 #include "stringbuffer.h"
 #include "Serializer.h"
+#include "decode.h"
 
 using namespace rapidjson;
 using namespace std;
+using namespace base64;
 Gallery::Gallery(Parameters* params, Logging* logger) {
 	this->logger = logger;
 	this->params = params;
@@ -157,9 +159,28 @@ void Gallery::process(FCGX_Request* request) {
 	char* uri = FCGX_GetParam("REQUEST_URI", request->envp);
 
 	if(auth) {
-		char* remoteUser = FCGX_GetParam("REMOTE_USER", request->envp);
-		
-		
+		char* auth_header = FCGX_GetParam("HTTP_AUTHORIZATION", request->envp);
+		if(auth_header != NULL && strstr(auth_header, "Basic ") == auth_header) {
+			char* auth_details = auth_header + 6;
+			int l = strlen(auth_details);
+			//Decode the base64-encoded string.
+			char* decoded_auth = new char[l + 1]();
+			base64_decodestate decode_state;
+			base64_init_decodestate(&decode_state);
+			base64_decode_block(auth_details, l, decoded_auth, &decode_state);
+			//Separate username and password.
+			char* pass = strchr(decoded_auth, ':');
+			*(pass) = '\0';
+			pass++;
+			if(pass != params->get("pass") || decoded_auth != params->get("username")) {
+				FCGX_PutStr(HTTP_NO_AUTH, strlen(HTTP_NO_AUTH), request->out);
+				return;
+			}
+
+		} else {
+			FCGX_PutStr(HTTP_NO_AUTH, strlen(HTTP_NO_AUTH), request->out);
+			return;
+		}
 	}
 
 	std::string final;
@@ -180,7 +201,7 @@ void Gallery::process(FCGX_Request* request) {
 		if(strlength == NULL)
 			return;
 		int len = atoi(strlength);
-		char* postdata = new char[len + 1];
+		char* postdata = new char[len + 1]();
 		FCGX_GetStr(postdata, len, request->in);
 		//End the string.
 		postdata[len] = '\0';

@@ -13,7 +13,7 @@ struct FileData {
 	char* data;
 };
 
-typedef void (*FILE_LINE_CALLBACK)(void*, char*);
+typedef void (*FILE_LINE_CALLBACK)(void*, char*, int);
 
 class FileSystem {
 public:

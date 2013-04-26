@@ -19,6 +19,11 @@
 #define SLIDESHOW_SET_PR 1
 #define SLIDESHOW_RAND_PR 9
 
+#define HTTP_NO_AUTH "Status: 401 Unauthorized\r\nWWW-Authenticate: Basic realm=\"Gallery\"\r\n\r\n"
+
+//TODO move these into client
+
+
 #define DUPLICATE_ALBUM "An album with the specified name or path already exists. Please try again."
 #define ALBUM_ADDED_SUCCESS "Album added successfully!"
 #define ALBUMS_ADDED_SUCCESS "Albums added successfully!"

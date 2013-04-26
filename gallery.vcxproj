@@ -54,11 +54,12 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_WIN32;SQLITE_ENABLE_COLUMN_METADATA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>include;include/fastcgi;include/sqlite;include/rapidjson</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;include/fastcgi;include/sqlite;include/rapidjson;include/b64</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
       <InterproceduralOptimization>MultiFile</InterproceduralOptimization>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -75,7 +76,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_WIN32;SQLITE_ENABLE_COLUMN_METADATA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>include;include/fastcgi;include/sqlite;include/rapidjson</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;include/fastcgi;include/sqlite;include/rapidjson;include/b64</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
@@ -89,6 +90,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\b64\cdecode.c" />
     <ClCompile Include="src\Database.cpp" />
     <ClCompile Include="src\fastcgi\fcgiapp.c" />
     <ClCompile Include="src\fastcgi\os_win32.c" />
@@ -105,6 +107,8 @@
     <ClCompile Include="src\sqlite\sqlite3.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\b64\cdecode.h" />
+    <ClInclude Include="include\b64\decode.h" />
     <ClInclude Include="include\Database.h" />
     <ClInclude Include="include\fastcgi\fastcgi.h" />
     <ClInclude Include="include\fastcgi\fcgiapp.h" />
