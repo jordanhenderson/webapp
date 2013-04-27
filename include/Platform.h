@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cstdarg>
 #include <string>
+#include <memory>
 
 
 #ifdef WIN32
@@ -29,7 +30,8 @@
 #define JSON_HEADER "Content-type: application/json\r\n\r\n"
 #define JS_HEADER "Content-type: application/javascript\r\n\r\n"
 #define HTML_404 "Status: 404 Not Found\r\n\r\nThe page you requested cannot be found (404)."
-
+#define XSTR(a) STR(a)
+#define STR(a) #a
 class Internal {
 protected: int nError;
 public:

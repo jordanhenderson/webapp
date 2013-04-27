@@ -11,8 +11,6 @@
 #define TEMPLATE_IMAGE "image.html"
 #define TEMPLATE_FLASH "flash.html"
 #define TEMPLATE_TEXT "text.html"
-#define STORE_PATH "store"
-#define THUMBS_PATH "thumbs"
 #define DEFAULT_THUMB "default.png"
 #define ALBUM_SET 0
 #define ALBUM_RANDOM 1
@@ -29,32 +27,41 @@
 #define ALBUMS_ADDED_SUCCESS "Albums added successfully!"
 #define MISSING_FIELD "Please ensure all required fields are entered correctly."
 #define ALBUM_NOT_EXISTS "The album path specified does not exist. Please try again."
-#define THUMB_EXTENSIONS (".png", ".gif", ".jpg", ".jpeg")
+
 #define RESPONSE_TYPE_DATA 0
 #define RESPONSE_TYPE_TABLE 1
 
+#define THUMB_EXTENSIONS_D {".png", ".gif", ".jpg", ".jpeg", NULL};
 
 typedef std::unordered_map<std::string, std::string> RequestVars;
 class Logging;
 class Gallery : public ServerHandler, Internal {
 private:
-	Logging* logger;
-	Parameters* params;
-	Parameters* filecache;
+	std::shared_ptr<Logging> logger;
+	std::shared_ptr<Parameters> params;
 	std::string getPage(const char* page);
 	std::string loadFile(const char* file);
-	Database* database;
+	std::unique_ptr<Database> database;
 	RequestVars parseRequestVariables(char* vars);
 	std::string processVars(RequestVars&);
 	std::string user;
 	std::string pass;
+	std::string basepath;
+	std::string storepath;
+	std::string dbpath;
+	std::string thumbspath;
 	int auth;
 public:
-	Gallery::Gallery(Parameters* params, Logging* logger);
+	Gallery::Gallery(std::shared_ptr<Parameters>& params, std::shared_ptr<Logging>& logger);
 	Gallery::~Gallery();
 	void process(FCGX_Request* request);
 	std::string getAlbums();
 	std::string getAlbumsTable();
+	int getDuplicateAlbums(char* name, char* path);
+	std::vector<std::string> getRandomFileIds();
+	std::vector<std::string> getSetIds();
+	std::string getFilename(int);
+	int genThumb(char* file, int shortmax, int longmax);
 };
 
 #endif

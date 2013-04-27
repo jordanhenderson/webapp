@@ -12,9 +12,9 @@ typedef std::vector<std::string> QueryRow;
 class Query {
 public:
 	std::string dbq;
-	QueryRow* params; 
-	QueryResponse* response;
-	QueryRow* description;
+	std::unique_ptr<QueryRow> params; 
+	std::unique_ptr<QueryResponse> response;
+	std::unique_ptr<QueryRow> description;
 	int status;
 	Query(std::string dbq);
 	~Query();
@@ -29,7 +29,8 @@ private:
 public:
 	Database(const char* filename);
 	~Database();
-	Query* select(Query* query, int desc = 0);
-	Query* select(const char* query, int desc = 0);
+	void select(std::unique_ptr<Query>& query, int desc = 0);
+	std::unique_ptr<Query> select(const char* query, int desc = 0);
+	std::unique_ptr<Query> select(const char* query, std::unique_ptr<QueryRow>& params, int desc =0);
 };
 #endif

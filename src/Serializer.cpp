@@ -3,6 +3,7 @@
 using namespace std;
 using namespace rapidjson;
 Serializer::Serializer() {
+	
 	data.SetObject();
 	Value d(kArrayType);
 	
@@ -39,9 +40,14 @@ void Serializer::append(unordered_map<string, string>& map) {
 	m.SetObject();
 	for (unordered_map<string, string>::const_iterator it = map.begin(); 
 		it != map.end(); ++it) {
-		m.AddMember(it->first.c_str(), it->second.c_str(), data.GetAllocator());
+			m.AddMember(it->first.c_str(), it->second.c_str(), data.GetAllocator());
 	}
 	d.PushBack(m, data.GetAllocator());
+}
+
+void Serializer::append(unique_ptr<unordered_map<string, string>>& map) {
+	append(*(map.get()));
+	storedMaps.push_back(move(map));
 }
 
 void Serializer::append(vector<string>& vector) {

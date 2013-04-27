@@ -10,12 +10,6 @@ Query::Query(string dbq) {
 }
 
 Query::~Query() {
-	if(params != NULL)
-		delete params;
-	if(response != NULL)
-		delete response;
-	if(description != NULL)
-		delete description;
 }
 
 void Database::process() {
@@ -24,8 +18,10 @@ void Database::process() {
 
 		if(queue.try_pop(qry))  {
 			sqlite3_stmt *stmt;
-			if(sqlite3_prepare_v2(db, qry->dbq.c_str(), qry->dbq.length(), &stmt, 0))
+			if(sqlite3_prepare_v2(db, qry->dbq.c_str(), qry->dbq.length(), &stmt, 0)) {
+				qry->status = DATABASE_QUERY_FINISHED;
 				continue;
+			}
 			std::vector<std::string> params = *qry->params;
 			for(int i = 0; i < qry->params->size(); i++) {
 				sqlite3_bind_text(stmt, i, params[i].c_str(), params[i].length(), SQLITE_STATIC);
@@ -74,40 +70,46 @@ Database::~Database() {
 	sqlite3_close(db);
 }
 
-Query* Database::select(Query* query, int desc) {
+void Database::select(unique_ptr<Query>& query, int desc) {
 	if(nError != ERROR_DB_FAILED) {
 		
 		//create the response and description vectors
 		if(query->response == NULL) {
-			QueryResponse* response = new QueryResponse();
-			query->response = response;
+			unique_ptr<QueryResponse> response = unique_ptr<QueryResponse>(new QueryResponse());
+			query->response = std::move(response);
 		} 
 		if(query->description == NULL && desc) {
-			QueryRow* description = new QueryRow();
-			query->description = description;
+			unique_ptr<QueryRow> description = unique_ptr<QueryRow>(new QueryRow());
+			query->description = std::move(description);
 		}
 
 		if(query->params == NULL) {
-			QueryRow* params = new QueryRow();
-			query->params = params;
+			unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
+			query->params = std::move(params);
 		}
 		//add it to the processing queue, wait for response
-		
-		queue.push(query);
+		//Release the query object from management, add it to the queue.
+		Query* q = query.release();
+		queue.push(q);
 		//Wait for status to be set to DATABASE_QUERY_FINISHED (blocking the calling thread)
-		while(query->status != DATABASE_QUERY_FINISHED) {
+		while(q->status != DATABASE_QUERY_FINISHED) {
 			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
 
-		//Clean up params.
-		delete query->params;
-		query->params = NULL;
-		
+		query.reset(q);		
 	}
-	return query;
 }
 
-Query* Database::select(const char* query, int desc) {
-	Query* q = new Query(query);
-	return select(q, desc);
+unique_ptr<Query> Database::select(const char* query, int desc) {
+	unique_ptr<Query> q = unique_ptr<Query>(new Query(query));
+	select(q, desc);
+	return q;
 }
+
+unique_ptr<Query> Database::select(const char* query, unique_ptr<QueryRow>& params, int desc) {
+	unique_ptr<Query> q = unique_ptr<Query>(new Query(query));
+	q->params = std::move(params);
+	select(q, desc);
+	return q;
+}
+

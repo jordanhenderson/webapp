@@ -12,7 +12,7 @@ class Logging : Internal {
 	std::thread logger;
 	tbb::concurrent_queue<std::string> queue;
 	void process();
-	File* logFile;
+	std::unique_ptr<File> logFile;
 	int status;
 public:
 	Logging(std::string logPath);

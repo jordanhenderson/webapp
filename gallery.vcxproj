@@ -52,7 +52,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_WIN32;SQLITE_ENABLE_COLUMN_METADATA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>include;include/fastcgi;include/sqlite;include/rapidjson;include/b64</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -64,7 +64,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;magick++.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -74,7 +74,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_WIN32;SQLITE_ENABLE_COLUMN_METADATA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_VISUALC_;_CONSOLE;_WIN32;SQLITE_ENABLE_COLUMN_METADATA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>include;include/fastcgi;include/sqlite;include/rapidjson;include/b64</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -86,7 +86,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;magick++.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>libmmt</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -117,6 +118,112 @@
     <ClInclude Include="include\fastcgi\fcgi_config.h" />
     <ClInclude Include="include\FileSystem.h" />
     <ClInclude Include="include\Gallery.h" />
+    <ClInclude Include="include\Magick++.h" />
+    <ClInclude Include="include\Magick++\Blob.h" />
+    <ClInclude Include="include\Magick++\BlobRef.h" />
+    <ClInclude Include="include\Magick++\CoderInfo.h" />
+    <ClInclude Include="include\Magick++\Color.h" />
+    <ClInclude Include="include\Magick++\Drawable.h" />
+    <ClInclude Include="include\Magick++\Exception.h" />
+    <ClInclude Include="include\Magick++\Functions.h" />
+    <ClInclude Include="include\Magick++\Geometry.h" />
+    <ClInclude Include="include\Magick++\Image.h" />
+    <ClInclude Include="include\Magick++\ImageRef.h" />
+    <ClInclude Include="include\Magick++\Include.h" />
+    <ClInclude Include="include\Magick++\Montage.h" />
+    <ClInclude Include="include\Magick++\Options.h" />
+    <ClInclude Include="include\Magick++\Pixels.h" />
+    <ClInclude Include="include\Magick++\STL.h" />
+    <ClInclude Include="include\Magick++\Thread.h" />
+    <ClInclude Include="include\Magick++\TypeMetric.h" />
+    <ClInclude Include="include\magick\alpha_composite.h" />
+    <ClInclude Include="include\magick\analyze.h" />
+    <ClInclude Include="include\magick\animate.h" />
+    <ClInclude Include="include\magick\api.h" />
+    <ClInclude Include="include\magick\attribute.h" />
+    <ClInclude Include="include\magick\average.h" />
+    <ClInclude Include="include\magick\bit_stream.h" />
+    <ClInclude Include="include\magick\blob.h" />
+    <ClInclude Include="include\magick\cdl.h" />
+    <ClInclude Include="include\magick\channel.h" />
+    <ClInclude Include="include\magick\color.h" />
+    <ClInclude Include="include\magick\colormap.h" />
+    <ClInclude Include="include\magick\colorspace.h" />
+    <ClInclude Include="include\magick\color_lookup.h" />
+    <ClInclude Include="include\magick\command.h" />
+    <ClInclude Include="include\magick\common.h" />
+    <ClInclude Include="include\magick\compare.h" />
+    <ClInclude Include="include\magick\composite.h" />
+    <ClInclude Include="include\magick\compress.h" />
+    <ClInclude Include="include\magick\confirm_access.h" />
+    <ClInclude Include="include\magick\constitute.h" />
+    <ClInclude Include="include\magick\decorate.h" />
+    <ClInclude Include="include\magick\delegate.h" />
+    <ClInclude Include="include\magick\deprecate.h" />
+    <ClInclude Include="include\magick\describe.h" />
+    <ClInclude Include="include\magick\display.h" />
+    <ClInclude Include="include\magick\draw.h" />
+    <ClInclude Include="include\magick\effect.h" />
+    <ClInclude Include="include\magick\enhance.h" />
+    <ClInclude Include="include\magick\enum_strings.h" />
+    <ClInclude Include="include\magick\error.h" />
+    <ClInclude Include="include\magick\floats.h" />
+    <ClInclude Include="include\magick\forward.h" />
+    <ClInclude Include="include\magick\fx.h" />
+    <ClInclude Include="include\magick\gem.h" />
+    <ClInclude Include="include\magick\gradient.h" />
+    <ClInclude Include="include\magick\hclut.h" />
+    <ClInclude Include="include\magick\image.h" />
+    <ClInclude Include="include\magick\list.h" />
+    <ClInclude Include="include\magick\locale_c.h" />
+    <ClInclude Include="include\magick\log.h" />
+    <ClInclude Include="include\magick\magic.h" />
+    <ClInclude Include="include\magick\magick.h" />
+    <ClInclude Include="include\magick\magick_config.h" />
+    <ClInclude Include="include\magick\magick_endian.h" />
+    <ClInclude Include="include\magick\magick_types.h" />
+    <ClInclude Include="include\magick\map.h" />
+    <ClInclude Include="include\magick\memory.h" />
+    <ClInclude Include="include\magick\module.h" />
+    <ClInclude Include="include\magick\monitor.h" />
+    <ClInclude Include="include\magick\montage.h" />
+    <ClInclude Include="include\magick\nt_base.h" />
+    <ClInclude Include="include\magick\nt_feature.h" />
+    <ClInclude Include="include\magick\omp_data_view.h" />
+    <ClInclude Include="include\magick\operator.h" />
+    <ClInclude Include="include\magick\paint.h" />
+    <ClInclude Include="include\magick\pixel_cache.h" />
+    <ClInclude Include="include\magick\pixel_iterator.h" />
+    <ClInclude Include="include\magick\plasma.h" />
+    <ClInclude Include="include\magick\prefetch.h" />
+    <ClInclude Include="include\magick\PreRvIcccm.h" />
+    <ClInclude Include="include\magick\profile.h" />
+    <ClInclude Include="include\magick\quantize.h" />
+    <ClInclude Include="include\magick\random.h" />
+    <ClInclude Include="include\magick\registry.h" />
+    <ClInclude Include="include\magick\render.h" />
+    <ClInclude Include="include\magick\resize.h" />
+    <ClInclude Include="include\magick\resource.h" />
+    <ClInclude Include="include\magick\semaphore.h" />
+    <ClInclude Include="include\magick\shear.h" />
+    <ClInclude Include="include\magick\signature.h" />
+    <ClInclude Include="include\magick\spinlock.h" />
+    <ClInclude Include="include\magick\stamp.h" />
+    <ClInclude Include="include\magick\static.h" />
+    <ClInclude Include="include\magick\statistics.h" />
+    <ClInclude Include="include\magick\studio.h" />
+    <ClInclude Include="include\magick\symbols.h" />
+    <ClInclude Include="include\magick\tempfile.h" />
+    <ClInclude Include="include\magick\texture.h" />
+    <ClInclude Include="include\magick\timer.h" />
+    <ClInclude Include="include\magick\transform.h" />
+    <ClInclude Include="include\magick\tsd.h" />
+    <ClInclude Include="include\magick\type.h" />
+    <ClInclude Include="include\magick\unix_port.h" />
+    <ClInclude Include="include\magick\utility.h" />
+    <ClInclude Include="include\magick\version.h" />
+    <ClInclude Include="include\magick\widget.h" />
+    <ClInclude Include="include\magick\xwindow.h" />
     <ClInclude Include="include\rapidjson\document.h" />
     <ClInclude Include="include\rapidjson\filestream.h" />
     <ClInclude Include="include\rapidjson\prettywriter.h" />

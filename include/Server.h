@@ -12,13 +12,13 @@ public:
 class Server : Internal {
 
 	std::thread serverpool[SERVER_THREADS];
-	ServerHandler* handler;
-	Logging* logger;
+	std::shared_ptr<ServerHandler> handler;
+	std::shared_ptr<Logging> logger;
 public:
-	Server(Logging*, ServerHandler*);
+	Server(std::shared_ptr<Logging>&, std::shared_ptr<ServerHandler>&);
 	~Server();
 	void join();
-	void setHandler(ServerHandler*);
+	void setHandler(std::shared_ptr<ServerHandler>&);
 	void run(int nThread, int sock);
 	
 };

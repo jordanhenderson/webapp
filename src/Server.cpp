@@ -18,7 +18,7 @@ void Server::run(int nThread, int sock) {
 			break;
 
 		char* uri = FCGX_GetParam("REQUEST_URI", request.envp);
-		printf("Thread ID: %i, URL: %s\n", nThread, uri);
+		logger->printf("Thread ID: %i, URL: %s", nThread, uri);
 		if(handler != NULL)
 			handler->process(&request); 
 		
@@ -27,10 +27,9 @@ void Server::run(int nThread, int sock) {
 		FCGX_Finish_r(&request);
 	}
 	
-	
 }
 
-Server::Server( Logging* logging, ServerHandler* handler) {
+Server::Server( std::shared_ptr<Logging>& logging, std::shared_ptr<ServerHandler>& handler) {
 	this->logger = logging;
 	if(FCGX_IsCGI()) {
 		logger->log("Running as CGI Server.");
@@ -50,7 +49,7 @@ Server::~Server() {
 
 }
 
-void Server::setHandler(ServerHandler* handler) {
+void Server::setHandler(shared_ptr<ServerHandler> &handler) {
 	this->handler = handler;
 }
 

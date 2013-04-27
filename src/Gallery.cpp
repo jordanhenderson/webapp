@@ -9,15 +9,24 @@
 #include "stringbuffer.h"
 #include "Serializer.h"
 #include "decode.h"
+#include <Magick++.h>
 
 using namespace rapidjson;
 using namespace std;
 using namespace base64;
-Gallery::Gallery(Parameters* params, Logging* logger) {
+using namespace Magick;
+
+const char* THUMB_EXTENSIONS[] = THUMB_EXTENSIONS_D;
+Gallery::Gallery(shared_ptr<Parameters>& params, shared_ptr<Logging>& logger) {
 	this->logger = logger;
 	this->params = params;
-	this->filecache = new Parameters();
-	this->database = new Database("gallery.sqlite");
+	storepath = params->get("storepath");
+	basepath = params->get("basepath");
+	dbpath = params->get("dbpath");
+	thumbspath = params->get("thumbspath");
+
+	this->database = unique_ptr<Database>(new Database((basepath + "/" + dbpath).c_str()));
+
 	//Check authentication
 	user = params->get("username");
 	pass = params->get("pass");
@@ -26,24 +35,23 @@ Gallery::Gallery(Parameters* params, Logging* logger) {
 	} else
 		auth = 0;
 
+	genThumb("test/csse2010_2.png", 300, 300);
+
 }
 
 Gallery::~Gallery() {
-	delete filecache;
-	delete database;
 }
 
 string Gallery::getPage(const char* page) {
-	string pageuri = params->get("basepath") +  "/templates/" + string(page) + ".html";
+	string pageuri = basepath +  "/templates/" + string(page) + ".html";
 
 	if(FileSystem::Exists(pageuri.c_str())) {
 		string data = HTML_HEADER;
-		File* f = FileSystem::Open(pageuri.c_str(), "rb");
-		FileData* filedata = FileSystem::Read(f);
+		unique_ptr<File> f = FileSystem::Open(pageuri.c_str(), "rb");
+		unique_ptr<FileData> filedata = FileSystem::Read(f);
 		data.append(filedata->data, filedata->size);
 		FileSystem::Close(f);
-		delete filedata;
-		delete f;
+
 		return data;
 	} else {
 		return loadFile(page);
@@ -52,7 +60,7 @@ string Gallery::getPage(const char* page) {
 }
 
 string Gallery::loadFile(const char* uri) {
-	std::string fileuri = params->get("basepath") + uri;
+	std::string fileuri = basepath + uri;
 	std::string data;
 
 		if(FileSystem::Exists(fileuri.c_str())) {
@@ -62,12 +70,10 @@ string Gallery::loadFile(const char* uri) {
 				data = CSS_HEADER;
 			else if(endsWith(uri, ".js"))
 				data = JS_HEADER;
-			File* f = FileSystem::Open(fileuri.c_str(), "rb");
-			FileData* filedata = FileSystem::Read(f);
+			unique_ptr<File> f = FileSystem::Open(fileuri.c_str(), "rb");
+			unique_ptr<FileData> filedata = FileSystem::Read(f);
 			data.append(filedata->data, filedata->size);
 			FileSystem::Close(f);
-			delete filedata;
-			delete f;
 		} else {
 			data.append(HTML_404);
 		}
@@ -76,51 +82,45 @@ string Gallery::loadFile(const char* uri) {
 }
 
 string Gallery::getAlbums() {
-	Query* query = database->select("SELECT COUNT(*) FROM albums;");
+	unique_ptr<Query> query = database->select("SELECT COUNT(*) FROM albums;");
 	string final;
 	
 	int nAlbums = std::stoi(((*query->response)[0][0]));
-	delete query;
-	Serializer* serializer = new Serializer();
+	Serializer serializer;
 	query = database->select("SELECT id, name, added, lastedited, path, type, rating, recursive, (SELECT thumbpath FROM thumbs WHERE id = albums.thumbid) AS thumb FROM albums;", 1);
-	std::vector<unordered_map<string,string>*> maplist;
 	for(vector<string> row: *query->response) {
-		unordered_map<string, string>* rowmap = new unordered_map<string,string>();
-		maplist.push_back(rowmap);
+		//Create unique pointers for the map, store them in the maps vector. This way, the map (AKA string pointers) are retained until maps is deconstructed.
+		unique_ptr<unordered_map<string, string>> rowmap = unique_ptr<unordered_map<string,string>>(new unordered_map<string,string>);
+		
 		if(!FileSystem::Exists(row[8].c_str())) {
 			row[8] = DEFAULT_THUMB;
 		}
 		for(int i = 0; i < query->description->size(); i++) {
 			(*rowmap)[(*query->description)[i]] =  row[i];
 		}
-		serializer->append(*rowmap);
+		
+		serializer.append(move(rowmap));
+
 	}
+	
 
+	final = serializer.get(RESPONSE_TYPE_DATA);
 
-	final = serializer->get(RESPONSE_TYPE_DATA);
-	for(unordered_map<string,string>* map : maplist) {
-		delete map;
-	}
-
-	delete serializer;
 	return final;
 }
 
 string Gallery::getAlbumsTable() {
-	Query* query = database->select("SELECT id, name, added, lastedited, path, type, rating, recursive, (SELECT thumbpath FROM thumbs WHERE id = albums.thumbid) AS thumb FROM albums;", 1);
+	unique_ptr<Query> query = database->select("SELECT id, name, added, lastedited, path, type, rating, recursive, (SELECT thumbpath FROM thumbs WHERE id = albums.thumbid) AS thumb FROM albums;", 1);
 
 	unordered_map<string, string> tableData;
-	tableData["THUMBS_PATH"] = THUMBS_PATH;
+	tableData["THUMBS_PATH"] = basepath + "/" + thumbspath;
 	tableData["thumb"] = "img";
 	
-	Serializer* serializer = new Serializer();
-	serializer->append(tableData);
-	serializer->append(*query->description);
+	Serializer serializer;
+	serializer.append(tableData);
+	serializer.append(*query->description);
 	
-	return serializer->get(RESPONSE_TYPE_TABLE);
-
-	delete query;
-	delete serializer;
+	return serializer.get(RESPONSE_TYPE_TABLE);
 }
 
 
@@ -213,8 +213,50 @@ void Gallery::process(FCGX_Request* request) {
 	FCGX_PutStr(final.c_str(), final.length(), request->out);
 }
 
+int Gallery::getDuplicateAlbums(char* name, char* path) {
+	unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
+	params->push_back(name);
+	params->push_back(path);
+	unique_ptr<Query> query = database->select("SELECT COUNT(*) FROM albums WHERE name = ? OR path = ?;", params, 1);
+	return stoi((*query->response)[0][0]);
+}
+
+vector<string> Gallery::getRandomFileIds() {
+	vector<string> s;
+	unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
+	params->push_back(XSTR(ALBUM_RANDOM));
+	unique_ptr<Query> query = database->select("SELECT COUNT(*) FROM albums WHERE name = ? OR path = ?;", params);
+	for(vector<string> row: *query->response) {
+		unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
+		params->push_back(row[0]);
+		unique_ptr<Query> query = database->select("SELECT id FROM files WHERE albumid = ? AND enabled = 1;", params);
+		for(vector<string> s_row: *query->response) {
+			s.push_back(s_row[0]);
+		}
+	}
+	return s;
+}
+
+vector<string> Gallery::getSetIds() {
+	vector<string> s;
+	unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
+	params->push_back(XSTR(ALBUM_SET));
+	unique_ptr<Query> query = database->select("SELECT id FROM albums WHERE type = ?;", params);
+	for(vector<string> row: *query->response) {
+		s.push_back(row[0]);
+	}
+	return s;
+}
+
+string Gallery::getFilename(int fileid) {
+	unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
+	params->push_back(to_string(fileid));
+	unique_ptr<Query> query = database->select("SELECT filename FROM files WHERE id = ?;", params);
+	string filename = (*query->response)[0][0];
+	return filename;
+}
+
 string Gallery::processVars(RequestVars& vars) {
-	string a = vars["t"];
 	if(vars["t"] == "albums") {
 		if(vars["f"] == "table")
 			return getAlbumsTable();
@@ -224,3 +266,26 @@ string Gallery::processVars(RequestVars& vars) {
 	}
 }
 
+
+int Gallery::genThumb(char* file, int shortmax, int longmax) {
+	Magick::InitializeMagick(NULL);
+	int validimage = 0;
+	for(int i = 0; THUMB_EXTENSIONS[i] != NULL; i++) {
+		if(endsWith(file, THUMB_EXTENSIONS[i])) {
+			validimage = 1;
+		}
+	}
+	if(!validimage){
+		return -1;
+	}
+	try {
+		string imagepath = basepath + "/" + storepath + "/" + file;
+		Image image(imagepath);
+		int rows = image.rows();
+		int height = image.columns();
+	} catch(...) {
+
+	}
+
+	return 0;
+}

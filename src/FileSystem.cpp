@@ -1,8 +1,8 @@
 #include "FileSystem.h"
 #include <codecvt>
 using namespace std;
-File* FileSystem::Open(const char* fileName, const char* flags) {
-	File* tmpFile = new File;
+unique_ptr<File> FileSystem::Open(const char* fileName, const char* flags) {
+	unique_ptr<File> tmpFile = unique_ptr<File>(new File);
 	locale loc;
 	//ensure file is opened in binary mode
 	int flen = strlen(flags);
@@ -27,20 +27,20 @@ File* FileSystem::Open(const char* fileName, const char* flags) {
 		else if(flags[0] == 'r')
 			errType = "reading";
 		//Debug Message: File Access error: $fileName could not be opened for $errType.
-		return NULL;
+		return move(tmpFile);
 	}
 
 	//Debug Message: File $fileName opened successfully. Flags: $flags.
-	return tmpFile;
+	return move(tmpFile);
 }
 
-void FileSystem::Close(File* file) {
+void FileSystem::Close(unique_ptr<File>& file) {
 	if(file == NULL || file->pszFile == NULL)
 		return;
 	fclose(file->pszFile);
 }
 
-long FileSystem::Size(File* file) {
+long FileSystem::Size(unique_ptr<File>& file) {
 	int old = ftell(file->pszFile);
 	fseek(file->pszFile, 0L, SEEK_END);
 	int sz = ftell(file->pszFile);
@@ -50,9 +50,10 @@ long FileSystem::Size(File* file) {
 }
 
 
-FileData* FileSystem::Process(File* file, void* userdata, void* callback) {
+unique_ptr<FileData> FileSystem::Process(unique_ptr<File>& file, void* userdata, void* callback) {
+	unique_ptr<FileData> fdata = unique_ptr<FileData>(new FileData);
 	if(file == NULL || file->pszFile == NULL)
-		return NULL;
+		return move(fdata);
 	int baseBytes = 0;
 	int oldBaseBytes = 0;
 	
@@ -62,7 +63,7 @@ FileData* FileSystem::Process(File* file, void* userdata, void* callback) {
 	rewind(file->pszFile);
 	int count = 0;
 	int size = Size(file);
-	FileData* fdata = new FileData;
+	
 	fdata->data = new char[size * sizeof(char) + 1];
 
 		if(callback != NULL) {
@@ -86,17 +87,17 @@ FileData* FileSystem::Process(File* file, void* userdata, void* callback) {
 			fdata->data[++nRead] = '\0';
 		}
 	fdata->size = size;
-	return fdata;
+	return move(fdata);
 }
 
-void FileSystem::Write(File* file, string buffer) {
+void FileSystem::Write(unique_ptr<File>& file, string buffer) {
 	if(file == NULL || file->pszFile == NULL)
 		return;
 	fputs(buffer.c_str(), file->pszFile);
 	fflush(file->pszFile);
 }
 
-void FileSystem::WriteLine(File* file, string buffer) {
+void FileSystem::WriteLine(unique_ptr<File>& file, string buffer) {
 	string tmp = string(buffer);
 	Write(file, tmp.append(ENV_NEWLINE));
 }

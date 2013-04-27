@@ -18,21 +18,21 @@ typedef void (*FILE_LINE_CALLBACK)(void*, char*, int);
 class FileSystem {
 public:
 	//Load a file, returning a File* to the handle.
-	static File* Open(const char* fileName, const char* flags);
+	static std::unique_ptr<File> Open(const char* fileName, const char* flags);
 	//Read an entire file, returning a char* of it's contents.
 	//Same as calling ProcessFile with null callback.
-	inline static FileData* Read(File* file) {
+	inline static std::unique_ptr<FileData> Read(std::unique_ptr<File>&  file) {
 		return Process(file, NULL, NULL);
 	}
 	
 	//Process a file, using a callback function to process each line.
-	static FileData* Process(File* file, void* userdata, void* function);
+	static std::unique_ptr<FileData> Process(std::unique_ptr<File>& file, void* userdata, void* function);
 	//Closes the file.
-	static void Close(File* file);
-	static void Write(File* file, std::string buffer);
-	static void WriteLine(File* file, std::string buffer);
+	static void Close(std::unique_ptr<File>&  file);
+	static void Write(std::unique_ptr<File>&  file, std::string buffer);
+	static void WriteLine(std::unique_ptr<File>&  file, std::string buffer);
 	static int Exists(const char* path);
-	static long Size(File* file);
+	static long Size(std::unique_ptr<File>& file);
 	FileSystem() {};
 	~FileSystem() {};
 };		

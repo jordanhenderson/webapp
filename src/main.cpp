@@ -1,30 +1,36 @@
 #include "Logging.h"
 #include "Gallery.h"
 #include "Server.h"
-#include <Windows.h>
 
+
+using namespace std;
 #ifdef WIN32
+#include <Windows.h>
 int wmain(int argc, wchar_t* argv[]) {
 #else
 int main(int argc, char* argv[]) {
 #endif
 	setlocale(LC_CTYPE, "");
 	//Create the gallery instance. Handles all logic
-	Parameters* params = new Parameters();
+	shared_ptr<Parameters> params = unique_ptr<Parameters>(new Parameters());
 	//TODO convert params to file
 	if(FileSystem::Exists("gallery.conf")) {
-		File* conf = FileSystem::Open("gallery.conf", "rb");
-		FileSystem::Process(conf, params, (void*)Parameters::parseBuffer);
+		std::unique_ptr<File> conf = FileSystem::Open("gallery.conf", "rb");
+		FileSystem::Process(conf, params.get(), (void*)Parameters::parseBuffer);
+		FileSystem::Close(conf);
 	} else {
 		//DEFAULT PARAMETERS
-		params->set("logfile", "gallery2.log");
+		params->set("logfile", "gallery.log");
 		params->set("basepath", "gallery");
+		params->set("dbpath", "gallery.sqlite");
+		params->set("storepath", "store");
+		params->set("thumbspath", "thumbs");
 	}
 	
 	//Create logging instance
-	Logging* logger = new Logging(params->get("logfile"));
+	shared_ptr<Logging> logger = unique_ptr<Logging>(new Logging(params->get("basepath") + "/" + params->get("logfile")));
 
-	Gallery* gallery = new Gallery(params, logger);
+	shared_ptr<ServerHandler> gallery = shared_ptr<ServerHandler>(new Gallery(params, logger));
 	//Create a HTTPServer on port 8080
 	Server* server = new Server(logger, gallery);
 	server->setHandler(gallery);
