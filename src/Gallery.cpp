@@ -9,12 +9,12 @@
 #include "stringbuffer.h"
 #include "Serializer.h"
 #include "decode.h"
-#include <Magick++.h>
+#include "jpeglib.h"
+#include "jerror.h"
 
 using namespace rapidjson;
 using namespace std;
 using namespace base64;
-using namespace Magick;
 
 const char* THUMB_EXTENSIONS[] = THUMB_EXTENSIONS_D;
 Gallery::Gallery(shared_ptr<Parameters>& params, shared_ptr<Logging>& logger) {
@@ -35,7 +35,7 @@ Gallery::Gallery(shared_ptr<Parameters>& params, shared_ptr<Logging>& logger) {
 	} else
 		auth = 0;
 
-	genThumb("test/csse2010_2.png", 300, 300);
+	genThumb("test/csse2010_2.jpg", 300, 300);
 
 }
 
@@ -268,7 +268,7 @@ string Gallery::processVars(RequestVars& vars) {
 
 
 int Gallery::genThumb(char* file, int shortmax, int longmax) {
-	Magick::InitializeMagick(NULL);
+
 	int validimage = 0;
 	for(int i = 0; THUMB_EXTENSIONS[i] != NULL; i++) {
 		if(endsWith(file, THUMB_EXTENSIONS[i])) {
@@ -280,12 +280,21 @@ int Gallery::genThumb(char* file, int shortmax, int longmax) {
 	}
 	try {
 		string imagepath = basepath + "/" + storepath + "/" + file;
-		Image image(imagepath);
-		int rows = image.rows();
-		int height = image.columns();
+
+		if(FileSystem::Exists(imagepath.c_str())) {
+			struct jpeg_decompress_struct cinfo;
+			struct jpeg_error_mgr jerr;
+			cinfo.err = jpeg_std_error (&jerr);
+			jpeg_create_decompress (&cinfo);
+			unique_ptr<File> file = FileSystem::Open(imagepath, "r");
+			jpeg_stdio_src(&cinfo, file->pszFile);
+			jpeg_read_header(&cinfo, TRUE);
+			int width = cinfo.image_width;
+			int height = cinfo.image_height;
+		}
+
 	} catch(...) {
 
 	}
-
 	return 0;
 }

@@ -20,7 +20,7 @@ Logging::Logging() {
 void Logging::setFile(string logPath) {
 	if(logFile != NULL) 
 		FileSystem::Close(logFile);
-	logFile = FileSystem::Open(logPath.c_str(), "w");
+	logFile = FileSystem::Open(logPath, "w");
 
 }
 

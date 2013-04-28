@@ -4,8 +4,8 @@
 #include "Platform.h"
 struct File {
 	FILE* pszFile;
-	const char* fileName;
-	const char* flags;
+	std::string fileName;
+	std::string flags;
 };
 
 struct FileData {
@@ -18,7 +18,7 @@ typedef void (*FILE_LINE_CALLBACK)(void*, char*, int);
 class FileSystem {
 public:
 	//Load a file, returning a File* to the handle.
-	static std::unique_ptr<File> Open(const char* fileName, const char* flags);
+	static std::unique_ptr<File> Open(const std::string& fileName, const std::string& flags);
 	//Read an entire file, returning a char* of it's contents.
 	//Same as calling ProcessFile with null callback.
 	inline static std::unique_ptr<FileData> Read(std::unique_ptr<File>&  file) {

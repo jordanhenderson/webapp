@@ -30,6 +30,7 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
     <UseIntelTBB>true</UseIntelTBB>
+    <UseIntelIPP>Sequential</UseIntelIPP>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -54,7 +55,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>include;include/fastcgi;include/sqlite;include/rapidjson;include/b64</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;include/fastcgi;include/sqlite;include/rapidjson;include/b64;include/zlib;include/lpng;include/jpeg</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
       <InterproceduralOptimization>MultiFile</InterproceduralOptimization>
@@ -64,7 +65,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>ws2_32.lib;magick++.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -72,22 +73,27 @@
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_VISUALC_;_CONSOLE;_WIN32;SQLITE_ENABLE_COLUMN_METADATA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>include;include/fastcgi;include/sqlite;include/rapidjson;include/b64</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;include/fastcgi;include/sqlite;include/rapidjson;include/b64;include/zlib;include/lpng;include/jpeg</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
+      <OptimizeForWindowsApplication>true</OptimizeForWindowsApplication>
+      <Parallelization>false</Parallelization>
+      <UseIntelOptimizedHeaders>true</UseIntelOptimizedHeaders>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>ws2_32.lib;magick++.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <IgnoreSpecificDefaultLibraries>libmmt</IgnoreSpecificDefaultLibraries>
+      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>
+      </IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -98,6 +104,78 @@
     <ClCompile Include="src\FileSystem.cpp" />
     <ClCompile Include="src\Gallery.cpp" />
     <ClCompile Include="src\Internal.cpp" />
+    <ClCompile Include="src\jpeg\cdjpeg.c" />
+    <ClCompile Include="src\jpeg\jaricom.c" />
+    <ClCompile Include="src\jpeg\jcapimin.c" />
+    <ClCompile Include="src\jpeg\jcapistd.c" />
+    <ClCompile Include="src\jpeg\jcarith.c" />
+    <ClCompile Include="src\jpeg\jccoefct.c" />
+    <ClCompile Include="src\jpeg\jccolor.c" />
+    <ClCompile Include="src\jpeg\jcdctmgr.c" />
+    <ClCompile Include="src\jpeg\jchuff.c" />
+    <ClCompile Include="src\jpeg\jcinit.c" />
+    <ClCompile Include="src\jpeg\jcmainct.c" />
+    <ClCompile Include="src\jpeg\jcmarker.c" />
+    <ClCompile Include="src\jpeg\jcmaster.c" />
+    <ClCompile Include="src\jpeg\jcomapi.c" />
+    <ClCompile Include="src\jpeg\jcparam.c" />
+    <ClCompile Include="src\jpeg\jcprepct.c" />
+    <ClCompile Include="src\jpeg\jcsample.c" />
+    <ClCompile Include="src\jpeg\jdapimin.c" />
+    <ClCompile Include="src\jpeg\jdapistd.c" />
+    <ClCompile Include="src\jpeg\jdarith.c" />
+    <ClCompile Include="src\jpeg\jdatadst.c" />
+    <ClCompile Include="src\jpeg\jdatasrc.c" />
+    <ClCompile Include="src\jpeg\jdcoefct.c" />
+    <ClCompile Include="src\jpeg\jdcolor.c" />
+    <ClCompile Include="src\jpeg\jddctmgr.c" />
+    <ClCompile Include="src\jpeg\jdhuff.c" />
+    <ClCompile Include="src\jpeg\jdinput.c" />
+    <ClCompile Include="src\jpeg\jdmainct.c" />
+    <ClCompile Include="src\jpeg\jdmarker.c" />
+    <ClCompile Include="src\jpeg\jdmaster.c" />
+    <ClCompile Include="src\jpeg\jdmerge.c" />
+    <ClCompile Include="src\jpeg\jdpostct.c" />
+    <ClCompile Include="src\jpeg\jdsample.c" />
+    <ClCompile Include="src\jpeg\jerror.c" />
+    <ClCompile Include="src\jpeg\jfdctflt.c" />
+    <ClCompile Include="src\jpeg\jfdctfst.c" />
+    <ClCompile Include="src\jpeg\jfdctint.c" />
+    <ClCompile Include="src\jpeg\jidctflt.c" />
+    <ClCompile Include="src\jpeg\jidctfst.c" />
+    <ClCompile Include="src\jpeg\jidctint.c" />
+    <ClCompile Include="src\jpeg\jmemmgr.c" />
+    <ClCompile Include="src\jpeg\jmemnobs.c" />
+    <ClCompile Include="src\jpeg\jquant1.c" />
+    <ClCompile Include="src\jpeg\jquant2.c" />
+    <ClCompile Include="src\jpeg\jutils.c" />
+    <ClCompile Include="src\jpeg\rdbmp.c" />
+    <ClCompile Include="src\jpeg\rdcolmap.c" />
+    <ClCompile Include="src\jpeg\rdgif.c" />
+    <ClCompile Include="src\jpeg\rdppm.c" />
+    <ClCompile Include="src\jpeg\rdrle.c" />
+    <ClCompile Include="src\jpeg\rdswitch.c" />
+    <ClCompile Include="src\jpeg\rdtarga.c" />
+    <ClCompile Include="src\jpeg\wrbmp.c" />
+    <ClCompile Include="src\jpeg\wrgif.c" />
+    <ClCompile Include="src\jpeg\wrppm.c" />
+    <ClCompile Include="src\jpeg\wrrle.c" />
+    <ClCompile Include="src\jpeg\wrtarga.c" />
+    <ClCompile Include="src\lpng\png.c" />
+    <ClCompile Include="src\lpng\pngerror.c" />
+    <ClCompile Include="src\lpng\pngget.c" />
+    <ClCompile Include="src\lpng\pngmem.c" />
+    <ClCompile Include="src\lpng\pngpread.c" />
+    <ClCompile Include="src\lpng\pngread.c" />
+    <ClCompile Include="src\lpng\pngrio.c" />
+    <ClCompile Include="src\lpng\pngrtran.c" />
+    <ClCompile Include="src\lpng\pngrutil.c" />
+    <ClCompile Include="src\lpng\pngset.c" />
+    <ClCompile Include="src\lpng\pngtrans.c" />
+    <ClCompile Include="src\lpng\pngwio.c" />
+    <ClCompile Include="src\lpng\pngwrite.c" />
+    <ClCompile Include="src\lpng\pngwtran.c" />
+    <ClCompile Include="src\lpng\pngwutil.c" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Platform.cpp" />
     <ClCompile Include="src\Serializer.cpp" />
@@ -106,6 +184,21 @@
     <ClCompile Include="src\Parameters.cpp" />
     <ClCompile Include="src\Socket.cpp" />
     <ClCompile Include="src\sqlite\sqlite3.c" />
+    <ClCompile Include="src\zlib\adler32.c" />
+    <ClCompile Include="src\zlib\compress.c" />
+    <ClCompile Include="src\zlib\crc32.c" />
+    <ClCompile Include="src\zlib\deflate.c" />
+    <ClCompile Include="src\zlib\gzclose.c" />
+    <ClCompile Include="src\zlib\gzlib.c" />
+    <ClCompile Include="src\zlib\gzread.c" />
+    <ClCompile Include="src\zlib\gzwrite.c" />
+    <ClCompile Include="src\zlib\infback.c" />
+    <ClCompile Include="src\zlib\inffast.c" />
+    <ClCompile Include="src\zlib\inflate.c" />
+    <ClCompile Include="src\zlib\inftrees.c" />
+    <ClCompile Include="src\zlib\trees.c" />
+    <ClCompile Include="src\zlib\uncompr.c" />
+    <ClCompile Include="src\zlib\zutil.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\b64\cdecode.h" />
@@ -118,112 +211,25 @@
     <ClInclude Include="include\fastcgi\fcgi_config.h" />
     <ClInclude Include="include\FileSystem.h" />
     <ClInclude Include="include\Gallery.h" />
-    <ClInclude Include="include\Magick++.h" />
-    <ClInclude Include="include\Magick++\Blob.h" />
-    <ClInclude Include="include\Magick++\BlobRef.h" />
-    <ClInclude Include="include\Magick++\CoderInfo.h" />
-    <ClInclude Include="include\Magick++\Color.h" />
-    <ClInclude Include="include\Magick++\Drawable.h" />
-    <ClInclude Include="include\Magick++\Exception.h" />
-    <ClInclude Include="include\Magick++\Functions.h" />
-    <ClInclude Include="include\Magick++\Geometry.h" />
-    <ClInclude Include="include\Magick++\Image.h" />
-    <ClInclude Include="include\Magick++\ImageRef.h" />
-    <ClInclude Include="include\Magick++\Include.h" />
-    <ClInclude Include="include\Magick++\Montage.h" />
-    <ClInclude Include="include\Magick++\Options.h" />
-    <ClInclude Include="include\Magick++\Pixels.h" />
-    <ClInclude Include="include\Magick++\STL.h" />
-    <ClInclude Include="include\Magick++\Thread.h" />
-    <ClInclude Include="include\Magick++\TypeMetric.h" />
-    <ClInclude Include="include\magick\alpha_composite.h" />
-    <ClInclude Include="include\magick\analyze.h" />
-    <ClInclude Include="include\magick\animate.h" />
-    <ClInclude Include="include\magick\api.h" />
-    <ClInclude Include="include\magick\attribute.h" />
-    <ClInclude Include="include\magick\average.h" />
-    <ClInclude Include="include\magick\bit_stream.h" />
-    <ClInclude Include="include\magick\blob.h" />
-    <ClInclude Include="include\magick\cdl.h" />
-    <ClInclude Include="include\magick\channel.h" />
-    <ClInclude Include="include\magick\color.h" />
-    <ClInclude Include="include\magick\colormap.h" />
-    <ClInclude Include="include\magick\colorspace.h" />
-    <ClInclude Include="include\magick\color_lookup.h" />
-    <ClInclude Include="include\magick\command.h" />
-    <ClInclude Include="include\magick\common.h" />
-    <ClInclude Include="include\magick\compare.h" />
-    <ClInclude Include="include\magick\composite.h" />
-    <ClInclude Include="include\magick\compress.h" />
-    <ClInclude Include="include\magick\confirm_access.h" />
-    <ClInclude Include="include\magick\constitute.h" />
-    <ClInclude Include="include\magick\decorate.h" />
-    <ClInclude Include="include\magick\delegate.h" />
-    <ClInclude Include="include\magick\deprecate.h" />
-    <ClInclude Include="include\magick\describe.h" />
-    <ClInclude Include="include\magick\display.h" />
-    <ClInclude Include="include\magick\draw.h" />
-    <ClInclude Include="include\magick\effect.h" />
-    <ClInclude Include="include\magick\enhance.h" />
-    <ClInclude Include="include\magick\enum_strings.h" />
-    <ClInclude Include="include\magick\error.h" />
-    <ClInclude Include="include\magick\floats.h" />
-    <ClInclude Include="include\magick\forward.h" />
-    <ClInclude Include="include\magick\fx.h" />
-    <ClInclude Include="include\magick\gem.h" />
-    <ClInclude Include="include\magick\gradient.h" />
-    <ClInclude Include="include\magick\hclut.h" />
-    <ClInclude Include="include\magick\image.h" />
-    <ClInclude Include="include\magick\list.h" />
-    <ClInclude Include="include\magick\locale_c.h" />
-    <ClInclude Include="include\magick\log.h" />
-    <ClInclude Include="include\magick\magic.h" />
-    <ClInclude Include="include\magick\magick.h" />
-    <ClInclude Include="include\magick\magick_config.h" />
-    <ClInclude Include="include\magick\magick_endian.h" />
-    <ClInclude Include="include\magick\magick_types.h" />
-    <ClInclude Include="include\magick\map.h" />
-    <ClInclude Include="include\magick\memory.h" />
-    <ClInclude Include="include\magick\module.h" />
-    <ClInclude Include="include\magick\monitor.h" />
-    <ClInclude Include="include\magick\montage.h" />
-    <ClInclude Include="include\magick\nt_base.h" />
-    <ClInclude Include="include\magick\nt_feature.h" />
-    <ClInclude Include="include\magick\omp_data_view.h" />
-    <ClInclude Include="include\magick\operator.h" />
-    <ClInclude Include="include\magick\paint.h" />
-    <ClInclude Include="include\magick\pixel_cache.h" />
-    <ClInclude Include="include\magick\pixel_iterator.h" />
-    <ClInclude Include="include\magick\plasma.h" />
-    <ClInclude Include="include\magick\prefetch.h" />
-    <ClInclude Include="include\magick\PreRvIcccm.h" />
-    <ClInclude Include="include\magick\profile.h" />
-    <ClInclude Include="include\magick\quantize.h" />
-    <ClInclude Include="include\magick\random.h" />
-    <ClInclude Include="include\magick\registry.h" />
-    <ClInclude Include="include\magick\render.h" />
-    <ClInclude Include="include\magick\resize.h" />
-    <ClInclude Include="include\magick\resource.h" />
-    <ClInclude Include="include\magick\semaphore.h" />
-    <ClInclude Include="include\magick\shear.h" />
-    <ClInclude Include="include\magick\signature.h" />
-    <ClInclude Include="include\magick\spinlock.h" />
-    <ClInclude Include="include\magick\stamp.h" />
-    <ClInclude Include="include\magick\static.h" />
-    <ClInclude Include="include\magick\statistics.h" />
-    <ClInclude Include="include\magick\studio.h" />
-    <ClInclude Include="include\magick\symbols.h" />
-    <ClInclude Include="include\magick\tempfile.h" />
-    <ClInclude Include="include\magick\texture.h" />
-    <ClInclude Include="include\magick\timer.h" />
-    <ClInclude Include="include\magick\transform.h" />
-    <ClInclude Include="include\magick\tsd.h" />
-    <ClInclude Include="include\magick\type.h" />
-    <ClInclude Include="include\magick\unix_port.h" />
-    <ClInclude Include="include\magick\utility.h" />
-    <ClInclude Include="include\magick\version.h" />
-    <ClInclude Include="include\magick\widget.h" />
-    <ClInclude Include="include\magick\xwindow.h" />
+    <ClInclude Include="include\jpeg\cderror.h" />
+    <ClInclude Include="include\jpeg\cdjpeg.h" />
+    <ClInclude Include="include\jpeg\jconfig.h" />
+    <ClInclude Include="include\jpeg\jdct.h" />
+    <ClInclude Include="include\jpeg\jerror.h" />
+    <ClInclude Include="include\jpeg\jinclude.h" />
+    <ClInclude Include="include\jpeg\jmemsys.h" />
+    <ClInclude Include="include\jpeg\jmorecfg.h" />
+    <ClInclude Include="include\jpeg\jpegint.h" />
+    <ClInclude Include="include\jpeg\jpeglib.h" />
+    <ClInclude Include="include\jpeg\jversion.h" />
+    <ClInclude Include="include\jpeg\transupp.h" />
+    <ClInclude Include="include\lpng\png.h" />
+    <ClInclude Include="include\lpng\pngconf.h" />
+    <ClInclude Include="include\lpng\pngdebug.h" />
+    <ClInclude Include="include\lpng\pnginfo.h" />
+    <ClInclude Include="include\lpng\pnglibconf.h" />
+    <ClInclude Include="include\lpng\pngpriv.h" />
+    <ClInclude Include="include\lpng\pngstruct.h" />
     <ClInclude Include="include\rapidjson\document.h" />
     <ClInclude Include="include\rapidjson\filestream.h" />
     <ClInclude Include="include\rapidjson\prettywriter.h" />
@@ -238,6 +244,17 @@
     <ClInclude Include="include\Platform.h" />
     <ClInclude Include="include\Socket.h" />
     <ClInclude Include="include\sqlite\sqlite3.h" />
+    <ClInclude Include="include\zlib\crc32.h" />
+    <ClInclude Include="include\zlib\deflate.h" />
+    <ClInclude Include="include\zlib\gzguts.h" />
+    <ClInclude Include="include\zlib\inffast.h" />
+    <ClInclude Include="include\zlib\inffixed.h" />
+    <ClInclude Include="include\zlib\inflate.h" />
+    <ClInclude Include="include\zlib\inftrees.h" />
+    <ClInclude Include="include\zlib\trees.h" />
+    <ClInclude Include="include\zlib\zconf.h" />
+    <ClInclude Include="include\zlib\zlib.h" />
+    <ClInclude Include="include\zlib\zutil.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

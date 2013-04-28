@@ -1,20 +1,19 @@
 #include "FileSystem.h"
-#include <codecvt>
 using namespace std;
-unique_ptr<File> FileSystem::Open(const char* fileName, const char* flags) {
+unique_ptr<File> FileSystem::Open(const string& fileName, const string& flags) {
 	unique_ptr<File> tmpFile = unique_ptr<File>(new File);
-	locale loc;
 	//ensure file is opened in binary mode
-	int flen = strlen(flags);
-	char* actualFlag = new char[flen + 2];
+	int flen = flags.length();
+	string actualFlag = flags;
 	if(flags[flen-1] != 'b') {
-		strcpy(actualFlag, flags);
-		strcat(actualFlag, "b");
+		actualFlag.append("b");
 	}
 	
 #ifdef WIN32
-	std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> conv;
-	tmpFile->pszFile = _wfopen(conv.from_bytes(fileName).c_str(), conv.from_bytes(flags).c_str());
+	std::wstring wfileName, wflags;
+	wfileName.assign(fileName.begin(), fileName.end());
+	wflags.assign(actualFlag.begin(), actualFlag.end());
+	tmpFile->pszFile = _wfopen(wfileName.c_str(), wflags.c_str());
 #else
 	tmpFile->pszFile = fopen(fileName, flags);
 #endif

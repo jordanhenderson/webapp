@@ -34,11 +34,23 @@
     <Filter Include="Source Files\b64">
       <UniqueIdentifier>{bcfbdaf8-bc49-46ae-a35e-ff2bbe754fb7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\magick++">
-      <UniqueIdentifier>{d5a5b110-b489-4327-8c06-b6f59f3b342f}</UniqueIdentifier>
+    <Filter Include="zlib">
+      <UniqueIdentifier>{6bd8afe5-1b75-4c01-a1bc-925a75ab93f6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\magick">
-      <UniqueIdentifier>{b85a8fbf-6c15-4983-aca1-652c1bee919c}</UniqueIdentifier>
+    <Filter Include="Source Files\zlib">
+      <UniqueIdentifier>{3eb62cfd-0566-4e91-a1e3-bf039f2ca9f2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\lpng">
+      <UniqueIdentifier>{c31709b7-9f90-47e4-bf3a-ac1a70baaa80}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\jpeg">
+      <UniqueIdentifier>{21654ff6-86e3-47b8-ac69-1b5d8596e83f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\lpng">
+      <UniqueIdentifier>{5bf94894-2981-411f-a9b3-f64477627dae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\jpeg">
+      <UniqueIdentifier>{b7602135-4b18-466e-b24a-5e48d6c818f2}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -86,6 +98,267 @@
     </ClCompile>
     <ClCompile Include="src\b64\cdecode.c">
       <Filter>Source Files\b64</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lpng\png.c">
+      <Filter>Source Files\lpng</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngerror.c">
+      <Filter>Source Files\lpng</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngget.c">
+      <Filter>Source Files\lpng</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngmem.c">
+      <Filter>Source Files\lpng</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngpread.c">
+      <Filter>Source Files\lpng</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngread.c">
+      <Filter>Source Files\lpng</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngrio.c">
+      <Filter>Source Files\lpng</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngrtran.c">
+      <Filter>Source Files\lpng</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngrutil.c">
+      <Filter>Source Files\lpng</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngset.c">
+      <Filter>Source Files\lpng</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngtrans.c">
+      <Filter>Source Files\lpng</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngwio.c">
+      <Filter>Source Files\lpng</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngwrite.c">
+      <Filter>Source Files\lpng</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngwtran.c">
+      <Filter>Source Files\lpng</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngwutil.c">
+      <Filter>Source Files\lpng</Filter>
+    </ClCompile>
+    <ClCompile Include="src\zlib\adler32.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="src\zlib\compress.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="src\zlib\crc32.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="src\zlib\deflate.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="src\zlib\gzclose.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="src\zlib\gzlib.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="src\zlib\gzread.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="src\zlib\gzwrite.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="src\zlib\infback.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="src\zlib\inffast.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="src\zlib\inflate.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="src\zlib\inftrees.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="src\zlib\trees.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="src\zlib\uncompr.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="src\zlib\zutil.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\cdjpeg.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\rdcolmap.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\wrbmp.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\wrgif.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\wrppm.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\wrrle.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\wrtarga.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\rdbmp.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\rdgif.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\rdppm.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\rdrle.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\rdswitch.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\rdtarga.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcparam.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcomapi.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdmaster.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jquant1.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jquant2.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdmerge.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jutils.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jccolor.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdcolor.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdsample.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdpostct.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jddctmgr.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcarith.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdarith.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jaricom.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jidctint.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jidctfst.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jidctflt.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jchuff.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdhuff.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jccoefct.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdcoefct.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcmainct.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdmainct.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdinput.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jerror.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcapimin.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcapistd.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdapimin.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdapistd.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdatadst.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdatasrc.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcmarker.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdmarker.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jmemmgr.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcinit.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jmemnobs.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcmaster.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcsample.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcprepct.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcdctmgr.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jfdctflt.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jfdctfst.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jfdctint.c">
+      <Filter>Source Files\jpeg</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -161,323 +434,95 @@
     <ClInclude Include="include\b64\decode.h">
       <Filter>Header Files\b64</Filter>
     </ClInclude>
-    <ClInclude Include="include\Magick++.h">
-      <Filter>Header Files\magick++</Filter>
+    <ClInclude Include="include\lpng\png.h">
+      <Filter>Header Files\lpng</Filter>
     </ClInclude>
-    <ClInclude Include="include\Magick++\Blob.h">
-      <Filter>Header Files\magick++</Filter>
+    <ClInclude Include="include\lpng\pngconf.h">
+      <Filter>Header Files\lpng</Filter>
     </ClInclude>
-    <ClInclude Include="include\Magick++\BlobRef.h">
-      <Filter>Header Files\magick++</Filter>
+    <ClInclude Include="include\lpng\pngdebug.h">
+      <Filter>Header Files\lpng</Filter>
     </ClInclude>
-    <ClInclude Include="include\Magick++\CoderInfo.h">
-      <Filter>Header Files\magick++</Filter>
+    <ClInclude Include="include\lpng\pnginfo.h">
+      <Filter>Header Files\lpng</Filter>
     </ClInclude>
-    <ClInclude Include="include\Magick++\Color.h">
-      <Filter>Header Files\magick++</Filter>
+    <ClInclude Include="include\lpng\pngpriv.h">
+      <Filter>Header Files\lpng</Filter>
     </ClInclude>
-    <ClInclude Include="include\Magick++\Drawable.h">
-      <Filter>Header Files\magick++</Filter>
+    <ClInclude Include="include\lpng\pngstruct.h">
+      <Filter>Header Files\lpng</Filter>
     </ClInclude>
-    <ClInclude Include="include\Magick++\Exception.h">
-      <Filter>Header Files\magick++</Filter>
+    <ClInclude Include="include\zlib\crc32.h">
+      <Filter>zlib</Filter>
     </ClInclude>
-    <ClInclude Include="include\Magick++\Functions.h">
-      <Filter>Header Files\magick++</Filter>
+    <ClInclude Include="include\zlib\deflate.h">
+      <Filter>zlib</Filter>
     </ClInclude>
-    <ClInclude Include="include\Magick++\Geometry.h">
-      <Filter>Header Files\magick++</Filter>
+    <ClInclude Include="include\zlib\gzguts.h">
+      <Filter>zlib</Filter>
     </ClInclude>
-    <ClInclude Include="include\Magick++\Image.h">
-      <Filter>Header Files\magick++</Filter>
+    <ClInclude Include="include\zlib\inffast.h">
+      <Filter>zlib</Filter>
     </ClInclude>
-    <ClInclude Include="include\Magick++\ImageRef.h">
-      <Filter>Header Files\magick++</Filter>
+    <ClInclude Include="include\zlib\inffixed.h">
+      <Filter>zlib</Filter>
     </ClInclude>
-    <ClInclude Include="include\Magick++\Include.h">
-      <Filter>Header Files\magick++</Filter>
+    <ClInclude Include="include\zlib\inflate.h">
+      <Filter>zlib</Filter>
     </ClInclude>
-    <ClInclude Include="include\Magick++\Montage.h">
-      <Filter>Header Files\magick++</Filter>
+    <ClInclude Include="include\zlib\inftrees.h">
+      <Filter>zlib</Filter>
     </ClInclude>
-    <ClInclude Include="include\Magick++\Options.h">
-      <Filter>Header Files\magick++</Filter>
+    <ClInclude Include="include\zlib\trees.h">
+      <Filter>zlib</Filter>
     </ClInclude>
-    <ClInclude Include="include\Magick++\Pixels.h">
-      <Filter>Header Files\magick++</Filter>
+    <ClInclude Include="include\zlib\zconf.h">
+      <Filter>zlib</Filter>
     </ClInclude>
-    <ClInclude Include="include\Magick++\STL.h">
-      <Filter>Header Files\magick++</Filter>
+    <ClInclude Include="include\zlib\zlib.h">
+      <Filter>zlib</Filter>
     </ClInclude>
-    <ClInclude Include="include\Magick++\Thread.h">
-      <Filter>Header Files\magick++</Filter>
+    <ClInclude Include="include\zlib\zutil.h">
+      <Filter>zlib</Filter>
     </ClInclude>
-    <ClInclude Include="include\Magick++\TypeMetric.h">
-      <Filter>Header Files\magick++</Filter>
+    <ClInclude Include="include\lpng\pnglibconf.h">
+      <Filter>Header Files\lpng</Filter>
     </ClInclude>
-    <ClInclude Include="include\magick\alpha_composite.h">
-      <Filter>Header Files\magick</Filter>
+    <ClInclude Include="include\jpeg\cderror.h">
+      <Filter>Header Files\jpeg</Filter>
     </ClInclude>
-    <ClInclude Include="include\magick\analyze.h">
-      <Filter>Header Files\magick</Filter>
+    <ClInclude Include="include\jpeg\cdjpeg.h">
+      <Filter>Header Files\jpeg</Filter>
     </ClInclude>
-    <ClInclude Include="include\magick\animate.h">
-      <Filter>Header Files\magick</Filter>
+    <ClInclude Include="include\jpeg\jdct.h">
+      <Filter>Header Files\jpeg</Filter>
     </ClInclude>
-    <ClInclude Include="include\magick\api.h">
-      <Filter>Header Files\magick</Filter>
+    <ClInclude Include="include\jpeg\jerror.h">
+      <Filter>Header Files\jpeg</Filter>
     </ClInclude>
-    <ClInclude Include="include\magick\attribute.h">
-      <Filter>Header Files\magick</Filter>
+    <ClInclude Include="include\jpeg\jinclude.h">
+      <Filter>Header Files\jpeg</Filter>
     </ClInclude>
-    <ClInclude Include="include\magick\average.h">
-      <Filter>Header Files\magick</Filter>
+    <ClInclude Include="include\jpeg\jmemsys.h">
+      <Filter>Header Files\jpeg</Filter>
     </ClInclude>
-    <ClInclude Include="include\magick\bit_stream.h">
-      <Filter>Header Files\magick</Filter>
+    <ClInclude Include="include\jpeg\jmorecfg.h">
+      <Filter>Header Files\jpeg</Filter>
     </ClInclude>
-    <ClInclude Include="include\magick\blob.h">
-      <Filter>Header Files\magick</Filter>
+    <ClInclude Include="include\jpeg\jpegint.h">
+      <Filter>Header Files\jpeg</Filter>
     </ClInclude>
-    <ClInclude Include="include\magick\cdl.h">
-      <Filter>Header Files\magick</Filter>
+    <ClInclude Include="include\jpeg\jpeglib.h">
+      <Filter>Header Files\jpeg</Filter>
     </ClInclude>
-    <ClInclude Include="include\magick\channel.h">
-      <Filter>Header Files\magick</Filter>
+    <ClInclude Include="include\jpeg\jversion.h">
+      <Filter>Header Files\jpeg</Filter>
     </ClInclude>
-    <ClInclude Include="include\magick\color.h">
-      <Filter>Header Files\magick</Filter>
+    <ClInclude Include="include\jpeg\transupp.h">
+      <Filter>Header Files\jpeg</Filter>
     </ClInclude>
-    <ClInclude Include="include\magick\color_lookup.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\colormap.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\colorspace.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\command.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\common.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\compare.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\composite.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\compress.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\confirm_access.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\constitute.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\decorate.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\delegate.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\deprecate.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\describe.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\display.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\draw.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\effect.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\enhance.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\enum_strings.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\error.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\floats.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\forward.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\fx.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\gem.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\gradient.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\hclut.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\image.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\list.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\locale_c.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\log.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\magic.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\magick.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\magick_config.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\magick_endian.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\magick_types.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\map.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\memory.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\module.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\monitor.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\montage.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\nt_base.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\nt_feature.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\omp_data_view.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\operator.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\paint.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\pixel_cache.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\pixel_iterator.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\plasma.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\prefetch.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\PreRvIcccm.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\profile.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\quantize.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\random.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\registry.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\render.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\resize.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\resource.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\semaphore.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\shear.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\signature.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\spinlock.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\stamp.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\static.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\statistics.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\studio.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\symbols.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\tempfile.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\texture.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\timer.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\transform.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\tsd.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\type.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\unix_port.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\utility.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\version.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\widget.h">
-      <Filter>Header Files\magick</Filter>
-    </ClInclude>
-    <ClInclude Include="include\magick\xwindow.h">
-      <Filter>Header Files\magick</Filter>
+    <ClInclude Include="include\jpeg\jconfig.h">
+      <Filter>Header Files\jpeg</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
