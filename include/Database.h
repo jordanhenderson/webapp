@@ -19,7 +19,7 @@ public:
 	Query(std::string dbq);
 	~Query();
 };
-class Database : Internal {
+class Database : public Internal {
 private:
 	sqlite3* db;
 	std::thread dbthread;

@@ -51,6 +51,7 @@ void Logging::printf(string format, ...) {
 	sz = vsnprintf(NULL, 0, format.c_str(), args);
 	buffer = new char[sz + 1];
 	vsnprintf(buffer, sz + 1, format.c_str(), args);
+	delete[] buffer;
 	va_end(args);
 	this->log(string(buffer, sz));
 }

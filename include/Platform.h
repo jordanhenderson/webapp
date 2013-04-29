@@ -20,10 +20,11 @@
 #define _wfopen fopen
 
 #endif
-
-#define ERROR_FILE_NOT_FOUND 1
-#define ERROR_SOCKET_FAILED 2
-#define ERROR_DB_FAILED 3
+//Similar definitions to winerror.h to avoid incompatibility.
+#define ERROR_SUCCESS 0L
+#define ERROR_FILE_NOT_FOUND 2L
+#define ERROR_SOCKET_FAILED 3L
+#define ERROR_DB_FAILED 4L
 
 #define HTML_HEADER "Content-type: text/html\r\n\r\n"
 #define CSS_HEADER "Content-type: text/css; charset=UTF-8\r\n\r\n"
@@ -33,9 +34,9 @@
 #define XSTR(a) STR(a)
 #define STR(a) #a
 class Internal {
-protected: int nError;
 public:
 	int GetLastError();
+protected: int nError;
 };
 
 bool endsWith(const std::string &a, const std::string &b);

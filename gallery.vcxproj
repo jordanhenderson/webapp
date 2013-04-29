@@ -22,6 +22,7 @@
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <UseIntelTBB>true</UseIntelTBB>
+    <UseIntelIPP>Sequential</UseIntelIPP>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -103,13 +104,19 @@
     <ClCompile Include="src\fastcgi\os_win32.c" />
     <ClCompile Include="src\FileSystem.cpp" />
     <ClCompile Include="src\Gallery.cpp" />
+    <ClCompile Include="src\Image.cpp" />
     <ClCompile Include="src\Internal.cpp" />
+    <ClCompile Include="src\jpeg\bmp.c" />
     <ClCompile Include="src\jpeg\cdjpeg.c" />
     <ClCompile Include="src\jpeg\jaricom.c" />
     <ClCompile Include="src\jpeg\jcapimin.c" />
     <ClCompile Include="src\jpeg\jcapistd.c" />
     <ClCompile Include="src\jpeg\jcarith.c" />
     <ClCompile Include="src\jpeg\jccoefct.c" />
+    <ClCompile Include="src\jpeg\jccolext.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="src\jpeg\jccolor.c" />
     <ClCompile Include="src\jpeg\jcdctmgr.c" />
     <ClCompile Include="src\jpeg\jchuff.c" />
@@ -119,14 +126,22 @@
     <ClCompile Include="src\jpeg\jcmaster.c" />
     <ClCompile Include="src\jpeg\jcomapi.c" />
     <ClCompile Include="src\jpeg\jcparam.c" />
+    <ClCompile Include="src\jpeg\jcphuff.c" />
     <ClCompile Include="src\jpeg\jcprepct.c" />
     <ClCompile Include="src\jpeg\jcsample.c" />
+    <ClCompile Include="src\jpeg\jctrans.c" />
     <ClCompile Include="src\jpeg\jdapimin.c" />
     <ClCompile Include="src\jpeg\jdapistd.c" />
     <ClCompile Include="src\jpeg\jdarith.c" />
+    <ClCompile Include="src\jpeg\jdatadst-tj.c" />
     <ClCompile Include="src\jpeg\jdatadst.c" />
+    <ClCompile Include="src\jpeg\jdatasrc-tj.c" />
     <ClCompile Include="src\jpeg\jdatasrc.c" />
     <ClCompile Include="src\jpeg\jdcoefct.c" />
+    <ClCompile Include="src\jpeg\jdcolext.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="src\jpeg\jdcolor.c" />
     <ClCompile Include="src\jpeg\jddctmgr.c" />
     <ClCompile Include="src\jpeg\jdhuff.c" />
@@ -135,8 +150,14 @@
     <ClCompile Include="src\jpeg\jdmarker.c" />
     <ClCompile Include="src\jpeg\jdmaster.c" />
     <ClCompile Include="src\jpeg\jdmerge.c" />
+    <ClCompile Include="src\jpeg\jdmrgext.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdphuff.c" />
     <ClCompile Include="src\jpeg\jdpostct.c" />
     <ClCompile Include="src\jpeg\jdsample.c" />
+    <ClCompile Include="src\jpeg\jdtrans.c" />
     <ClCompile Include="src\jpeg\jerror.c" />
     <ClCompile Include="src\jpeg\jfdctflt.c" />
     <ClCompile Include="src\jpeg\jfdctfst.c" />
@@ -144,10 +165,13 @@
     <ClCompile Include="src\jpeg\jidctflt.c" />
     <ClCompile Include="src\jpeg\jidctfst.c" />
     <ClCompile Include="src\jpeg\jidctint.c" />
+    <ClCompile Include="src\jpeg\jidctred.c" />
     <ClCompile Include="src\jpeg\jmemmgr.c" />
     <ClCompile Include="src\jpeg\jmemnobs.c" />
+    <ClCompile Include="src\jpeg\jpegtran.c" />
     <ClCompile Include="src\jpeg\jquant1.c" />
     <ClCompile Include="src\jpeg\jquant2.c" />
+    <ClCompile Include="src\jpeg\jsimd_none.c" />
     <ClCompile Include="src\jpeg\jutils.c" />
     <ClCompile Include="src\jpeg\rdbmp.c" />
     <ClCompile Include="src\jpeg\rdcolmap.c" />
@@ -156,6 +180,9 @@
     <ClCompile Include="src\jpeg\rdrle.c" />
     <ClCompile Include="src\jpeg\rdswitch.c" />
     <ClCompile Include="src\jpeg\rdtarga.c" />
+    <ClCompile Include="src\jpeg\tjutil.c" />
+    <ClCompile Include="src\jpeg\transupp.c" />
+    <ClCompile Include="src\jpeg\turbojpeg.c" />
     <ClCompile Include="src\jpeg\wrbmp.c" />
     <ClCompile Include="src\jpeg\wrgif.c" />
     <ClCompile Include="src\jpeg\wrppm.c" />
@@ -211,18 +238,28 @@
     <ClInclude Include="include\fastcgi\fcgi_config.h" />
     <ClInclude Include="include\FileSystem.h" />
     <ClInclude Include="include\Gallery.h" />
+    <ClInclude Include="include\Image.h" />
+    <ClInclude Include="include\jpeg\bmp.h" />
     <ClInclude Include="include\jpeg\cderror.h" />
     <ClInclude Include="include\jpeg\cdjpeg.h" />
+    <ClInclude Include="include\jpeg\config.h" />
+    <ClInclude Include="include\jpeg\jchuff.h" />
     <ClInclude Include="include\jpeg\jconfig.h" />
     <ClInclude Include="include\jpeg\jdct.h" />
+    <ClInclude Include="include\jpeg\jdhuff.h" />
     <ClInclude Include="include\jpeg\jerror.h" />
     <ClInclude Include="include\jpeg\jinclude.h" />
     <ClInclude Include="include\jpeg\jmemsys.h" />
     <ClInclude Include="include\jpeg\jmorecfg.h" />
+    <ClInclude Include="include\jpeg\jpegcomp.h" />
     <ClInclude Include="include\jpeg\jpegint.h" />
     <ClInclude Include="include\jpeg\jpeglib.h" />
+    <ClInclude Include="include\jpeg\jsimd.h" />
+    <ClInclude Include="include\jpeg\jsimddct.h" />
     <ClInclude Include="include\jpeg\jversion.h" />
+    <ClInclude Include="include\jpeg\tjutil.h" />
     <ClInclude Include="include\jpeg\transupp.h" />
+    <ClInclude Include="include\jpeg\turbojpeg.h" />
     <ClInclude Include="include\lpng\png.h" />
     <ClInclude Include="include\lpng\pngconf.h" />
     <ClInclude Include="include\lpng\pngdebug.h" />

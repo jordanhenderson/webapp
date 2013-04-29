@@ -1,9 +1,11 @@
 /*
  * jcparam.c
  *
+ * This file was part of the Independent JPEG Group's software:
  * Copyright (C) 1991-1998, Thomas G. Lane.
- * Modified 2003-2012 by Guido Vollbeding.
- * This file is part of the Independent JPEG Group's software.
+ * Modified 2003-2008 by Guido Vollbeding.
+ * Modifications:
+ * Copyright (C) 2009-2011, D. R. Commander.
  * For conditions of distribution and use, see the accompanying README file.
  *
  * This file contains optional default-setting code for the JPEG compressor.
@@ -87,6 +89,7 @@ static const unsigned int std_chrominance_quant_tbl[DCTSIZE2] = {
 };
 
 
+#if JPEG_LIB_VERSION >= 70
 GLOBAL(void)
 jpeg_default_qtables (j_compress_ptr cinfo, boolean force_baseline)
 /* Set or change the 'quality' (quantization) setting, using default tables
@@ -100,6 +103,7 @@ jpeg_default_qtables (j_compress_ptr cinfo, boolean force_baseline)
   jpeg_add_quant_table(cinfo, 1, std_chrominance_quant_tbl,
 		       cinfo->q_scale_factor[1], force_baseline);
 }
+#endif
 
 
 GLOBAL(void)
@@ -150,7 +154,7 @@ jpeg_set_quality (j_compress_ptr cinfo, int quality, boolean force_baseline)
 /* Set or change the 'quality' (quantization) setting, using default tables.
  * This is the standard quality-adjusting entry point for typical user
  * interfaces; only those who want detailed control over quantization tables
- * would use the preceding routines directly.
+ * would use the preceding three routines directly.
  */
 {
   /* Convert user 0-100 rating to percentage scaling */
@@ -301,8 +305,10 @@ jpeg_set_defaults (j_compress_ptr cinfo)
 
   /* Initialize everything not dependent on the color space */
 
+#if JPEG_LIB_VERSION >= 70
   cinfo->scale_num = 1;		/* 1:1 scaling */
   cinfo->scale_denom = 1;
+#endif
   cinfo->data_precision = BITS_IN_JSAMPLE;
   /* Set up two quantization tables using default quality of 75 */
   jpeg_set_quality(cinfo, 75, TRUE);
@@ -339,8 +345,10 @@ jpeg_set_defaults (j_compress_ptr cinfo)
   /* By default, use the simpler non-cosited sampling alignment */
   cinfo->CCIR601_sampling = FALSE;
 
+#if JPEG_LIB_VERSION >= 70
   /* By default, apply fancy downsampling */
   cinfo->do_fancy_downsampling = TRUE;
+#endif
 
   /* No input smoothing */
   cinfo->smoothing_factor = 0;
@@ -367,9 +375,6 @@ jpeg_set_defaults (j_compress_ptr cinfo)
   cinfo->X_density = 1;		/* Pixel aspect ratio is square by default */
   cinfo->Y_density = 1;
 
-  /* No color transform */
-  cinfo->color_transform = JCT_NONE;
-
   /* Choose JPEG colorspace based on input space, set defaults accordingly */
 
   jpeg_default_colorspace(cinfo);
@@ -388,6 +393,16 @@ jpeg_default_colorspace (j_compress_ptr cinfo)
     jpeg_set_colorspace(cinfo, JCS_GRAYSCALE);
     break;
   case JCS_RGB:
+  case JCS_EXT_RGB:
+  case JCS_EXT_RGBX:
+  case JCS_EXT_BGR:
+  case JCS_EXT_BGRX:
+  case JCS_EXT_XBGR:
+  case JCS_EXT_XRGB:
+  case JCS_EXT_RGBA:
+  case JCS_EXT_BGRA:
+  case JCS_EXT_ABGR:
+  case JCS_EXT_ARGB:
     jpeg_set_colorspace(cinfo, JCS_YCbCr);
     break;
   case JCS_YCbCr:
@@ -451,9 +466,7 @@ jpeg_set_colorspace (j_compress_ptr cinfo, J_COLOR_SPACE colorspace)
     cinfo->write_Adobe_marker = TRUE; /* write Adobe marker to flag RGB */
     cinfo->num_components = 3;
     SET_COMP(0, 0x52 /* 'R' */, 1,1, 0, 0,0);
-    SET_COMP(1, 0x47 /* 'G' */, 1,1, 0,
-		cinfo->color_transform == JCT_SUBTRACT_GREEN ? 1 : 0,
-		cinfo->color_transform == JCT_SUBTRACT_GREEN ? 1 : 0);
+    SET_COMP(1, 0x47 /* 'G' */, 1,1, 0, 0,0);
     SET_COMP(2, 0x42 /* 'B' */, 1,1, 0, 0,0);
     break;
   case JCS_YCbCr:

@@ -31,7 +31,7 @@
 #define RESPONSE_TYPE_DATA 0
 #define RESPONSE_TYPE_TABLE 1
 
-#define THUMB_EXTENSIONS_D {".png", ".gif", ".jpg", ".jpeg", NULL};
+
 
 typedef std::unordered_map<std::string, std::string> RequestVars;
 class Logging;

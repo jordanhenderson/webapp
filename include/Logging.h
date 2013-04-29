@@ -8,7 +8,7 @@
 
 #define LOGGER_STATUS_PROCESS 0
 #define LOGGER_STATUS_FINISHED 1
-class Logging : Internal {
+class Logging : public Internal {
 	std::thread logger;
 	tbb::concurrent_queue<std::string> queue;
 	void process();

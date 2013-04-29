@@ -32,6 +32,9 @@ public:
 	static void Write(std::unique_ptr<File>&  file, std::string buffer);
 	static void WriteLine(std::unique_ptr<File>&  file, std::string buffer);
 	static int Exists(const char* path);
+	inline static int Exists(std::string& path) {
+		return Exists(path.c_str());	
+	};
 	static long Size(std::unique_ptr<File>& file);
 	FileSystem() {};
 	~FileSystem() {};

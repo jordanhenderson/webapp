@@ -4,7 +4,7 @@
 #include "tbb/concurrent_unordered_map.h"
 //Dynamic parameter class
 typedef tbb::concurrent_unordered_map<std::string, std::string> paramMap;
-class Parameters : Internal {
+class Parameters : public Internal {
 public:
 	std::string get(std::string param);
 	const int getDigit(std::string param);

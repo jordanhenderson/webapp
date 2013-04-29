@@ -3,20 +3,18 @@
 #include "Platform.h"
 #include "Logging.h"
 #include "Gallery.h"
+#include "Image.h"
 #include "fcgiapp.h"
 #include "document.h"
 #include "prettywriter.h"
 #include "stringbuffer.h"
 #include "Serializer.h"
 #include "decode.h"
-#include "jpeglib.h"
-#include "jerror.h"
 
 using namespace rapidjson;
 using namespace std;
 using namespace base64;
 
-const char* THUMB_EXTENSIONS[] = THUMB_EXTENSIONS_D;
 Gallery::Gallery(shared_ptr<Parameters>& params, shared_ptr<Logging>& logger) {
 	this->logger = logger;
 	this->params = params;
@@ -45,7 +43,7 @@ Gallery::~Gallery() {
 string Gallery::getPage(const char* page) {
 	string pageuri = basepath +  "/templates/" + string(page) + ".html";
 
-	if(FileSystem::Exists(pageuri.c_str())) {
+	if(FileSystem::Exists(pageuri)) {
 		string data = HTML_HEADER;
 		unique_ptr<File> f = FileSystem::Open(pageuri.c_str(), "rb");
 		unique_ptr<FileData> filedata = FileSystem::Read(f);
@@ -63,7 +61,7 @@ string Gallery::loadFile(const char* uri) {
 	std::string fileuri = basepath + uri;
 	std::string data;
 
-		if(FileSystem::Exists(fileuri.c_str())) {
+		if(FileSystem::Exists(fileuri)) {
 			data = HTML_HEADER;
 
 			if(endsWith(uri, ".css"))
@@ -92,7 +90,7 @@ string Gallery::getAlbums() {
 		//Create unique pointers for the map, store them in the maps vector. This way, the map (AKA string pointers) are retained until maps is deconstructed.
 		unique_ptr<unordered_map<string, string>> rowmap = unique_ptr<unordered_map<string,string>>(new unordered_map<string,string>);
 		
-		if(!FileSystem::Exists(row[8].c_str())) {
+		if(!FileSystem::Exists(row[8])) {
 			row[8] = DEFAULT_THUMB;
 		}
 		for(int i = 0; i < query->description->size(); i++) {
@@ -113,7 +111,7 @@ string Gallery::getAlbumsTable() {
 	unique_ptr<Query> query = database->select("SELECT id, name, added, lastedited, path, type, rating, recursive, (SELECT thumbpath FROM thumbs WHERE id = albums.thumbid) AS thumb FROM albums;", 1);
 
 	unordered_map<string, string> tableData;
-	tableData["THUMBS_PATH"] = basepath + "/" + thumbspath;
+	tableData["THUMBS_PATH"] = thumbspath;
 	tableData["thumb"] = "img";
 	
 	Serializer serializer;
@@ -174,8 +172,11 @@ void Gallery::process(FCGX_Request* request) {
 			pass++;
 			if(pass != params->get("pass") || decoded_auth != params->get("username")) {
 				FCGX_PutStr(HTTP_NO_AUTH, strlen(HTTP_NO_AUTH), request->out);
+				delete[] decoded_auth;
 				return;
 			}
+		
+			delete[] decoded_auth;
 
 		} else {
 			FCGX_PutStr(HTTP_NO_AUTH, strlen(HTTP_NO_AUTH), request->out);
@@ -207,6 +208,7 @@ void Gallery::process(FCGX_Request* request) {
 		postdata[len] = '\0';
 		RequestVars v = parseRequestVars(postdata);
 		final = processVars(v);
+		delete[] postdata;
 		
 	}
 
@@ -268,33 +270,12 @@ string Gallery::processVars(RequestVars& vars) {
 
 
 int Gallery::genThumb(char* file, int shortmax, int longmax) {
+	string imagepath = basepath + "/" + storepath + "/" + file;
+	Image image(imagepath);
 
-	int validimage = 0;
-	for(int i = 0; THUMB_EXTENSIONS[i] != NULL; i++) {
-		if(endsWith(file, THUMB_EXTENSIONS[i])) {
-			validimage = 1;
-		}
-	}
-	if(!validimage){
+	if(!image.GetLastError() != ERROR_SUCCESS){
 		return -1;
 	}
-	try {
-		string imagepath = basepath + "/" + storepath + "/" + file;
 
-		if(FileSystem::Exists(imagepath.c_str())) {
-			struct jpeg_decompress_struct cinfo;
-			struct jpeg_error_mgr jerr;
-			cinfo.err = jpeg_std_error (&jerr);
-			jpeg_create_decompress (&cinfo);
-			unique_ptr<File> file = FileSystem::Open(imagepath, "r");
-			jpeg_stdio_src(&cinfo, file->pszFile);
-			jpeg_read_header(&cinfo, TRUE);
-			int width = cinfo.image_width;
-			int height = cinfo.image_height;
-		}
-
-	} catch(...) {
-
-	}
 	return 0;
 }

@@ -1,8 +1,10 @@
 /*
  * transupp.c
  *
- * Copyright (C) 1997-2012, Thomas G. Lane, Guido Vollbeding.
- * This file is part of the Independent JPEG Group's software.
+ * This file was part of the Independent JPEG Group's software:
+ * Copyright (C) 1997-2011, Thomas G. Lane, Guido Vollbeding.
+ * Modifications:
+ * Copyright (C) 2010, D. R. Commander.
  * For conditions of distribution and use, see the accompanying README file.
  *
  * This file contains image transformation routines and other utility code
@@ -20,7 +22,17 @@
 #include "jinclude.h"
 #include "jpeglib.h"
 #include "transupp.h"		/* My own external interface */
+#include "jpegcomp.h"
 #include <ctype.h>		/* to declare isdigit() */
+
+
+#if JPEG_LIB_VERSION >= 70
+#define dstinfo_min_DCT_h_scaled_size dstinfo->min_DCT_h_scaled_size
+#define dstinfo_min_DCT_v_scaled_size dstinfo->min_DCT_v_scaled_size
+#else
+#define dstinfo_min_DCT_h_scaled_size DCTSIZE
+#define dstinfo_min_DCT_v_scaled_size DCTSIZE
+#endif
 
 
 #if TRANSFORMS_SUPPORTED
@@ -134,7 +146,7 @@ do_flip_h_no_crop (j_decompress_ptr srcinfo, j_compress_ptr dstinfo,
    * Partial iMCUs at the right edge are left untouched.
    */
   MCU_cols = srcinfo->output_width /
-    (dstinfo->max_h_samp_factor * dstinfo->min_DCT_h_scaled_size);
+    (dstinfo->max_h_samp_factor * dstinfo_min_DCT_h_scaled_size);
 
   for (ci = 0; ci < dstinfo->num_components; ci++) {
     compptr = dstinfo->comp_info + ci;
@@ -200,7 +212,7 @@ do_flip_h (j_decompress_ptr srcinfo, j_compress_ptr dstinfo,
    * this is essentially the same as the routine above.
    */
   MCU_cols = srcinfo->output_width /
-    (dstinfo->max_h_samp_factor * dstinfo->min_DCT_h_scaled_size);
+    (dstinfo->max_h_samp_factor * dstinfo_min_DCT_h_scaled_size);
 
   for (ci = 0; ci < dstinfo->num_components; ci++) {
     compptr = dstinfo->comp_info + ci;
@@ -265,7 +277,7 @@ do_flip_v (j_decompress_ptr srcinfo, j_compress_ptr dstinfo,
    * Partial iMCUs at the bottom edge are copied verbatim.
    */
   MCU_rows = srcinfo->output_height /
-    (dstinfo->max_v_samp_factor * dstinfo->min_DCT_v_scaled_size);
+    (dstinfo->max_v_samp_factor * dstinfo_min_DCT_v_scaled_size);
 
   for (ci = 0; ci < dstinfo->num_components; ci++) {
     compptr = dstinfo->comp_info + ci;
@@ -393,7 +405,7 @@ do_rot_90 (j_decompress_ptr srcinfo, j_compress_ptr dstinfo,
    * not mirrored.
    */
   MCU_cols = srcinfo->output_height /
-    (dstinfo->max_h_samp_factor * dstinfo->min_DCT_h_scaled_size);
+    (dstinfo->max_h_samp_factor * dstinfo_min_DCT_h_scaled_size);
 
   for (ci = 0; ci < dstinfo->num_components; ci++) {
     compptr = dstinfo->comp_info + ci;
@@ -474,7 +486,7 @@ do_rot_270 (j_decompress_ptr srcinfo, j_compress_ptr dstinfo,
    * not mirrored.
    */
   MCU_rows = srcinfo->output_width /
-    (dstinfo->max_v_samp_factor * dstinfo->min_DCT_v_scaled_size);
+    (dstinfo->max_v_samp_factor * dstinfo_min_DCT_v_scaled_size);
 
   for (ci = 0; ci < dstinfo->num_components; ci++) {
     compptr = dstinfo->comp_info + ci;
@@ -542,9 +554,9 @@ do_rot_180 (j_decompress_ptr srcinfo, j_compress_ptr dstinfo,
   jpeg_component_info *compptr;
 
   MCU_cols = srcinfo->output_width /
-    (dstinfo->max_h_samp_factor * dstinfo->min_DCT_h_scaled_size);
+    (dstinfo->max_h_samp_factor * dstinfo_min_DCT_h_scaled_size);
   MCU_rows = srcinfo->output_height /
-    (dstinfo->max_v_samp_factor * dstinfo->min_DCT_v_scaled_size);
+    (dstinfo->max_v_samp_factor * dstinfo_min_DCT_v_scaled_size);
 
   for (ci = 0; ci < dstinfo->num_components; ci++) {
     compptr = dstinfo->comp_info + ci;
@@ -653,9 +665,9 @@ do_transverse (j_decompress_ptr srcinfo, j_compress_ptr dstinfo,
   jpeg_component_info *compptr;
 
   MCU_cols = srcinfo->output_height /
-    (dstinfo->max_h_samp_factor * dstinfo->min_DCT_h_scaled_size);
+    (dstinfo->max_h_samp_factor * dstinfo_min_DCT_h_scaled_size);
   MCU_rows = srcinfo->output_width /
-    (dstinfo->max_v_samp_factor * dstinfo->min_DCT_v_scaled_size);
+    (dstinfo->max_v_samp_factor * dstinfo_min_DCT_v_scaled_size);
 
   for (ci = 0; ci < dstinfo->num_components; ci++) {
     compptr = dstinfo->comp_info + ci;
@@ -897,7 +909,12 @@ jtransform_request_workspace (j_decompress_ptr srcinfo,
     info->num_components = srcinfo->num_components;
 
   /* Compute output image dimensions and related values. */
+#if JPEG_LIB_VERSION >= 80
   jpeg_core_output_dimensions(srcinfo);
+#else
+  srcinfo->output_width = srcinfo->image_width;
+  srcinfo->output_height = srcinfo->image_height;
+#endif
 
   /* Return right away if -perfect is given and transformation is not perfect.
    */
@@ -905,15 +922,15 @@ jtransform_request_workspace (j_decompress_ptr srcinfo,
     if (info->num_components == 1) {
       if (!jtransform_perfect_transform(srcinfo->output_width,
 	  srcinfo->output_height,
-	  srcinfo->min_DCT_h_scaled_size,
-	  srcinfo->min_DCT_v_scaled_size,
+	  srcinfo->_min_DCT_h_scaled_size,
+	  srcinfo->_min_DCT_v_scaled_size,
 	  info->transform))
 	return FALSE;
     } else {
       if (!jtransform_perfect_transform(srcinfo->output_width,
 	  srcinfo->output_height,
-	  srcinfo->max_h_samp_factor * srcinfo->min_DCT_h_scaled_size,
-	  srcinfo->max_v_samp_factor * srcinfo->min_DCT_v_scaled_size,
+	  srcinfo->max_h_samp_factor * srcinfo->_min_DCT_h_scaled_size,
+	  srcinfo->max_v_samp_factor * srcinfo->_min_DCT_v_scaled_size,
 	  info->transform))
 	return FALSE;
     }
@@ -932,26 +949,26 @@ jtransform_request_workspace (j_decompress_ptr srcinfo,
     info->output_width = srcinfo->output_height;
     info->output_height = srcinfo->output_width;
     if (info->num_components == 1) {
-      info->iMCU_sample_width = srcinfo->min_DCT_v_scaled_size;
-      info->iMCU_sample_height = srcinfo->min_DCT_h_scaled_size;
+      info->iMCU_sample_width = srcinfo->_min_DCT_v_scaled_size;
+      info->iMCU_sample_height = srcinfo->_min_DCT_h_scaled_size;
     } else {
       info->iMCU_sample_width =
-	srcinfo->max_v_samp_factor * srcinfo->min_DCT_v_scaled_size;
+	srcinfo->max_v_samp_factor * srcinfo->_min_DCT_v_scaled_size;
       info->iMCU_sample_height =
-	srcinfo->max_h_samp_factor * srcinfo->min_DCT_h_scaled_size;
+	srcinfo->max_h_samp_factor * srcinfo->_min_DCT_h_scaled_size;
     }
     break;
   default:
     info->output_width = srcinfo->output_width;
     info->output_height = srcinfo->output_height;
     if (info->num_components == 1) {
-      info->iMCU_sample_width = srcinfo->min_DCT_h_scaled_size;
-      info->iMCU_sample_height = srcinfo->min_DCT_v_scaled_size;
+      info->iMCU_sample_width = srcinfo->_min_DCT_h_scaled_size;
+      info->iMCU_sample_height = srcinfo->_min_DCT_v_scaled_size;
     } else {
       info->iMCU_sample_width =
-	srcinfo->max_h_samp_factor * srcinfo->min_DCT_h_scaled_size;
+	srcinfo->max_h_samp_factor * srcinfo->_min_DCT_h_scaled_size;
       info->iMCU_sample_height =
-	srcinfo->max_v_samp_factor * srcinfo->min_DCT_v_scaled_size;
+	srcinfo->max_v_samp_factor * srcinfo->_min_DCT_v_scaled_size;
     }
     break;
   }
@@ -1020,7 +1037,7 @@ jtransform_request_workspace (j_decompress_ptr srcinfo,
   case JXFORM_FLIP_H:
     if (info->trim)
       trim_right_edge(info, srcinfo->output_width);
-    if (info->y_crop_offset != 0)
+    if (info->y_crop_offset != 0 || info->slow_hflip)
       need_workspace = TRUE;
     /* do_flip_h_no_crop doesn't need a workspace array */
     break;
@@ -1076,7 +1093,7 @@ jtransform_request_workspace (j_decompress_ptr srcinfo,
   if (need_workspace) {
     coef_arrays = (jvirt_barray_ptr *)
       (*srcinfo->mem->alloc_small) ((j_common_ptr) srcinfo, JPOOL_IMAGE,
-	SIZEOF(jvirt_barray_ptr) * info->num_components);
+		SIZEOF(jvirt_barray_ptr) * info->num_components);
     width_in_iMCUs = (JDIMENSION)
       jdiv_round_up((long) info->output_width,
 		    (long) info->iMCU_sample_width);
@@ -1124,9 +1141,11 @@ transpose_critical_parameters (j_compress_ptr dstinfo)
   jtemp = dstinfo->image_width;
   dstinfo->image_width = dstinfo->image_height;
   dstinfo->image_height = jtemp;
+#if JPEG_LIB_VERSION >= 70
   itemp = dstinfo->min_DCT_h_scaled_size;
   dstinfo->min_DCT_h_scaled_size = dstinfo->min_DCT_v_scaled_size;
   dstinfo->min_DCT_v_scaled_size = itemp;
+#endif
 
   /* Transpose sampling factors */
   for (ci = 0; ci < dstinfo->num_components; ci++) {
@@ -1362,8 +1381,10 @@ jtransform_adjust_parameters (j_decompress_ptr srcinfo,
   /* Correct the destination's image dimensions as necessary
    * for rotate/flip, resize, and crop operations.
    */
+#if JPEG_LIB_VERSION >= 70
   dstinfo->jpeg_width = info->output_width;
   dstinfo->jpeg_height = info->output_height;
+#endif
 
   /* Transpose destination image parameters */
   switch (info->transform) {
@@ -1371,9 +1392,17 @@ jtransform_adjust_parameters (j_decompress_ptr srcinfo,
   case JXFORM_TRANSVERSE:
   case JXFORM_ROT_90:
   case JXFORM_ROT_270:
+#if JPEG_LIB_VERSION < 70
+    dstinfo->image_width = info->output_height;
+    dstinfo->image_height = info->output_width;
+#endif
     transpose_critical_parameters(dstinfo);
     break;
   default:
+#if JPEG_LIB_VERSION < 70
+    dstinfo->image_width = info->output_width;
+    dstinfo->image_height = info->output_height;
+#endif
     break;
   }
 
@@ -1389,6 +1418,7 @@ jtransform_adjust_parameters (j_decompress_ptr srcinfo,
       GETJOCTET(srcinfo->marker_list->data[5]) == 0) {
     /* Suppress output of JFIF marker */
     dstinfo->write_JFIF_header = FALSE;
+#if JPEG_LIB_VERSION >= 70
     /* Adjust Exif image parameters */
     if (dstinfo->jpeg_width != srcinfo->image_width ||
 	dstinfo->jpeg_height != srcinfo->image_height)
@@ -1396,6 +1426,7 @@ jtransform_adjust_parameters (j_decompress_ptr srcinfo,
       adjust_exif_parameters(srcinfo->marker_list->data + 6,
 	srcinfo->marker_list->data_length - 6,
 	dstinfo->jpeg_width, dstinfo->jpeg_height);
+#endif
   }
 
   /* Return the appropriate output data set */
@@ -1432,7 +1463,7 @@ jtransform_execute_transform (j_decompress_ptr srcinfo,
 	      src_coef_arrays, dst_coef_arrays);
     break;
   case JXFORM_FLIP_H:
-    if (info->y_crop_offset != 0)
+    if (info->y_crop_offset != 0 || info->slow_hflip)
       do_flip_h(srcinfo, dstinfo, info->x_crop_offset, info->y_crop_offset,
 		src_coef_arrays, dst_coef_arrays);
     else

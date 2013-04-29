@@ -9,7 +9,7 @@ public:
 	virtual void process(FCGX_Request* request) = 0;
 };
 
-class Server : Internal {
+class Server : public Internal {
 
 	std::thread serverpool[SERVER_THREADS];
 	std::shared_ptr<ServerHandler> handler;
