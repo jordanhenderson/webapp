@@ -37,6 +37,7 @@ int main(int argc, char* argv[]) {
 	server->join();
 	//Finish any remaining log messages
 	logger->finish();
+	delete server;
 	return 0;
 }
 

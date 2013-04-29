@@ -6,6 +6,7 @@ Logging::Logging(string logPath) {
 	status = LOGGER_STATUS_PROCESS;
 	//Create a logging thread that will continuously queue.pop().
 	logger = thread(&Logging::process, this);
+	logger.detach();
 
 }
 
@@ -14,7 +15,6 @@ Logging::Logging() {
 	logFile = NULL;
 	status = LOGGER_STATUS_PROCESS;
 	logger = thread(&Logging::process, this);
-
 }
 
 void Logging::setFile(string logPath) {
@@ -30,7 +30,7 @@ void Logging::process() {
 		if(queue.try_pop(msg))  {
 			FileSystem::WriteLine(logFile, msg);
 		}
-		std::this_thread::sleep_for(std::chrono::seconds(1));
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 }
 
@@ -51,9 +51,9 @@ void Logging::printf(string format, ...) {
 	sz = vsnprintf(NULL, 0, format.c_str(), args);
 	buffer = new char[sz + 1];
 	vsnprintf(buffer, sz + 1, format.c_str(), args);
-	delete[] buffer;
 	va_end(args);
 	this->log(string(buffer, sz));
+	delete[] buffer;
 }
 
 void Logging::finish() {

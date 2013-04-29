@@ -33,10 +33,20 @@ unique_ptr<File> FileSystem::Open(const string& fileName, const string& flags) {
 	return move(tmpFile);
 }
 
+FileData::~FileData() {
+	delete[] data;
+}
+
+File::~File() {
+	if(pszFile != NULL)
+		fclose(pszFile);
+}
+
 void FileSystem::Close(unique_ptr<File>& file) {
 	if(file == NULL || file->pszFile == NULL)
 		return;
 	fclose(file->pszFile);
+	file->pszFile = NULL;
 }
 
 long FileSystem::Size(unique_ptr<File>& file) {
@@ -63,7 +73,7 @@ unique_ptr<FileData> FileSystem::Process(unique_ptr<File>& file, void* userdata,
 	int count = 0;
 	int size = Size(file);
 	
-	fdata->data = new char[size * sizeof(char) + 1];
+	fdata->data = new char[size * sizeof(char) + 1]();
 
 		if(callback != NULL) {
 			while(!feof(tmpFile)) {
@@ -83,20 +93,20 @@ unique_ptr<FileData> FileSystem::Process(unique_ptr<File>& file, void* userdata,
 			//Simply read the entire file. Hopefully improve performance.
 
 			size_t nRead = fread(fdata->data, sizeof(char), size, tmpFile);
-			fdata->data[++nRead] = '\0';
+			fdata->data[nRead] = '\0';
 		}
 	fdata->size = size;
 	return move(fdata);
 }
 
-void FileSystem::Write(unique_ptr<File>& file, string buffer) {
+void FileSystem::Write(unique_ptr<File>& file, string& buffer) {
 	if(file == NULL || file->pszFile == NULL)
 		return;
 	fputs(buffer.c_str(), file->pszFile);
 	fflush(file->pszFile);
 }
 
-void FileSystem::WriteLine(unique_ptr<File>& file, string buffer) {
+void FileSystem::WriteLine(unique_ptr<File>& file, string& buffer) {
 	string tmp = string(buffer);
 	Write(file, tmp.append(ENV_NEWLINE));
 }

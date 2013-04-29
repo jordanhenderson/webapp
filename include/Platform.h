@@ -1,7 +1,10 @@
 //This file contains universal macros and definitions helpful to all classes.
 #ifndef PLATFORM_H
 #define PLATFORM_H
-
+#ifdef _DEBUG
+#define _WINSOCKAPI_  
+#include <vld.h> 
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unordered_map>

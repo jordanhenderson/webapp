@@ -10,6 +10,7 @@ Query::Query(string dbq) {
 }
 
 Query::~Query() {
+
 }
 
 void Database::process() {
@@ -39,6 +40,7 @@ void Database::process() {
 						}
 						const char* text = (const char*)sqlite3_column_text(stmt, col);
 						int size = sqlite3_column_bytes(stmt, col);
+						
 						row.push_back(string(text,size));
 					}
 					havedesc = 1;
@@ -67,6 +69,9 @@ Database::Database(const char* filename) {
 }
 
 Database::~Database() {
+	status = DATABASE_STATUS_FINISHED;
+	if(dbthread.joinable())
+		dbthread.join();
 	sqlite3_close(db);
 }
 

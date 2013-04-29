@@ -15,6 +15,7 @@ using namespace rapidjson;
 using namespace std;
 using namespace base64;
 
+
 Gallery::Gallery(shared_ptr<Parameters>& params, shared_ptr<Logging>& logger) {
 	this->logger = logger;
 	this->params = params;
@@ -32,10 +33,10 @@ Gallery::Gallery(shared_ptr<Parameters>& params, shared_ptr<Logging>& logger) {
 		auth = 1;
 	} else
 		auth = 0;
-	genThumb("test/csse2010_2.jpg", 300, 300);
 }
 
 Gallery::~Gallery() {
+	
 }
 
 string Gallery::getPage(const char* page) {

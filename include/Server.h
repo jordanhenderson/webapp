@@ -4,6 +4,7 @@
 class Gallery; 
 #include "fcgiapp.h"
 #define SERVER_THREADS 20
+
 class ServerHandler {
 public:
 	virtual void process(FCGX_Request* request) = 0;
