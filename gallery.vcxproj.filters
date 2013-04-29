@@ -318,9 +318,6 @@
     <ClCompile Include="src\jpeg\jdsample.c">
       <Filter>Source Files\jpeg</Filter>
     </ClCompile>
-    <ClCompile Include="src\jpeg\jdtrans.c">
-      <Filter>Source Files\jpeg</Filter>
-    </ClCompile>
     <ClCompile Include="src\jpeg\jerror.c">
       <Filter>Source Files\jpeg</Filter>
     </ClCompile>
@@ -349,9 +346,6 @@
       <Filter>Source Files\jpeg</Filter>
     </ClCompile>
     <ClCompile Include="src\jpeg\jmemnobs.c">
-      <Filter>Source Files\jpeg</Filter>
-    </ClCompile>
-    <ClCompile Include="src\jpeg\jpegtran.c">
       <Filter>Source Files\jpeg</Filter>
     </ClCompile>
     <ClCompile Include="src\jpeg\jquant1.c">
@@ -409,6 +403,9 @@
       <Filter>Source Files\jpeg</Filter>
     </ClCompile>
     <ClCompile Include="src\jpeg\wrtarga.c">
+      <Filter>Source Files\jpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdtrans.c">
       <Filter>Source Files\jpeg</Filter>
     </ClCompile>
   </ItemGroup>

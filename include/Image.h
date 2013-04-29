@@ -8,13 +8,23 @@
 class Image : public Internal {
 private:
 	int imageType;
+	double width;
+	double height;
+	int nBytes;
+	int nChannels;
+	int colorspace;
+	unsigned char* pixels;
 public:
 	Image(std::string& filename);
-	~Image() {};
-	int width();
-	int height();
-	void resize(int width, int height);
-
+	~Image();
+	inline double getWidth() {
+		return width;
+	}
+	inline double getHeight() {
+		return height;	
+	};
+	void resize(double width, double height);
+	void save(std::string& filename);
 };
 
 #endif

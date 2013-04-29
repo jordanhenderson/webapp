@@ -32,9 +32,7 @@ Gallery::Gallery(shared_ptr<Parameters>& params, shared_ptr<Logging>& logger) {
 		auth = 1;
 	} else
 		auth = 0;
-
 	genThumb("test/csse2010_2.jpg", 300, 300);
-
 }
 
 Gallery::~Gallery() {
@@ -269,13 +267,37 @@ string Gallery::processVars(RequestVars& vars) {
 }
 
 
-int Gallery::genThumb(char* file, int shortmax, int longmax) {
+int Gallery::genThumb(char* file, double shortmax, double longmax) {
 	string imagepath = basepath + "/" + storepath + "/" + file;
 	Image image(imagepath);
-
-	if(!image.GetLastError() != ERROR_SUCCESS){
+	int err = image.GetLastError();
+	if(image.GetLastError() != ERROR_SUCCESS){
 		return -1;
 	}
+	//Calculate correct size (keeping aspect ratio) to shrink image to.
+	double wRatio = 1;
+	double hRatio = 1;
+	double width = image.getWidth();
+	double height = image.getHeight();
+	if(width >= height) {
+		if(width > longmax || height > shortmax) {
+			wRatio = longmax / width;
+			hRatio = shortmax / height;
+		}
+	}
+	else {
+		if(height > longmax || width > shortmax) {
+			wRatio = shortmax / width;
+			hRatio = longmax / height;
+		}
+	}
 
+	double ratio = min(wRatio, hRatio);
+	double newWidth = width * ratio;
+	double newHeight = height * ratio;
+
+
+	image.resize(newWidth, newHeight);
+	image.save(basepath + "/" + thumbspath + "/" + file);
 	return 0;
 }

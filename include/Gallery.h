@@ -61,7 +61,7 @@ public:
 	std::vector<std::string> getRandomFileIds();
 	std::vector<std::string> getSetIds();
 	std::string getFilename(int);
-	int genThumb(char* file, int shortmax, int longmax);
+	int genThumb(char* file, double shortmax, double longmax);
 };
 
 #endif

@@ -59,7 +59,7 @@
       <AdditionalIncludeDirectories>include;include/fastcgi;include/sqlite;include/rapidjson;include/b64;include/zlib;include/lpng;include/jpeg</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
-      <InterproceduralOptimization>MultiFile</InterproceduralOptimization>
+      <InterproceduralOptimization>NoIPO</InterproceduralOptimization>
       <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -168,7 +168,6 @@
     <ClCompile Include="src\jpeg\jidctred.c" />
     <ClCompile Include="src\jpeg\jmemmgr.c" />
     <ClCompile Include="src\jpeg\jmemnobs.c" />
-    <ClCompile Include="src\jpeg\jpegtran.c" />
     <ClCompile Include="src\jpeg\jquant1.c" />
     <ClCompile Include="src\jpeg\jquant2.c" />
     <ClCompile Include="src\jpeg\jsimd_none.c" />
