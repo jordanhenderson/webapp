@@ -238,6 +238,9 @@
     <ClInclude Include="include\fastcgi\fcgi_config.h" />
     <ClInclude Include="include\FileSystem.h" />
     <ClInclude Include="include\Gallery.h" />
+    <ClInclude Include="include\gif\gif_hash.h" />
+    <ClInclude Include="include\gif\gif_lib.h" />
+    <ClInclude Include="include\gif\gif_lib_private.h" />
     <ClInclude Include="include\Image.h" />
     <ClInclude Include="include\jpeg\bmp.h" />
     <ClInclude Include="include\jpeg\cderror.h" />

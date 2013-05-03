@@ -52,6 +52,12 @@
     <Filter Include="Header Files\jpeg">
       <UniqueIdentifier>{b7602135-4b18-466e-b24a-5e48d6c818f2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\gif">
+      <UniqueIdentifier>{00e8a9d4-153a-485d-97ba-d10a11de7210}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\gif">
+      <UniqueIdentifier>{5931c9b1-4ba7-4cbf-b9af-b550103c527d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Logging.cpp">
@@ -601,6 +607,15 @@
     </ClInclude>
     <ClInclude Include="include\jpeg\turbojpeg.h">
       <Filter>Header Files\jpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="include\gif\gif_hash.h">
+      <Filter>Header Files\gif</Filter>
+    </ClInclude>
+    <ClInclude Include="include\gif\gif_lib.h">
+      <Filter>Header Files\gif</Filter>
+    </ClInclude>
+    <ClInclude Include="include\gif\gif_lib_private.h">
+      <Filter>Header Files\gif</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
