@@ -1,10 +1,7 @@
 //This file contains universal macros and definitions helpful to all classes.
 #ifndef PLATFORM_H
 #define PLATFORM_H
-#ifdef _DEBUG
-#define _WINSOCKAPI_  
-#include <vld.h> 
-#endif
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unordered_map>
@@ -28,6 +25,8 @@
 #define ERROR_FILE_NOT_FOUND 2L
 #define ERROR_SOCKET_FAILED 3L
 #define ERROR_DB_FAILED 4L
+#define ERROR_INVALID_IMAGE 5L
+#define ERROR_IMAGE_PROCESSING_FAILED 6L
 
 #define HTML_HEADER "Content-type: text/html\r\n\r\n"
 #define CSS_HEADER "Content-type: text/css; charset=UTF-8\r\n\r\n"
