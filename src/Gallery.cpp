@@ -34,7 +34,7 @@ Gallery::Gallery(shared_ptr<Parameters>& params, shared_ptr<Logging>& logger) {
 	} else
 		auth = 0;
 
-	this->genThumb("test/testgif.gif", 300, 300);
+	this->genThumb("test/testgif2.gif", 300, 300);
 	
 }
 

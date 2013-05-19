@@ -6,9 +6,6 @@
 #define IMAGE_TYPE_PNG 1
 #define IMAGE_TYPE_GIF 2
 #define THUMB_EXTENSIONS_JPEG_D {".jpg", ".jpeg", NULL};
-#define IMAGE_COLORSPACE_RGB 0
-#define IMAGE_COLORSPACE_RGBA 1
-
 struct GifFileType;
 
 class Image : public Internal {
@@ -19,12 +16,8 @@ private:
 	int width;
 	int height;
 	int nBytes;
-	int nChannels;
-	int colorspace;
 	unsigned char* pixels;
 	void changeType(std::string& filename);
-	int getColorSpace();
-	void setColorSpace(int colorSpace);
 	//PNG ONLY
 	int bitdepth;
 	unsigned char** row_pointers; 

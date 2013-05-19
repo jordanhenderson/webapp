@@ -54,6 +54,22 @@ void Image::changeType(std::string& filename) {
 	}
 
 	if(endsWith(filename, ".gif")) {
+		//PNG/JPG->GIF
+		if(imageType >= 0 && imageType != IMAGE_TYPE_GIF) {
+			gif = EGifOpen(NULL, 0, NULL);
+			gif->ImageCount = 1;
+			gif->SWidth = width;
+			gif->SHeight = height;
+			gif->SColorMap = GifMakeMapObject(1 << 8, NULL);
+			gif->SavedImages = (SavedImage*)malloc(sizeof(SavedImage));
+			memset((char *)&gif->SavedImages[0], '\0', sizeof(SavedImage));
+
+			gif->SavedImages[0].ImageDesc.Width = width;
+			gif->SavedImages[0].ImageDesc.Height = height;
+			gifMakeMap(pixels, width, height, (unsigned char**)&gif->SavedImages[0].ImageDesc.ColorMap, 
+				(unsigned char**)&gif->SavedImages[0].RasterBits);
+
+		}
 		imageType = IMAGE_TYPE_GIF;
 	}
 }
@@ -65,7 +81,8 @@ void Image::load(std::string& filename) {
 	}
 	//Check image extension. Use IMAGE_TYPE_JPEG for bmp/gif/jpg/jpeg, IMAGE_TYPE_PNG for png.
 	//nError = ERROR_IMAGE_TYPE_NOT_SUPPORTED if image extension not recognised.
-	width = height = nBytes = nChannels = colorspace = bitdepth = 0;
+	width = height = nBytes = bitdepth = 0;
+	gif = NULL;
 
 	cleanup();
 
@@ -88,10 +105,10 @@ void Image::load(std::string& filename) {
 			width = cinfo.image_width;
 			height = cinfo.image_height;
 			bitdepth = 8;
-			setColorSpace(cinfo.out_color_space);
+			cinfo.out_color_space = JCS_EXT_RGBA;
 			jpeg_start_decompress(&cinfo);
 
-			nChannels = cinfo.output_components;
+		
 
 			//Allocate pixels array.
 			nBytes = cinfo.output_width * cinfo.output_height * cinfo.output_components;
@@ -149,14 +166,15 @@ void Image::load(std::string& filename) {
 			png_set_strip_16(png_ptr);
 			png_set_expand(png_ptr);
 			png_set_gray_to_rgb(png_ptr);
+			int colorType = png_get_color_type(png_ptr, info_ptr);
+			if(colorType == PNG_COLOR_TYPE_RGB)
+				png_set_filler(png_ptr, 0xff, PNG_FILLER_AFTER);
 			png_read_update_info(png_ptr, info_ptr);
 
 			width = png_get_image_width(png_ptr, info_ptr);
 			height = png_get_image_height(png_ptr, info_ptr);
-			setColorSpace(png_get_color_type(png_ptr, info_ptr));
-
+			
 			bitdepth = png_get_bit_depth(png_ptr, info_ptr);
-			nChannels = png_get_channels(png_ptr, info_ptr);
 
 			//Get bytes per row.
 
@@ -200,9 +218,6 @@ void Image::load(std::string& filename) {
 			width = gif->SWidth;
 			height = gif->SHeight;
 			bitdepth = 8;
-			
-			nChannels = 4;
-			colorspace = IMAGE_COLORSPACE_RGBA;
 
 			//Allocate our frame array.
 			frames = new unsigned char*[gif->ImageCount]();
@@ -226,49 +241,6 @@ finish:
 
 }
 
-void Image::setColorSpace(int colorSpace) {
-	switch(imageType) {
-	case IMAGE_TYPE_JPEG: 
-		if(colorSpace == JCS_EXT_RGB) colorspace = IMAGE_COLORSPACE_RGB;
-		else if(colorSpace == JCS_EXT_RGBA) colorspace = IMAGE_COLORSPACE_RGBA;
-		else goto error;
-		break;
-	case IMAGE_TYPE_PNG:
-		if(colorSpace == PNG_COLOR_TYPE_RGB) colorspace = IMAGE_COLORSPACE_RGB;
-		else if(colorSpace == PNG_COLOR_TYPE_RGBA) colorspace = IMAGE_COLORSPACE_RGBA;
-		else goto error;
-		break;
-	default:
-		goto error;
-	} 
-	return;
-
-error:
-	nError = ERROR_IMAGE_PROCESSING_FAILED;
-}
-
-int Image::getColorSpace() {
-	switch(imageType) {
-	case IMAGE_TYPE_JPEG: 
-		if(colorspace == IMAGE_COLORSPACE_RGB) return JCS_EXT_RGB;
-		else if(colorspace == IMAGE_COLORSPACE_RGBA) return JCS_EXT_RGBA;
-		else goto error;
-		break;
-	case IMAGE_TYPE_PNG:
-		if(colorspace == IMAGE_COLORSPACE_RGB) return PNG_COLOR_TYPE_RGB;
-		else if(colorspace == IMAGE_COLORSPACE_RGBA) return PNG_COLOR_TYPE_RGBA;
-		else goto error;
-		break;
-	default:
-		goto error;
-	}
-
-	//Gif does not need a colorspace. We assume RGBA at this point.
-error:
-	nError = ERROR_IMAGE_PROCESSING_FAILED;
-	return 0;
-}
-
 void Image::save(std::string& filename) {
 	unique_ptr<File> file = FileSystem::Open(filename, "wb");
 	//Temporarily change the type, to allow output handling to correctly work with different image types.
@@ -285,14 +257,14 @@ void Image::save(std::string& filename) {
 			jpeg_stdio_dest(&cinfo, file->pszFile);
 			cinfo.image_width = width;
 			cinfo.image_height = height;
-			cinfo.input_components = nChannels;
-			cinfo.in_color_space = (J_COLOR_SPACE)getColorSpace();
+			cinfo.input_components = 4;
+			cinfo.in_color_space = JCS_EXT_RGBA;
 
 			jpeg_set_defaults(&cinfo);
 			jpeg_set_quality(&cinfo, 100, TRUE);
 			jpeg_start_compress(&cinfo, TRUE);
 			unsigned int scanline_count = 0;
-			unsigned int scanline_length = width * nChannels;
+			unsigned int scanline_length = width * 4;
 			while(cinfo.next_scanline < cinfo.image_height) {
 				input_data[0] = (pixels + (scanline_count * scanline_length));
 				jpeg_write_scanlines(&cinfo, input_data, 1);
@@ -328,18 +300,15 @@ void Image::save(std::string& filename) {
 				goto finish;
 			}
 
-			
-
 			png_init_io(png_ptr, file->pszFile);
 			png_set_IHDR(png_ptr, info_ptr, width, height,
-				bitdepth, getColorSpace(), PNG_INTERLACE_NONE,
+				bitdepth, PNG_COLOR_TYPE_RGBA, PNG_INTERLACE_NONE,
 				PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
 			png_write_info(png_ptr, info_ptr);
 
 			//Write bytes
 			png_write_image(png_ptr,row_pointers);
-
 			png_write_end(png_ptr, info_ptr);
 			png_destroy_write_struct(&png_ptr, &info_ptr);
 
@@ -383,8 +352,11 @@ finish:
 }
 
 void Image::resize(int width, int height) {
-	if(imageType != IMAGE_TYPE_GIF)
+	if(imageType != IMAGE_TYPE_GIF) {
 		pixels = _resize(pixels, width, height, this->width, this->height);
+		this->width = width;
+		this->height = height;
+	}
 	else {
 		//Resize each frame.
 		for (int i = 0; i < gif->ImageCount; i++) {
@@ -426,7 +398,7 @@ void Image::regenRowPointers() {
 		delete row_pointers;
 	row_pointers = new png_bytep[height * sizeof(png_bytep)]();
 	for(int i = 0; i < height; i++) {
-		row_pointers[i] = pixels + (i*width*nChannels);
+		row_pointers[i] = pixels + (i*width*4);
 	}
 }
 
@@ -456,23 +428,16 @@ unsigned char* Image::_resize(unsigned char* image, int width, int height, int o
 	ippiResizeLanczosInit_8u(size, dstsize, 3, pSpec, initBuf);
 
 	//Get the size required for the pBuffer, allocate it
-	ippiResizeGetBufferSize_8u(pSpec,dstsize,nChannels,&bufsize);
+	ippiResizeGetBufferSize_8u(pSpec,dstsize,4,&bufsize);
 	Ipp8u* pBuffer=ippsMalloc_8u(bufsize);
 
 	//Allocate the temporary buffer used to store resized image.
-	Ipp8u* tmpBuf = ippsMalloc_8u(width * height * nChannels);
+	Ipp8u* tmpBuf = ippsMalloc_8u(width * height * 4);
 
 
 
 	if(pBuffer != NULL) {
-		//TODO optimize the following.
-		if(nChannels == 3) {
-			status = ippiResizeLanczos_8u_C3R((const Ipp8u*)image, oldWidth*nChannels, tmpBuf, width*nChannels, dstOffset, dstsize, ippBorderRepl,0,pSpec, pBuffer );
-		} else if(nChannels == 4) {
-			status = ippiResizeLanczos_8u_C4R((const Ipp8u*)image, oldWidth*nChannels, tmpBuf, width*nChannels, dstOffset, dstsize, ippBorderRepl,0,pSpec, pBuffer );
-		} else {
-			nError = ERROR_IMAGE_PROCESSING_FAILED;
-		}
+			status = ippiResizeLanczos_8u_C4R((const Ipp8u*)image, oldWidth*4, tmpBuf, width*4, dstOffset, dstsize, ippBorderRepl,0,pSpec, pBuffer );
 	}
 
 	ippsFree(initBuf);
@@ -482,7 +447,7 @@ unsigned char* Image::_resize(unsigned char* image, int width, int height, int o
 
 
 	
-	nBytes = width * height * nChannels;
+	nBytes = width * height * 4;
 	return tmpBuf;
 }
 

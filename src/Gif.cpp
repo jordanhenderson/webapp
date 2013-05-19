@@ -59,8 +59,9 @@ void Image::gifInsertFrame(int frame) {
 }
 
 void Image::gifMakeMap(unsigned char* image, int width, int height, unsigned char** map, unsigned char** raster) {
+	
 	palinitnet(NULL, 0, 1.0, image,width*height*4,256,
-		IMAGE_COLORSPACE_RGBA, 1.8, 0.0,
+		1, 1.8, 0.0,
 		0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 0);
 
 	double sample_factor = 1 + (double)width*(double)height / (512*512);
