@@ -56,18 +56,19 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Program Files (x86)\Visual Leak Detector\include;include;include/fastcgi;include/sqlite;include/rapidjson;include/b64;include/zlib;include/lpng;include/jpeg</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;include/fastcgi;include/sqlite;include/rapidjson;include/b64;include/zlib;include/lpng;include/jpeg;include/gif;include/pngnq</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
       <InterproceduralOptimization>NoIPO</InterproceduralOptimization>
-      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <C99Support>true</C99Support>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>ws2_32.lib;vld.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Program Files (x86)\Visual Leak Detector\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -79,7 +80,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_VISUALC_;_CONSOLE;_WIN32;SQLITE_ENABLE_COLUMN_METADATA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>include;include/fastcgi;include/sqlite;include/rapidjson;include/b64;include/zlib;include/lpng;include/jpeg</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;include/fastcgi;include/sqlite;include/rapidjson;include/b64;include/zlib;include/lpng;include/jpeg;include/gif;include/pngnq</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
@@ -87,6 +88,7 @@
       <Parallelization>false</Parallelization>
       <UseIntelOptimizedHeaders>true</UseIntelOptimizedHeaders>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <C99Support>true</C99Support>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -99,133 +101,709 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\b64\cdecode.c" />
+    <ClCompile Include="src\b64\cdecode.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="src\Database.cpp" />
-    <ClCompile Include="src\fastcgi\fcgiapp.c" />
-    <ClCompile Include="src\fastcgi\os_win32.c" />
+    <ClCompile Include="src\fastcgi\fcgiapp.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\fastcgi\os_win32.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="src\FileSystem.cpp" />
     <ClCompile Include="src\Gallery.cpp" />
+    <ClCompile Include="src\Gif.cpp" />
+    <ClCompile Include="src\gif\dgif_lib.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\gif\egif_lib.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\gif\gifalloc.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\gif\gif_err.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\gif\gif_font.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\gif\gif_hash.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\gif\quantize.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="src\Image.cpp" />
     <ClCompile Include="src\Internal.cpp" />
-    <ClCompile Include="src\jpeg\bmp.c" />
-    <ClCompile Include="src\jpeg\cdjpeg.c" />
-    <ClCompile Include="src\jpeg\jaricom.c" />
-    <ClCompile Include="src\jpeg\jcapimin.c" />
-    <ClCompile Include="src\jpeg\jcapistd.c" />
-    <ClCompile Include="src\jpeg\jcarith.c" />
-    <ClCompile Include="src\jpeg\jccoefct.c" />
+    <ClCompile Include="src\jpeg\bmp.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\cdjpeg.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jaricom.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcapimin.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcapistd.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcarith.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jccoefct.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="src\jpeg\jccolext.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
     </ClCompile>
-    <ClCompile Include="src\jpeg\jccolor.c" />
-    <ClCompile Include="src\jpeg\jcdctmgr.c" />
-    <ClCompile Include="src\jpeg\jchuff.c" />
-    <ClCompile Include="src\jpeg\jcinit.c" />
-    <ClCompile Include="src\jpeg\jcmainct.c" />
-    <ClCompile Include="src\jpeg\jcmarker.c" />
-    <ClCompile Include="src\jpeg\jcmaster.c" />
-    <ClCompile Include="src\jpeg\jcomapi.c" />
-    <ClCompile Include="src\jpeg\jcparam.c" />
-    <ClCompile Include="src\jpeg\jcphuff.c" />
-    <ClCompile Include="src\jpeg\jcprepct.c" />
-    <ClCompile Include="src\jpeg\jcsample.c" />
-    <ClCompile Include="src\jpeg\jctrans.c" />
-    <ClCompile Include="src\jpeg\jdapimin.c" />
-    <ClCompile Include="src\jpeg\jdapistd.c" />
-    <ClCompile Include="src\jpeg\jdarith.c" />
-    <ClCompile Include="src\jpeg\jdatadst-tj.c" />
-    <ClCompile Include="src\jpeg\jdatadst.c" />
-    <ClCompile Include="src\jpeg\jdatasrc-tj.c" />
-    <ClCompile Include="src\jpeg\jdatasrc.c" />
-    <ClCompile Include="src\jpeg\jdcoefct.c" />
+    <ClCompile Include="src\jpeg\jccolor.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcdctmgr.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jchuff.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcinit.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcmainct.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcmarker.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcmaster.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcomapi.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcparam.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcphuff.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcprepct.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jcsample.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jctrans.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdapimin.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdapistd.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdarith.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdatadst-tj.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdatadst.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdatasrc-tj.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdatasrc.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdcoefct.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="src\jpeg\jdcolext.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
     </ClCompile>
-    <ClCompile Include="src\jpeg\jdcolor.c" />
-    <ClCompile Include="src\jpeg\jddctmgr.c" />
-    <ClCompile Include="src\jpeg\jdhuff.c" />
-    <ClCompile Include="src\jpeg\jdinput.c" />
-    <ClCompile Include="src\jpeg\jdmainct.c" />
-    <ClCompile Include="src\jpeg\jdmarker.c" />
-    <ClCompile Include="src\jpeg\jdmaster.c" />
-    <ClCompile Include="src\jpeg\jdmerge.c" />
+    <ClCompile Include="src\jpeg\jdcolor.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jddctmgr.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdhuff.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdinput.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdmainct.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdmarker.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdmaster.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdmerge.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="src\jpeg\jdmrgext.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
     </ClCompile>
-    <ClCompile Include="src\jpeg\jdphuff.c" />
-    <ClCompile Include="src\jpeg\jdpostct.c" />
-    <ClCompile Include="src\jpeg\jdsample.c" />
-    <ClCompile Include="src\jpeg\jdtrans.c" />
-    <ClCompile Include="src\jpeg\jerror.c" />
-    <ClCompile Include="src\jpeg\jfdctflt.c" />
-    <ClCompile Include="src\jpeg\jfdctfst.c" />
-    <ClCompile Include="src\jpeg\jfdctint.c" />
-    <ClCompile Include="src\jpeg\jidctflt.c" />
-    <ClCompile Include="src\jpeg\jidctfst.c" />
-    <ClCompile Include="src\jpeg\jidctint.c" />
-    <ClCompile Include="src\jpeg\jidctred.c" />
-    <ClCompile Include="src\jpeg\jmemmgr.c" />
-    <ClCompile Include="src\jpeg\jmemnobs.c" />
-    <ClCompile Include="src\jpeg\jquant1.c" />
-    <ClCompile Include="src\jpeg\jquant2.c" />
-    <ClCompile Include="src\jpeg\jsimd_none.c" />
-    <ClCompile Include="src\jpeg\jutils.c" />
-    <ClCompile Include="src\jpeg\rdbmp.c" />
-    <ClCompile Include="src\jpeg\rdcolmap.c" />
-    <ClCompile Include="src\jpeg\rdgif.c" />
-    <ClCompile Include="src\jpeg\rdppm.c" />
-    <ClCompile Include="src\jpeg\rdrle.c" />
-    <ClCompile Include="src\jpeg\rdswitch.c" />
-    <ClCompile Include="src\jpeg\rdtarga.c" />
-    <ClCompile Include="src\jpeg\tjutil.c" />
-    <ClCompile Include="src\jpeg\transupp.c" />
-    <ClCompile Include="src\jpeg\turbojpeg.c" />
-    <ClCompile Include="src\jpeg\wrbmp.c" />
-    <ClCompile Include="src\jpeg\wrgif.c" />
-    <ClCompile Include="src\jpeg\wrppm.c" />
-    <ClCompile Include="src\jpeg\wrrle.c" />
-    <ClCompile Include="src\jpeg\wrtarga.c" />
-    <ClCompile Include="src\lpng\png.c" />
-    <ClCompile Include="src\lpng\pngerror.c" />
-    <ClCompile Include="src\lpng\pngget.c" />
-    <ClCompile Include="src\lpng\pngmem.c" />
-    <ClCompile Include="src\lpng\pngpread.c" />
-    <ClCompile Include="src\lpng\pngread.c" />
-    <ClCompile Include="src\lpng\pngrio.c" />
-    <ClCompile Include="src\lpng\pngrtran.c" />
-    <ClCompile Include="src\lpng\pngrutil.c" />
-    <ClCompile Include="src\lpng\pngset.c" />
-    <ClCompile Include="src\lpng\pngtrans.c" />
-    <ClCompile Include="src\lpng\pngwio.c" />
-    <ClCompile Include="src\lpng\pngwrite.c" />
-    <ClCompile Include="src\lpng\pngwtran.c" />
-    <ClCompile Include="src\lpng\pngwutil.c" />
+    <ClCompile Include="src\jpeg\jdphuff.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdpostct.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdsample.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jdtrans.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jerror.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jfdctflt.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jfdctfst.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jfdctint.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jidctflt.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jidctfst.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jidctint.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jidctred.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jmemmgr.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jmemnobs.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jquant1.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jquant2.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jsimd_none.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\jutils.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\rdbmp.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\rdcolmap.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\rdgif.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\rdppm.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\rdrle.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\rdswitch.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\rdtarga.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\tjutil.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\transupp.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\turbojpeg.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\wrbmp.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\wrgif.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\wrppm.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\wrrle.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\jpeg\wrtarga.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\lpng\png.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngerror.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngget.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngmem.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngpread.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngread.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngrio.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngrtran.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngrutil.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngset.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngtrans.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngwio.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngwrite.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngwtran.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\lpng\pngwutil.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Platform.cpp" />
+    <ClCompile Include="src\pngnq\neuquant32.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="src\Serializer.cpp" />
     <ClCompile Include="src\Server.cpp" />
     <ClCompile Include="src\Logging.cpp" />
     <ClCompile Include="src\Parameters.cpp" />
     <ClCompile Include="src\Socket.cpp" />
-    <ClCompile Include="src\sqlite\sqlite3.c" />
-    <ClCompile Include="src\zlib\adler32.c" />
-    <ClCompile Include="src\zlib\compress.c" />
-    <ClCompile Include="src\zlib\crc32.c" />
-    <ClCompile Include="src\zlib\deflate.c" />
-    <ClCompile Include="src\zlib\gzclose.c" />
-    <ClCompile Include="src\zlib\gzlib.c" />
-    <ClCompile Include="src\zlib\gzread.c" />
-    <ClCompile Include="src\zlib\gzwrite.c" />
-    <ClCompile Include="src\zlib\infback.c" />
-    <ClCompile Include="src\zlib\inffast.c" />
-    <ClCompile Include="src\zlib\inflate.c" />
-    <ClCompile Include="src\zlib\inftrees.c" />
-    <ClCompile Include="src\zlib\trees.c" />
-    <ClCompile Include="src\zlib\uncompr.c" />
-    <ClCompile Include="src\zlib\zutil.c" />
+    <ClCompile Include="src\sqlite\sqlite3.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\zlib\adler32.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\zlib\compress.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\zlib\crc32.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\zlib\deflate.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\zlib\gzclose.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\zlib\gzlib.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\zlib\gzread.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\zlib\gzwrite.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\zlib\infback.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\zlib\inffast.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\zlib\inflate.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\zlib\inftrees.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\zlib\trees.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\zlib\uncompr.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="src\zlib\zutil.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </AdditionalOptions>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\b64\cdecode.h" />
@@ -241,6 +819,7 @@
     <ClInclude Include="include\gif\gif_hash.h" />
     <ClInclude Include="include\gif\gif_lib.h" />
     <ClInclude Include="include\gif\gif_lib_private.h" />
+    <ClInclude Include="include\gif\stdbool.h" />
     <ClInclude Include="include\Image.h" />
     <ClInclude Include="include\jpeg\bmp.h" />
     <ClInclude Include="include\jpeg\cderror.h" />
@@ -270,6 +849,7 @@
     <ClInclude Include="include\lpng\pnglibconf.h" />
     <ClInclude Include="include\lpng\pngpriv.h" />
     <ClInclude Include="include\lpng\pngstruct.h" />
+    <ClInclude Include="include\pngnq\neuquant32.h" />
     <ClInclude Include="include\rapidjson\document.h" />
     <ClInclude Include="include\rapidjson\filestream.h" />
     <ClInclude Include="include\rapidjson\prettywriter.h" />

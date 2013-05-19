@@ -34,9 +34,6 @@
     <Filter Include="Source Files\b64">
       <UniqueIdentifier>{bcfbdaf8-bc49-46ae-a35e-ff2bbe754fb7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="zlib">
-      <UniqueIdentifier>{6bd8afe5-1b75-4c01-a1bc-925a75ab93f6}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\zlib">
       <UniqueIdentifier>{3eb62cfd-0566-4e91-a1e3-bf039f2ca9f2}</UniqueIdentifier>
     </Filter>
@@ -57,6 +54,15 @@
     </Filter>
     <Filter Include="Source Files\gif">
       <UniqueIdentifier>{5931c9b1-4ba7-4cbf-b9af-b550103c527d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\pngnq">
+      <UniqueIdentifier>{4213fd1d-f2cc-4727-a6b0-2f5f89708bef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\pngnq">
+      <UniqueIdentifier>{3d121dba-4b40-4eec-b2c3-9f64cdeb9d48}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\zlib">
+      <UniqueIdentifier>{6bd8afe5-1b75-4c01-a1bc-925a75ab93f6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -414,6 +420,33 @@
     <ClCompile Include="src\jpeg\jdtrans.c">
       <Filter>Source Files\jpeg</Filter>
     </ClCompile>
+    <ClCompile Include="src\gif\dgif_lib.c">
+      <Filter>Source Files\gif</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gif\egif_lib.c">
+      <Filter>Source Files\gif</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gif\gif_err.c">
+      <Filter>Source Files\gif</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gif\gif_font.c">
+      <Filter>Source Files\gif</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gif\gif_hash.c">
+      <Filter>Source Files\gif</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gif\gifalloc.c">
+      <Filter>Source Files\gif</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gif\quantize.c">
+      <Filter>Source Files\gif</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Gif.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pngnq\neuquant32.c">
+      <Filter>Source Files\pngnq</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Logging.h">
@@ -507,37 +540,37 @@
       <Filter>Header Files\lpng</Filter>
     </ClInclude>
     <ClInclude Include="include\zlib\crc32.h">
-      <Filter>zlib</Filter>
+      <Filter>Header Files\zlib</Filter>
     </ClInclude>
     <ClInclude Include="include\zlib\deflate.h">
-      <Filter>zlib</Filter>
+      <Filter>Header Files\zlib</Filter>
     </ClInclude>
     <ClInclude Include="include\zlib\gzguts.h">
-      <Filter>zlib</Filter>
+      <Filter>Header Files\zlib</Filter>
     </ClInclude>
     <ClInclude Include="include\zlib\inffast.h">
-      <Filter>zlib</Filter>
+      <Filter>Header Files\zlib</Filter>
     </ClInclude>
     <ClInclude Include="include\zlib\inffixed.h">
-      <Filter>zlib</Filter>
+      <Filter>Header Files\zlib</Filter>
     </ClInclude>
     <ClInclude Include="include\zlib\inflate.h">
-      <Filter>zlib</Filter>
+      <Filter>Header Files\zlib</Filter>
     </ClInclude>
     <ClInclude Include="include\zlib\inftrees.h">
-      <Filter>zlib</Filter>
+      <Filter>Header Files\zlib</Filter>
     </ClInclude>
     <ClInclude Include="include\zlib\trees.h">
-      <Filter>zlib</Filter>
+      <Filter>Header Files\zlib</Filter>
     </ClInclude>
     <ClInclude Include="include\zlib\zconf.h">
-      <Filter>zlib</Filter>
+      <Filter>Header Files\zlib</Filter>
     </ClInclude>
     <ClInclude Include="include\zlib\zlib.h">
-      <Filter>zlib</Filter>
+      <Filter>Header Files\zlib</Filter>
     </ClInclude>
     <ClInclude Include="include\zlib\zutil.h">
-      <Filter>zlib</Filter>
+      <Filter>Header Files\zlib</Filter>
     </ClInclude>
     <ClInclude Include="include\lpng\pnglibconf.h">
       <Filter>Header Files\lpng</Filter>
@@ -616,6 +649,12 @@
     </ClInclude>
     <ClInclude Include="include\gif\gif_lib_private.h">
       <Filter>Header Files\gif</Filter>
+    </ClInclude>
+    <ClInclude Include="include\gif\stdbool.h">
+      <Filter>Header Files\gif</Filter>
+    </ClInclude>
+    <ClInclude Include="include\pngnq\neuquant32.h">
+      <Filter>Header Files\pngnq</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

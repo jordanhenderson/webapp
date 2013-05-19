@@ -12,7 +12,9 @@ two modules will be linked.  Preserve this property!
 #include <limits.h>
 #include <stdint.h>
 #include <fcntl.h>
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include <stdio.h>
 #include <string.h>
 
@@ -51,7 +53,7 @@ DGifOpenFileName(const char *FileName, int *Error)
 {
     int FileHandle;
     GifFileType *GifFile;
-
+	
     if ((FileHandle = open(FileName, O_RDONLY)) == -1) {
 	if (Error != NULL)
 	    *Error = D_GIF_ERR_OPEN_FAILED;

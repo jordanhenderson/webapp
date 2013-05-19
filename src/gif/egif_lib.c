@@ -8,7 +8,9 @@ two modules will be linked.  Preserve this property!
 
 *****************************************************************************/
 
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>

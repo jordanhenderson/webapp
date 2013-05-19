@@ -33,6 +33,9 @@ Gallery::Gallery(shared_ptr<Parameters>& params, shared_ptr<Logging>& logger) {
 		auth = 1;
 	} else
 		auth = 0;
+
+	this->genThumb("test/testgif.gif", 300, 300);
+	
 }
 
 Gallery::~Gallery() {
@@ -99,7 +102,6 @@ string Gallery::getAlbums() {
 		serializer.append(move(rowmap));
 
 	}
-	
 
 	final = serializer.get(RESPONSE_TYPE_DATA);
 
@@ -298,7 +300,8 @@ int Gallery::genThumb(char* file, double shortmax, double longmax) {
 	double newHeight = height * ratio;
 
 
-	image.resize(newWidth, newHeight);
-	image.save(basepath + "/" + thumbspath + "/" + file);
+   	image.resize(30, 80);
+	//image.save(basepath + "/" + thumbspath + "/" + file);
+	image.save(basepath + "/" + thumbspath + "/" + "out.gif");
 	return 0;
 }
