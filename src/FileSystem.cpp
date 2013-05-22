@@ -1,4 +1,5 @@
 #include "FileSystem.h"
+#include "tinydir.h"
 using namespace std;
 unique_ptr<File> FileSystem::Open(const string& fileName, const string& flags) {
 	unique_ptr<File> tmpFile = unique_ptr<File>(new File);
@@ -117,4 +118,23 @@ int FileSystem::Exists(const char* path) {
 	if(stat(path, &buf) == 0)
 		return 1;
 	return 0;
+}
+
+vector<string> FileSystem::GetFiles(string& path, int recurse) {
+	vector<string> files;
+	if(!recurse) {
+		tinydir_dir dir;
+		tinydir_open(&dir, path.c_str());
+		while(dir.has_next) {
+			tinydir_file file;
+			tinydir_readfile(&dir, &file);
+			if(!file.is_dir) 
+				files.push_back(file.name);
+			
+			tinydir_next(&dir);
+		}
+	} else {
+		//recursive case.
+
+	}
 }

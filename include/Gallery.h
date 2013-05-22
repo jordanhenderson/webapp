@@ -18,18 +18,10 @@
 #define SLIDESHOW_RAND_PR 9
 
 #define HTTP_NO_AUTH "Status: 401 Unauthorized\r\nWWW-Authenticate: Basic realm=\"Gallery\"\r\n\r\n"
-
-//TODO move these into client
-
-
-#define DUPLICATE_ALBUM "An album with the specified name or path already exists. Please try again."
-#define ALBUM_ADDED_SUCCESS "Album added successfully!"
-#define ALBUMS_ADDED_SUCCESS "Albums added successfully!"
-#define MISSING_FIELD "Please ensure all required fields are entered correctly."
-#define ALBUM_NOT_EXISTS "The album path specified does not exist. Please try again."
-
 #define RESPONSE_TYPE_DATA 0
 #define RESPONSE_TYPE_TABLE 1
+#define RESPONSE_TYPE_MESSAGE 2
+#define RESPONSE_TYPE_FULL_MESSAGE 3
 
 
 
@@ -57,11 +49,13 @@ public:
 	void process(FCGX_Request* request);
 	std::string getAlbums();
 	std::string getAlbumsTable();
+	std::string addAlbum(std::string name, std::string path, std::string type, std::string recurse, std::string genthumbs);
 	int getDuplicateAlbums(char* name, char* path);
 	std::vector<std::string> getRandomFileIds();
 	std::vector<std::string> getSetIds();
 	std::string getFilename(int);
 	int genThumb(char* file, double shortmax, double longmax);
+	int getDuplicates( std::string name, std::string path );
 };
 
 #endif

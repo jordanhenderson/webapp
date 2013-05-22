@@ -24,7 +24,7 @@ Gallery::Gallery(shared_ptr<Parameters>& params, shared_ptr<Logging>& logger) {
 	dbpath = params->get("dbpath");
 	thumbspath = params->get("thumbspath");
 
-	this->database = unique_ptr<Database>(new Database((basepath + "/" + dbpath).c_str()));
+	this->database = unique_ptr<Database>(new Database((basepath + PATHSEP + dbpath).c_str()));
 
 	//Check authentication
 	user = params->get("username");
@@ -33,8 +33,6 @@ Gallery::Gallery(shared_ptr<Parameters>& params, shared_ptr<Logging>& logger) {
 		auth = 1;
 	} else
 		auth = 0;
-
-	this->genThumb("test/testgif2.gif", 300, 300);
 	
 }
 
@@ -43,7 +41,7 @@ Gallery::~Gallery() {
 }
 
 string Gallery::getPage(const char* page) {
-	string pageuri = basepath +  "/templates/" + string(page) + ".html";
+	string pageuri = basepath +  PATHSEP + "templates" + PATHSEP + string(page) + ".html";
 
 	if(FileSystem::Exists(pageuri)) {
 		string data = HTML_HEADER;
@@ -108,6 +106,38 @@ string Gallery::getAlbums() {
 	return final;
 }
 
+
+int Gallery::getDuplicates( string name, string path ) {
+	unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
+	params->push_back(name);
+	params->push_back(path);
+	
+	unique_ptr<Query> query = database->select("SELECT COUNT(*) FROM albums WHERE name = ? OR path = ?;", params);
+	return stoi((*query->response)[0].at(0));
+}
+
+
+string Gallery::addAlbum( string name, string path, string type, string recurse, string genthumbs ) {
+	if(!is_number(type))
+		return "";
+	int nRecurse = recurse.empty() ? 0 : 1;
+	int nGenThumbs = genthumbs.empty() ? 0 : 1;
+	if(!name.empty() && !path.empty()) {
+		//_addAlbum
+		int nDuplicates = getDuplicates(name, path);
+		Serializer serializer;
+		if(nDuplicates > 0) {
+			serializer.append("DUPLICATE_ALBUM");
+			return serializer.get(RESPONSE_TYPE_MESSAGE);
+		} else {
+			//Add the album.
+
+
+		}
+	}
+	return "";
+}
+
 string Gallery::getAlbumsTable() {
 	unique_ptr<Query> query = database->select("SELECT id, name, added, lastedited, path, type, rating, recursive, (SELECT thumbpath FROM thumbs WHERE id = albums.thumbid) AS thumb FROM albums;", 1);
 
@@ -128,6 +158,8 @@ RequestVars parseRequestVars(char* vars) {
 	char* val = NULL;
 	std::unordered_map<std::string, std::string> varmap;
 	int i;
+	//Set key to be vars, in case ? is not present.
+	key = vars;
 	for(i = 0; vars[i] != '\0'; i++) {
 		if(vars[i] == '?') {
 			key = vars + i + 1;
@@ -150,7 +182,7 @@ RequestVars parseRequestVars(char* vars) {
 		//Copy the key and val into our unordered map.
 		varmap[key] = val;
 	}
-	return varmap;
+	return move(varmap);
 }
 
 void Gallery::process(FCGX_Request* request) {
@@ -191,7 +223,7 @@ void Gallery::process(FCGX_Request* request) {
 			//Create an unordered map containing ?key=var pairs.
 			RequestVars v = parseRequestVars(uri + 4);
 			final = processVars(v);
-		} else if(strcmp(uri, "/") == 0) {
+		} else if(uri[0] == PATHSEP && uri[1] == '\0') {
 			final = getPage("index");
 		} else {
 			//Return the file if it exists. Else return 404.
@@ -260,10 +292,16 @@ string Gallery::getFilename(int fileid) {
 }
 
 string Gallery::processVars(RequestVars& vars) {
-	if(vars["t"] == "albums") {
-		if(vars["f"] == "table")
+	string t = vars["t"];
+	string f = vars["f"];
+
+	//TODO improve this.
+	if(t == "albums") {
+		if(f == "table")
 			return getAlbumsTable();
 		return getAlbums();
+	} else if(t == "addAlbum") {
+		return addAlbum(vars["name"], vars["path"], vars["type"], vars["recurse"], vars["genthumbs"]);
 	} else {
 		return JSON_HEADER + string("{}");
 	}
@@ -271,7 +309,7 @@ string Gallery::processVars(RequestVars& vars) {
 
 
 int Gallery::genThumb(char* file, double shortmax, double longmax) {
-	string imagepath = basepath + "/" + storepath + "/" + file;
+	string imagepath = basepath + PATHSEP + storepath + PATHSEP + file;
 	Image image(imagepath);
 	int err = image.GetLastError();
 	if(image.GetLastError() != ERROR_SUCCESS){
@@ -300,8 +338,7 @@ int Gallery::genThumb(char* file, double shortmax, double longmax) {
 	double newHeight = height * ratio;
 
 
-   	image.resize(30, 80);
-	//image.save(basepath + "/" + thumbspath + "/" + file);
-	image.save(basepath + "/" + thumbspath + "/" + "out.gif");
+   	image.resize(newWidth, newHeight);
+	image.save(basepath + PATHSEP + thumbspath + PATHSEP + file);
 	return 0;
 }

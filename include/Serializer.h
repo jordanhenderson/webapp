@@ -16,6 +16,7 @@ private:
 public:
 	void append(std::vector<std::string>&);
 	void append(std::string&);
+	void append(const char*);
 	void append(std::unordered_map<std::string, std::string>& map);
 	void append(std::unique_ptr<std::unordered_map<std::string, std::string>>&);
 	void append(std::vector<std::vector<std::string>>&);

@@ -28,10 +28,10 @@ int main(int argc, char* argv[]) {
 	}
 	
 	//Create logging instance
-	shared_ptr<Logging> logger = unique_ptr<Logging>(new Logging(params->get("basepath") + "/" + params->get("logfile")));
+	shared_ptr<Logging> logger = unique_ptr<Logging>(new Logging(params->get("basepath") + PATHSEP + params->get("logfile")));
 
 	shared_ptr<ServerHandler> gallery = shared_ptr<ServerHandler>(new Gallery(params, logger));
-	//Create a HTTPServer on port 8080
+	//Create a fastcgi server.
 	Server* server = new Server(logger, gallery);
 	server->setHandler(gallery);
 	server->join();

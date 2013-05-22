@@ -1,7 +1,7 @@
 #include "Database.h"
 using namespace std;
 
-Query::Query(string dbq) {
+Query::Query(const char* dbq) {
 	this->dbq = dbq;
 	params = NULL;
 	response = NULL;
@@ -19,13 +19,14 @@ void Database::process() {
 
 		if(queue.try_pop(qry))  {
 			sqlite3_stmt *stmt;
-			if(sqlite3_prepare_v2(db, qry->dbq.c_str(), qry->dbq.length(), &stmt, 0)) {
+			if(sqlite3_prepare_v2(db, qry->dbq, strlen(qry->dbq), &stmt, 0)) {
 				qry->status = DATABASE_QUERY_FINISHED;
 				continue;
 			}
 			std::vector<std::string> params = *qry->params;
-			for(int i = 0; i < qry->params->size(); i++) {
-				sqlite3_bind_text(stmt, i, params[i].c_str(), params[i].length(), SQLITE_STATIC);
+			int m = qry->params->size();
+			for(int i = 0; i < m; i++) {
+				sqlite3_bind_text(stmt, m-i, params[i].c_str(), params[i].length(), SQLITE_STATIC);
 			}
 			if(qry->response != NULL) {
 				

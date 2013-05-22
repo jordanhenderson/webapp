@@ -64,6 +64,9 @@
     <Filter Include="Header Files\zlib">
       <UniqueIdentifier>{6bd8afe5-1b75-4c01-a1bc-925a75ab93f6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\tinydir">
+      <UniqueIdentifier>{36d2bc81-0681-4816-8e7a-8d6cf802bba8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Logging.cpp">
@@ -655,6 +658,9 @@
     </ClInclude>
     <ClInclude Include="include\pngnq\neuquant32.h">
       <Filter>Header Files\pngnq</Filter>
+    </ClInclude>
+    <ClInclude Include="include\tinydir\tinydir.h">
+      <Filter>Header Files\tinydir</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

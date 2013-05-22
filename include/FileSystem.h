@@ -40,6 +40,8 @@ public:
 		return Exists(path.c_str());	
 	};
 	static long Size(std::unique_ptr<File>& file);
+	//Return a vector containing a list of files found in path.
+	static std::vector<std::string> GetFiles(std::string& path, int recurse);
 	FileSystem() {};
 	~FileSystem() {};
 };		

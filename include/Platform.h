@@ -35,6 +35,7 @@
 #define HTML_404 "Status: 404 Not Found\r\n\r\nThe page you requested cannot be found (404)."
 #define XSTR(a) STR(a)
 #define STR(a) #a
+#define PATHSEP '/'
 class Internal {
 public:
 	int GetLastError();

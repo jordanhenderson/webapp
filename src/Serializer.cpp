@@ -27,6 +27,11 @@ void Serializer::append(string& str) {
 		d.PushBack(str.c_str(), data.GetAllocator());
 }
 
+void Serializer::append(const char* str) {
+	Value&d = data["data"];
+	d.PushBack(str, data.GetAllocator());
+}
+
 void Serializer::append(string& str, Value& value) {
 	if(is_number(str))
 		value.PushBack(stoi(str), data.GetAllocator());

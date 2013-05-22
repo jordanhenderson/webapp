@@ -11,12 +11,12 @@ typedef std::vector<std::vector<std::string>> QueryResponse;
 typedef std::vector<std::string> QueryRow;
 class Query {
 public:
-	std::string dbq;
+	const char* dbq;
 	std::unique_ptr<QueryRow> params; 
 	std::unique_ptr<QueryResponse> response;
 	std::unique_ptr<QueryRow> description;
 	int status;
-	Query(std::string dbq);
+	Query(const char* dbq);
 	~Query();
 };
 class Database : public Internal {
