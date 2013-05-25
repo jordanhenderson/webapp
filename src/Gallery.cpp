@@ -85,14 +85,38 @@ string Gallery::getAlbums() {
 	
 	int nAlbums = std::stoi(((*query->response)[0][0]));
 	Serializer serializer;
-	query = database->select("SELECT id, name, added, lastedited, path, type, rating, recursive, (SELECT thumbpath FROM thumbs WHERE id = albums.thumbid) AS thumb FROM albums;", 1);
+	query = database->select("SELECT id, name, added, lastedited, path, type, rating, recursive, thumbid AS thumb FROM albums;", 1);
 	for(vector<string> row: *query->response) {
-		//Create unique pointers for the map, store them in the maps vector. This way, the map (AKA string pointers) are retained until maps is deconstructed.
+		//create unique pointers for the map, store them in the maps vector. This way, the map (AKA string pointers) are retained until maps is deconstructed.
 		unique_ptr<unordered_map<string, string>> rowmap = unique_ptr<unordered_map<string,string>>(new unordered_map<string,string>);
 		
-		if(!FileSystem::Exists(row[8])) {
+		try{
+			if(row[8].empty()) {
+				//AlbumID -> SELECT first albumfiles, use that file.
+				unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
+				params->push_back(row[0]);
+				unique_ptr<Query> query = database->select("SELECT fileid FROM albumfiles WHERE albumid = ? ORDER BY id ASC LIMIT 1;", params);
+				string sFileID = (*query->response).at(0).at(0);
+				int fileID = std::stoi(sFileID);
+				if(fileID > 0) {
+					//Attempt to use the file referenced by albumfiles
+					unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
+					params->push_back(sFileID);
+					unique_ptr<Query> query = database->select("SELECT path FROM  files WHERE id = ?;", params);
+					row[8] = row[4] + PATHSEP + (*query->response).at(0).at(0);
+				}
+			} else {
+				//AlbumID -> thumbID -> thumb
+				unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
+				params->push_back(row[8]);
+				unique_ptr<Query> query = database->select("SELECT path FROM  thumbs WHERE id = ?;", params);
+				row[8] = row[4] + PATHSEP + (*query->response).at(0).at(0);
+			}
+		} catch(...) {
 			row[8] = DEFAULT_THUMB;
 		}
+
+
 		for(int i = 0; i < query->description->size(); i++) {
 			(*rowmap)[(*query->description)[i]] =  row[i];
 		}
@@ -107,7 +131,7 @@ string Gallery::getAlbums() {
 }
 
 
-int Gallery::getDuplicates( string name, string path ) {
+int Gallery::getDuplicates( string& name, string& path ) {
 	unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
 	params->push_back(name);
 	params->push_back(path);
@@ -117,7 +141,7 @@ int Gallery::getDuplicates( string name, string path ) {
 }
 
 
-string Gallery::addAlbum( string name, string path, string type, string recurse, string genthumbs ) {
+string Gallery::addAlbum( string& name, string& path, string& type, string& recurse, string& genthumbs ) {
 	if(!is_number(type))
 		return "";
 	int nRecurse = recurse.empty() ? 0 : 1;
@@ -131,7 +155,43 @@ string Gallery::addAlbum( string name, string path, string type, string recurse,
 			return serializer.get(RESPONSE_TYPE_MESSAGE);
 		} else {
 			//Add the album.
+			unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
+			//get the date.
+			time_t t;
+			time(&t);
+			char date[9];
+			strftime(date, 9, "%Y%m%d", localtime(&t));
+			
+			params->push_back(name);
+			params->push_back(date);
+			params->push_back(date);
+			params->push_back(path);
+			params->push_back(type);
+			params->push_back(to_string(nRecurse));
 
+			int albumID = database->exec("INSERT INTO albums (name, added, lastedited, path, type, recursive) VALUES (?,?,?,?,?,?);", params);
+			vector<string> files = FileSystem::GetFiles(basepath + PATHSEP + storepath + PATHSEP + path, "", nRecurse);
+			int albumThumbID = -1;
+			if(files.size() > 0) {
+				for(int i = 0; i < files.size(); i++) {
+					//Generate thumb.
+					FileSystem::MakePath(basepath + PATHSEP + thumbspath + PATHSEP + path + PATHSEP + files[i]);
+					genThumb((path + PATHSEP + files[i]).c_str(), 180, 180);
+					//Insert file 
+					unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
+					params->push_back(files[i]);
+					params->push_back(files[i]);
+					params->push_back(date);
+				
+					int fileID = database->exec("INSERT INTO files (name, path, added) VALUES (?,?,?);", params);
+					//Add entry into albumFiles
+					unique_ptr<QueryRow> fparams = unique_ptr<QueryRow>(new QueryRow());
+					fparams->push_back(to_string(albumID));
+					fparams->push_back(to_string(fileID));
+					database->exec("INSERT INTO albumfiles (albumid, fileid) VALUES (?,?);", fparams);
+
+				}
+			}
 
 		}
 	}
@@ -139,15 +199,17 @@ string Gallery::addAlbum( string name, string path, string type, string recurse,
 }
 
 string Gallery::getAlbumsTable() {
-	unique_ptr<Query> query = database->select("SELECT id, name, added, lastedited, path, type, rating, recursive, (SELECT thumbpath FROM thumbs WHERE id = albums.thumbid) AS thumb FROM albums;", 1);
 
 	unordered_map<string, string> tableData;
 	tableData["THUMBS_PATH"] = thumbspath;
 	tableData["thumb"] = "img";
+	char* tabledesc[] = {"id", "name", "added", "lastedited", "path", "type", "rating", "recursive", "thumb"};
+	vector<string> desc(tabledesc, end(tabledesc));
+
 	
 	Serializer serializer;
 	serializer.append(tableData);
-	serializer.append(*query->description);
+	serializer.append(desc);
 	
 	return serializer.get(RESPONSE_TYPE_TABLE);
 }
@@ -235,7 +297,7 @@ void Gallery::process(FCGX_Request* request) {
 		if(strlength == NULL)
 			return;
 		int len = atoi(strlength);
-		char* postdata = new char[len + 1]();
+		char* postdata = new char[len + 1];
 		FCGX_GetStr(postdata, len, request->in);
 		//End the string.
 		postdata[len] = '\0';
@@ -248,7 +310,7 @@ void Gallery::process(FCGX_Request* request) {
 	FCGX_PutStr(final.c_str(), final.length(), request->out);
 }
 
-int Gallery::getDuplicateAlbums(char* name, char* path) {
+int Gallery::getDuplicateAlbums(const char* name, const char* path) {
 	unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
 	params->push_back(name);
 	params->push_back(path);
@@ -301,15 +363,16 @@ string Gallery::processVars(RequestVars& vars) {
 			return getAlbumsTable();
 		return getAlbums();
 	} else if(t == "addAlbum") {
-		return addAlbum(vars["name"], vars["path"], vars["type"], vars["recurse"], vars["genthumbs"]);
+		return addAlbum(vars["name"], vars["path"], vars["type"], vars["recursive"], vars["genthumbs"]);
 	} else {
 		return JSON_HEADER + string("{}");
 	}
 }
 
 
-int Gallery::genThumb(char* file, double shortmax, double longmax) {
+int Gallery::genThumb(const char* file, double shortmax, double longmax) {
 	string imagepath = basepath + PATHSEP + storepath + PATHSEP + file;
+	
 	Image image(imagepath);
 	int err = image.GetLastError();
 	if(image.GetLastError() != ERROR_SUCCESS){

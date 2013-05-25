@@ -22,6 +22,7 @@
 #define RESPONSE_TYPE_TABLE 1
 #define RESPONSE_TYPE_MESSAGE 2
 #define RESPONSE_TYPE_FULL_MESSAGE 3
+#define GETSPATH(x) basepath + PATHSEP + storepath + PATHSEP + x
 
 
 
@@ -49,13 +50,13 @@ public:
 	void process(FCGX_Request* request);
 	std::string getAlbums();
 	std::string getAlbumsTable();
-	std::string addAlbum(std::string name, std::string path, std::string type, std::string recurse, std::string genthumbs);
-	int getDuplicateAlbums(char* name, char* path);
+	std::string addAlbum(std::string& name, std::string& path, std::string& type, std::string& recurse, std::string& genthumbs);
+	int getDuplicateAlbums(const char* name, const char* path);
 	std::vector<std::string> getRandomFileIds();
 	std::vector<std::string> getSetIds();
 	std::string getFilename(int);
-	int genThumb(char* file, double shortmax, double longmax);
-	int getDuplicates( std::string name, std::string path );
+	int genThumb(const char* file, double shortmax, double longmax);
+	int getDuplicates( std::string& name, std::string& path );
 };
 
 #endif

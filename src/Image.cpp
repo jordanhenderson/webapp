@@ -220,8 +220,8 @@ void Image::load(std::string& filename) {
 			bitdepth = 8;
 
 			//Allocate our frame array.
-			frames = new unsigned char*[gif->ImageCount]();
-			maps = new unsigned char*[gif->ImageCount]();
+			frames = new unsigned char*[gif->ImageCount];
+			maps = new unsigned char*[gif->ImageCount];
 			for(int i = 0; i < gif->ImageCount; i++) {
 				gifInsertFrame(i);
 			}
@@ -396,7 +396,7 @@ void Image::resize(int width, int height) {
 void Image::regenRowPointers() {
 	if(row_pointers != NULL)
 		delete row_pointers;
-	row_pointers = new png_bytep[height * sizeof(png_bytep)]();
+	row_pointers = new png_bytep[height * sizeof(png_bytep)];
 	for(int i = 0; i < height; i++) {
 		row_pointers[i] = pixels + (i*width*4);
 	}

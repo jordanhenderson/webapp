@@ -111,12 +111,26 @@ _TINYDIR_FUNC
 int _tinydir_file_cmp(const void *a, const void *b);
 
 
-/* definitions*/
+/* definitions (custom additions to tinydir)*/
+
 #ifdef _MSC_VER
-_TINYDIR_FUNC wchar_t* strtowide(char* str) {
-	size_t len = strlen(str);
-	wchar_t* tmpPath = new wchar_t[len];
-	mbstowcs(tmpPath, str, len);
+#define mkdir(dir) _wmkdir (dir);
+#else
+#define mkdir(dir) mkdir (dir,0755);
+#endif
+
+#ifdef _MSC_VER
+_TINYDIR_FUNC wchar_t* strtowide(const char* str) {
+	size_t requiredSize = mbstowcs(NULL, str, 0);
+	wchar_t* tmpPath = new wchar_t[(requiredSize+1)*sizeof(wchar_t)];
+	mbstowcs(tmpPath, str, requiredSize+1);
+	return tmpPath;
+}
+
+_TINYDIR_FUNC char* widetostr(const wchar_t* str) {
+	size_t requiredSize = wcstombs(NULL, str, 0);
+	char* tmpPath = new char[requiredSize+1];
+	wcstombs(tmpPath, str, requiredSize+1);
 	return tmpPath;
 }
 #endif
@@ -338,9 +352,9 @@ int tinydir_readfile(const tinydir_dir *dir, tinydir_file *file)
 	strcat(file->path, "/");
 	
 #ifdef _MSC_VER
-	wchar_t* filename = strtowide(file->name);
-	wcscpy(filename,
-		dir->_f.cFileName);
+	char* filename = widetostr(dir->_f.cFileName);
+	strcpy(file->name,
+		filename);
 	delete[] filename;
 #else
 	strcpy(file->name,
@@ -435,6 +449,31 @@ int _tinydir_file_cmp(const void *a, const void *b)
 		return -(fa->is_dir - fb->is_dir);
 	}
 	return strncasecmp(fa->name, fb->name, _TINYDIR_FILENAME_MAX);
+}
+
+_TINYDIR_FUNC void tinydir_create(const char* path) {
+#ifdef WIN32
+	//utf8 char*->wchar_t
+	wchar_t* aDir = strtowide(path);
+#else
+	char* aDir = path;
+#endif
+	mkdir(aDir);
+	delete[] aDir;
+}
+
+_TINYDIR_FUNC int tinydir_todir(char* path, int len) {
+	//Remove last block from path.
+	int i = len;
+	for(; i > 0; i--) {
+		if(path[i] == PATHSEP) {
+			path[i] = 0;
+			break;
+		}
+	}
+	//return amount of characters change.
+	return len - i;
+
 }
 
 #endif

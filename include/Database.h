@@ -16,6 +16,7 @@ public:
 	std::unique_ptr<QueryResponse> response;
 	std::unique_ptr<QueryRow> description;
 	int status;
+	int lastrowid;
 	Query(const char* dbq);
 	~Query();
 };
@@ -30,6 +31,8 @@ public:
 	Database(const char* filename);
 	~Database();
 	void select(std::unique_ptr<Query>& query, int desc = 0);
+	int exec(std::unique_ptr<Query>& query);
+	int exec(const char* query, std::unique_ptr<QueryRow>& params);
 	std::unique_ptr<Query> select(const char* query, int desc = 0);
 	std::unique_ptr<Query> select(const char* query, std::unique_ptr<QueryRow>& params, int desc =0);
 };

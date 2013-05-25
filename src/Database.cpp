@@ -26,12 +26,13 @@ void Database::process() {
 			std::vector<std::string> params = *qry->params;
 			int m = qry->params->size();
 			for(int i = 0; i < m; i++) {
-				sqlite3_bind_text(stmt, m-i, params[i].c_str(), params[i].length(), SQLITE_STATIC);
+				sqlite3_bind_text(stmt, i+1, params[i].c_str(), params[i].length(), SQLITE_STATIC);
 			}
 			if(qry->response != NULL) {
 				
 				int havedesc = 0;
-				while(sqlite3_step(stmt) == SQLITE_ROW) {
+				int lasterror = sqlite3_step(stmt);
+				while(lasterror == SQLITE_ROW) {
 					
 					vector<string> row;
 					for(int col = 0; col < sqlite3_column_count(stmt); col++) {
@@ -46,9 +47,10 @@ void Database::process() {
 					}
 					havedesc = 1;
 					qry->response->push_back(row);
-					
+					lasterror = sqlite3_step(stmt);
 				}
 				sqlite3_finalize(stmt);
+				qry->lastrowid = sqlite3_last_insert_rowid(db);
 				qry->status = DATABASE_QUERY_FINISHED;
 			}
 
@@ -104,6 +106,39 @@ void Database::select(unique_ptr<Query>& query, int desc) {
 
 		query.reset(q);		
 	}
+}
+
+int Database::exec(unique_ptr<Query>& query) {
+	if(nError != ERROR_DB_FAILED) {
+		if(query->response == NULL) {
+			unique_ptr<QueryResponse> response = unique_ptr<QueryResponse>(new QueryResponse());
+			query->response = std::move(response);
+		} 
+
+		if(query->params == NULL) {
+			unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
+			query->params = std::move(params);
+		}
+
+		Query* q = query.release();
+		queue.push(q);
+		//Wait for status to be set to DATABASE_QUERY_FINISHED (blocking the calling thread)
+		while(q->status != DATABASE_QUERY_FINISHED) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}
+
+		query.reset(q);		
+		return query->lastrowid;
+		
+	}
+	return 0;
+}
+
+int Database::exec(const char* query, unique_ptr<QueryRow>& params) {
+	unique_ptr<Query> q = unique_ptr<Query>(new Query(query));
+	q->params = std::move(params);
+	return exec(q);
+	
 }
 
 unique_ptr<Query> Database::select(const char* query, int desc) {

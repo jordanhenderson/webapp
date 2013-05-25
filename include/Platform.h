@@ -10,6 +10,8 @@
 #include <cstdarg>
 #include <string>
 #include <memory>
+#include <ctime>
+#include <direct.h>
 
 
 #ifdef WIN32
@@ -36,6 +38,7 @@
 #define XSTR(a) STR(a)
 #define STR(a) #a
 #define PATHSEP '/'
+
 class Internal {
 public:
 	int GetLastError();
