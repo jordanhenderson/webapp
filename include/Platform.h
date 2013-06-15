@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unordered_map>
+#include <map>
 #include <thread>
 #include <cstdio>
 #include <cstdarg>
@@ -12,6 +13,10 @@
 #include <memory>
 #include <ctime>
 #include <direct.h>
+#include <algorithm>
+#include <cctype>
+#include <vector>
+#include <sstream>
 
 
 #ifdef WIN32
@@ -47,4 +52,7 @@ protected: int nError;
 
 bool endsWith(const std::string &a, const std::string &b);
 bool is_number(const std::string &a);
+std::string replaceAll( std::string const& original, std::string const& before, std::string const& after );
+std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems);
+std::vector<std::string> split(const std::string &s, char delim);
 #endif

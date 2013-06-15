@@ -23,11 +23,17 @@
 #define RESPONSE_TYPE_MESSAGE 2
 #define RESPONSE_TYPE_FULL_MESSAGE 3
 #define GETSPATH(x) basepath + PATHSEP + storepath + PATHSEP + x
-
-
-
+#define MAP(m) \
+	m["addAlbum"] = &Gallery::addAlbum; \
+	m["getAlbums"] = &Gallery::getAlbums; \
+	m["delAlbums"] = &Gallery::delAlbums; \
+	m["addBulkAlbums"] = &Gallery::addBulkAlbums;
+#define GETCHK(s) s.empty() ? 0 : 1
 typedef std::unordered_map<std::string, std::string> RequestVars;
+typedef std::string Response;
+typedef int(Gallery::*GallFunc)(RequestVars&, Response&);
 class Logging;
+
 class Gallery : public ServerHandler, Internal {
 private:
 	std::shared_ptr<Logging> logger;
@@ -48,15 +54,18 @@ public:
 	Gallery::Gallery(std::shared_ptr<Parameters>& params, std::shared_ptr<Logging>& logger);
 	Gallery::~Gallery();
 	void process(FCGX_Request* request);
-	std::string getAlbums();
-	std::string getAlbumsTable();
-	std::string addAlbum(std::string& name, std::string& path, std::string& type, std::string& recurse, std::string& genthumbs);
 	int getDuplicateAlbums(const char* name, const char* path);
 	std::vector<std::string> getRandomFileIds();
 	std::vector<std::string> getSetIds();
 	std::string getFilename(int);
 	int genThumb(const char* file, double shortmax, double longmax);
 	int getDuplicates( std::string& name, std::string& path );
+
+	//Main response functions.
+	int getAlbums(RequestVars& vars, Response&);
+	int addAlbum(RequestVars& vars, Response&);
+	int addBulkAlbums(RequestVars& vars, Response&);
+	int delAlbums(RequestVars& vars, Response&);
 };
 
 #endif

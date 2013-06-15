@@ -137,7 +137,9 @@ int Database::exec(unique_ptr<Query>& query) {
 int Database::exec(const char* query, unique_ptr<QueryRow>& params) {
 	unique_ptr<Query> q = unique_ptr<Query>(new Query(query));
 	q->params = std::move(params);
-	return exec(q);
+	int nRet = exec(q);
+	params = std::move(q->params);
+	return nRet;
 	
 }
 
@@ -151,6 +153,7 @@ unique_ptr<Query> Database::select(const char* query, unique_ptr<QueryRow>& para
 	unique_ptr<Query> q = unique_ptr<Query>(new Query(query));
 	q->params = std::move(params);
 	select(q, desc);
+	params = std::move(q->params);
 	return q;
 }
 

@@ -45,6 +45,9 @@ void Serializer::append(unordered_map<string, string>& map) {
 	m.SetObject();
 	for (unordered_map<string, string>::const_iterator it = map.begin(); 
 		it != map.end(); ++it) {
+			if(is_number(it->second))
+			m.AddMember(it->first.c_str(), stoi(it->second), data.GetAllocator());
+			else
 			m.AddMember(it->first.c_str(), it->second.c_str(), data.GetAllocator());
 	}
 	d.PushBack(m, data.GetAllocator());

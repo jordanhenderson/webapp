@@ -134,10 +134,45 @@ void FileSystem::MakePath(const string& path) {
 				//make the directory
 				tinydir_create(tmpPath.c_str());
 			}
+			tinydir_close(&dir);
 			tmpPath[i] = '/';
-
 		}
 	}
+}
+
+void FileSystem::DeletePath(const string& path) {
+	if(!FileSystem::Exists(path))
+		return;
+
+	tinydir_dir dir;
+	tinydir_open(&dir, path.c_str());
+
+	//Delete all files/directories.
+	while(dir.has_next) {
+		tinydir_file f;
+		tinydir_readfile(&dir, &f);
+		if(!f.is_dir) {
+#ifdef WIN32
+			_wunlink(strtowide(f.path));
+#else
+			unlink(f.path);
+#endif
+		}
+		else if(f.name[0] != '.') {
+			DeletePath(f.path);
+		}
+		tinydir_next(&dir);
+
+	}
+	tinydir_close(&dir);
+#ifdef WIN32
+	std::wstring wPath;
+	wPath.assign(path.begin(), path.end());
+	int err = _wrmdir(wPath.c_str());
+#else
+	rmdir(path.c_str());
+#endif
+
 }
 
 vector<string> FileSystem::GetFiles(const string& base, const string& path, int recurse) {

@@ -42,6 +42,7 @@ namespace FileSystem {
 	};
 	long Size(std::unique_ptr<File>& file);
 	void MakePath(const std::string& path);
+	void DeletePath(const std::string& path);
 	//Return a vector containing a list of files found in path.
 	std::vector<std::string> GetFiles(const std::string& base, const std::string& path, int recurse);
 };		
