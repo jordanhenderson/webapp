@@ -23,8 +23,7 @@
 #define RESPONSE_TYPE_MESSAGE 2
 #define RESPONSE_TYPE_FULL_MESSAGE 3
 #define GETSPATH(x) basepath + PATHSEP + storepath + PATHSEP + x
-#define MAP(m) \
-	m["addAlbum"] = &Gallery::addAlbum; \
+#define GALLERYMAP(m) 	m["addAlbum"] = &Gallery::addAlbum; \
 	m["getAlbums"] = &Gallery::getAlbums; \
 	m["delAlbums"] = &Gallery::delAlbums; \
 	m["addBulkAlbums"] = &Gallery::addBulkAlbums;
@@ -40,8 +39,8 @@ private:
 	std::shared_ptr<Parameters> params;
 	std::string getPage(const char* page);
 	std::string loadFile(const char* file);
-	std::unique_ptr<Database> database;
-	RequestVars parseRequestVariables(char* vars);
+	Database* database;
+	RequestVars parseRequestVariables(char* vars, RequestVars& v);
 	std::string processVars(RequestVars&);
 	std::string user;
 	std::string pass;

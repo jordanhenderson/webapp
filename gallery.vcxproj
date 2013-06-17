@@ -75,20 +75,22 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Disabled</Optimization>
       <FunctionLevelLinking>false</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_VISUALC_;_CONSOLE;_WIN32;SQLITE_ENABLE_COLUMN_METADATA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>include;include/fastcgi;include/sqlite;include/rapidjson;include/b64;include/zlib;include/lpng;include/jpeg;include/gif;include/pngnq;include/tinydir</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
-      <OptimizeForWindowsApplication>true</OptimizeForWindowsApplication>
+      <OptimizeForWindowsApplication>false</OptimizeForWindowsApplication>
       <Parallelization>false</Parallelization>
       <UseIntelOptimizedHeaders>true</UseIntelOptimizedHeaders>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MultiProcessorCompilation>false</MultiProcessorCompilation>
       <C99Support>true</C99Support>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <UseProcessorExtensions>None</UseProcessorExtensions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -98,6 +100,7 @@
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -107,7 +110,9 @@
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </AdditionalOptions>
     </ClCompile>
-    <ClCompile Include="src\Database.cpp" />
+    <ClCompile Include="src\Database.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="src\fastcgi\fcgiapp.c">
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </AdditionalOptions>
@@ -120,9 +125,13 @@
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </AdditionalOptions>
     </ClCompile>
-    <ClCompile Include="src\FileSystem.cpp" />
+    <ClCompile Include="src\FileSystem.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="src\Gallery.cpp" />
-    <ClCompile Include="src\Gif.cpp" />
+    <ClCompile Include="src\Gif.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="src\gif\dgif_lib.c">
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </AdditionalOptions>
@@ -166,7 +175,9 @@
       </AdditionalOptions>
     </ClCompile>
     <ClCompile Include="src\Image.cpp" />
-    <ClCompile Include="src\Internal.cpp" />
+    <ClCompile Include="src\Internal.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="src\jpeg\bmp.c">
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </AdditionalOptions>
@@ -706,7 +717,9 @@
     <ClCompile Include="src\Serializer.cpp" />
     <ClCompile Include="src\Server.cpp" />
     <ClCompile Include="src\Logging.cpp" />
-    <ClCompile Include="src\Parameters.cpp" />
+    <ClCompile Include="src\Parameters.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="src\Socket.cpp" />
     <ClCompile Include="src\sqlite\sqlite3.c">
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

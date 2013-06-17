@@ -5,14 +5,13 @@
 
 using namespace std;
 #ifdef WIN32
-#include <Windows.h>
 int wmain(int argc, wchar_t* argv[]) {
 #else
 int main(int argc, char* argv[]) {
 #endif
 	setlocale(LC_CTYPE, "");
 	//Create the gallery instance. Handles all logic
-	shared_ptr<Parameters> params = unique_ptr<Parameters>(new Parameters());
+	shared_ptr<Parameters> params = shared_ptr<Parameters>(new Parameters());
 	//TODO convert params to file
 	if(FileSystem::Exists("gallery.conf")) {
 		std::unique_ptr<File> conf = FileSystem::Open("gallery.conf", "rb");
@@ -38,6 +37,7 @@ int main(int argc, char* argv[]) {
 	//Finish any remaining log messages
 	logger->finish();
 	delete server;
+	
 	return 0;
 }
 

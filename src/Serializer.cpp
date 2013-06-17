@@ -21,15 +21,12 @@ std::string Serializer::get(int type) {
 
 void Serializer::append(string& str) {
 	Value& d = data["data"];
+	
 	if(is_number(str))
 		d.PushBack(stoi(str), data.GetAllocator());
 	else
 		d.PushBack(str.c_str(), data.GetAllocator());
-}
 
-void Serializer::append(const char* str) {
-	Value&d = data["data"];
-	d.PushBack(str, data.GetAllocator());
 }
 
 void Serializer::append(string& str, Value& value) {
@@ -45,17 +42,19 @@ void Serializer::append(unordered_map<string, string>& map) {
 	m.SetObject();
 	for (unordered_map<string, string>::const_iterator it = map.begin(); 
 		it != map.end(); ++it) {
+
+			Value f;
+			f.SetString(it->first.c_str(), it->first.length(), data.GetAllocator());
+			Value s;
 			if(is_number(it->second))
-			m.AddMember(it->first.c_str(), stoi(it->second), data.GetAllocator());
+				s.SetInt(stoi(it->second));
 			else
-			m.AddMember(it->first.c_str(), it->second.c_str(), data.GetAllocator());
+				s.SetString(it->second.c_str(), it->second.length(), data.GetAllocator());
+
+			m.AddMember(f, s, data.GetAllocator());
+			
 	}
 	d.PushBack(m, data.GetAllocator());
-}
-
-void Serializer::append(unique_ptr<unordered_map<string, string>>& map) {
-	append(*(map.get()));
-	storedMaps.push_back(move(map));
 }
 
 void Serializer::append(vector<string>& vector) {

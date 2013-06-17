@@ -26,7 +26,7 @@ void Logging::setFile(string logPath) {
 
 void Logging::process() {
 	while(status == LOGGER_STATUS_PROCESS) {
-		string msg = "";
+		string msg;
 		if(queue.try_pop(msg))  {
 			FileSystem::WriteLine(logFile, msg);
 		}
@@ -51,9 +51,11 @@ void Logging::printf(string format, ...) {
 	sz = vsnprintf(NULL, 0, format.c_str(), args);
 	buffer = new char[sz + 1];
 	vsnprintf(buffer, sz + 1, format.c_str(), args);
-	va_end(args);
 	this->log(string(buffer, sz));
 	delete[] buffer;
+	va_end(args);
+	
+	
 }
 
 void Logging::finish() {

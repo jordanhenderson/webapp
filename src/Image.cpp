@@ -30,7 +30,7 @@ void Image::cleanup() {
 	}
 }
 
-Image::Image(string& filename) {
+Image::Image(const string& filename) {
 	imageType = -1; 
 	row_pointers = NULL;
 	pixels = NULL;
@@ -39,7 +39,8 @@ Image::Image(string& filename) {
 	
 }
 
-void Image::changeType(std::string& filename) {
+void Image::changeType(const string& filename) {
+	
 	for(int i = 0; THUMB_EXTENSIONS_JPEG[i] != NULL; i++) {
 		if(endsWith(filename, THUMB_EXTENSIONS_JPEG[i])) {
 			imageType = IMAGE_TYPE_JPEG;
@@ -72,9 +73,10 @@ void Image::changeType(std::string& filename) {
 		}
 		imageType = IMAGE_TYPE_GIF;
 	}
+	
 }
 
-void Image::load(std::string& filename) {
+void Image::load(const std::string& filename) {
 	if(!FileSystem::Exists(filename)){
 		nError = ERROR_FILE_NOT_FOUND;
 		return;
@@ -241,7 +243,7 @@ finish:
 
 }
 
-void Image::save(std::string& filename) {
+void Image::save(const string& filename) {
 	unique_ptr<File> file = FileSystem::Open(filename, "wb");
 	//Temporarily change the type, to allow output handling to correctly work with different image types.
 	int oldType = imageType;

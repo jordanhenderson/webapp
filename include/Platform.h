@@ -2,21 +2,19 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
+#include <memory>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <vector>
 #include <unordered_map>
+#include <string>
+
 #include <map>
-#include <thread>
 #include <cstdio>
 #include <cstdarg>
-#include <string>
-#include <memory>
-#include <ctime>
 #include <direct.h>
-#include <algorithm>
-#include <cctype>
 #include <vector>
-#include <sstream>
+
 
 
 #ifdef WIN32
@@ -25,9 +23,8 @@
 #else
 #define ENV_NEWLINE "\n"
 #define _wfopen fopen
-
 #endif
-//Similar definitions to winerror.h to avoid incompatibility.
+
 #define ERROR_SUCCESS 0L
 #define ERROR_FILE_NOT_FOUND 2L
 #define ERROR_SOCKET_FAILED 3L
@@ -53,6 +50,33 @@ protected: int nError;
 bool endsWith(const std::string &a, const std::string &b);
 bool is_number(const std::string &a);
 std::string replaceAll( std::string const& original, std::string const& before, std::string const& after );
-std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems);
-std::vector<std::string> split(const std::string &s, char delim);
+
+template < class ContainerT >
+void tokenize(const std::string& str, ContainerT& tokens,
+			  const std::string& delimiters = " ", bool trimEmpty = false) 
+{
+	std::string::size_type pos, lastPos = 0;
+	while(true)
+	{
+		pos = str.find_first_of(delimiters, lastPos);
+		if(pos == std::string::npos)
+		{
+			pos = str.length();
+
+			if(pos != lastPos || !trimEmpty)
+				tokens.push_back(ContainerT::value_type(str.data()+lastPos,
+				(ContainerT::value_type::size_type)pos-lastPos ));
+
+			break;
+		}
+		else
+		{
+			if(pos != lastPos || !trimEmpty)
+				tokens.push_back(ContainerT::value_type(str.data()+lastPos,
+				(ContainerT::value_type::size_type)pos-lastPos ));
+		}
+
+		lastPos = pos + 1;
+	}
+};
 #endif

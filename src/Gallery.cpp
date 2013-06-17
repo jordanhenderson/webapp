@@ -24,7 +24,7 @@ Gallery::Gallery(shared_ptr<Parameters>& params, shared_ptr<Logging>& logger) {
 	dbpath = params->get("dbpath");
 	thumbspath = params->get("thumbspath");
 
-	this->database = unique_ptr<Database>(new Database((basepath + PATHSEP + dbpath).c_str()));
+	this->database = new Database((basepath + PATHSEP + dbpath).c_str());
 
 	//Check authentication
 	user = params->get("username");
@@ -37,11 +37,12 @@ Gallery::Gallery(shared_ptr<Parameters>& params, shared_ptr<Logging>& logger) {
 }
 
 Gallery::~Gallery() {
-	
+	delete database;
 }
 
+	
 string Gallery::getPage(const char* page) {
-	string pageuri = basepath +  PATHSEP + "templates" + PATHSEP + string(page) + ".html";
+	const string pageuri = basepath +  PATHSEP + "templates" + PATHSEP + page + ".html";
 
 	if(FileSystem::Exists(pageuri)) {
 		string data = HTML_HEADER;
@@ -56,6 +57,7 @@ string Gallery::getPage(const char* page) {
 	}
 
 }
+
 
 string Gallery::loadFile(const char* uri) {
 	std::string fileuri = basepath + uri;
@@ -79,8 +81,11 @@ string Gallery::loadFile(const char* uri) {
 	return data;
 }
 
+
 int Gallery::getAlbums(RequestVars& vars, Response& r) {
+
 	string format = vars["f"];
+	Serializer serializer;
 	if(format == "table") {
 		unordered_map<string, string> tableData;
 		tableData["THUMBS_PATH"] = thumbspath;
@@ -89,42 +94,39 @@ int Gallery::getAlbums(RequestVars& vars, Response& r) {
 		vector<string> desc(tabledesc, end(tabledesc));
 
 
-		Serializer serializer;
+		
 		serializer.append(tableData);
 		serializer.append(desc);
 		r = serializer.get(RESPONSE_TYPE_TABLE);
-		return 0;
 	} else {
-
+		
 		unique_ptr<Query> query = database->select("SELECT COUNT(*) FROM albums;");
-	
 		int nAlbums = std::stoi(((*query->response)[0][0]));
-		Serializer serializer;
 		query = database->select("SELECT id, name, added, lastedited, path, type, rating, recursive, thumbid AS thumb FROM albums;", 1);
+		
 		for(vector<string> row: *query->response) {
-			//create unique pointers for the map, store them in the maps vector. This way, the map (AKA string pointers) are retained until maps is deconstructed.
-			unique_ptr<unordered_map<string, string>> rowmap = unique_ptr<unordered_map<string,string>>(new unordered_map<string,string>);
+			unordered_map<string, string> rowmap;
 		
 			try{
 				if(row[8].empty()) {
 					//AlbumID -> SELECT first albumfiles, use that file.
-					unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
-					params->push_back(row[0]);
-					unique_ptr<Query> query = database->select("SELECT fileid FROM albumfiles WHERE albumid = ? ORDER BY id ASC LIMIT 1;", params);
+					QueryRow params;
+					params.push_back(row[0]);
+					unique_ptr<Query> query = database->select("SELECT fileid FROM albumfiles WHERE albumid = ? ORDER BY id ASC LIMIT 1;", &params);
 					string sFileID = (*query->response).at(0).at(0);
 					int fileID = std::stoi(sFileID);
 					if(fileID > 0) {
 						//Attempt to use the file referenced by albumfiles
-						unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
-						params->push_back(sFileID);
-						unique_ptr<Query> query = database->select("SELECT path FROM  files WHERE id = ?;", params);
+						QueryRow params;
+						params.push_back(sFileID);
+						unique_ptr<Query> query = database->select("SELECT path FROM  files WHERE id = ?;", &params);
 						row[8] = row[4] + PATHSEP + (*query->response).at(0).at(0);
 					}
 				} else {
 					//AlbumID -> thumbID -> thumb
-					unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
-					params->push_back(row[8]);
-					unique_ptr<Query> query = database->select("SELECT path FROM  thumbs WHERE id = ?;", params);
+					QueryRow params;
+					params.push_back(row[8]);
+					unique_ptr<Query> query = database->select("SELECT path FROM  thumbs WHERE id = ?;", &params);
 					row[8] = row[4] + PATHSEP + (*query->response).at(0).at(0);
 				}
 			} catch(...) {
@@ -132,31 +134,31 @@ int Gallery::getAlbums(RequestVars& vars, Response& r) {
 			}
 
 			for(int i = 0; i < query->description->size(); i++) {
-				(*rowmap)[(*query->description)[i]] =  row[i];
+				rowmap[(*query->description)[i]] =  row[i];
 			}
-		
-			serializer.append(move(rowmap));
+			serializer.append(rowmap);
 		}
 		
-
 		r = serializer.get(RESPONSE_TYPE_DATA);
 		
-		return 0;
 	}
+	return 0;
 }
 
 
 int Gallery::getDuplicates( string& name, string& path ) {
-	unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
-	params->push_back(name);
-	params->push_back(path);
+	QueryRow params;
+	params.push_back(name);
+	params.push_back(path);
 	
-	unique_ptr<Query> query = database->select("SELECT COUNT(*) FROM albums WHERE name = ? OR path = ?;", params);
+	unique_ptr<Query> query = database->select("SELECT COUNT(*) FROM albums WHERE name = ? OR path = ?;", &params);
 	return stoi((*query->response)[0].at(0));
 }
 
 int Gallery::addBulkAlbums(RequestVars& vars, Response& r) {
-	for(string path: split(vars["paths"], '\n')) {
+	vector<string> paths;
+	tokenize(vars["paths"],paths,"\n");
+	for(string path: paths) {
 		vars["path"] = vars["name"] = ref(path);
 		if(addAlbum(vars, r) == 1) {
 			//An error has occured!
@@ -189,21 +191,21 @@ int Gallery::addAlbum(RequestVars& vars, Response& r) {
 			//Thread the adding code using a sneaky lambda. TODO: Add cleanup of thread.
 			std::thread aa([this, name, path, type, nRecurse, nGenThumbs]() {
 				//Add the album.
-				unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
+				QueryRow params;
 				//get the date.
 				time_t t;
 				time(&t);
 				char date[9];
 				strftime(date, 9, "%Y%m%d", localtime(&t));
 			
-				params->push_back(name);
-				params->push_back(date);
-				params->push_back(date);
-				params->push_back(path);
-				params->push_back(type);
-				params->push_back(to_string(nRecurse));
+				params.push_back(name);
+				params.push_back(date);
+				params.push_back(date);
+				params.push_back(path);
+				params.push_back(type);
+				params.push_back(to_string(nRecurse));
 
-				int albumID = database->exec("INSERT INTO albums (name, added, lastedited, path, type, recursive) VALUES (?,?,?,?,?,?);", params);
+				int albumID = database->exec("INSERT INTO albums (name, added, lastedited, path, type, recursive) VALUES (?,?,?,?,?,?);", &params);
 				vector<string> files = FileSystem::GetFiles(basepath + PATHSEP + storepath + PATHSEP + path, "", nRecurse);
 				int albumThumbID = -1;
 				if(files.size() > 0) {
@@ -214,17 +216,17 @@ int Gallery::addAlbum(RequestVars& vars, Response& r) {
 							genThumb((path + PATHSEP + files[i]).c_str(), 180, 180);
 						}
 						//Insert file 
-						unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
-						params->push_back(files[i]);
-						params->push_back(files[i]);
-						params->push_back(date);
+						QueryRow params;
+						params.push_back(files[i]);
+						params.push_back(files[i]);
+						params.push_back(date);
 				
-						int fileID = database->exec("INSERT INTO files (name, path, added) VALUES (?,?,?);", params);
+						int fileID = database->exec("INSERT INTO files (name, path, added) VALUES (?,?,?);", &params);
 						//Add entry into albumFiles
-						unique_ptr<QueryRow> fparams = unique_ptr<QueryRow>(new QueryRow());
-						fparams->push_back(to_string(albumID));
-						fparams->push_back(to_string(fileID));
-						database->exec("INSERT INTO albumfiles (albumid, fileid) VALUES (?,?);", fparams);
+						QueryRow fparams;
+						fparams.push_back(to_string(albumID));
+						fparams.push_back(to_string(fileID));
+						database->exec("INSERT INTO albumfiles (albumid, fileid) VALUES (?,?);", &fparams);
 
 					}
 				}
@@ -248,55 +250,57 @@ int Gallery::delAlbums(RequestVars& vars, Response& r) {
 	Serializer serializer;
 	unordered_map<std::string, std::string> map;
 
-	string albums = vars["a"];
+
 	int delThumbs = GETCHK(vars["delthumbs"]);
 	int delFiles = GETCHK(vars["delfiles"]);
-	for(string album: split(albums, ',')) {
-		unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
+	vector<string> albums;
+	tokenize(vars["a"],albums,",");
+	for(string album: albums) {
+		QueryRow params;
 
 		//Delete files.
-		params->push_back(album);
-		unique_ptr<Query> query = database->select("SELECT id, fileid FROM albumfiles WHERE albumid = ?;", params);
+		params.push_back(album);
+		unique_ptr<Query> query = database->select("SELECT id, fileid FROM albumfiles WHERE albumid = ?;", &params);
 		for(vector<string> row: (*query->response)) {
 			//Delete thumbs first.
-			unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
-			params->push_back(row.at(1));
-			unique_ptr<Query> query = database->select("SELECT thumbid FROM files WHERE id = ?;", params);
+			QueryRow params;
+			params.push_back(row.at(1));
+			unique_ptr<Query> query = database->select("SELECT thumbid FROM files WHERE id = ?;", &params);
 			try {
 			string thumbid = (*query->response).at(0).at(0);
 			if(!thumbid.empty()) {
 				//Delete the thumb entry.
-				unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
-				params->push_back(thumbid);
-				database->exec("DELETE FROM thumbs WHERE id = ?;", params);
+				QueryRow params;
+				params.push_back(thumbid);
+				database->exec("DELETE FROM thumbs WHERE id = ?;", &params);
 			}
 			} catch(out_of_range ex) {
 				//albumfiles exists, file does not!
 			}
-			database->exec("DELETE FROM files WHERE id = ?;", params);
+			database->exec("DELETE FROM files WHERE id = ?;", &params);
 
 			//Now delete albumfiles.
-			params->clear();
-			params->push_back(row.at(0));
-			database->exec("DELETE FROM albumfiles WHERE id = ?;", params);
+			params.clear();
+			params.push_back(row.at(0));
+			database->exec("DELETE FROM albumfiles WHERE id = ?;", &params);
 		}
 
 		//Finally, delete the album thumb, then the album.
 
-		params->clear();
-		params->push_back(album);
-		query = database->select("SELECT path, thumbid FROM albums WHERE id = ?;", params);
+		params.clear();
+		params.push_back(album);
+		query = database->select("SELECT path, thumbid FROM albums WHERE id = ?;", &params);
 		try {
 			string path = (*query->response).at(0).at(0);
 			string thumbid = (*query->response).at(0).at(1);
 			if(!thumbid.empty()) {
 				//Delete the thumb entry.
-				unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
-				params->push_back(thumbid);
-				database->exec("DELETE FROM thumbs WHERE id = ?;", params);
+				QueryRow params;
+				params.push_back(thumbid);
+				database->exec("DELETE FROM thumbs WHERE id = ?;", &params);
 			}
 			//Delete the album.
-			database->exec("DELETE FROM albums WHERE id = ?;", params);
+			database->exec("DELETE FROM albums WHERE id = ?;", &params);
 			if(delFiles) {
 				//Delete the albums' files.
 				FileSystem::DeletePath(basepath + PATHSEP + storepath + PATHSEP + path);
@@ -317,10 +321,9 @@ int Gallery::delAlbums(RequestVars& vars, Response& r) {
 	return 0;
 }
 
-RequestVars parseRequestVars(char* vars) {
+void parseRequestVars(char* vars, RequestVars& varmap) {
 	char* key = NULL;
 	char* val = NULL;
-	RequestVars varmap;
 	int i;
 	//Set key to be vars, in case ? is not present.
 	key = vars;
@@ -346,8 +349,9 @@ RequestVars parseRequestVars(char* vars) {
 		//Copy the key and val into our unordered map.
 		varmap[key] = val;
 	}
-	return move(varmap);
+	return;
 }
+
 
 void Gallery::process(FCGX_Request* request) {
 	char* method = FCGX_GetParam("REQUEST_METHOD", request->envp);
@@ -358,11 +362,12 @@ void Gallery::process(FCGX_Request* request) {
 		if(auth_header != NULL && strstr(auth_header, "Basic ") == auth_header) {
 			char* auth_details = auth_header + 6;
 			int l = strlen(auth_details);
-			//Decode the base64-encoded string.
-			char* decoded_auth = new char[l + 1]();
+			//Decode the base64-encoded string. We need to initialise with 0's as the decoded string length is unknown (unless we check padding).
+			char* decoded_auth = new char[l / 4 * 3 + 1]();
 			base64_decodestate decode_state;
 			base64_init_decodestate(&decode_state);
 			base64_decode_block(auth_details, l, decoded_auth, &decode_state);
+
 			//Separate username and password.
 			char* pass = strchr(decoded_auth, ':');
 			*(pass) = '\0';
@@ -385,7 +390,8 @@ void Gallery::process(FCGX_Request* request) {
 	if(strcmp(method, "GET") == 0) {
 		if(strstr(uri, "/api") == uri) {
 			//Create an unordered map containing ?key=var pairs.
-			RequestVars v = parseRequestVars(uri + 4);
+			RequestVars v;
+			parseRequestVars(uri + 4, v);
 			final = processVars(v);
 		} else if(uri[0] == PATHSEP && uri[1] == '\0') {
 			final = getPage("index");
@@ -404,7 +410,8 @@ void Gallery::process(FCGX_Request* request) {
 		//End the string.
 		postdata[len] = '\0';
 
-		RequestVars v = parseRequestVars(postdata);
+		RequestVars v;
+		parseRequestVars(postdata, v);
 		for(auto outer = v.begin(); outer!= v.end(); ++outer) {
 			v[outer->first] = replaceAll(v[outer->first], "%2F", "/");
 			v[outer->first] = replaceAll(v[outer->first], "%0D%0A", "\n");
@@ -414,25 +421,26 @@ void Gallery::process(FCGX_Request* request) {
 	}
 
 	FCGX_PutStr(final.c_str(), final.length(), request->out);
+	
 }
 
 int Gallery::getDuplicateAlbums(const char* name, const char* path) {
-	unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
-	params->push_back(name);
-	params->push_back(path);
-	unique_ptr<Query> query = database->select("SELECT COUNT(*) FROM albums WHERE name = ? OR path = ?;", params, 1);
+	QueryRow params;
+	params.push_back(name);
+	params.push_back(path);
+	unique_ptr<Query> query = database->select("SELECT COUNT(*) FROM albums WHERE name = ? OR path = ?;", &params, 1);
 	return stoi((*query->response).at(0).at(0));
 }
 
 vector<string> Gallery::getRandomFileIds() {
 	vector<string> s;
-	unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
-	params->push_back(XSTR(ALBUM_RANDOM));
-	unique_ptr<Query> query = database->select("SELECT COUNT(*) FROM albums WHERE name = ? OR path = ?;", params);
+	QueryRow params;
+	params.push_back(XSTR(ALBUM_RANDOM));
+	unique_ptr<Query> query = database->select("SELECT COUNT(*) FROM albums WHERE name = ? OR path = ?;", &params);
 	for(vector<string> row: *query->response) {
-		unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
-		params->push_back(row.at(0));
-		unique_ptr<Query> query = database->select("SELECT id FROM files WHERE albumid = ? AND enabled = 1;", params);
+		QueryRow params;
+		params.push_back(row.at(0));
+		unique_ptr<Query> query = database->select("SELECT id FROM files WHERE albumid = ? AND enabled = 1;", &params);
 		for(vector<string> s_row: *query->response) {
 			s.push_back(s_row.at(0));
 		}
@@ -442,9 +450,9 @@ vector<string> Gallery::getRandomFileIds() {
 
 vector<string> Gallery::getSetIds() {
 	vector<string> s;
-	unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
-	params->push_back(XSTR(ALBUM_SET));
-	unique_ptr<Query> query = database->select("SELECT id FROM albums WHERE type = ?;", params);
+	QueryRow params;
+	params.push_back(XSTR(ALBUM_SET));
+	unique_ptr<Query> query = database->select("SELECT id FROM albums WHERE type = ?;", &params);
 	for(vector<string> row: *query->response) {
 		s.push_back(row[0]);
 	}
@@ -452,17 +460,18 @@ vector<string> Gallery::getSetIds() {
 }
 
 string Gallery::getFilename(int fileid) {
-	unique_ptr<QueryRow> params = unique_ptr<QueryRow>(new QueryRow());
-	params->push_back(to_string(fileid));
-	unique_ptr<Query> query = database->select("SELECT filename FROM files WHERE id = ?;", params);
+	QueryRow params;
+	params.push_back(to_string(fileid));
+	unique_ptr<Query> query = database->select("SELECT filename FROM files WHERE id = ?;", &params);
 	string filename = (*query->response).at(0).at(0);
 	return filename;
 }
 
+
 string Gallery::processVars(RequestVars& vars) {
 	string t = vars["t"];
 	std::map<string, GallFunc> m;
-	MAP(m);
+	GALLERYMAP(m);
 	std::map<string, GallFunc>::const_iterator miter = m.find(t);
 	if(miter != m.end()) {
 		GallFunc f = miter->second;
@@ -471,10 +480,9 @@ string Gallery::processVars(RequestVars& vars) {
 		(this->*f)(vars, r);
 		return r;
 	} else {
-		return JSON_HEADER + string("{}");
+		return JSON_HEADER "{}";
 	}
 }
-
 
 int Gallery::genThumb(const char* file, double shortmax, double longmax) {
 	string imagepath = basepath + PATHSEP + storepath + PATHSEP + file;

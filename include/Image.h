@@ -17,7 +17,7 @@ private:
 	int height;
 	int nBytes;
 	unsigned char* pixels;
-	void changeType(std::string& filename);
+	void changeType(const std::string& filename);
 	//PNG ONLY
 	int bitdepth;
 	unsigned char** row_pointers; 
@@ -30,7 +30,7 @@ private:
 	void gifInsertFrame(int frame);
 	void gifMakeMap(unsigned char* image, int width, int height, unsigned char** map, unsigned char** raster);
 public:
-	Image(std::string& filename);
+	Image(const std::string& filename);
 	~Image();
 	inline int getWidth() {
 		return width;
@@ -38,9 +38,9 @@ public:
 	inline int getHeight() {
 		return height;	
 	};
-	void load(std::string& filename);
+	void load(const std::string& filename);
 	void resize(int width, int height);
-	void save(std::string& filename);
+	void save(const std::string& filename);
 };
 
 #endif
