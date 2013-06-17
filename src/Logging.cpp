@@ -26,18 +26,19 @@ void Logging::setFile(string logPath) {
 
 void Logging::process() {
 	while(status == LOGGER_STATUS_PROCESS) {
-		string msg;
+		string* msg;
 		if(queue.try_pop(msg))  {
-			FileSystem::WriteLine(logFile, msg);
+			FileSystem::WriteLine(logFile, *msg);
+			delete msg;
 		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		this_thread::sleep_for(chrono::microseconds(100));
 	}
 }
 
-void Logging::log(string msg) {
+void Logging::log(const string& msg) {
 	//Insert msg into our message queue for the Logging thread to handle.
 	if(logFile == NULL || logFile->pszFile != NULL)
-		queue.push(msg);
+		queue.push(new string(msg));
 }
 
 void Logging::printf(string format, ...) {
@@ -66,9 +67,10 @@ void Logging::finish() {
 		logger.join();
 	else return;
 	//Process any messages still on the queue
-	string msg = "";
+	string* msg;
 	while(queue.try_pop(msg)) {
-		FileSystem::WriteLine(logFile, msg);
+		FileSystem::WriteLine(logFile, *msg);
+		delete msg;
 	}
 	//Finally, close the file.
 	FileSystem::Close(logFile);

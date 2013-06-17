@@ -67,16 +67,14 @@ void Database::process() {
 					
 					havedesc = 1;
 					qry->response->push_back(row);
-					lasterror = sqlite3_step(stmt);
 					}
+					lasterror = sqlite3_step(stmt);
 				}
 				sqlite3_finalize(stmt);
 				qry->lastrowid = sqlite3_last_insert_rowid(db);
 				qry->status = DATABASE_QUERY_FINISHED;
-			
-
 		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		this_thread::sleep_for(chrono::milliseconds(1));
 	}
 }
 
@@ -107,7 +105,7 @@ void Database::select(Query* query) {
 		queue.push(query);
 		//Wait for status to be set to DATABASE_QUERY_FINISHED (blocking the calling thread)
 		while(query->status != DATABASE_QUERY_FINISHED) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			this_thread::sleep_for(chrono::milliseconds(1));
 		}
 
 		

@@ -76,7 +76,7 @@ void Image::changeType(const string& filename) {
 	
 }
 
-void Image::load(const std::string& filename) {
+void Image::load(const string& filename) {
 	if(!FileSystem::Exists(filename)){
 		nError = ERROR_FILE_NOT_FOUND;
 		return;

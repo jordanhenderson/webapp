@@ -7,7 +7,7 @@ string Parameters::get(string param) {
 		retVal = params->at(param);
 		//param does not exist
 	}
-	catch(const std::out_of_range&) {
+	catch(const out_of_range&) {
 		retVal = "";
 	}
 	return retVal;
@@ -18,14 +18,14 @@ const int Parameters::getDigit(string param) {
 }
 
 void Parameters::set(string param, string value) {
-	params->insert(std::make_pair(param, value));
+	params->insert(make_pair(param, value));
 }
 
 bool Parameters::hasParam(string param) {
 	try {
 		string val = params->at(param);
 		return true;
-	} catch(const std::out_of_range&) {
+	} catch(const out_of_range&) {
 		return false;
 	}
 }

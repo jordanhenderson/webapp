@@ -11,7 +11,7 @@ Serializer::Serializer() {
 }
 
 
-std::string Serializer::get(int type) {
+string Serializer::get(int type) {
 	Writer<StringBuffer> writer(buffer);
 	data.AddMember("type", type, data.GetAllocator());
 	data.Accept(writer);

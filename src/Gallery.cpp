@@ -60,8 +60,8 @@ string Gallery::getPage(const char* page) {
 
 
 string Gallery::loadFile(const char* uri) {
-	std::string fileuri = basepath + uri;
-	std::string data;
+	string fileuri = basepath + uri;
+	string data;
 
 		if(FileSystem::Exists(fileuri)) {
 			data = HTML_HEADER;
@@ -101,7 +101,7 @@ int Gallery::getAlbums(RequestVars& vars, Response& r) {
 	} else {
 		
 		unique_ptr<Query> query = database->select("SELECT COUNT(*) FROM albums;");
-		int nAlbums = std::stoi(((*query->response)[0][0]));
+		int nAlbums = stoi(((*query->response)[0][0]));
 		query = database->select("SELECT id, name, added, lastedited, path, type, rating, recursive, thumbid AS thumb FROM albums;", 1);
 		
 		for(vector<string> row: *query->response) {
@@ -114,7 +114,7 @@ int Gallery::getAlbums(RequestVars& vars, Response& r) {
 					params.push_back(row[0]);
 					unique_ptr<Query> query = database->select("SELECT fileid FROM albumfiles WHERE albumid = ? ORDER BY id ASC LIMIT 1;", &params);
 					string sFileID = (*query->response).at(0).at(0);
-					int fileID = std::stoi(sFileID);
+					int fileID = stoi(sFileID);
 					if(fileID > 0) {
 						//Attempt to use the file referenced by albumfiles
 						QueryRow params;
@@ -179,7 +179,7 @@ int Gallery::addAlbum(RequestVars& vars, Response& r) {
 	string path = vars["path"];
 	int addStatus = 0;
 	Serializer serializer;
-	unordered_map<std::string, std::string> map;
+	unordered_map<string, string> map;
 	if(!name.empty() && !path.empty()) {
 		//_addAlbum
 		int nDuplicates = getDuplicates(name, path);
@@ -189,7 +189,7 @@ int Gallery::addAlbum(RequestVars& vars, Response& r) {
 			addStatus = 2;
 		} else {
 			//Thread the adding code using a sneaky lambda. TODO: Add cleanup of thread.
-			std::thread aa([this, name, path, type, nRecurse, nGenThumbs]() {
+			thread aa([this, name, path, type, nRecurse, nGenThumbs]() {
 				//Add the album.
 				QueryRow params;
 				//get the date.
@@ -248,7 +248,7 @@ int Gallery::addAlbum(RequestVars& vars, Response& r) {
 
 int Gallery::delAlbums(RequestVars& vars, Response& r) {
 	Serializer serializer;
-	unordered_map<std::string, std::string> map;
+	unordered_map<string, string> map;
 
 
 	int delThumbs = GETCHK(vars["delthumbs"]);
@@ -386,7 +386,7 @@ void Gallery::process(FCGX_Request* request) {
 		}
 	}
 
-	std::string final;
+	string final;
 	if(strcmp(method, "GET") == 0) {
 		if(strstr(uri, "/api") == uri) {
 			//Create an unordered map containing ?key=var pairs.
@@ -470,9 +470,9 @@ string Gallery::getFilename(int fileid) {
 
 string Gallery::processVars(RequestVars& vars) {
 	string t = vars["t"];
-	std::map<string, GallFunc> m;
+	map<string, GallFunc> m;
 	GALLERYMAP(m);
-	std::map<string, GallFunc>::const_iterator miter = m.find(t);
+	map<string, GallFunc>::const_iterator miter = m.find(t);
 	if(miter != m.end()) {
 		GallFunc f = miter->second;
 		Response r;

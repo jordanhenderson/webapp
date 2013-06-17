@@ -12,21 +12,21 @@ bool endsWith(const string &a, const string &b) {
 	}
 }
 bool is_number(const string &s) {	
-		return !s.empty() && std::find_if(s.begin(), 
-			s.end(), [](char c) { return !std::isdigit(c); }) == s.end();
+		return !s.empty() && find_if(s.begin(), 
+			s.end(), [](char c) { return !isdigit(c); }) == s.end();
 }
 
-std::string replaceAll( std::string const& original, std::string const& before, std::string const& after ) {
-	std::string retval;
-	std::string::const_iterator end     = original.end();
-	std::string::const_iterator current = original.begin();
-	std::string::const_iterator next    =
-		std::search( current, end, before.begin(), before.end() );
+string replaceAll( string const& original, string const& before, string const& after ) {
+	string retval;
+	string::const_iterator end     = original.end();
+	string::const_iterator current = original.begin();
+	string::const_iterator next    =
+		search( current, end, before.begin(), before.end() );
 	while ( next != end ) {
 		retval.append( current, next );
 		retval.append( after );
 		current = next + before.size();
-		next = std::search( current, end, before.begin(), before.end() );
+		next = search( current, end, before.begin(), before.end() );
 	}
 	retval.append( current, next );
 	return retval;

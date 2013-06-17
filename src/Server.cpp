@@ -22,14 +22,12 @@ void Server::run(int nThread, int sock) {
 		if(handler != NULL)
 			handler->process(&request); 
 		
-
-		//std::this_thread::sleep_for(std::chrono::seconds(2));
 		FCGX_Finish_r(&request);
 	}
 	
 }
 
-Server::Server( std::shared_ptr<Logging>& logging, std::shared_ptr<ServerHandler>& handler) {
+Server::Server( shared_ptr<Logging>& logging, shared_ptr<ServerHandler>& handler) {
 	this->logger = logging;
 	if(FCGX_IsCGI()) {
 		logger->log("Running as CGI Server.");

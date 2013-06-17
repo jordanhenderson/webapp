@@ -11,7 +11,7 @@ unique_ptr<File> FileSystem::Open(const string& fileName, const string& flags) {
 	}
 	
 #ifdef WIN32
-	std::wstring wfileName, wflags;
+	wstring wfileName, wflags;
 	wfileName.assign(fileName.begin(), fileName.end());
 	wflags.assign(actualFlag.begin(), actualFlag.end());
 	tmpFile->pszFile = _wfopen(wfileName.c_str(), wflags.c_str());
@@ -162,17 +162,17 @@ void FileSystem::DeletePath(const string& path) {
 			DeletePath(f.path);
 		}
 		tinydir_next(&dir);
-
 	}
+	
 	tinydir_close(&dir);
 #ifdef WIN32
-	std::wstring wPath;
+	wstring wPath;
 	wPath.assign(path.begin(), path.end());
 	int err = _wrmdir(wPath.c_str());
 #else
 	rmdir(path.c_str());
 #endif
-
+	
 }
 
 vector<string> FileSystem::GetFiles(const string& base, const string& path, int recurse) {

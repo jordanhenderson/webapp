@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
 	shared_ptr<Parameters> params = shared_ptr<Parameters>(new Parameters());
 	//TODO convert params to file
 	if(FileSystem::Exists("gallery.conf")) {
-		std::unique_ptr<File> conf = FileSystem::Open("gallery.conf", "rb");
+		auto conf = FileSystem::Open("gallery.conf", "rb");
 		FileSystem::Process(conf, params.get(), (void*)Parameters::parseBuffer);
 		FileSystem::Close(conf);
 	} else {
@@ -27,9 +27,9 @@ int main(int argc, char* argv[]) {
 	}
 	
 	//Create logging instance
-	shared_ptr<Logging> logger = unique_ptr<Logging>(new Logging(params->get("basepath") + PATHSEP + params->get("logfile")));
+	auto logger = shared_ptr<Logging>(new Logging(params->get("basepath") + PATHSEP + params->get("logfile")));
+	auto gallery = shared_ptr<ServerHandler>(new Gallery(params, logger));
 
-	shared_ptr<ServerHandler> gallery = shared_ptr<ServerHandler>(new Gallery(params, logger));
 	//Create a fastcgi server.
 	Server* server = new Server(logger, gallery);
 	server->setHandler(gallery);

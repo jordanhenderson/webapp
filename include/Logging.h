@@ -10,7 +10,7 @@
 #define LOGGER_STATUS_FINISHED 1
 class Logging : public Internal {
 	std::thread logger;
-	tbb::concurrent_queue<std::string> queue;
+	tbb::concurrent_queue<std::string*> queue;
 	void process();
 	std::unique_ptr<File> logFile;
 	int status;
@@ -19,7 +19,7 @@ public:
 	Logging();
 	~Logging(){};
 	void printf(std::string format, ...);
-	void log(std::string msg);
+	void log(const std::string& msg);
 	inline void setFile(std::string file);
 	void finish();
 	
