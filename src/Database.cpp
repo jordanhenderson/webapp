@@ -145,7 +145,7 @@ unique_ptr<Query> Database::select(const string& query, int desc) {
 }
 
 unique_ptr<Query> Database::select(const string& query, QueryRow* params, int desc) {
-	unique_ptr<Query> q = unique_ptr<Query>(new Query(query, params));
+	auto q = unique_ptr<Query>(new Query(query, params));
 	if(desc)
 		q->description = new QueryRow();
 

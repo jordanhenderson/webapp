@@ -90,7 +90,8 @@ void Image::load(const string& filename) {
 
 	changeType(filename);
 
-	unique_ptr<File> file = FileSystem::Open(filename, "rb");
+	File file;
+	FileSystem::Open(filename, "rb", &file);
 
 	switch(imageType) {
 	case IMAGE_TYPE_JPEG: 
@@ -101,7 +102,7 @@ void Image::load(const string& filename) {
 			cinfo.err = jpeg_std_error (&jerr);
 			jpeg_create_decompress (&cinfo);
 
-			jpeg_stdio_src(&cinfo, file->pszFile);
+			jpeg_stdio_src(&cinfo, file.pszFile);
 			jpeg_read_header(&cinfo, TRUE);
 
 			width = cinfo.image_width;
@@ -134,7 +135,7 @@ void Image::load(const string& filename) {
 	case IMAGE_TYPE_PNG: 
 		{
 			png_byte header[8];
-			fread(header, 1, 8, file->pszFile);
+			fread(header, 1, 8, file.pszFile);
 			int is_png = !png_sig_cmp(header, 0, 8);
 			if(!is_png) {
 				nError = ERROR_INVALID_IMAGE;
@@ -159,7 +160,7 @@ void Image::load(const string& filename) {
 				goto finish;
 			}
 
-			png_init_io(png_ptr, file->pszFile);
+			png_init_io(png_ptr, file.pszFile);
 			png_set_sig_bytes(png_ptr, 8);
 
 			png_read_info(png_ptr, info_ptr);
@@ -203,9 +204,9 @@ void Image::load(const string& filename) {
 
 			//DGifOpenFileHandle(file->pszFile);
 			int error;
-			gif = DGifOpenFileHandle(fileno(file->pszFile), &error);
+			gif = DGifOpenFileHandle(fileno(file.pszFile), &error);
 
-			file->pszFile = NULL;
+			file.pszFile = NULL;
 			if(!gif) {
 				nError = ERROR_IMAGE_PROCESSING_FAILED;
 				goto finish;
@@ -230,7 +231,7 @@ void Image::load(const string& filename) {
 			pixels = frames[0];
 			
 			//File now handled by giflib.
-			file->pszFile = NULL;
+			file.pszFile = NULL;
 			
 		}
 		break;
@@ -238,13 +239,14 @@ void Image::load(const string& filename) {
 
 	nError = ERROR_SUCCESS;
 finish:
-	if(file->pszFile != NULL)
-		FileSystem::Close(file);
+	if(file.pszFile != NULL)
+		FileSystem::Close(&file);
 
 }
 
 void Image::save(const string& filename) {
-	unique_ptr<File> file = FileSystem::Open(filename, "wb");
+	File file;
+	FileSystem::Open(filename, "wb", &file);
 	//Temporarily change the type, to allow output handling to correctly work with different image types.
 	int oldType = imageType;
 	changeType(filename);
@@ -256,7 +258,7 @@ void Image::save(const string& filename) {
 			unsigned char* input_data[1];
 			cinfo.err = jpeg_std_error (&jerr);
 			jpeg_create_compress(&cinfo);
-			jpeg_stdio_dest(&cinfo, file->pszFile);
+			jpeg_stdio_dest(&cinfo, file.pszFile);
 			cinfo.image_width = width;
 			cinfo.image_height = height;
 			cinfo.input_components = 4;
@@ -302,7 +304,7 @@ void Image::save(const string& filename) {
 				goto finish;
 			}
 
-			png_init_io(png_ptr, file->pszFile);
+			png_init_io(png_ptr, file.pszFile);
 			png_set_IHDR(png_ptr, info_ptr, width, height,
 				bitdepth, PNG_COLOR_TYPE_RGBA, PNG_INTERLACE_NONE,
 				PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
@@ -318,7 +320,7 @@ void Image::save(const string& filename) {
 		break;
 	case IMAGE_TYPE_GIF: {
 		int error;
-		GifFileType* output = EGifOpenFileHandle(fileno(file->pszFile), &error);
+		GifFileType* output = EGifOpenFileHandle(fileno(file.pszFile), &error);
 		if(!output) {
 			nError = ERROR_IMAGE_PROCESSING_FAILED;
 			goto finish;
@@ -339,7 +341,7 @@ void Image::save(const string& filename) {
 			nError = ERROR_IMAGE_PROCESSING_FAILED;
 			goto finish;
 		}
-		file->pszFile = NULL;
+		file.pszFile = NULL;
 
 		}
 		break;
@@ -348,8 +350,8 @@ void Image::save(const string& filename) {
 	nError = ERROR_SUCCESS;
 finish:
 	imageType = oldType;
-	if(file->pszFile != NULL)
-		FileSystem::Close(file);
+	if(file.pszFile != NULL)
+		FileSystem::Close(&file);
 	
 }
 

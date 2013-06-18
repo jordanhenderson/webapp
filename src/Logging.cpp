@@ -2,6 +2,7 @@
 using namespace std;
 Logging::Logging(string logPath) {
 	//Open a file for writing.
+	logFile = new File();
 	setFile(logPath);
 	status = LOGGER_STATUS_PROCESS;
 	//Create a logging thread that will continuously queue.pop().
@@ -10,9 +11,13 @@ Logging::Logging(string logPath) {
 
 }
 
+Logging::~Logging() {
+	delete logFile;
+}
+
 Logging::Logging() {
 	//Empty logging instance. No logFile.
-	logFile = NULL;
+	logFile = new File();
 	status = LOGGER_STATUS_PROCESS;
 	logger = thread(&Logging::process, this);
 }
@@ -20,7 +25,7 @@ Logging::Logging() {
 void Logging::setFile(string logPath) {
 	if(logFile != NULL) 
 		FileSystem::Close(logFile);
-	logFile = FileSystem::Open(logPath, "w");
+	FileSystem::Open(logPath, "w", logFile);
 
 }
 

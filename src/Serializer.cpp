@@ -16,7 +16,7 @@ string Serializer::get(int type) {
 	data.AddMember("type", type, data.GetAllocator());
 	data.Accept(writer);
 	
-	return JSON_HEADER + string(buffer.GetString(), buffer.Size());
+	return string(buffer.GetString(), buffer.Size());
 }
 
 void Serializer::append(string& str) {

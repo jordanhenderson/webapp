@@ -27,8 +27,7 @@ void Server::run(int nThread, int sock) {
 	
 }
 
-Server::Server( shared_ptr<Logging>& logging, shared_ptr<ServerHandler>& handler) {
-	this->logger = logging;
+Server::Server(ServerHandler* handler) {
 	if(FCGX_IsCGI()) {
 		logger->log("Running as CGI Server.");
 	}
@@ -47,7 +46,7 @@ Server::~Server() {
 
 }
 
-void Server::setHandler(shared_ptr<ServerHandler> &handler) {
+void Server::setHandler(ServerHandler* handler) {
 	this->handler = handler;
 }
 

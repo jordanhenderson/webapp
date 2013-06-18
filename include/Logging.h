@@ -12,12 +12,12 @@ class Logging : public Internal {
 	std::thread logger;
 	tbb::concurrent_queue<std::string*> queue;
 	void process();
-	std::unique_ptr<File> logFile;
+	File* logFile;
 	int status;
 public:
 	Logging(std::string logPath);
 	Logging();
-	~Logging(){};
+	~Logging();
 	void printf(std::string format, ...);
 	void log(const std::string& msg);
 	inline void setFile(std::string file);
@@ -25,5 +25,7 @@ public:
 	
 
 };
+
+extern Logging* logger;
 
 #endif

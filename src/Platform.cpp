@@ -1,7 +1,7 @@
 #include "Platform.h"
 #include <algorithm>
 #include <cctype>
-
+#include <ctime>
 using namespace std;
 bool endsWith(const string &a, const string &b) {
 
@@ -30,4 +30,41 @@ string replaceAll( string const& original, string const& before, string const& a
 	}
 	retval.append( current, next );
 	return retval;
+}
+
+std::string string_format(const std::string fmt, ...) {
+	int size = 100;
+	std::string str;
+	va_list ap;
+	while (1) {
+		str.resize(size);
+		va_start(ap, fmt);
+		int n = vsnprintf((char *)str.c_str(), size, fmt.c_str(), ap);
+		va_end(ap);
+		if (n > -1 && n < size) {
+			str.resize(n);
+			return str;
+		}
+		if (n > -1)
+			size = n + 1;
+		else
+			size *= 2;
+	}
+	return str;
+}
+
+std::string date_format(const std::string fmt, const size_t datesize, time_t* t, int gmt) {
+	time_t actual_time;
+	if(t == NULL) {
+		time(&actual_time);
+	} else actual_time = *t;
+	std::string str;
+	str.resize(datesize);
+	if(!gmt) strftime((char*)str.c_str(), datesize, fmt.c_str(), localtime(&actual_time));
+	else strftime((char*)str.c_str(), datesize, fmt.c_str(), gmtime(&actual_time));
+	return str;
+}
+
+void add_days(time_t& t, int days) {
+	t += days * 24 * 3600;
 }

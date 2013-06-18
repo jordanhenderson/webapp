@@ -35,13 +35,13 @@ class Logging;
 
 class Gallery : public ServerHandler, Internal {
 private:
-	std::shared_ptr<Logging> logger;
-	std::shared_ptr<Parameters> params;
-	std::string getPage(const char* page);
-	std::string loadFile(const char* file);
+	
+	Parameters* params;
+	std::string getPage(const std::string& page);
+	std::string loadFile(const std::string& file);
 	Database* database;
 	RequestVars parseRequestVariables(char* vars, RequestVars& v);
-	std::string processVars(RequestVars&);
+	Response processVars(RequestVars&);
 	std::string user;
 	std::string pass;
 	std::string basepath;
@@ -49,16 +49,19 @@ private:
 	std::string dbpath;
 	std::string thumbspath;
 	int auth;
-public:
-	Gallery::Gallery(std::shared_ptr<Parameters>& params, std::shared_ptr<Logging>& logger);
-	Gallery::~Gallery();
-	void process(FCGX_Request* request);
+
 	int getDuplicateAlbums(const char* name, const char* path);
 	std::vector<std::string> getRandomFileIds();
 	std::vector<std::string> getSetIds();
 	std::string getFilename(int);
 	int genThumb(const char* file, double shortmax, double longmax);
 	int getDuplicates( std::string& name, std::string& path );
+	std::string genCookie(const std::string& name, const std::string& value, time_t* date=NULL);
+public:
+	Gallery::Gallery(Parameters* params);
+	Gallery::~Gallery();
+	void process(FCGX_Request* request);
+
 
 	//Main response functions.
 	int getAlbums(RequestVars& vars, Response&);
