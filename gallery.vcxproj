@@ -108,12 +108,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\b64\cdecode.c">
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </AdditionalOptions>
-    </ClCompile>
     <ClCompile Include="src\Database.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
     </ClCompile>
@@ -718,12 +712,14 @@
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </AdditionalOptions>
     </ClCompile>
+    <ClCompile Include="src\RamSession.cpp" />
     <ClCompile Include="src\Serializer.cpp" />
     <ClCompile Include="src\Server.cpp" />
     <ClCompile Include="src\Logging.cpp" />
     <ClCompile Include="src\Parameters.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="src\Session.cpp" />
     <ClCompile Include="src\Socket.cpp" />
     <ClCompile Include="src\sqlite\sqlite3.c">
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -823,8 +819,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\b64\cdecode.h" />
-    <ClInclude Include="include\b64\decode.h" />
+    <ClInclude Include="include\Container.h" />
     <ClInclude Include="include\Database.h" />
     <ClInclude Include="include\fastcgi\fastcgi.h" />
     <ClInclude Include="include\fastcgi\fcgiapp.h" />
@@ -879,6 +874,7 @@
     <ClInclude Include="include\Logging.h" />
     <ClInclude Include="include\Parameters.h" />
     <ClInclude Include="include\Platform.h" />
+    <ClInclude Include="include\Session.h" />
     <ClInclude Include="include\Socket.h" />
     <ClInclude Include="include\sqlite\sqlite3.h" />
     <ClInclude Include="include\tinydir\tinydir.h" />
@@ -893,6 +889,11 @@
     <ClInclude Include="include\zlib\zconf.h" />
     <ClInclude Include="include\zlib\zlib.h" />
     <ClInclude Include="include\zlib\zutil.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="ext\cryptopp\cryptlib.vcxproj">
+      <Project>{3423ec9a-52e4-4a4d-9753-edebc38785ef}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

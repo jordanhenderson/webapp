@@ -17,6 +17,7 @@
 
 
 
+
 #ifdef WIN32
 #define ENV_NEWLINE "\r\n"
 #define snprintf _snprintf
@@ -40,7 +41,11 @@
 #define HTML_404 "Status: 404 Not Found\r\n\r\nThe page you requested cannot be found (404)."
 #define XSTR(a) STR(a)
 #define STR(a) #a
-#define PATHSEP '/'
+#define PSEP "/"
+#define PATHSEP PSEP[0]
+
+
+extern std::string empty;
 
 class Internal {
 public:
@@ -80,6 +85,9 @@ void tokenize(const std::string& str, ContainerT& tokens,
 		lastPos = pos + 1;
 	}
 };
+
+
+
 std::string string_format(const std::string fmt, ...);
 std::string date_format(const std::string fmt, const size_t datesize, time_t* t=NULL, int gmt = 0);
 void add_days(time_t& t, int days);

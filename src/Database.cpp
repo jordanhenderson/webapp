@@ -112,25 +112,11 @@ void Database::select(Query* query) {
 	}
 }
 
-void Database::select(unique_ptr<Query>& query) {
-	Query* q = query.release();
-	select(q);
-	query.reset(q);
-}
-
 int Database::exec(Query* query) {
 	select(query);
 	if(nError != ERROR_DB_FAILED)
 		return query->lastrowid;
 	return 0;
-}
-
-int Database::exec(unique_ptr<Query>& query) {
-	Query* q = query.release();
-	int nRet = exec(q);
-	query.reset(q);
-	return nRet;
-
 }
 
 int Database::exec(const string& query, QueryRow* params) {
@@ -140,17 +126,18 @@ int Database::exec(const string& query, QueryRow* params) {
 	return nRet;
 }
 
-unique_ptr<Query> Database::select(const string& query, int desc) {
+Query Database::select(const string& query, int desc) {
 	return select(query, NULL, desc);
 }
 
-unique_ptr<Query> Database::select(const string& query, QueryRow* params, int desc) {
-	auto q = unique_ptr<Query>(new Query(query, params));
+Query Database::select(const string& query, QueryRow* params, int desc) {
+	Query q(query, params);
 	if(desc)
-		q->description = new QueryRow();
+		q.description = new QueryRow();
 
-	q->response = new QueryResponse();
+	q.response = new QueryResponse();
 
-	select(q);
+	select(&q);
 	return q;
 }
+

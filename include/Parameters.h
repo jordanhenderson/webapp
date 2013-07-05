@@ -1,13 +1,13 @@
 #ifndef PARAMETERS_H
 #define PARAMETERS_H
 #include "Platform.h"
-#include "tbb/concurrent_unordered_map.h"
+#include "Container.h"
 //Dynamic parameter class
-typedef tbb::concurrent_unordered_map<std::string, std::string> paramMap;
+typedef std::unordered_map<std::string, std::string> ParamMap;
 class Parameters : public Internal {
 public:
-	std::string get(std::string param);
-	const int getDigit(std::string param);
+	std::string& get(const std::string& param);
+	const int getDigit(const std::string& param);
 	void set(std::string param, std::string value);
 	inline static void parseBuffer(void* params, char* paramBuffer, int bytesRead) {
 		Parameters* t = static_cast<Parameters*>(params);
@@ -30,7 +30,7 @@ public:
 	Parameters();
 	~Parameters();
 private:
-	paramMap* params;
+	LockableContainer<ParamMap>* params;
 };
 
 

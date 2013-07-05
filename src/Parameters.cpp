@@ -1,41 +1,36 @@
 #include "Parameters.h"
 
 using namespace std;
-string Parameters::get(string param) {
-	string retVal;
-	try {
-		retVal = params->at(param);
-		//param does not exist
-	}
-	catch(const out_of_range&) {
-		retVal = "";
-	}
-	return retVal;
+string& Parameters::get(const string& param) {
+	LockableContainerLock<ParamMap> lock(*params);
+	ParamMap::iterator it = lock->find(param);
+	if(it != lock->end())
+		return it->second;
+
+	return empty;
 }
 
-const int Parameters::getDigit(string param) {
+const int Parameters::getDigit(const string& param) {
 	return stoi(get(param));
 }
 
 void Parameters::set(string param, string value) {
-	params->insert(make_pair(param, value));
+	LockableContainerLock<ParamMap> lock(*params);
+	lock->insert(make_pair(param, value));
 }
 
 bool Parameters::hasParam(string param) {
-	try {
-		string val = params->at(param);
-		return true;
-	} catch(const out_of_range&) {
-		return false;
-	}
+	if(get(param) != empty) return true;
+	return false;
 }
 Parameters::Parameters() {
 	//Create new parameter map
-	params = new paramMap();
+	params = new LockableContainer<ParamMap>();
 }
 
 size_t Parameters::getSize() {
-	return params->size();
+	LockableContainerLock<ParamMap> lock(*params);
+	return lock->size();
 }
 
 Parameters::~Parameters() {

@@ -36,8 +36,11 @@ void Serializer::append(string& str, Value& value) {
 		value.PushBack(str.c_str(), data.GetAllocator());
 }
 
-void Serializer::append(unordered_map<string, string>& map) {
-	Value& d = data["data"];
+void Serializer::append(unordered_map<string, string>& map, Value* v) {
+	Value* d;
+	if(v == NULL) d = &data["data"];
+	else d = v;
+
 	Value m;
 	m.SetObject();
 	for (unordered_map<string, string>::const_iterator it = map.begin(); 
@@ -54,7 +57,7 @@ void Serializer::append(unordered_map<string, string>& map) {
 			m.AddMember(f, s, data.GetAllocator());
 			
 	}
-	d.PushBack(m, data.GetAllocator());
+	d->PushBack(m, data.GetAllocator());
 }
 
 void Serializer::append(vector<string>& vector) {
@@ -81,5 +84,17 @@ void Serializer::append(vector<vector<string>>& vector) {
 			}
 			v.PushBack(r, data.GetAllocator());
 		}
+	d.PushBack(v, data.GetAllocator());
+}
+
+void Serializer::append(vector<unordered_map<string, string>>& vec) {
+	if(!vec.size()>0)
+		return;
+	Value& d = data["data"];
+	Value v; 
+	v.SetArray();
+	for(unordered_map<string,string> m: vec) {
+		append(m, &v);
+	}
 	d.PushBack(v, data.GetAllocator());
 }

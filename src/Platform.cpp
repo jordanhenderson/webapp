@@ -32,7 +32,7 @@ string replaceAll( string const& original, string const& before, string const& a
 	return retval;
 }
 
-std::string string_format(const std::string fmt, ...) {
+string string_format(const std::string fmt, ...) {
 	int size = 100;
 	std::string str;
 	va_list ap;
@@ -53,18 +53,20 @@ std::string string_format(const std::string fmt, ...) {
 	return str;
 }
 
-std::string date_format(const std::string fmt, const size_t datesize, time_t* t, int gmt) {
+string date_format(const std::string fmt, const size_t datesize, time_t* t, int gmt) {
 	time_t actual_time;
 	if(t == NULL) {
 		time(&actual_time);
 	} else actual_time = *t;
 	std::string str;
 	str.resize(datesize);
-	if(!gmt) strftime((char*)str.c_str(), datesize, fmt.c_str(), localtime(&actual_time));
-	else strftime((char*)str.c_str(), datesize, fmt.c_str(), gmtime(&actual_time));
+	if(!gmt) strftime((char*)str.c_str(), datesize+1, fmt.c_str(), localtime(&actual_time));
+	else strftime((char*)str.c_str(), datesize+1, fmt.c_str(), gmtime(&actual_time));
 	return str;
 }
 
 void add_days(time_t& t, int days) {
 	t += days * 24 * 3600;
 }
+
+string empty = "";

@@ -23,6 +23,8 @@ public:
 	int params_copy;
 	Query(const std::string& dbq, QueryRow* params=NULL, int copy = 0);
 	~Query();
+
+
 };
 
 class Database : public Internal {
@@ -32,15 +34,15 @@ private:
 	tbb::concurrent_queue<Query*> queue;
 	void process();
 	int status;
-	void select(Query* query);
-	int exec(Query* query);
+	
+
 public:
 	Database(const char* filename);
 	~Database();
-	void select(std::unique_ptr<Query>& query);
-	int exec(std::unique_ptr<Query>& query);
+	void select(Query* query);
+	int exec(Query* query);
 	int exec(const std::string& query, QueryRow* params);
-	std::unique_ptr<Query> select(const std::string& query, int desc = 0);
-	std::unique_ptr<Query> select(const std::string& query, QueryRow* params, int desc = 0);
+	Query select(const std::string& query, int desc = 0);
+	Query select(const std::string& query, QueryRow* params, int desc = 0);
 };
 #endif
