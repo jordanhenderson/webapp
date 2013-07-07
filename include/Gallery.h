@@ -35,7 +35,7 @@
 #define SELECT_FILE_THUMBID "SELECT thumbid FROM files WHERE id = ?;"
 #define SELECT_ALBUM_PATH_THUMB "SELECT path, thumbid FROM albums WHERE id = ?;"
 #define SELECT_ALBUM_COUNT "SELECT COUNT(*) FROM albums;"
-#define SELECT_ALBUM_DETAILS "SELECT id, name, added, lastedited, path, type, rating, recursive, thumbid AS thumb FROM albums LIMIT ?;"
+#define SELECT_ALBUM_DETAILS "SELECT id, name, added, lastedited, type, rating, recursive, path, thumbid AS thumb FROM albums LIMIT ?;"
 #define SELECT_FIRST_FILE "SELECT fileid FROM albumfiles WHERE albumid = ? ORDER BY id ASC LIMIT 1;"
 #define SELECT_FILE_PATH "SELECT path FROM files WHERE id = ?;"
 #define SELECT_THUMB_PATH "SELECT path FROM thumbs WHERE id = ?;"
@@ -61,7 +61,8 @@
 	m["delAlbums"] = &Gallery::delAlbums; \
 	m["addBulkAlbums"] = &Gallery::addBulkAlbums; \
 	m["login"] = &Gallery::login; \
-	m["setThumb"] = &Gallery::setThumb;
+	m["setThumb"] = &Gallery::setThumb; \
+	m["getFiles"] = &Gallery::getFiles;
 #define GETCHK(s) s.empty() ? 0 : 1
 typedef std::unordered_map<std::string, std::string> RequestVars;
 typedef std::unordered_map<std::string, std::string> CookieVars;
@@ -96,6 +97,7 @@ private:
 	CookieVars parseCookies(const char* cookies);
 	std::map<std::string, GallFunc> m;
 	void getData(Query&, Serializer&, int thumbrow);
+	int hasAlbums();
 public:
 	Gallery::Gallery(Parameters* params);
 	Gallery::~Gallery();
@@ -109,6 +111,7 @@ public:
 	int delAlbums(RequestVars&, Response&, SessionStore&);
 	int login(RequestVars&, Response&, SessionStore&);
 	int setThumb(RequestVars&, Response&, SessionStore&);
+	int getFiles(RequestVars&, Response&, SessionStore&);
 };
 
 #endif

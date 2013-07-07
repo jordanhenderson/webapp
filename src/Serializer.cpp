@@ -36,6 +36,25 @@ void Serializer::append(string& str, Value& value) {
 		value.PushBack(str.c_str(), data.GetAllocator());
 }
 
+//if push_back==1, push onto data when complete.
+void Serializer::append(const string& key, const string& value,  int push_back, Value* m) {
+	Value* actualMap;
+	Value _m;
+	if(m == NULL) actualMap = &_m;
+	else actualMap = m;
+	if(!actualMap->IsObject())
+		actualMap->SetObject();
+
+	Value f, s;
+	f.SetString(key.c_str(), key.length(), data.GetAllocator());
+	if(is_number(value)) s.SetInt(stoi(value));
+	else s.SetString(value.c_str(), value.length(), data.GetAllocator());
+	actualMap->AddMember(f, s, data.GetAllocator());
+	if(push_back)
+		&data["data"].PushBack(*actualMap, data.GetAllocator());
+
+}
+
 void Serializer::append(unordered_map<string, string>& map, Value* v) {
 	Value* d;
 	if(v == NULL) d = &data["data"];
@@ -45,17 +64,7 @@ void Serializer::append(unordered_map<string, string>& map, Value* v) {
 	m.SetObject();
 	for (unordered_map<string, string>::const_iterator it = map.begin(); 
 		it != map.end(); ++it) {
-
-			Value f;
-			f.SetString(it->first.c_str(), it->first.length(), data.GetAllocator());
-			Value s;
-			if(is_number(it->second))
-				s.SetInt(stoi(it->second));
-			else
-				s.SetString(it->second.c_str(), it->second.length(), data.GetAllocator());
-
-			m.AddMember(f, s, data.GetAllocator());
-			
+			append(it->first, it->second, 0, &m);	
 	}
 	d->PushBack(m, data.GetAllocator());
 }

@@ -8,6 +8,7 @@
 
 #define DATABASE_STATUS_PROCESS 0
 #define DATABASE_STATUS_FINISHED 1
+#define DATABASE_QUERY_STARTED 0
 #define DATABASE_QUERY_FINISHED 1
 
 typedef std::vector<std::vector<std::string>> QueryResponse;
@@ -23,8 +24,7 @@ public:
 	int params_copy;
 	Query(const std::string& dbq, QueryRow* params=NULL, int copy = 0);
 	~Query();
-
-
+	Query& operator=(const Query& rhs);
 };
 
 class Database : public Internal {

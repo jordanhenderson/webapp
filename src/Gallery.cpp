@@ -314,16 +314,29 @@ int Gallery::genThumb(const char* file, double shortmax, double longmax) {
 	return 0;
 }
 
+int Gallery::hasAlbums() {
+	Query query = database->select(SELECT_ALBUM_COUNT);
+	int nAlbums = stoi(((*query.response)[0][0]));
+	if(nAlbums == 0) {
+		return 0;
+	}
+	return 1;
+}
+
 
 //Public API functions. 
 int Gallery::login(RequestVars& vars, Response& r, SessionStore& store) {
 	string user = vars["user"];
 	string pass = vars["pass"];
+	Serializer s;
 	if(!user.empty() && !pass.empty()) {
 		if(user == this->user && pass == this->pass) {
 			store.store("auth", "TRUE");
+			s.append("msg", "LOGIN_SUCCESS", 1);
+
 		}
 	}
+	r.append(s.get(RESPONSE_TYPE_MESSAGE));
 	return 0;
 }
 
@@ -486,21 +499,28 @@ int Gallery::delAlbums(RequestVars& vars, Response& r, SessionStore&) {
 	return 0;
 }
 
-int Gallery::getAlbums(RequestVars& vars, Response& r, SessionStore&) {
+int Gallery::getFiles(RequestVars& vars, Response& r, SessionStore&) {
 	string format = vars["f"];
 	Serializer serializer;
 
-	Query query = database->select(SELECT_ALBUM_COUNT);
-	int nAlbums = stoi(((*query.response)[0][0]));
-	if(nAlbums == 0) {
-		unordered_map<string, string> map;
-		map["msg"] = "NO_ALBUMS";
-		serializer.append(map);
+	if(!hasAlbums()) {
+		serializer.append("msg", "NO_ALBUMS", 1);
 		r.append(serializer.get(RESPONSE_TYPE_FULL_MESSAGE));
 		return 0;
 	}
+	return 0;
+	
+}
 
-
+int Gallery::getAlbums(RequestVars& vars, Response& r, SessionStore&) {
+	string format = vars["f"];
+	Serializer serializer;
+	
+	if(!hasAlbums()) {
+		serializer.append("msg", "NO_ALBUMS", 1);
+		r.append(serializer.get(RESPONSE_TYPE_FULL_MESSAGE));
+		return 0;
+	}
 
 	int is_table = (format == "table" ? 1 : 0);
 	//Tabledesc needs to be declared in order to keep it in scope later (even if vars["f"]!=table)
@@ -520,6 +540,7 @@ int Gallery::getAlbums(RequestVars& vars, Response& r, SessionStore&) {
 	QueryRow params;
 	params.push_back(limit);
 	Query query2 = database->select(SELECT_ALBUM_DETAILS, &params, 1);
+	
 	getData(query2, serializer, thumbrow);
 	if(is_table) r.append(serializer.get(RESPONSE_TYPE_TABLE));
 	else r.append(serializer.get(RESPONSE_TYPE_DATA));
@@ -529,6 +550,7 @@ int Gallery::getAlbums(RequestVars& vars, Response& r, SessionStore&) {
 void Gallery::getData(Query& query, Serializer& serializer, int thumbrow) {
 	int pathrow = thumbrow - 1;
 	std::vector<unordered_map<string,string>> rows;
+	
 	for(vector<string> row: *query.response) {
 		unordered_map<string, string> rowmap;
 
@@ -537,6 +559,7 @@ void Gallery::getData(Query& query, Serializer& serializer, int thumbrow) {
 			QueryRow params;
 			params.push_back(row[0]);
 			Query query = database->select(SELECT_FIRST_FILE, &params);
+			query.dbq->clear();
 			if(query.response->size() > 0) {
 				string sFileID = query.response->at(0).at(0);
 				int fileID = stoi(sFileID);
@@ -550,6 +573,7 @@ void Gallery::getData(Query& query, Serializer& serializer, int thumbrow) {
 			} else {
 				row[thumbrow] = DEFAULT_THUMB;
 			}
+			
 		} else {
 			//AlbumID -> thumbID -> thumb
 			QueryRow params;
@@ -562,6 +586,7 @@ void Gallery::getData(Query& query, Serializer& serializer, int thumbrow) {
 			rowmap[(*query.description)[i]] = row[i];
 		}
 		rows.push_back(rowmap);
+		
 	}
 
 	serializer.append(rows);

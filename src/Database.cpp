@@ -15,6 +15,7 @@ Query::Query(const string& dbq, QueryRow* p, int copy) {
 	}
 	response = NULL;
 	description = NULL;
+	status = DATABASE_QUERY_STARTED;
 }
 
 Query::~Query() {
@@ -28,6 +29,17 @@ Query::~Query() {
 	delete dbq;
 }
 
+Query& Query::operator=(const Query& rhs) {
+	this->~Query();
+	//Copy all element references.
+	dbq = rhs.dbq;
+	params_copy = rhs.params_copy;
+	params = rhs.params;
+	description = rhs.description;
+	status = rhs.status;
+	response = rhs.response;
+	return *this;
+}
 
 
 void Database::process() {
@@ -36,6 +48,9 @@ void Database::process() {
 
 		if(queue.try_pop(qry))  {
 			sqlite3_stmt *stmt;
+			if(qry->status == DATABASE_QUERY_FINISHED)  {
+				continue;
+			}
 			if(sqlite3_prepare_v2(db, qry->dbq->c_str(), qry->dbq->length(), &stmt, 0)) {
 				qry->status = DATABASE_QUERY_FINISHED;
 				continue;
@@ -101,14 +116,11 @@ void Database::select(Query* query) {
 	if(nError != ERROR_DB_FAILED) {
 		//add it to the processing queue, wait for response
 		//Release the query object from management, add it to the queue.
-		
 		queue.push(query);
 		//Wait for status to be set to DATABASE_QUERY_FINISHED (blocking the calling thread)
 		while(query->status != DATABASE_QUERY_FINISHED) {
 			this_thread::sleep_for(chrono::milliseconds(1));
-		}
-
-		
+		}	
 	}
 }
 
