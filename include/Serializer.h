@@ -6,6 +6,7 @@
 #include "document.h"
 #include "stringbuffer.h"
 #include "Platform.h"
+#include "Database.h"
 
 class Serializer {
 private:
@@ -22,6 +23,9 @@ public:
 	void append(const std::string& key, const std::string& value,  int push_back=0, rapidjson::Value* m=NULL);
 	Serializer();
 	std::string get(int type);
+
+	//Query functions
+	void append(Query& q);
 };
 
 #endif

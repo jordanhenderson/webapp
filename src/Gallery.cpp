@@ -222,37 +222,6 @@ void Gallery::process(FCGX_Request* request) {
 	
 }
 
-vector<string> Gallery::getRandomFileIds() {
-	vector<string> s;
-	Query query = database->select(SELECT_RANDOM_ALBUMIDS);
-	for(vector<string> row: *query.response) {
-		QueryRow params;
-		params.push_back(row.at(0));
-		Query query = database->select(SELECT_ENABLED_FILES, &params);
-		for(vector<string> s_row: *query.response) {
-			s.push_back(s_row.at(0));
-		}
-	}
-	return s;
-}
-
-vector<string> Gallery::getSetIds() {
-	vector<string> s;
-	Query query = database->select(SELECT_SET_ALBUMIDS);
-	for(vector<string> row: *query.response) {
-		s.push_back(row[0]);
-	}
-	return s;
-}
-
-string Gallery::getFilename(int fileid) {
-	QueryRow params;
-	params.push_back(to_string(fileid));
-	Query query = database->select(SELECT_FILENAME, &params);
-	string filename = query.response->at(0).at(0);
-	return filename;
-}
-
 
 Response Gallery::processVars(RequestVars& vars, SessionStore& session, int publishSession) {
 	string t = vars["t"];
@@ -323,8 +292,12 @@ int Gallery::hasAlbums() {
 	return 1;
 }
 
-
 //Public API functions. 
+int Gallery::search(RequestVars& vars, Response& r, SessionStore& store) {
+	return getFiles(vars, r, store);
+
+}
+
 int Gallery::login(RequestVars& vars, Response& r, SessionStore& store) {
 	string user = vars["user"];
 	string pass = vars["pass"];
@@ -392,16 +365,24 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 				int albumThumbID = -1;
 				if(files.size() > 0) {
 					for(int i = 0; i < files.size(); i++) {
+						string thumbID;
 						//Generate thumb.
 						if(nGenThumbs) {
 							FileSystem::MakePath(basepath + PATHSEP + thumbspath + PATHSEP + path + PATHSEP + files[i]);
 							genThumb((path + PATHSEP + files[i]).c_str(), 180, 180);
+							QueryRow params;
+							params.push_back(path + PATHSEP + files[i]);
+							int nThumbID = database->exec(INSERT_THUMB, &params);
+							if(nThumbID > 0) {
+								thumbID = to_string(nThumbID);
+							}
 						}
 						//Insert file 
 						QueryRow params;
 						params.push_back(files[i]);
 						params.push_back(files[i]);
 						params.push_back(date);
+						params.push_back(thumbID);
 
 						int fileID = database->exec(INSERT_FILE, &params);
 						//Add entry into albumFiles
@@ -469,10 +450,10 @@ int Gallery::delAlbums(RequestVars& vars, Response& r, SessionStore&) {
 
 		params.clear();
 		params.push_back(album);
-		query = database->select(SELECT_ALBUM_PATH_THUMB, &params);
+		Query delquery = database->select(SELECT_ALBUM_PATH_THUMB, &params);
 		
-		string path = query.response->at(0).at(0);
-		string thumbid = query.response->at(0).at(1);
+		string path = delquery.response->at(0).at(0);
+		string thumbid = delquery.response->at(0).at(1);
 		if(!thumbid.empty()) {
 			//Delete the thumb entry.
 			QueryRow params;
@@ -499,20 +480,7 @@ int Gallery::delAlbums(RequestVars& vars, Response& r, SessionStore&) {
 	return 0;
 }
 
-int Gallery::getFiles(RequestVars& vars, Response& r, SessionStore&) {
-	string format = vars["f"];
-	Serializer serializer;
-
-	if(!hasAlbums()) {
-		serializer.append("msg", "NO_ALBUMS", 1);
-		r.append(serializer.get(RESPONSE_TYPE_FULL_MESSAGE));
-		return 0;
-	}
-	return 0;
-	
-}
-
-int Gallery::getAlbums(RequestVars& vars, Response& r, SessionStore&) {
+int Gallery::getData(string& query_str, RequestVars& vars, Response& r, SessionStore&) {
 	string format = vars["f"];
 	Serializer serializer;
 	
@@ -524,72 +492,63 @@ int Gallery::getAlbums(RequestVars& vars, Response& r, SessionStore&) {
 
 	int is_table = (format == "table" ? 1 : 0);
 	//Tabledesc needs to be declared in order to keep it in scope later (even if vars["f"]!=table)
-	char* tabledesc[] = {"id", "name", "added", "lastedited", "type", "rating", "recursive", "path", "thumb"};
-	vector<string> desc(tabledesc, end(tabledesc));
-	int thumbrow = sizeof(tabledesc)/sizeof(char*) - 1;
-	int pathrow = thumbrow-1;
-	if(is_table) {
-		unordered_map<string, string> tableData;
-		tableData["THUMBS_PATH"] = thumbspath;
-		tableData["thumb"] = "img";
-		serializer.append(tableData);
-		serializer.append(desc);
-	} 
 
 	string limit = vars["limit"].empty() ? XSTR(DEFAULT_PAGE_LIMIT) : vars["limit"];
+
+
 	QueryRow params;
-	params.push_back(limit);
-	Query query2 = database->select(SELECT_ALBUM_DETAILS, &params, 1);
+	string aid = vars["aid"];
+	if(!aid.empty()) {
+		query_str.append(CONDITION_ALBUM);
+		params.push_back(aid);
+	}
 	
-	getData(query2, serializer, thumbrow);
+	
+	if(vars["t"] == "search") {
+		query_str.append(CONDITION_SEARCH);
+		params.push_back("%" + vars["q"] + "%");
+	}
+
+	query_str.append(SELECT_DETAILS_END);
+	params.push_back(limit);
+	
+	Query query = database->select(query_str, &params, 1);
+
+	vector<string> vec;
+	//Add extra table metadata
+	if(is_table) {
+		Value v; v.SetObject();
+		serializer.append("THUMBS_PATH", thumbspath, 0, &v);
+		serializer.append("thumb", "img", 1, &v);
+		
+		for(string s: *query.description)
+			vec.push_back(s);
+
+		serializer.append(vec);
+	}
+
+	//Generate a map of key:value (column:value)
+	serializer.append(query);
+
 	if(is_table) r.append(serializer.get(RESPONSE_TYPE_TABLE));
 	else r.append(serializer.get(RESPONSE_TYPE_DATA));
 	return 0;
 }
 
-void Gallery::getData(Query& query, Serializer& serializer, int thumbrow) {
-	int pathrow = thumbrow - 1;
-	std::vector<unordered_map<string,string>> rows;
+int Gallery::getFiles(RequestVars& vars, Response& r, SessionStore&s) {
+	string query = SELECT_FILE_DETAILS;
 	
-	for(vector<string> row: *query.response) {
-		unordered_map<string, string> rowmap;
-
-		if(row[thumbrow].empty()) {
-			//AlbumID -> SELECT first albumfiles, use that file.
-			QueryRow params;
-			params.push_back(row[0]);
-			Query query = database->select(SELECT_FIRST_FILE, &params);
-			query.dbq->clear();
-			if(query.response->size() > 0) {
-				string sFileID = query.response->at(0).at(0);
-				int fileID = stoi(sFileID);
-				if(fileID > 0) {
-					//Attempt to use the file referenced by albumfiles
-					QueryRow params;
-					params.push_back(sFileID);
-					Query query = database->select(SELECT_FILE_PATH, &params);
-					row[thumbrow] = row[pathrow] + PATHSEP + query.response->at(0).at(0);
-				}
-			} else {
-				row[thumbrow] = DEFAULT_THUMB;
-			}
-			
-		} else {
-			//AlbumID -> thumbID -> thumb
-			QueryRow params;
-			params.push_back(row[thumbrow]);
-			Query query = database->select(SELECT_THUMB_PATH, &params);
-			row[thumbrow] = row[pathrow] + PATHSEP + query.response->at(0).at(0);
-		}
-			
-		for(int i = 0; i < query.description->size(); i++) {
-			rowmap[(*query.description)[i]] = row[i];
-		}
-		rows.push_back(rowmap);
-		
+	if(vars["o"]=="grouped") {
+		query.append(CONDITION_FILE_GROUPED);
 	}
 
-	serializer.append(rows);
+	return getData(query, vars, r, s);
+	
+}
+
+int Gallery::getAlbums(RequestVars& vars, Response& r, SessionStore&s) {
+	string query = SELECT_ALBUM_DETAILS;
+	return getData(query, vars, r, s);
 }
 
 int Gallery::setThumb(RequestVars& vars, Response& r, SessionStore&) {

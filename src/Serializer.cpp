@@ -36,6 +36,21 @@ void Serializer::append(string& str, Value& value) {
 		value.PushBack(str.c_str(), data.GetAllocator());
 }
 
+void Serializer::append(Query& q) {
+	Value& d = data["data"];
+	Value arr(kArrayType);
+	
+	for(int i = 0; i < q.response->size(); i++) {
+		Value vrow(kObjectType);
+		for(int j = 0; j < q.description->size(); j++) {
+			vrow.AddMember(q.description->at(j).c_str(), 
+				q.response->at(i).at(j).c_str(), data.GetAllocator());
+		}
+		arr.PushBack(vrow, data.GetAllocator());
+	}
+	d.PushBack(arr, data.GetAllocator());
+}
+
 //if push_back==1, push onto data when complete.
 void Serializer::append(const string& key, const string& value,  int push_back, Value* m) {
 	Value* actualMap;

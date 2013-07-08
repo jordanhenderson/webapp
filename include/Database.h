@@ -24,7 +24,6 @@ public:
 	int params_copy;
 	Query(const std::string& dbq, QueryRow* params=NULL, int copy = 0);
 	~Query();
-	Query& operator=(const Query& rhs);
 };
 
 class Database : public Internal {

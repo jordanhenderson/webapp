@@ -29,19 +29,6 @@ Query::~Query() {
 	delete dbq;
 }
 
-Query& Query::operator=(const Query& rhs) {
-	this->~Query();
-	//Copy all element references.
-	dbq = rhs.dbq;
-	params_copy = rhs.params_copy;
-	params = rhs.params;
-	description = rhs.description;
-	status = rhs.status;
-	response = rhs.response;
-	return *this;
-}
-
-
 void Database::process() {
 	while(status == DATABASE_STATUS_PROCESS) {
 		Query* qry;

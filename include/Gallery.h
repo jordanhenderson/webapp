@@ -35,13 +35,9 @@
 #define SELECT_FILE_THUMBID "SELECT thumbid FROM files WHERE id = ?;"
 #define SELECT_ALBUM_PATH_THUMB "SELECT path, thumbid FROM albums WHERE id = ?;"
 #define SELECT_ALBUM_COUNT "SELECT COUNT(*) FROM albums;"
-#define SELECT_ALBUM_DETAILS "SELECT id, name, added, lastedited, type, rating, recursive, path, thumbid AS thumb FROM albums LIMIT ?;"
-#define SELECT_FIRST_FILE "SELECT fileid FROM albumfiles WHERE albumid = ? ORDER BY id ASC LIMIT 1;"
-#define SELECT_FILE_PATH "SELECT path FROM files WHERE id = ?;"
-#define SELECT_THUMB_PATH "SELECT path FROM thumbs WHERE id = ?;"
 
 #define INSERT_ALBUM "INSERT INTO albums (name, added, lastedited, path, type, recursive) VALUES (?,?,?,?,?,?);"
-#define INSERT_FILE "INSERT INTO files (name, path, added) VALUES (?,?,?);"
+#define INSERT_FILE "INSERT INTO files (name, path, added, thumbid) VALUES (?,?,?,?);"
 #define INSERT_ALBUM_FILE "INSERT INTO albumfiles (albumid, fileid) VALUES (?,?);"
 #define INSERT_THUMB "INSERT INTO thumbs(path) VALUES (?);"
 #define UPDATE_THUMB "UPDATE %s SET thumbid = ? WHERE id = ?;"
@@ -51,9 +47,35 @@
 #define DELETE_ALBUM_FILE "DELETE FROM albumfiles WHERE id = ?;"
 #define DELETE_ALBUM "DELETE FROM albums WHERE id = ?;"
 
+#define SELECT_FILE_DETAILS "SELECT f.id AS id, al.id as aid, f.name, f.rating as rating, f.views as views, al.views as aviews, al.rating as arating, al.type, \
+(SELECT al.path || " XSTR(PSEP) " || f.path) AS path, \
+	COALESCE(\
+		(SELECT th.path FROM thumbs th JOIN files ON files.thumbid = th.id AND files.id = f.id), \
+		(SELECT value FROM system WHERE name=\"default_thumb\")) \
+AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON al.id=alf.albumid WHERE 1 "
+
+#define SELECT_DETAILS_END " ORDER BY id DESC LIMIT ?;"
+
+#define CONDITION_SEARCH " AND f.id IN (SELECT f.id FROM files f WHERE f.name LIKE ?) "
+
+
+#define CONDITION_FILE_GROUPED " AND al.type = " XSTR(ALBUM_RANDOM) " OR al.type = " XSTR(ALBUM_SET) \
+" AND f.id IN (SELECT fileid FROM albumfiles WHERE albumid=al.id ORDER BY id ASC LIMIT 1) "
+
+#define CONDITION_ALBUM " AND al.id = ? "
+
+
+
+#define SELECT_ALBUM_DETAILS "SELECT al.id AS id, name, added, lastedited, type, rating, recursive, views, al.path AS path, \
+	COALESCE(\
+		(SELECT th.path FROM thumbs th JOIN albums ON albums.thumbid = th.id AND albums.id = al.id),\
+		(SELECT th.path FROM thumbs th JOIN files f ON f.thumbid = th.id JOIN albumfiles alf ON alf.fileid=f.id AND alf.id IN \
+			(SELECT id FROM albumfiles WHERE albumid=al.id ORDER BY id ASC LIMIT 1) JOIN albums ON albums.id = al.id),\
+		(SELECT value FROM system WHERE name=\"default_thumb\")) AS thumb FROM albums al WHERE 1 "
+
+
+
 #define DEFAULT_PAGE_LIMIT 25
-
-
 
 #define GETSPATH(x) basepath + PATHSEP + storepath + PATHSEP + x
 #define GALLERYMAP(m) 	m["addAlbum"] = &Gallery::addAlbum; \
@@ -62,7 +84,8 @@
 	m["addBulkAlbums"] = &Gallery::addBulkAlbums; \
 	m["login"] = &Gallery::login; \
 	m["setThumb"] = &Gallery::setThumb; \
-	m["getFiles"] = &Gallery::getFiles;
+	m["getFiles"] = &Gallery::getFiles; \
+	m["search"] = &Gallery::search;
 #define GETCHK(s) s.empty() ? 0 : 1
 typedef std::unordered_map<std::string, std::string> RequestVars;
 typedef std::unordered_map<std::string, std::string> CookieVars;
@@ -88,16 +111,14 @@ private:
 	std::string thumbspath;
 	int auth;
 
-	std::vector<std::string> getRandomFileIds();
-	std::vector<std::string> getSetIds();
-	std::string getFilename(int);
 	int genThumb(const char* file, double shortmax, double longmax);
 	int getDuplicates( std::string& name, std::string& path );
 	std::string genCookie(const std::string& name, const std::string& value, time_t* date=NULL);
 	CookieVars parseCookies(const char* cookies);
 	std::map<std::string, GallFunc> m;
-	void getData(Query&, Serializer&, int thumbrow);
+	void createFieldMap(Query& q, rapidjson::Value& v);
 	int hasAlbums();
+	int getData(std::string& query, RequestVars&, Response&, SessionStore&);
 public:
 	Gallery::Gallery(Parameters* params);
 	Gallery::~Gallery();
@@ -112,6 +133,7 @@ public:
 	int login(RequestVars&, Response&, SessionStore&);
 	int setThumb(RequestVars&, Response&, SessionStore&);
 	int getFiles(RequestVars&, Response&, SessionStore&);
+	int search(RequestVars&, Response&, SessionStore&);
 };
 
 #endif
