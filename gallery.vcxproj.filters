@@ -61,6 +61,15 @@
     <Filter Include="Header Files\tinydir">
       <UniqueIdentifier>{36d2bc81-0681-4816-8e7a-8d6cf802bba8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\tbb">
+      <UniqueIdentifier>{e504ffa1-0a6f-45f9-a3d2-ed301bb6395f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\tbb\ia32">
+      <UniqueIdentifier>{eb516ef8-1d27-4aae-af29-218f48f4be58}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\tbb\intel64">
+      <UniqueIdentifier>{c448ac2a-77b9-42fe-aebb-dcff8bd02a20}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Logging.cpp">
@@ -447,6 +456,75 @@
     <ClCompile Include="src\RamSession.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\tbb\concurrent_queue.cpp">
+      <Filter>Source Files\tbb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tbb\concurrent_monitor.cpp">
+      <Filter>Source Files\tbb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tbb\semaphore.cpp">
+      <Filter>Source Files\tbb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tbb\tbb_misc.cpp">
+      <Filter>Source Files\tbb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tbb\cache_aligned_allocator.cpp">
+      <Filter>Source Files\tbb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tbb\itt_notify.cpp">
+      <Filter>Source Files\tbb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tbb\dynamic_link.cpp">
+      <Filter>Source Files\tbb</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Users\hendo\Desktop\tbb\tbb41_20130613oss\src\tbb\spin_mutex.cpp">
+      <Filter>Source Files\tbb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tbb\tbb_main.cpp">
+      <Filter>Source Files\tbb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tbb\scheduler.cpp">
+      <Filter>Source Files\tbb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tbb\tbb_statistics.cpp">
+      <Filter>Source Files\tbb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tbb\arena.cpp">
+      <Filter>Source Files\tbb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tbb\observer_proxy.cpp">
+      <Filter>Source Files\tbb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tbb\mutex.cpp">
+      <Filter>Source Files\tbb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tbb\task_group_context.cpp">
+      <Filter>Source Files\tbb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tbb\task.cpp">
+      <Filter>Source Files\tbb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tbb\market.cpp">
+      <Filter>Source Files\tbb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tbb\governor.cpp">
+      <Filter>Source Files\tbb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tbb\tbb_misc_ex.cpp">
+      <Filter>Source Files\tbb</Filter>
+    </ClCompile>
+    <ClCompile Include="include\rml\client\rml_tbb.cpp">
+      <Filter>Source Files\tbb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tbb\concurrent_vector.cpp">
+      <Filter>Source Files\tbb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tbb\private_server.cpp">
+      <Filter>Source Files\tbb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tbb\spin_rw_mutex.cpp">
+      <Filter>Source Files\tbb</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Logging.h">
@@ -659,5 +737,21 @@
     <ClInclude Include="include\Container.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\tbb\ia32-masm\atomic_support.asm">
+      <Filter>Source Files\tbb\ia32</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="src\tbb\ia32-masm\lock_byte.asm">
+      <Filter>Source Files\tbb\ia32</Filter>
+    </MASM>
+    <MASM Include="src\tbb\intel64-masm\atomic_support.asm">
+      <Filter>Source Files\tbb\intel64</Filter>
+    </MASM>
+    <MASM Include="src\tbb\intel64-masm\intel64_misc.asm">
+      <Filter>Source Files\tbb\intel64</Filter>
+    </MASM>
   </ItemGroup>
 </Project>
