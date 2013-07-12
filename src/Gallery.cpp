@@ -18,12 +18,11 @@ using namespace base64;
 
 Gallery::Gallery(Parameters* params) {
 	this->params = params;
-	storepath = params->get("storepath");
-	basepath = params->get("basepath");
 	dbpath = params->get("dbpath");
-	thumbspath = params->get("thumbspath");
-
+	
+	basepath = params->get("basepath");
 	this->database = new Database((basepath + PATHSEP + dbpath).c_str());
+
 	session = new Session();
 
 	//Check authentication
@@ -248,6 +247,8 @@ Response Gallery::processVars(RequestVars& vars, SessionStore& session, int publ
 }
 
 int Gallery::genThumb(const char* file, double shortmax, double longmax) {
+	string storepath = database->select(SELECT_SYSTEM("store_path")).response->at(0).at(0);
+	string thumbspath = database->select(SELECT_SYSTEM("thumbs_path")).response->at(0).at(0);
 	string imagepath = basepath + PATHSEP + storepath + PATHSEP + file;
 	
 	Image image(imagepath);
@@ -293,8 +294,17 @@ int Gallery::hasAlbums() {
 }
 
 //Public API functions. 
-int Gallery::search(RequestVars& vars, Response& r, SessionStore& store) {
-	return getFiles(vars, r, store);
+int Gallery::search(RequestVars& vars, Response& r, SessionStore& s) {
+	string query = SELECT_FILE_DETAILS;
+	QueryRow params;
+	
+	if(vars["t"] == "search") {
+		query.append(CONDITION_SEARCH);
+		params.push_back("%" + vars["q"] + "%");
+	}
+
+	Query q(query, &params);
+	return getData(q, vars, r, s);
 
 }
 
@@ -348,6 +358,8 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 		} else {
 			//Thread the adding code using a sneaky lambda. TODO: Add cleanup of thread.
 			thread aa([this, name, path, type, nRecurse, nGenThumbs]() {
+				string storepath = database->select(SELECT_SYSTEM("store_path")).response->at(0).at(0);
+				string thumbspath = database->select(SELECT_SYSTEM("thumbs_path")).response->at(0).at(0);
 				//Add the album.
 				QueryRow params;
 				//get the date.
@@ -462,6 +474,8 @@ int Gallery::delAlbums(RequestVars& vars, Response& r, SessionStore&) {
 		}
 		//Delete the album.
 		database->exec(DELETE_ALBUM, &params);
+		string storepath = database->select(SELECT_SYSTEM("store_path")).response->at(0).at(0);
+		string thumbspath = database->select(SELECT_SYSTEM("thumbs_path")).response->at(0).at(0);
 		if(delFiles) {
 			//Delete the albums' files.
 			FileSystem::DeletePath(basepath + PATHSEP + storepath + PATHSEP + path);
@@ -480,8 +494,7 @@ int Gallery::delAlbums(RequestVars& vars, Response& r, SessionStore&) {
 	return 0;
 }
 
-int Gallery::getData(string& query_str, RequestVars& vars, Response& r, SessionStore&) {
-	string format = vars["f"];
+int Gallery::getData(Query& query, RequestVars& vars, Response& r, SessionStore&) {
 	Serializer serializer;
 	
 	if(!hasAlbums()) {
@@ -490,65 +503,55 @@ int Gallery::getData(string& query_str, RequestVars& vars, Response& r, SessionS
 		return 0;
 	}
 
-	int is_table = (format == "table" ? 1 : 0);
-	//Tabledesc needs to be declared in order to keep it in scope later (even if vars["f"]!=table)
-
 	string limit = vars["limit"].empty() ? XSTR(DEFAULT_PAGE_LIMIT) : vars["limit"];
-
-
-	QueryRow params;
-	string aid = vars["aid"];
-	if(!aid.empty()) {
-		query_str.append(CONDITION_ALBUM);
-		params.push_back(aid);
-	}
+	query.params->push_back(limit);
+	query.dbq->append(SELECT_DETAILS_END);
 	
-	
-	if(vars["t"] == "search") {
-		query_str.append(CONDITION_SEARCH);
-		params.push_back("%" + vars["q"] + "%");
-	}
-
-	query_str.append(SELECT_DETAILS_END);
-	params.push_back(limit);
-	
-	Query query = database->select(query_str, &params, 1);
-
-	vector<string> vec;
-	//Add extra table metadata
-	if(is_table) {
-		Value v; v.SetObject();
-		serializer.append("THUMBS_PATH", thumbspath, 0, &v);
-		serializer.append("thumb", "img", 1, &v);
-		
-		for(string s: *query.description)
-			vec.push_back(s);
-
-		serializer.append(vec);
-	}
-
-	//Generate a map of key:value (column:value)
+	query.description = new QueryRow();
+	query.response = new QueryResponse();
+	database->select(&query);
 	serializer.append(query);
 
-	if(is_table) r.append(serializer.get(RESPONSE_TYPE_TABLE));
-	else r.append(serializer.get(RESPONSE_TYPE_DATA));
+	r.append(serializer.get(RESPONSE_TYPE_DATA));
 	return 0;
 }
 
 int Gallery::getFiles(RequestVars& vars, Response& r, SessionStore&s) {
 	string query = SELECT_FILE_DETAILS;
+	QueryRow params;
 	
-	if(vars["o"]=="grouped") {
+	string album = vars["album"];
+	string id = vars["id"];
+	if(!album.empty() && id.empty()) {
+		query.append(CONDITION_ALBUM);
+		params.push_back(album);
+		database->exec(INC_ALBUM_VIEWS, &params);
+	}
+	else if(!id.empty()) {
+		query.append(CONDITION_FILEID);
+		params.push_back(id);
+		//Increment views.
+		database->exec(INC_FILE_VIEWS, &params);
+	} else {
 		query.append(CONDITION_FILE_GROUPED);
 	}
+	
 
-	return getData(query, vars, r, s);
+	Query q(query, &params);
+	return getData(q, vars, r, s);
 	
 }
 
 int Gallery::getAlbums(RequestVars& vars, Response& r, SessionStore&s) {
 	string query = SELECT_ALBUM_DETAILS;
-	return getData(query, vars, r, s);
+	string id = vars["id"];
+	QueryRow params;
+	if(!id.empty()) {
+		query.append(CONDITION_ALBUM);
+		params.push_back(id);
+	}
+	Query q(query, &params);
+	return getData(q, vars, r, s);
 }
 
 int Gallery::setThumb(RequestVars& vars, Response& r, SessionStore&) {

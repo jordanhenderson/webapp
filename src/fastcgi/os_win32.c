@@ -20,7 +20,9 @@
 static const char rcsid[] = "$Id: os_win32.c,v 1.34 2003/06/22 00:16:43 robs Exp $";
 #endif /* not lint */
 
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN 
+#endif
 #include <windows.h>
 #include <winsock2.h>
 #include <stdlib.h>

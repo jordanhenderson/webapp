@@ -21,9 +21,8 @@
 
 #define HTTP_NO_AUTH "Status: 401 Unauthorized\r\n\r\nUnauthorised access."
 #define RESPONSE_TYPE_DATA 0
-#define RESPONSE_TYPE_TABLE 1
-#define RESPONSE_TYPE_MESSAGE 2
-#define RESPONSE_TYPE_FULL_MESSAGE 3
+#define RESPONSE_TYPE_MESSAGE 1
+#define RESPONSE_TYPE_FULL_MESSAGE 2
 
 //QUERY DEFINTIONS
 #define SELECT_RANDOM_ALBUMIDS "SELECT id FROM albums WHERE type = " XSTR(ALBUM_RANDOM) ";"
@@ -36,6 +35,7 @@
 #define SELECT_ALBUM_PATH_THUMB "SELECT path, thumbid FROM albums WHERE id = ?;"
 #define SELECT_ALBUM_COUNT "SELECT COUNT(*) FROM albums;"
 
+#define SELECT_SYSTEM(var) "SELECT value FROM system WHERE name=\"" var "\""
 #define INSERT_ALBUM "INSERT INTO albums (name, added, lastedited, path, type, recursive) VALUES (?,?,?,?,?,?);"
 #define INSERT_FILE "INSERT INTO files (name, path, added, thumbid) VALUES (?,?,?,?);"
 #define INSERT_ALBUM_FILE "INSERT INTO albumfiles (albumid, fileid) VALUES (?,?);"
@@ -47,31 +47,34 @@
 #define DELETE_ALBUM_FILE "DELETE FROM albumfiles WHERE id = ?;"
 #define DELETE_ALBUM "DELETE FROM albums WHERE id = ?;"
 
-#define SELECT_FILE_DETAILS "SELECT f.id AS id, al.id as aid, f.name, f.rating as rating, f.views as views, al.views as aviews, al.rating as arating, al.type, \
-(SELECT al.path || " XSTR(PSEP) " || f.path) AS path, \
+#define SELECT_FILE_DETAILS "SELECT f.id AS id, al.id as aid, f.name, f.rating as rating, f.views as views, \
+(SELECT (" SELECT_SYSTEM("store_path") ") || " XSTR(PSEP) " || al.path || " XSTR(PSEP) " || f.path) AS path, \
 	COALESCE(\
-		(SELECT th.path FROM thumbs th JOIN files ON files.thumbid = th.id AND files.id = f.id), \
-		(SELECT value FROM system WHERE name=\"default_thumb\")) \
+		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || " XSTR(PSEP) " || th.path FROM thumbs th JOIN files ON files.thumbid = th.id AND files.id = f.id), \
+		(" SELECT_SYSTEM("default_thumb") ")) \
 AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON al.id=alf.albumid WHERE 1 "
 
 #define SELECT_DETAILS_END " ORDER BY id DESC LIMIT ?;"
 
 #define CONDITION_SEARCH " AND f.id IN (SELECT f.id FROM files f WHERE f.name LIKE ?) "
 
-
-#define CONDITION_FILE_GROUPED " AND al.type = " XSTR(ALBUM_RANDOM) " OR al.type = " XSTR(ALBUM_SET) \
-" AND f.id IN (SELECT fileid FROM albumfiles WHERE albumid=al.id ORDER BY id ASC LIMIT 1) "
+#define CONDITION_FILEID " AND f.id IN (?) "
 
 #define CONDITION_ALBUM " AND al.id = ? "
 
+#define INC_FILE_VIEWS "UPDATE files SET views = views + 1 WHERE id = ?"
+#define INC_ALBUM_VIEWS "UPDATE albums SET views = views + 1 WHERE id = ?"
+
+#define CONDITION_FILE_GROUPED " AND al.type = " XSTR(ALBUM_RANDOM) " OR al.type = " XSTR(ALBUM_SET) \
+" AND f.id IN (SELECT fileid FROM albumfiles WHERE albumid=al.id ORDER BY id DESC LIMIT 1) "
 
 
 #define SELECT_ALBUM_DETAILS "SELECT al.id AS id, name, added, lastedited, type, rating, recursive, views, al.path AS path, \
 	COALESCE(\
-		(SELECT th.path FROM thumbs th JOIN albums ON albums.thumbid = th.id AND albums.id = al.id),\
-		(SELECT th.path FROM thumbs th JOIN files f ON f.thumbid = th.id JOIN albumfiles alf ON alf.fileid=f.id AND alf.id IN \
+		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || " XSTR(PSEP) " || th.path FROM thumbs th JOIN albums ON albums.thumbid = th.id AND albums.id = al.id),\
+		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || " XSTR(PSEP) " || th.path FROM thumbs th JOIN files f ON f.thumbid = th.id JOIN albumfiles alf ON alf.fileid=f.id AND alf.id IN \
 			(SELECT id FROM albumfiles WHERE albumid=al.id ORDER BY id ASC LIMIT 1) JOIN albums ON albums.id = al.id),\
-		(SELECT value FROM system WHERE name=\"default_thumb\")) AS thumb FROM albums al WHERE 1 "
+		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || " XSTR(PSEP) " || (" SELECT_SYSTEM("default_thumb") "))) AS thumb FROM albums al WHERE 1 "
 
 
 
@@ -106,9 +109,7 @@ private:
 	std::string user;
 	std::string pass;
 	std::string basepath;
-	std::string storepath;
 	std::string dbpath;
-	std::string thumbspath;
 	int auth;
 
 	int genThumb(const char* file, double shortmax, double longmax);
@@ -118,7 +119,7 @@ private:
 	std::map<std::string, GallFunc> m;
 	void createFieldMap(Query& q, rapidjson::Value& v);
 	int hasAlbums();
-	int getData(std::string& query, RequestVars&, Response&, SessionStore&);
+	int getData(Query& query, RequestVars&, Response&, SessionStore&);
 public:
 	Gallery::Gallery(Parameters* params);
 	Gallery::~Gallery();

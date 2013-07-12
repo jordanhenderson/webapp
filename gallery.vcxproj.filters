@@ -739,12 +739,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\tbb\ia32-masm\atomic_support.asm">
-      <Filter>Source Files\tbb\ia32</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <MASM Include="src\tbb\ia32-masm\lock_byte.asm">
+      <Filter>Source Files\tbb\ia32</Filter>
+    </MASM>
+    <MASM Include="src\tbb\ia32-masm\atomic_support.asm">
       <Filter>Source Files\tbb\ia32</Filter>
     </MASM>
     <MASM Include="src\tbb\intel64-masm\atomic_support.asm">

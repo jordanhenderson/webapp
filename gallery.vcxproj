@@ -92,7 +92,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>__TBB_BUILD;USE_WINTHREAD;__TBB_NO_IMPLICIT_LINKAGE;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;_DEBUG;USE_PRECOMPILED_HEADERS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;VC_EXTRALEAN;__TBB_BUILD;USE_WINTHREAD;__TBB_NO_IMPLICIT_LINKAGE;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;_DEBUG;USE_PRECOMPILED_HEADERS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>include;include/tbb;include/rml/include;include/fastcgi;include/sqlite;include/rapidjson;include/b64;include/zlib;include/lpng;include/jpeg;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -116,7 +116,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>__TBB_BUILD;USE_WINTHREAD;__TBB_NO_IMPLICIT_LINKAGE;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;_DEBUG;USE_PRECOMPILED_HEADERS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;VC_EXTRALEAN;__TBB_BUILD;USE_WINTHREAD;__TBB_NO_IMPLICIT_LINKAGE;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;_DEBUG;USE_PRECOMPILED_HEADERS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>include;include/tbb;include/rml/include;include/fastcgi;include/sqlite;include/rapidjson;include/b64;include/zlib;include/lpng;include/jpeg;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -142,7 +142,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>false</IntrinsicFunctions>
-      <PreprocessorDefinitions>__TBB_BUILD;USE_WINTHREAD;__TBB_NO_IMPLICIT_LINKAGE;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;VC_EXTRALEAN;__TBB_BUILD;USE_WINTHREAD;__TBB_NO_IMPLICIT_LINKAGE;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>include;include/tbb;include/rml/include;include/fastcgi;include/sqlite;include/rapidjson;include/b64;include/zlib;include/lpng;include/jpeg;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -177,7 +177,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>__TBB_BUILD;USE_WINTHREAD;__TBB_NO_IMPLICIT_LINKAGE;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;VC_EXTRALEAN;__TBB_BUILD;USE_WINTHREAD;__TBB_NO_IMPLICIT_LINKAGE;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>include;include/tbb;include/rml/include;include/fastcgi;include/sqlite;include/rapidjson;include/b64;include/zlib;include/lpng;include/jpeg;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -1490,14 +1490,16 @@
       <FileType>Document</FileType>
     </MASM>
     <MASM Include="src\tbb\intel64-masm\atomic_support.asm">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </MASM>
     <MASM Include="src\tbb\intel64-masm\intel64_misc.asm">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </MASM>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
