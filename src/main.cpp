@@ -10,7 +10,7 @@ int wmain(int argc, wchar_t* argv[]) {
 int main(int argc, char* argv[]) {
 #endif
 	
-	setlocale(LC_CTYPE, "");
+	setlocale(LC_ALL, "");
 	Parameters params;
 	//TODO convert params to file
 	if(FileSystem::Exists("gallery.conf")) {

@@ -90,6 +90,10 @@ void Image::load(const string& filename) {
 
 	changeType(filename);
 
+	if(imageType == -1) {
+		nError = ERROR_NOT_SUPPORTED;
+		return;
+	}
 	File file;
 	FileSystem::Open(filename, "rb", &file);
 
@@ -167,17 +171,38 @@ void Image::load(const string& filename) {
 		
 			png_set_interlace_handling(png_ptr);
 			png_set_strip_16(png_ptr);
-			png_set_expand(png_ptr);
-			png_set_gray_to_rgb(png_ptr);
+			
 			int colorType = png_get_color_type(png_ptr, info_ptr);
+			bitdepth = png_get_bit_depth(png_ptr, info_ptr);
+			int trns = png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS);
 			if(colorType == PNG_COLOR_TYPE_RGB)
 				png_set_filler(png_ptr, 0xff, PNG_FILLER_AFTER);
+		   if (colorType == PNG_COLOR_TYPE_PALETTE) {
+			  png_set_expand(png_ptr);
+			  png_set_filler(png_ptr, 0xff, PNG_FILLER_AFTER);
+		   }
+
+		   /* expand grayscale images to the full 8 bits */
+		   if (colorType == PNG_COLOR_TYPE_GRAY &&
+			  bitdepth < 8)
+			  png_set_expand(png_ptr);
+
+		   /* expand images with transparency to full alpha channels */
+		   if (trns)
+			  png_set_expand(png_ptr);
+
+		   if(colorType == PNG_COLOR_TYPE_GRAY || colorType == PNG_COLOR_TYPE_RGB_ALPHA) {
+			   png_set_gray_to_rgb(png_ptr);
+			   png_set_filler(png_ptr, 0xff, PNG_FILLER_AFTER);
+		   }
+
+	
 			png_read_update_info(png_ptr, info_ptr);
 
 			width = png_get_image_width(png_ptr, info_ptr);
 			height = png_get_image_height(png_ptr, info_ptr);
 			
-			bitdepth = png_get_bit_depth(png_ptr, info_ptr);
+			
 
 			//Get bytes per row.
 
@@ -230,11 +255,13 @@ void Image::load(const string& filename) {
 			}
 			pixels = frames[0];
 			
+			
 			//File now handled by giflib.
 			file.pszFile = NULL;
 			
 		}
 		break;
+
 	}
 
 	nError = ERROR_SUCCESS;
@@ -330,14 +357,35 @@ void Image::save(const string& filename) {
 		output->SHeight = height;
 		output->SColorResolution = bitdepth;
 		output->SBackGroundColor = gif->SBackGroundColor;
-		output->SColorMap = GifMakeMapObject(
-			gif->SColorMap->ColorCount,
-			gif->SColorMap->Colors);
-
-		for (int i = 0; i < gif->ImageCount; i++)
-			(void) GifMakeSavedImage(output, &gif->SavedImages[i]);
+		output->SColorMap = NULL;
 		
-		if(EGifSpew(output) != GIF_OK) {
+
+		output->ImageCount = gif->ImageCount;
+		
+        output->SavedImages = (SavedImage *)malloc(sizeof(SavedImage)*gif->ImageCount);
+
+		//TODO Disposal optimisation for animations.
+		for (int i = 0; i < gif->ImageCount; i++) {
+			memset(&output->SavedImages[i], '\0', sizeof(SavedImage));
+			//Remove optimisation on savedimages.
+			output->SavedImages[i].ImageDesc.ColorMap = GifMakeMapObject(256, NULL);
+			output->SavedImages[i].RasterBits = (unsigned char *)malloc(sizeof(GifPixelType) *
+                                                   width * height);
+			output->SavedImages[i].ImageDesc.Width = width;
+			output->SavedImages[i].ImageDesc.Height = height;
+			output->SavedImages[i].ImageDesc.Top = 0;
+			output->SavedImages[i].ImageDesc.Left = 0;
+			output->SavedImages[i].ImageDesc.Interlace = 0;
+			output->SavedImages[i].ExtensionBlockCount = gif->SavedImages[i].ExtensionBlockCount;
+			output->SavedImages[i].ExtensionBlocks = gif->SavedImages[i].ExtensionBlocks;
+		
+			
+			//Remove subimage rasterbits issues
+			gifMakeMap(frames[i], width, height, (unsigned char**)&output->SavedImages[i].ImageDesc.ColorMap, (unsigned char**)&output->SavedImages[i].RasterBits);
+		}
+
+		
+	if(EGifSpew(output) != GIF_OK) {
 			nError = ERROR_IMAGE_PROCESSING_FAILED;
 			goto finish;
 		}
@@ -365,21 +413,19 @@ void Image::resize(int width, int height) {
 		//Resize each frame.
 		for (int i = 0; i < gif->ImageCount; i++) {
 
-			unsigned char* newFrame = _resize(frames[i], width, height, gif->SavedImages[i].ImageDesc.Width,
-				gif->SavedImages[i].ImageDesc.Height);
-			
+			unsigned char* newFrame = _resize(frames[i], width, height, gif->SWidth,
+				gif->SHeight);
+
 			if(newFrame == frames[i])
 				continue;
 			else {
 				frames[i] = newFrame; 
 			}
 
-			free(gif->SavedImages[i].RasterBits);
-			free(gif->SavedImages[i].ImageDesc.ColorMap);
 			gif->SavedImages[i].ImageDesc.Width = width;
 			gif->SavedImages[i].ImageDesc.Height = height;
 
-			gifMakeMap(frames[i], width, height, (unsigned char**)&gif->SavedImages[i].ImageDesc.ColorMap, (unsigned char**)&gif->SavedImages[i].RasterBits);
+			
 			//Generate a new colour map for each frame.
 
 			

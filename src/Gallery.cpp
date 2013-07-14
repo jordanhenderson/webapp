@@ -254,7 +254,7 @@ int Gallery::genThumb(const char* file, double shortmax, double longmax) {
 	Image image(imagepath);
 	int err = image.GetLastError();
 	if(image.GetLastError() != ERROR_SUCCESS){
-		return -1;
+		return err;
 	}
 	//Calculate correct size (keeping aspect ratio) to shrink image to.
 	double wRatio = 1;
@@ -279,9 +279,10 @@ int Gallery::genThumb(const char* file, double shortmax, double longmax) {
 	double newHeight = height * ratio;
 
 
-   	image.resize(newWidth, newHeight);
+    image.resize(newWidth, newHeight);
 	image.save(basepath + PATHSEP + thumbspath + PATHSEP + file);
-	return 0;
+
+	return ERROR_SUCCESS;
 }
 
 int Gallery::hasAlbums() {
@@ -341,7 +342,7 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 	string type = vars["type"];
 	if(!is_number(type))
 		return 1;
-	int nRecurse = GETCHK(vars["recurse"]);
+	int nRecurse = GETCHK(vars["recursive"]);
 	int nGenThumbs = GETCHK(vars["genthumbs"]);
 	string name = vars["name"];
 	string path = vars["path"];
@@ -381,12 +382,14 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 						//Generate thumb.
 						if(nGenThumbs) {
 							FileSystem::MakePath(basepath + PATHSEP + thumbspath + PATHSEP + path + PATHSEP + files[i]);
-							genThumb((path + PATHSEP + files[i]).c_str(), 180, 180);
-							QueryRow params;
-							params.push_back(path + PATHSEP + files[i]);
-							int nThumbID = database->exec(INSERT_THUMB, &params);
-							if(nThumbID > 0) {
-								thumbID = to_string(nThumbID);
+							logger->printf("Adding file: %s (%d)", files[i].c_str(), i);
+							if(genThumb((path + PATHSEP + files[i]).c_str(), 200, 200) == ERROR_SUCCESS) {
+								QueryRow params;
+								params.push_back(path + PATHSEP + files[i]);
+								int nThumbID = database->exec(INSERT_THUMB, &params);
+								if(nThumbID > 0) {
+									thumbID = to_string(nThumbID);
+								}
 							}
 						}
 						//Insert file 
@@ -463,27 +466,28 @@ int Gallery::delAlbums(RequestVars& vars, Response& r, SessionStore&) {
 		params.clear();
 		params.push_back(album);
 		Query delquery = database->select(SELECT_ALBUM_PATH_THUMB, &params);
-		
-		string path = delquery.response->at(0).at(0);
-		string thumbid = delquery.response->at(0).at(1);
-		if(!thumbid.empty()) {
-			//Delete the thumb entry.
-			QueryRow params;
-			params.push_back(thumbid);
-			database->exec(DELETE_THUMB, &params);
-		}
-		//Delete the album.
-		database->exec(DELETE_ALBUM, &params);
-		string storepath = database->select(SELECT_SYSTEM("store_path")).response->at(0).at(0);
-		string thumbspath = database->select(SELECT_SYSTEM("thumbs_path")).response->at(0).at(0);
-		if(delFiles) {
-			//Delete the albums' files.
-			FileSystem::DeletePath(basepath + PATHSEP + storepath + PATHSEP + path);
-		}
-		if(delThumbs) {
-			FileSystem::DeletePath(basepath + PATHSEP + thumbspath + PATHSEP + path);
-		}
+			if(delquery.response->size() > 0) {
 
+			string path = delquery.response->at(0).at(0);
+			string thumbid = delquery.response->at(0).at(1);
+			if(!thumbid.empty()) {
+				//Delete the thumb entry.
+				QueryRow params;
+				params.push_back(thumbid);
+				database->exec(DELETE_THUMB, &params);
+			}
+			//Delete the album.
+			database->exec(DELETE_ALBUM, &params);
+			string storepath = database->select(SELECT_SYSTEM("store_path")).response->at(0).at(0);
+			string thumbspath = database->select(SELECT_SYSTEM("thumbs_path")).response->at(0).at(0);
+			if(delFiles) {
+				//Delete the albums' files.
+				FileSystem::DeletePath(basepath + PATHSEP + storepath + PATHSEP + path);
+			}
+			if(delThumbs) {
+				FileSystem::DeletePath(basepath + PATHSEP + thumbspath + PATHSEP + path);
+			}
+		}
 
 	}
 

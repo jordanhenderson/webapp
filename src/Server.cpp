@@ -18,7 +18,7 @@ void Server::run(int nThread, int sock) {
 			break;
 
 		char* uri = FCGX_GetParam("REQUEST_URI", request.envp);
-		logger->printf("Thread ID: %i, URL: %s", nThread, uri);
+
 		if(handler != NULL)
 			handler->process(&request); 
 		

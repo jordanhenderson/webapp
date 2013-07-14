@@ -32,6 +32,7 @@
 #define ERROR_DB_FAILED 4L
 #define ERROR_INVALID_IMAGE 5L
 #define ERROR_IMAGE_PROCESSING_FAILED 6L
+#define ERROR_NOT_SUPPORTED 7L
 
 #define HTML_HEADER "Content-type: text/html\r\n"
 #define CSS_HEADER "Content-type: text/css; charset=UTF-8\r\n"

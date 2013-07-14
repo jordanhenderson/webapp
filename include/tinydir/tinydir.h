@@ -123,16 +123,16 @@ int _tinydir_file_cmp(const void *a, const void *b);
 
 #ifdef _MSC_VER
 _TINYDIR_FUNC wchar_t* strtowide(const char* str) {
-	size_t requiredSize = mbstowcs(NULL, str, 0);
-	wchar_t* tmpPath = new wchar_t[(requiredSize+1)*sizeof(wchar_t)];
-	mbstowcs(tmpPath, str, requiredSize+1);
+	size_t requiredSize = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
+	wchar_t* tmpPath = new wchar_t[requiredSize+sizeof(wchar_t)];
+	MultiByteToWideChar(CP_UTF8, 0, str, -1, tmpPath, requiredSize);
 	return tmpPath;
 }
 
 _TINYDIR_FUNC char* widetostr(const wchar_t* str) {
-	size_t requiredSize = wcstombs(NULL, str, 0);
-	char* tmpPath = new char[requiredSize+1];
-	wcstombs(tmpPath, str, requiredSize+1);
+	size_t requiredSize = WideCharToMultiByte(CP_UTF8, 0, str, -1, NULL, 0, NULL, NULL);
+	char* tmpPath = new char[requiredSize+sizeof(char)];
+	WideCharToMultiByte(CP_UTF8, 0, str, -1, tmpPath, requiredSize, NULL, NULL);
 	return tmpPath;
 }
 #endif

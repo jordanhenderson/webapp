@@ -6,6 +6,7 @@
 #define IMAGE_TYPE_PNG 1
 #define IMAGE_TYPE_GIF 2
 #define THUMB_EXTENSIONS_JPEG_D {".jpg", ".jpeg", NULL};
+
 struct GifFileType;
 
 class Image : public Internal {
@@ -23,6 +24,7 @@ private:
 	unsigned char** row_pointers; 
 	void regenRowPointers();
 	//GIF ONLY
+
 	GifFileType* gif;
 	unsigned char** frames;
 	unsigned char** maps;

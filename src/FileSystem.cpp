@@ -182,7 +182,6 @@ vector<string> FileSystem::GetFiles(const string& base, const string& path, int 
 	tinydir_dir dir;
 	string abase = base + PATHSEP + path;
 	tinydir_open(&dir, abase.c_str());
-	
 	while(dir.has_next) {
 		
 		tinydir_file file;
@@ -191,6 +190,7 @@ vector<string> FileSystem::GetFiles(const string& base, const string& path, int 
 		if(!file.is_dir) 
 			files.push_back(dpath);
 		else if(recurse && file.name[0] != '.') {
+			//Get+append files from subdirectory. (recursive case)
 			vector<string> rfiles = GetFiles(base, dpath, 1);
 			files.insert(files.end(), rfiles.begin(), rfiles.end());
 		}
