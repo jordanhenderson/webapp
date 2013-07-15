@@ -44,6 +44,7 @@
 #define UPDATE_THUMB "UPDATE %s SET thumbid = ? WHERE id = ?;"
 
 #define DELETE_ALBUM "DELETE FROM albums WHERE id = ?;"
+#define DELETE_FILES "DELETE FROM files WHERE id IN (?);" 
 
 #define SELECT_FILE_DETAILS "SELECT f.id AS id, al.id as aid, f.name, f.rating as rating, f.views as views, \
 (SELECT (" SELECT_SYSTEM("store_path") ") || " XSTR(PSEP) " || al.path || " XSTR(PSEP) " || f.path) AS path, \
@@ -76,11 +77,25 @@ AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON a
 
 #define SELECT_ALBUM_PATH "SELECT path, recursive FROM albums WHERE id = ?;"
 
-#define DELETE_FILES "DELETE FROM albumfiles WHERE fileid IN (?); DELETE FROM files WHERE id IN (?);" 
+#define DELETE_MISSING_FILES "DELETE FROM files WHERE path NOT IN ("
 
 #define PRAGMA_FOREIGN "PRAGMA foreign_keys = ON;"
 
+#define SELECT_PATHS_FROM_ALBUM "SELECT path FROM files JOIN albumfiles ON albumfiles.fileid = files.id WHERE albumid = ?;"
+
 #define DEFAULT_PAGE_LIMIT 32
+
+/* DBSPEC
+CREATE TABLE "albumfiles" ("id" INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL , "albumid" INTEGER NOT NULL REFERENCES albums(id) ON DELETE CASCADE, "fileid" INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE )
+CREATE TABLE "albums" ("id" INTEGER PRIMARY KEY  NOT NULL ,"name" TEXT,"added" DATETIME,"lastedited" DATETIME,"path" TEXT NOT NULL ,"type" INTEGER NOT NULL ,"thumbid" INTEGER REFERENCES thumbs(id) ON DELETE SET NULL,"rating" INTEGER NOT NULL  DEFAULT (0) ,"recursive" INTEGER NOT NULL , "views" INTEGER DEFAULT 0)
+CREATE TABLE "files" ("id" INTEGER PRIMARY KEY  NOT NULL,"name" TEXT,"path" TEXT,"added" TEXT,"enabled" INTEGER NOT NULL  DEFAULT (1) ,"thumbid" INTEGER REFERENCES thumbs(id) ON DELETE SET NULL,"rating" INTEGER DEFAULT(0), "views" INTEGER DEFAULT 0, "lastedited" TEXT)
+CREATE TABLE "system" ("id" INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL , "name" TEXT NOT NULL , "value" TEXT)
+CREATE TABLE "thumbs" ("id" INTEGER PRIMARY KEY  NOT NULL , "path" TEXT)
+CREATE TRIGGER "file_cleanup" AFTER DELETE ON "albums" BEGIN DELETE FROM files WHERE id NOT IN (SELECT fileid FROM albumfiles); END
+CREATE TRIGGER "thumbs_trigger_files" AFTER DELETE ON "files" BEGIN DELETE FROM thumbs WHERE id NOT IN (SELECT thumbid FROM files f WHERE thumbid NOT NULL UNION SELECT thumbid FROM albums WHERE thumbid NOT NULL); END
+CREATE TRIGGER "thumbs_trigger_albums" AFTER DELETE ON "albums" BEGIN DELETE FROM thumbs WHERE id NOT IN (SELECT thumbid FROM files f WHERE thumbid NOT NULL UNION SELECT thumbid FROM albums WHERE thumbid NOT NULL); END
+*/
+
 
 #define GETSPATH(x) basepath + PATHSEP + storepath + PATHSEP + x
 #define GALLERYMAP(m) 	m["addAlbum"] = &Gallery::addAlbum; \
@@ -123,6 +138,50 @@ private:
 	void createFieldMap(Query& q, rapidjson::Value& v);
 	int hasAlbums();
 	int getData(Query& query, RequestVars&, Response&, SessionStore&);
+	template <typename T>
+	void addFiles(T& files, int nGenThumbs, const std::string& path, const std::string& albumID) {
+		std::string date = date_format("%Y%m%d",8);
+		std::string storepath = database->select(SELECT_SYSTEM("store_path")).response->at(0).at(0);
+		std::string thumbspath = database->select(SELECT_SYSTEM("thumbs_path")).response->at(0).at(0);
+		if(files.size() > 0) {
+			for (T::const_iterator it = files.begin(), end = files.end(); it != end; ++it) {
+
+				string thumbID;
+				//Generate thumb.
+				if(nGenThumbs) {
+					FileSystem::MakePath(basepath + PATHSEP + thumbspath + PATHSEP + path + PATHSEP + *it);
+					if(genThumb((path + PATHSEP + *it).c_str(), 200, 200) == ERROR_SUCCESS) {
+						QueryRow params;
+						params.push_back(path + PATHSEP + *it);
+						int nThumbID = database->exec(INSERT_THUMB, &params);
+						if(nThumbID > 0) {
+							thumbID = to_string(nThumbID);
+						}
+					}
+				}
+				//Insert file 
+				QueryRow params;
+				params.push_back(*it);
+				params.push_back(*it);
+				params.push_back(date);
+				int fileID;
+				if(!thumbID.empty()) {
+					params.push_back(thumbID);
+					fileID = database->exec(INSERT_FILE, &params);
+				} else {
+					fileID = database->exec(INSERT_FILE_NO_THUMB, &params);
+				}
+				//Add entry into albumFiles
+				QueryRow fparams;
+				fparams.push_back(albumID);
+				fparams.push_back(to_string(fileID));
+				database->exec(INSERT_ALBUM_FILE, &fparams);
+
+			}
+		}
+	}
+
+
 public:
 	Gallery::Gallery(Parameters* params);
 	Gallery::~Gallery();

@@ -298,33 +298,68 @@ int Gallery::hasAlbums() {
 
 //Public API functions. 
 int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& s) {
-	string storepath = database->select(SELECT_SYSTEM("store_path")).response->at(0).at(0);
-	string thumbspath = database->select(SELECT_SYSTEM("thumbs_path")).response->at(0).at(0);
+
+	int nGenThumbs = GETCHK(vars["genthumbs"]);
 	vector<string> albums;
 	tokenize(vars["a"],albums,",");
+	thread aa([this, albums, nGenThumbs]() {
+	string storepath = database->select(SELECT_SYSTEM("store_path")).response->at(0).at(0);
+	string thumbspath = database->select(SELECT_SYSTEM("thumbs_path")).response->at(0).at(0);
 	for(string album: albums) {
 		QueryRow params;
 		params.push_back(album);
-		Query q(SELECT_ALBUM_PATH, &params);
+		Query q = database->select(SELECT_ALBUM_PATH, &params);
 		if(q.response->size() > 0) {
 			string path = q.response->at(0).at(0);
 			string recursive = q.response->at(0).at(1);
 
 			//Delete nonexistent paths stored in database.
-			string existingFiles = "";
-			vector<string> files = FileSystem::GetFiles(basepath + PATHSEP + storepath + PATHSEP + path, "", stoi(recursive));
-			for(string file: files) {
-				existingFiles.append(file + ",");
+			string existingFiles = DELETE_MISSING_FILES;
+			list<string> files = FileSystem::GetFilesAsList(basepath + PATHSEP + storepath + PATHSEP + path, "", stoi(recursive));
+			if(files.size() > 0) {
+				for (std::list<string>::const_iterator it = files.begin(), end = files.end(); it != end; ++it) {
+					existingFiles.append("\"" + *it + "\",");
+				}
+				existingFiles = existingFiles.substr(0, existingFiles.size()-1);
+				existingFiles.append(")");
+				
 			}
-			existingFiles = "(" + existingFiles = ")";
-			//Delete the entries.
 			
 
+			database->exec(existingFiles);
+			
+	
+			QueryRow params;
+			params.push_back(album);
 
+			//Get a list of files in the album from db.
+			Query q_album = database->select(SELECT_PATHS_FROM_ALBUM, &params);
+
+			for(int i = 0; i < q_album.response->size(); i++) {
+				vector<string> row = q_album.response->at(i);
+				//For every row, look for a match in files. Remove from files when match found.
+				for (std::list<string>::const_iterator it = files.begin(), end = files.end(); it != end;) {
+					if(row.at(0) == *it) {
+						it = files.erase(it);
+					} else {
+						it++;
+					}
+				}
+			}
+
+			addFiles(files, nGenThumbs, path, album);
 
 		}
-
 	}
+
+	});
+	aa.detach();
+	unordered_map<string, string> map;
+	map["msg"] = "REFRESH_SUCCESS";
+	map["close"] = "1";
+	Serializer serializer;
+	serializer.append(map);
+	r.append(serializer.get(RESPONSE_TYPE_MESSAGE));
 	return 0;
 }
 
@@ -411,43 +446,8 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 
 				int albumID = database->exec(INSERT_ALBUM, &params);
 				vector<string> files = FileSystem::GetFiles(basepath + PATHSEP + storepath + PATHSEP + path, "", nRecurse);
-				int albumThumbID = -1;
-				if(files.size() > 0) {
-					for(int i = 0; i < files.size(); i++) {
-						string thumbID;
-						//Generate thumb.
-						if(nGenThumbs) {
-							FileSystem::MakePath(basepath + PATHSEP + thumbspath + PATHSEP + path + PATHSEP + files[i]);
-							logger->printf("Adding file: %s (%d)", files[i].c_str(), i);
-							if(genThumb((path + PATHSEP + files[i]).c_str(), 200, 200) == ERROR_SUCCESS) {
-								QueryRow params;
-								params.push_back(path + PATHSEP + files[i]);
-								int nThumbID = database->exec(INSERT_THUMB, &params);
-								if(nThumbID > 0) {
-									thumbID = to_string(nThumbID);
-								}
-							}
-						}
-						//Insert file 
-						QueryRow params;
-						params.push_back(files[i]);
-						params.push_back(files[i]);
-						params.push_back(date);
-						int fileID;
-						if(!thumbID.empty()) {
-							params.push_back(thumbID);
-							fileID = database->exec(INSERT_FILE, &params);
-						} else {
-							fileID = database->exec(INSERT_FILE_NO_THUMB, &params);
-						}
-						//Add entry into albumFiles
-						QueryRow fparams;
-						fparams.push_back(to_string(albumID));
-						fparams.push_back(to_string(fileID));
-						database->exec(INSERT_ALBUM_FILE, &fparams);
-
-					}
-				}
+			
+				addFiles(files, nGenThumbs, path, to_string(albumID));
 			});
 			aa.detach();
 			map["msg"] = "ADDED_SUCCESS";
@@ -541,7 +541,7 @@ int Gallery::getFiles(RequestVars& vars, Response& r, SessionStore&s) {
 		params.push_back(id);
 		//Increment views.
 		database->exec(INC_FILE_VIEWS, &params);
-	} else {
+	} else if(vars["o"] == "grouped") {
 		query.append(CONDITION_FILE_GROUPED);
 	}
 	

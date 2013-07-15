@@ -202,3 +202,31 @@ vector<string> FileSystem::GetFiles(const string& base, const string& path, int 
 	return files;
 	
 }
+
+
+list<string> FileSystem::GetFilesAsList(const string& base, const string& path, int recurse) {
+	list<string> files;
+
+	tinydir_dir dir;
+	string abase = base + PATHSEP + path;
+	tinydir_open(&dir, abase.c_str());
+	while(dir.has_next) {
+		
+		tinydir_file file;
+		tinydir_readfile(&dir, &file);
+		string dpath = path.empty() ? file.name : path + PATHSEP + file.name;
+		if(!file.is_dir) 
+			files.push_back(dpath);
+		else if(recurse && file.name[0] != '.') {
+			//Get+append files from subdirectory. (recursive case)
+			list<string> rfiles = GetFilesAsList(base, dpath, 1);
+			files.insert(files.end(), rfiles.begin(), rfiles.end());
+		}
+		tinydir_next(&dir);
+		
+	}
+	tinydir_close(&dir);
+		
+	return files;
+	
+}
