@@ -67,8 +67,6 @@ void Image::changeType(const string& filename) {
 
 			gif->SavedImages[0].ImageDesc.Width = width;
 			gif->SavedImages[0].ImageDesc.Height = height;
-			gifMakeMap(pixels, width, height, (unsigned char**)&gif->SavedImages[0].ImageDesc.ColorMap, 
-				(unsigned char**)&gif->SavedImages[0].RasterBits);
 
 		}
 		imageType = IMAGE_TYPE_GIF;
@@ -254,6 +252,7 @@ void Image::load(const string& filename) {
 				gifInsertFrame(i);
 			}
 			pixels = frames[0];
+
 			
 			
 			//File now handled by giflib.
@@ -357,7 +356,9 @@ void Image::save(const string& filename) {
 		output->SHeight = height;
 		output->SColorResolution = bitdepth;
 		output->SBackGroundColor = gif->SBackGroundColor;
-		output->SColorMap = NULL;
+
+	
+		output->SColorMap = GifMakeMapObject(gif->SColorMap->ColorCount, gif->SColorMap->Colors);
 		
 
 		output->ImageCount = gif->ImageCount;
@@ -378,10 +379,12 @@ void Image::save(const string& filename) {
 			output->SavedImages[i].ImageDesc.Interlace = 0;
 			output->SavedImages[i].ExtensionBlockCount = gif->SavedImages[i].ExtensionBlockCount;
 			output->SavedImages[i].ExtensionBlocks = gif->SavedImages[i].ExtensionBlocks;
-		
+			
+
 			
 			//Remove subimage rasterbits issues
 			gifMakeMap(frames[i], width, height, (unsigned char**)&output->SavedImages[i].ImageDesc.ColorMap, (unsigned char**)&output->SavedImages[i].RasterBits);
+
 		}
 
 		

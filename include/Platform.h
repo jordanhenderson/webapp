@@ -14,6 +14,7 @@
 #include <cstdarg>
 #include <direct.h>
 #include <vector>
+#include <list>
 
 
 

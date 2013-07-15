@@ -38,13 +38,11 @@
 #define SELECT_SYSTEM(var) "SELECT value FROM system WHERE name=\"" var "\""
 #define INSERT_ALBUM "INSERT INTO albums (name, added, lastedited, path, type, recursive) VALUES (?,?,?,?,?,?);"
 #define INSERT_FILE "INSERT INTO files (name, path, added, thumbid) VALUES (?,?,?,?);"
+#define INSERT_FILE_NO_THUMB "INSERT INTO files (name, path, added) VALUES (?,?,?);"
 #define INSERT_ALBUM_FILE "INSERT INTO albumfiles (albumid, fileid) VALUES (?,?);"
 #define INSERT_THUMB "INSERT INTO thumbs(path) VALUES (?);"
 #define UPDATE_THUMB "UPDATE %s SET thumbid = ? WHERE id = ?;"
 
-#define DELETE_THUMB "DELETE FROM thumbs WHERE id = ?;"
-#define DELETE_FILE "DELETE FROM files WHERE id = ?;"
-#define DELETE_ALBUM_FILE "DELETE FROM albumfiles WHERE id = ?;"
 #define DELETE_ALBUM "DELETE FROM albums WHERE id = ?;"
 
 #define SELECT_FILE_DETAILS "SELECT f.id AS id, al.id as aid, f.name, f.rating as rating, f.views as views, \
@@ -76,9 +74,13 @@ AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON a
 			(SELECT id FROM albumfiles WHERE albumid=al.id ORDER BY id ASC LIMIT 1) JOIN albums ON albums.id = al.id),\
 		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || " XSTR(PSEP) " || (" SELECT_SYSTEM("default_thumb") "))) AS thumb FROM albums al WHERE 1 "
 
+#define SELECT_ALBUM_PATH "SELECT path, recursive FROM albums WHERE id = ?;"
 
+#define DELETE_FILES "DELETE FROM albumfiles WHERE fileid IN (?); DELETE FROM files WHERE id IN (?);" 
 
-#define DEFAULT_PAGE_LIMIT 25
+#define PRAGMA_FOREIGN "PRAGMA foreign_keys = ON;"
+
+#define DEFAULT_PAGE_LIMIT 32
 
 #define GETSPATH(x) basepath + PATHSEP + storepath + PATHSEP + x
 #define GALLERYMAP(m) 	m["addAlbum"] = &Gallery::addAlbum; \
@@ -88,7 +90,8 @@ AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON a
 	m["login"] = &Gallery::login; \
 	m["setThumb"] = &Gallery::setThumb; \
 	m["getFiles"] = &Gallery::getFiles; \
-	m["search"] = &Gallery::search;
+	m["search"] = &Gallery::search; \
+	m["refreshAlbums"] = &Gallery::refreshAlbums;
 #define GETCHK(s) s.empty() ? 0 : 1
 typedef std::unordered_map<std::string, std::string> RequestVars;
 typedef std::unordered_map<std::string, std::string> CookieVars;
@@ -135,6 +138,7 @@ public:
 	int setThumb(RequestVars&, Response&, SessionStore&);
 	int getFiles(RequestVars&, Response&, SessionStore&);
 	int search(RequestVars&, Response&, SessionStore&);
+	int refreshAlbums(RequestVars&, Response&, SessionStore&);
 };
 
 #endif

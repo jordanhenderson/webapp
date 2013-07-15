@@ -23,6 +23,8 @@ Gallery::Gallery(Parameters* params) {
 	basepath = params->get("basepath");
 	this->database = new Database((basepath + PATHSEP + dbpath).c_str());
 
+	//Enable pragma foreign keys.
+	database->exec(PRAGMA_FOREIGN);
 	session = new Session();
 
 	//Check authentication
@@ -295,6 +297,39 @@ int Gallery::hasAlbums() {
 }
 
 //Public API functions. 
+int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& s) {
+	string storepath = database->select(SELECT_SYSTEM("store_path")).response->at(0).at(0);
+	string thumbspath = database->select(SELECT_SYSTEM("thumbs_path")).response->at(0).at(0);
+	vector<string> albums;
+	tokenize(vars["a"],albums,",");
+	for(string album: albums) {
+		QueryRow params;
+		params.push_back(album);
+		Query q(SELECT_ALBUM_PATH, &params);
+		if(q.response->size() > 0) {
+			string path = q.response->at(0).at(0);
+			string recursive = q.response->at(0).at(1);
+
+			//Delete nonexistent paths stored in database.
+			string existingFiles = "";
+			vector<string> files = FileSystem::GetFiles(basepath + PATHSEP + storepath + PATHSEP + path, "", stoi(recursive));
+			for(string file: files) {
+				existingFiles.append(file + ",");
+			}
+			existingFiles = "(" + existingFiles = ")";
+			//Delete the entries.
+			
+
+
+
+		}
+
+	}
+	return 0;
+}
+
+
+
 int Gallery::search(RequestVars& vars, Response& r, SessionStore& s) {
 	string query = SELECT_FILE_DETAILS;
 	QueryRow params;
@@ -325,6 +360,7 @@ int Gallery::login(RequestVars& vars, Response& r, SessionStore& store) {
 }
 
 int Gallery::addBulkAlbums(RequestVars& vars, Response& r, SessionStore& s) {
+	//This function ignores duplicates.
 	vector<string> paths;
 	tokenize(vars["paths"],paths,"\n");
 	for(string path: paths) {
@@ -397,9 +433,13 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 						params.push_back(files[i]);
 						params.push_back(files[i]);
 						params.push_back(date);
-						params.push_back(thumbID);
-
-						int fileID = database->exec(INSERT_FILE, &params);
+						int fileID;
+						if(!thumbID.empty()) {
+							params.push_back(thumbID);
+							fileID = database->exec(INSERT_FILE, &params);
+						} else {
+							fileID = database->exec(INSERT_FILE_NO_THUMB, &params);
+						}
 						//Add entry into albumFiles
 						QueryRow fparams;
 						fparams.push_back(to_string(albumID));
@@ -436,46 +476,12 @@ int Gallery::delAlbums(RequestVars& vars, Response& r, SessionStore&) {
 	for(string album: albums) {
 		QueryRow params;
 
-		//Delete files.
 		params.push_back(album);
-		Query query = database->select(SELECT_ALBUM_FILE, &params);
-		for(vector<string> row: (*query.response)) {
-			//Delete thumbs first.
-			QueryRow params;
-			params.push_back(row.at(1));
-			Query query = database->select(SELECT_FILE_THUMBID, &params);
-			
-			string thumbid = query.response->at(0).at(0);
-			if(!thumbid.empty()) {
-				//Delete the thumb entry.
-				QueryRow params;
-				params.push_back(thumbid);
-				database->exec(DELETE_THUMB, &params);
-			}
-			
-			database->exec(DELETE_FILE, &params);
-
-			//Now delete albumfiles.
-			params.clear();
-			params.push_back(row.at(0));
-			database->exec(DELETE_ALBUM_FILE, &params);
-		}
-
-		//Finally, delete the album thumb, then the album.
-
-		params.clear();
-		params.push_back(album);
-		Query delquery = database->select(SELECT_ALBUM_PATH_THUMB, &params);
-			if(delquery.response->size() > 0) {
+		Query delquery = database->select(SELECT_ALBUM_PATH, &params);
+		if(delquery.response->size() > 0) {
 
 			string path = delquery.response->at(0).at(0);
-			string thumbid = delquery.response->at(0).at(1);
-			if(!thumbid.empty()) {
-				//Delete the thumb entry.
-				QueryRow params;
-				params.push_back(thumbid);
-				database->exec(DELETE_THUMB, &params);
-			}
+			
 			//Delete the album.
 			database->exec(DELETE_ALBUM, &params);
 			string storepath = database->select(SELECT_SYSTEM("store_path")).response->at(0).at(0);
@@ -488,7 +494,6 @@ int Gallery::delAlbums(RequestVars& vars, Response& r, SessionStore&) {
 				FileSystem::DeletePath(basepath + PATHSEP + thumbspath + PATHSEP + path);
 			}
 		}
-
 	}
 
 	map["msg"] = "DELETE_SUCCESS";

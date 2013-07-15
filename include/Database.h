@@ -40,7 +40,7 @@ public:
 	~Database();
 	void select(Query* query);
 	int exec(Query* query);
-	int exec(const std::string& query, QueryRow* params);
+	int exec(const std::string& query, QueryRow* params=NULL);
 	Query select(const std::string& query, int desc = 0);
 	Query select(const std::string& query, QueryRow* params, int desc = 0);
 };

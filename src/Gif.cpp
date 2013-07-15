@@ -10,8 +10,8 @@ void Image::gifInsertFrame(int frame) {
 	unsigned char bgcolor;
 	GifImageDesc* img = &gif->SavedImages[frame].ImageDesc;
 	int rastersize = gif->SWidth * gif->SHeight;
-	//Allocate the frame.
-	frames[frame] = ippsMalloc_8u(rastersize * 4);
+
+	
 	//Set color map to use local or global color map. Local overrides global.
 	ColorMapObject* map = img->ColorMap ? img->ColorMap : gif->SColorMap;
 	GraphicsControlBlock gcb;
@@ -26,8 +26,28 @@ void Image::gifInsertFrame(int frame) {
 		bgcolor = 0;
 	}
 
-	if(frame > 0 && gcb.DisposalMode == DISPOSE_DO_NOT) {
-		memcpy(frames[frame],frames[frame - 1], rastersize*4);
+	//Allocate the initial frame.
+	if(frame == 0) {
+		frames[frame] = ippsMalloc_8u(rastersize * 4);
+		//Fill the frame transparent.
+		unsigned char target[4];
+		GifColorType c;
+		if(alpha > -1) {
+			c = map->Colors[alpha];
+
+		} else {
+			c = map->Colors[bgcolor];
+		}
+		target[0] = c.Red;
+		target[1] = c.Green;
+		target[2] = c.Blue;
+		target[3] = 255;
+		for(int i = 0; i < rastersize; i++) {
+			memcpy(frames[frame]+i*4, &target, 4);
+
+		}
+		
+
 	}
 
 	unsigned char* framePixels = new unsigned char[gif->SWidth * gif->SHeight * 4]();
@@ -46,18 +66,18 @@ void Image::gifInsertFrame(int frame) {
 			while (dx < dlim) {
 				int indexInColourTable = (int) gif->SavedImages[frame].RasterBits[sx++];
 				GifColorType c;
-				unsigned char a;
+				unsigned char a = 255;
+				//dispose of transparent colours.
 				if(gcb.TransparentColor > 0 && indexInColourTable == alpha) {
-					c.Red = c.Blue = c.Green = a = 0;
+					a = 0;
 				}
 				else {
 					if(indexInColourTable < map->ColorCount) {
 						c = map->Colors[indexInColourTable];
-						a = 255;
 					}
 					else {
+						//Invalid colour (out of map range).
 						c.Red = c.Blue = c.Green = 0;
-						a = 255;
 					}
 				}
 				framePixels[dx*4] = c.Red;
@@ -72,16 +92,53 @@ void Image::gifInsertFrame(int frame) {
 	int count = 0;
 	for( int th = 0; th < gif->SHeight; th++ ) {
 		for( int tw = 0; tw < gif->SWidth; tw++ ) {
-			if( framePixels[count*4] != 0 && framePixels[(count*4)+1] != 0 && framePixels[(count*4)+2] != 0 && framePixels[(count*4)+3] != 0) {
+			if(framePixels[(count*4)+3] == 255) {
 				memcpy(&frames[frame][((th*gif->SWidth)+tw)*4], &framePixels[(count*4)], 4);
 			}
 			count++;
 		}
 	}
+
+	
+
+
+	if(frame + 1 < gif->ImageCount) {
+		frames[frame + 1] = ippsMalloc_8u(rastersize * 4);
+
+		
+		if(gcb.DisposalMode == DISPOSE_DO_NOT)
+			memcpy(frames[frame+1],frames[frame], rastersize*4);
+		else if(gcb.DisposalMode == DISPOSE_BACKGROUND) {
+			if(bgcolor == alpha) 
+				memset(frames[frame+1], '\0', rastersize*4);
+			else {
+				GifColorType c = map->Colors[bgcolor];
+				for(int i = 0; i < rastersize; i++) {
+					memcpy(frames[frame+1]+i*4, &c, 3);
+					*(frames[frame+1]+(i*4)+3) = 255;
+				}
+
+			}
+
+		} else if(gcb.DisposalMode == DISPOSE_PREVIOUS && frame > 0) {
+			//Not supported, just use current frame.
+			memcpy(frames[frame+1], frames[frame], rastersize*4);
+		} else {
+			//Unspecified.
+			if(frame == 0)
+				memset(frames[frame+1], '\0', rastersize * 4);
+			else
+				memcpy(frames[frame+1], framePixels, rastersize*4);
+		}
+	}
+
 	//Mark the gcb as not having a transparent color.
 	gcb.TransparentColor = -1;
+	//Remove disposal mode (unoptimised, but required for now).
+	gcb.DisposalMode = DISPOSE_BACKGROUND;
 	EGifGCBToSavedExtension(&gcb, gif, frame);
-	delete[] framePixels;
+
+		delete[] framePixels;
 
 }
 
