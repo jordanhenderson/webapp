@@ -477,9 +477,6 @@
     <ClCompile Include="src\tbb\dynamic_link.cpp">
       <Filter>Source Files\tbb</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\Users\hendo\Desktop\tbb\tbb41_20130613oss\src\tbb\spin_mutex.cpp">
-      <Filter>Source Files\tbb</Filter>
-    </ClCompile>
     <ClCompile Include="src\tbb\tbb_main.cpp">
       <Filter>Source Files\tbb</Filter>
     </ClCompile>
@@ -523,6 +520,9 @@
       <Filter>Source Files\tbb</Filter>
     </ClCompile>
     <ClCompile Include="src\tbb\spin_rw_mutex.cpp">
+      <Filter>Source Files\tbb</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tbb\spin_mutex.cpp">
       <Filter>Source Files\tbb</Filter>
     </ClCompile>
   </ItemGroup>

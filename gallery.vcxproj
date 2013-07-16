@@ -205,7 +205,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\Users\hendo\Desktop\tbb\tbb41_20130613oss\src\tbb\spin_mutex.cpp" />
     <ClCompile Include="include\rml\client\rml_tbb.cpp" />
     <ClCompile Include="src\Database.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
@@ -1243,6 +1242,7 @@
     <ClCompile Include="src\tbb\private_server.cpp" />
     <ClCompile Include="src\tbb\scheduler.cpp" />
     <ClCompile Include="src\tbb\semaphore.cpp" />
+    <ClCompile Include="src\tbb\spin_mutex.cpp" />
     <ClCompile Include="src\tbb\spin_rw_mutex.cpp" />
     <ClCompile Include="src\tbb\task.cpp" />
     <ClCompile Include="src\tbb\task_group_context.cpp" />
