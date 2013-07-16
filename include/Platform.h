@@ -22,6 +22,7 @@
 #ifdef WIN32
 #define ENV_NEWLINE "\r\n"
 #define snprintf _snprintf
+//#define HAS_IPP
 #else
 #define ENV_NEWLINE "\n"
 #define _wfopen fopen
@@ -45,6 +46,7 @@
 #define STR(a) #a
 #define PSEP "/"
 #define PATHSEP PSEP[0]
+
 
 
 extern std::string empty;

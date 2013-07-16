@@ -3,8 +3,9 @@
 #include "jerror.h"
 #include "png.h"
 #include "gif_lib.h"
-
+#ifdef HAS_IPP
 #include <ipp.h>
+#endif
 const char* THUMB_EXTENSIONS_JPEG[] = THUMB_EXTENSIONS_JPEG_D;
 using namespace std;
 void Image::cleanup() {
@@ -19,7 +20,11 @@ void Image::cleanup() {
 		//No break; intentional.
 	case IMAGE_TYPE_JPEG:
 		if(pixels != NULL) {
+#ifdef HAS_IPP
 			ippsFree(pixels);
+#else
+			delete[] pixels;
+#endif
 			pixels = NULL;
 		}
 		break;
@@ -118,7 +123,11 @@ void Image::load(const string& filename) {
 			//Allocate pixels array.
 			nBytes = cinfo.output_width * cinfo.output_height * cinfo.output_components;
 
+#ifdef HAS_IPP
 			pixels = ippsMalloc_8u(nBytes);
+#else	
+			pixels = new unsigned char[nBytes];
+#endif
 			unsigned int scanline_count = 0;
 			unsigned int scanline_length = cinfo.output_width * cinfo.output_components;
 			while(cinfo.output_scanline < cinfo.output_height) {
@@ -208,7 +217,11 @@ void Image::load(const string& filename) {
 			nBytes = height * scanline_length;
 
 			//Allocate the pixel dump
+#ifdef HAS_IPP
 			pixels = ippsMalloc_8u(nBytes);
+#else
+			pixels = new unsigned char[nBytes];
+#endif
 
 			if(row_pointers != NULL) {
 				nError = ERROR_IMAGE_PROCESSING_FAILED;
@@ -456,7 +469,7 @@ void Image::regenRowPointers() {
 }
 
 unsigned char* Image::_resize(unsigned char* image, int width, int height, int oldWidth, int oldHeight) {
-
+#ifdef HAS_IPP
 	if(width == oldWidth && height == oldHeight)
 		return image;
 
@@ -502,6 +515,15 @@ unsigned char* Image::_resize(unsigned char* image, int width, int height, int o
 	
 	nBytes = width * height * 4;
 	return tmpBuf;
+#else
+#warning Resize not implemented for non-IPP platforms.
+	//Just realloc the buffer instead (for now).
+	nBytes = width * height * 4;
+	image = (unsigned char*)realloc(image, nBytes);
+	return image;
+	
+
+#endif
 }
 
 Image::~Image() {
