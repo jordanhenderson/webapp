@@ -44,7 +44,6 @@
 #define UPDATE_THUMB "UPDATE %s SET thumbid = ? WHERE id = ?;"
 
 #define DELETE_ALBUM "DELETE FROM albums WHERE id = ?;"
-#define DELETE_FILES "DELETE FROM files WHERE id IN (?);" 
 
 #define SELECT_FILE_DETAILS "SELECT f.id AS id, al.id as aid, f.name, f.rating as rating, f.views as views, \
 (SELECT (" SELECT_SYSTEM("store_path") ") || " XSTR(PSEP) " || al.path || " XSTR(PSEP) " || f.path) AS path, \
@@ -53,11 +52,15 @@
 		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || " XSTR(PSEP) " || (" SELECT_SYSTEM("default_thumb") "))) \
 AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON al.id=alf.albumid WHERE 1 "
 
+#define CONDITION_FILE_ENABLED " AND f.enabled = 1 "
+
+#define TOGGLE_FILES "UPDATE files SET enabled = 1 - enabled WHERE id IN (SELECT f.id FROM files f JOIN albumfiles alf ON alf.fileid = f.id JOIN albums al ON alf.albumid = al.id WHERE 1 "
+
 #define SELECT_DETAILS_END " ORDER BY id DESC LIMIT ?;"
 
 #define CONDITION_SEARCH " AND f.id IN (SELECT f.id FROM files f WHERE f.name LIKE ?) "
 
-#define CONDITION_FILEID " AND f.id IN (?) "
+#define CONDITION_FILEID " AND f.id = ? "
 
 #define CONDITION_ALBUM " AND al.id = ? "
 
@@ -85,6 +88,11 @@ AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON a
 
 #define DEFAULT_PAGE_LIMIT 32
 
+
+#define CONDITION_N_FILE(op) " AND f.id = (SELECT fileid FROM albumfiles WHERE id = (SELECT id FROM albumfiles WHERE fileid " op " ? AND albumid = ? LIMIT 1))"
+
+#define SELECT_ALBUM_ID_WITH_FILE "SELECT al.id FROM albums al JOIN albumfiles alf ON alf.albumid = al.id JOIN files f ON alf.fileid = f.id WHERE f.id = ?"
+
 /* DBSPEC
 CREATE TABLE "albumfiles" ("id" INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL , "albumid" INTEGER NOT NULL REFERENCES albums(id) ON DELETE CASCADE, "fileid" INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE )
 CREATE TABLE "albums" ("id" INTEGER PRIMARY KEY  NOT NULL ,"name" TEXT,"added" DATETIME,"lastedited" DATETIME,"path" TEXT NOT NULL ,"type" INTEGER NOT NULL ,"thumbid" INTEGER REFERENCES thumbs(id) ON DELETE SET NULL,"rating" INTEGER NOT NULL  DEFAULT (0) ,"recursive" INTEGER NOT NULL , "views" INTEGER DEFAULT 0)
@@ -106,7 +114,9 @@ CREATE TRIGGER "thumbs_trigger_albums" AFTER DELETE ON "albums" BEGIN DELETE FRO
 	m["setThumb"] = &Gallery::setThumb; \
 	m["getFiles"] = &Gallery::getFiles; \
 	m["search"] = &Gallery::search; \
-	m["refreshAlbums"] = &Gallery::refreshAlbums;
+	m["refreshAlbums"] = &Gallery::refreshAlbums; \
+	m["disableFiles"] = &Gallery::disableFiles; \
+	m["nextFile"] = &Gallery::nextFile;
 #define GETCHK(s) s.empty() ? 0 : 1
 typedef std::unordered_map<std::string, std::string> RequestVars;
 typedef std::unordered_map<std::string, std::string> CookieVars;
@@ -198,6 +208,8 @@ public:
 	int getFiles(RequestVars&, Response&, SessionStore&);
 	int search(RequestVars&, Response&, SessionStore&);
 	int refreshAlbums(RequestVars&, Response&, SessionStore&);
+	int disableFiles(RequestVars&, Response&, SessionStore&);
+	int nextFile(RequestVars&, Response&, SessionStore&);
 };
 
 #endif

@@ -22,7 +22,7 @@
 #ifdef WIN32
 #define ENV_NEWLINE "\r\n"
 #define snprintf _snprintf
-//#define HAS_IPP
+#define HAS_IPP
 #else
 #define ENV_NEWLINE "\n"
 #define _wfopen fopen
@@ -93,6 +93,6 @@ void tokenize(const std::string& str, ContainerT& tokens,
 
 
 std::string string_format(const std::string fmt, ...);
-std::string date_format(const std::string fmt, const size_t datesize, time_t* t=NULL, int gmt = 0);
+std::string date_format(const std::string& fmt, const size_t datesize, time_t* t=NULL, int gmt = 0);
 void add_days(time_t& t, int days);
 #endif

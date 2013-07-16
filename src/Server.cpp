@@ -5,19 +5,17 @@
 using namespace std;
 void Server::run(int nThread, int sock) {
 	FCGX_Request request;
-	int rc = 0;
+
 
 
 
 	FCGX_InitRequest(&request, sock, 0);
 	for(;;) {
 		
-		rc = FCGX_Accept_r(&request);
+		int rc = FCGX_Accept_r(&request);
 		
 		if(rc < 0)
 			break;
-
-		char* uri = FCGX_GetParam("REQUEST_URI", request.envp);
 
 		if(handler != NULL)
 			handler->process(&request); 

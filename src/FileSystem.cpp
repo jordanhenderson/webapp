@@ -22,15 +22,9 @@ void FileSystem::Open(const string& fileName, const string& flags, File* outFile
 #endif
 	outFile->fileName = fileName;
 	outFile->flags = actualFlag;
-	char* errType = "";
-	if(outFile->pszFile == NULL) {
-		if(flags[0] == 'w' || flags[0] == 'a' || flags[1] == '+')
-			errType = "writing";
-		else if(flags[0] == 'r')
-			errType = "reading";
 		//Debug Message: File Access error: $fileName could not be opened for $errType.
 		
-	}
+	
 
 	//Debug Message: File $fileName opened successfully. Flags: $flags.
 	return;
@@ -65,22 +59,24 @@ long FileSystem::Size(File* file) {
 void FileSystem::Process(File* file, void* userdata, void* callback, FileData* outData) {
 	if(file == NULL || file->pszFile == NULL || outData == NULL)
 		return;
-	int baseBytes = 0;
-	int oldBaseBytes = 0;
+	
+	
 	
 	//Seek to the beginning.
 	
 	FILE* tmpFile = file->pszFile;
 	rewind(file->pszFile);
-	int count = 0;
 	int size = Size(file);
 	
 	outData->data = new char[size * sizeof(char) + 1];
 
 		if(callback != NULL) {
+			int baseBytes = 0;
+			int oldBaseBytes;
+			int count = 0;
 			while(!feof(tmpFile)) {
+					
 				//Read files line by line
-		
 					oldBaseBytes = ftell(tmpFile);
 					fgets(outData->data + baseBytes, 4096, tmpFile);
 					int nBytesRead = ftell(tmpFile) - oldBaseBytes;
@@ -90,6 +86,7 @@ void FileSystem::Process(File* file, void* userdata, void* callback, FileData* o
 				} 
 				baseBytes--;
 				count = 1;
+				
 		}
 		else {
 			//Simply read the entire file. Hopefully improve performance.
@@ -125,8 +122,7 @@ void FileSystem::MakePath(const string& path) {
 	//Recurisvely make a path structure.
 	string tmpPath = string(path);
 	int nFilename = tinydir_todir((char*)tmpPath.c_str(), tmpPath.length());
-	const char* lastSep = tmpPath.c_str();
-
+	
 	for(int i = 0; i <= tmpPath.length() - nFilename; i++) {
 		if(tmpPath[i] == '/' || tmpPath[i] == 0) {
 			tmpPath[i] = 0;
@@ -169,7 +165,7 @@ void FileSystem::DeletePath(const string& path) {
 #ifdef WIN32
 	wstring wPath;
 	wPath.assign(path.begin(), path.end());
-	int err = _wrmdir(wPath.c_str());
+	_wrmdir(wPath.c_str());
 #else
 	rmdir(path.c_str());
 #endif

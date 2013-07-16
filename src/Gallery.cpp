@@ -302,6 +302,49 @@ int Gallery::hasAlbums() {
 }
 
 //Public API functions. 
+int Gallery::nextFile(RequestVars& vars, Response& r, SessionStore& s) {
+	string query = SELECT_FILE_DETAILS CONDITION_N_FILE(">");
+	QueryRow params;
+	string id = vars["id"];
+	if(!id.empty()) {
+		//Get the album.
+		QueryRow params;
+		params.push_back(id);
+		Query q = database->select(SELECT_ALBUM_ID_WITH_FILE, &params);
+		if(!q.response->empty()) {
+			params.push_back(q.response->at(0).at(0));
+			//File has an album. Retrieve the next file.
+			Query q(query, &params);
+			return getData(q, vars, r, s);
+		}
+	}
+	r.append("{}");
+	return 0;
+
+}
+
+int Gallery::disableFiles(RequestVars& vars, Response& r, SessionStore& s) {
+	string query = TOGGLE_FILES;
+	QueryRow params;
+	
+	string album = vars["album"];
+	string id = vars["id"];
+	if(!album.empty() && id.empty()) {
+		query.append(CONDITION_ALBUM);
+		params.push_back(album);
+	}
+	else if(!id.empty()) {
+		query.append(CONDITION_FILEID);
+		params.push_back(id);
+		//Increment views.
+	} 
+	query.append(")");
+
+	database->exec(query, &params);
+	r.append("{}");
+	return 0;
+}
+
 int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& s) {
 
 	int nGenThumbs = GETCHK(vars["genthumbs"]);
@@ -309,19 +352,18 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& s) {
 	tokenize(vars["a"],albums,",");
 	thread aa([this, albums, nGenThumbs]() {
 	string storepath = database->select(SELECT_SYSTEM("store_path")).response->at(0).at(0);
-	string thumbspath = database->select(SELECT_SYSTEM("thumbs_path")).response->at(0).at(0);
 	for(string album: albums) {
 		QueryRow params;
 		params.push_back(album);
 		Query q = database->select(SELECT_ALBUM_PATH, &params);
-		if(q.response->size() > 0) {
+		if(!q.response->empty()) {
 			string path = q.response->at(0).at(0);
 			string recursive = q.response->at(0).at(1);
 
 			//Delete nonexistent paths stored in database.
 			string existingFiles = DELETE_MISSING_FILES;
 			list<string> files = FileSystem::GetFilesAsList(basepath + PATHSEP + storepath + PATHSEP + path, "", stoi(recursive));
-			if(files.size() > 0) {
+			if(!files.empty()) {
 				for (std::list<string>::const_iterator it = files.begin(), end = files.end(); it != end; ++it) {
 					existingFiles.append("\"" + *it + "\",");
 				}
@@ -347,7 +389,7 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& s) {
 					if(row.at(0) == *it) {
 						it = files.erase(it);
 					} else {
-						it++;
+						++it;
 					}
 				}
 			}
@@ -374,9 +416,11 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& s) {
 int Gallery::search(RequestVars& vars, Response& r, SessionStore& s) {
 	string query = SELECT_FILE_DETAILS;
 	QueryRow params;
-	
 	if(vars["t"] == "search") {
 		query.append(CONDITION_SEARCH);
+		if(vars["q"].empty()) {
+			query.append(CONDITION_FILE_ENABLED);
+		}
 		params.push_back("%" + vars["q"] + "%");
 	}
 
@@ -415,7 +459,6 @@ int Gallery::addBulkAlbums(RequestVars& vars, Response& r, SessionStore& s) {
 }
 
 int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
-
 	string type = vars["type"];
 	if(!is_number(type))
 		return 1;
@@ -437,7 +480,6 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 			//Thread the adding code using a sneaky lambda. TODO: Add cleanup of thread.
 			thread aa([this, name, path, type, nRecurse, nGenThumbs]() {
 				string storepath = database->select(SELECT_SYSTEM("store_path")).response->at(0).at(0);
-				string thumbspath = database->select(SELECT_SYSTEM("thumbs_path")).response->at(0).at(0);
 				//Add the album.
 				QueryRow params;
 				//get the date.
@@ -534,9 +576,13 @@ int Gallery::getData(Query& query, RequestVars& vars, Response& r, SessionStore&
 int Gallery::getFiles(RequestVars& vars, Response& r, SessionStore&s) {
 	string query = SELECT_FILE_DETAILS;
 	QueryRow params;
-	
+
 	string album = vars["album"];
 	string id = vars["id"];
+	if(vars["showall"] != "1" && id.empty()) 
+		query.append(CONDITION_FILE_ENABLED);
+	
+
 	if(!album.empty() && id.empty()) {
 		query.append(CONDITION_ALBUM);
 		params.push_back(album);
@@ -559,6 +605,7 @@ int Gallery::getFiles(RequestVars& vars, Response& r, SessionStore&s) {
 
 int Gallery::getAlbums(RequestVars& vars, Response& r, SessionStore&s) {
 	string query = SELECT_ALBUM_DETAILS;
+
 	string id = vars["id"];
 	QueryRow params;
 	if(!id.empty()) {
@@ -573,7 +620,7 @@ int Gallery::setThumb(RequestVars& vars, Response& r, SessionStore&) {
 	string type = vars["type"]+'s';
 	string id = vars["id"];
 	string path = vars["path"];
-	const char* target;
+
 	QueryRow params;
 	params.push_back(path);
 	int thumbID = database->exec(INSERT_THUMB, &params);

@@ -59,8 +59,6 @@ SessionStore* Session::new_session(char* host, char* user_agent) {
 		delete sto;
 		lock->erase(it);
 	}
-	std::hash<std::string> hashfn;
-	std::size_t str_hash = hashfn(output);
 	
 	SessionStore* session_store = new SESSION_STORE();
 

@@ -434,16 +434,11 @@ void Image::resize(int width, int height) {
 
 			if(newFrame == frames[i])
 				continue;
-			else {
+			else
 				frames[i] = newFrame; 
-			}
 
 			gif->SavedImages[i].ImageDesc.Width = width;
 			gif->SavedImages[i].ImageDesc.Height = height;
-
-			
-			//Generate a new colour map for each frame.
-
 			
 		}
 		this->width = width;

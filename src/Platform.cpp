@@ -53,7 +53,7 @@ string string_format(const std::string fmt, ...) {
 	return str;
 }
 
-string date_format(const std::string fmt, const size_t datesize, time_t* t, int gmt) {
+string date_format(const std::string& fmt, const size_t datesize, time_t* t, int gmt) {
 	time_t actual_time;
 	if(t == NULL) {
 		time(&actual_time);

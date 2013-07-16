@@ -1,9 +1,7 @@
 #include "Socket.h"
 using namespace std;
 int Socket::ResolveAddress(string address, string port) {
-	struct addrinfo *result = NULL,
-					*ptr = NULL,
-					hints;
+	struct addrinfo *result = NULL,	hints;
 	ZeroMemory(&hints, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
