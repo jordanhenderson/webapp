@@ -1,6 +1,7 @@
 #ifndef FILE_H
 #define FILE_H
 
+
 #include "Platform.h"
 class File {
 public:

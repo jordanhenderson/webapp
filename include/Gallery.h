@@ -56,7 +56,7 @@ AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON a
 
 #define TOGGLE_FILES "UPDATE files SET enabled = 1 - enabled WHERE id IN (SELECT f.id FROM files f JOIN albumfiles alf ON alf.fileid = f.id JOIN albums al ON alf.albumid = al.id WHERE 1 "
 
-#define SELECT_DETAILS_END " ORDER BY id DESC LIMIT ?;"
+#define ORDER_DEFAULT " ORDER BY "
 
 #define CONDITION_SEARCH " AND f.id IN (SELECT f.id FROM files f WHERE f.name LIKE ?) "
 
@@ -89,7 +89,7 @@ AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON a
 #define DEFAULT_PAGE_LIMIT 32
 
 
-#define CONDITION_N_FILE(op) " AND f.id = (SELECT fileid FROM albumfiles WHERE id = (SELECT id FROM albumfiles WHERE fileid " op " ? AND albumid = ? LIMIT 1))"
+#define CONDITION_N_FILE(op) " AND f.id = (SELECT fileid FROM albumfiles WHERE id = (SELECT alf.id FROM albumfiles alf JOIN files f ON f.id = fileid WHERE fileid " op " ? AND f.enabled = 1 LIMIT 1))"
 
 #define SELECT_ALBUM_ID_WITH_FILE "SELECT al.id FROM albums al JOIN albumfiles alf ON alf.albumid = al.id JOIN files f ON alf.fileid = f.id WHERE f.id = ?"
 
@@ -115,8 +115,7 @@ CREATE TRIGGER "thumbs_trigger_albums" AFTER DELETE ON "albums" BEGIN DELETE FRO
 	m["getFiles"] = &Gallery::getFiles; \
 	m["search"] = &Gallery::search; \
 	m["refreshAlbums"] = &Gallery::refreshAlbums; \
-	m["disableFiles"] = &Gallery::disableFiles; \
-	m["nextFile"] = &Gallery::nextFile;
+	m["disableFiles"] = &Gallery::disableFiles;
 #define GETCHK(s) s.empty() ? 0 : 1
 typedef std::unordered_map<std::string, std::string> RequestVars;
 typedef std::unordered_map<std::string, std::string> CookieVars;
@@ -192,6 +191,7 @@ private:
 	}
 
 
+
 public:
 	Gallery::Gallery(Parameters* params);
 	Gallery::~Gallery();
@@ -209,7 +209,6 @@ public:
 	int search(RequestVars&, Response&, SessionStore&);
 	int refreshAlbums(RequestVars&, Response&, SessionStore&);
 	int disableFiles(RequestVars&, Response&, SessionStore&);
-	int nextFile(RequestVars&, Response&, SessionStore&);
 };
 
 #endif

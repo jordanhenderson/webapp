@@ -193,7 +193,7 @@ void Gallery::process(FCGX_Request* request) {
 			RequestVars v;
 			parseRequestVars(uri + 4, v);
 			final = processVars(v, *store, createstore);
-		} else if(uri[0] == PATHSEP && uri[1] == '\0') {
+		} else if(uri[0] == PATHSEP && (uri[1] == '\0' || uri[1] == '?')) {
 			final = getPage("index");
 		} else {
 			final = getPage(uri);
@@ -301,28 +301,7 @@ int Gallery::hasAlbums() {
 	return 1;
 }
 
-//Public API functions. 
-int Gallery::nextFile(RequestVars& vars, Response& r, SessionStore& s) {
-	string query = SELECT_FILE_DETAILS CONDITION_N_FILE(">");
-	QueryRow params;
-	string id = vars["id"];
-	if(!id.empty()) {
-		//Get the album.
-		QueryRow params;
-		params.push_back(id);
-		Query q = database->select(SELECT_ALBUM_ID_WITH_FILE, &params);
-		if(!q.response->empty()) {
-			params.push_back(q.response->at(0).at(0));
-			//File has an album. Retrieve the next file.
-			Query q(query, &params);
-			return getData(q, vars, r, s);
-		}
-	}
-	r.append("{}");
-	return 0;
-
-}
-
+//Public API functions.
 int Gallery::disableFiles(RequestVars& vars, Response& r, SessionStore& s) {
 	string query = TOGGLE_FILES;
 	QueryRow params;
@@ -562,8 +541,12 @@ int Gallery::getData(Query& query, RequestVars& vars, Response& r, SessionStore&
 
 	string limit = vars["limit"].empty() ? XSTR(DEFAULT_PAGE_LIMIT) : vars["limit"];
 	query.params->push_back(limit);
-	query.dbq->append(SELECT_DETAILS_END);
-	
+
+	string order = vars["order"] == "ASC" ? "ASC" : "DESC" ;
+	//TODO validate col
+	string col = vars["by"].empty() ? "id" : vars["by"];
+	query.dbq->append(ORDER_DEFAULT + col + " " + order);
+	query.dbq->append(" LIMIT ? ");
 	query.description = new QueryRow();
 	query.response = new QueryResponse();
 	database->select(&query);
@@ -589,10 +572,26 @@ int Gallery::getFiles(RequestVars& vars, Response& r, SessionStore&s) {
 		database->exec(INC_ALBUM_VIEWS, &params);
 	}
 	else if(!id.empty()) {
+		string f = vars["f"];
+		if(!f.empty()) {
+			
+			if(f == "next") query.append(CONDITION_N_FILE(">"));
+				else 
+			if(f == "prev") query.append(CONDITION_N_FILE("<"));
+			
+			params.push_back(id);
+			Query q = database->select(SELECT_ALBUM_ID_WITH_FILE, &params);
+			if(!q.response->empty()) 
+				params.push_back(q.response->at(0).at(0));
+		} else {
 		query.append(CONDITION_FILEID);
 		params.push_back(id);
+		}
+
 		//Increment views.
-		database->exec(INC_FILE_VIEWS, &params);
+		QueryRow incParams;
+		incParams.push_back(id);
+		database->exec(INC_FILE_VIEWS, &incParams);
 	} else if(vars["o"] == "grouped") {
 		query.append(CONDITION_FILE_GROUPED);
 	}

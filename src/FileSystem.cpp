@@ -13,10 +13,13 @@ void FileSystem::Open(const string& fileName, const string& flags, File* outFile
 	}
 
 #ifdef WIN32
-	wstring wfileName, wflags;
-	wfileName.assign(fileName.begin(), fileName.end());
-	wflags.assign(actualFlag.begin(), actualFlag.end());
-	outFile->pszFile = _wfopen(wfileName.c_str(), wflags.c_str());
+	wchar_t* wfileName, *wflags;
+	wfileName = strtowide(fileName.c_str());
+	wflags = strtowide(flags.c_str());
+
+	outFile->pszFile = _wfopen(wfileName, wflags);
+	delete[] wfileName;
+	delete[] wflags;
 #else
 	outFile.pszFile = fopen(fileName, flags);
 #endif
@@ -111,10 +114,22 @@ void FileSystem::WriteLine(File* file, const string& buffer) {
 }
 //Returns true if the specified path exists and can be read.
 int FileSystem::Exists(const string& path) {
-	struct stat buf;
 	
+#ifdef WIN32
+	struct _stat64i32 buf;
+	wchar_t* tmpPath = strtowide(path.c_str());
+	
+	if(_wstat(tmpPath, &buf) == 0) {
+		delete[] tmpPath;
+		return 1;
+	}
+	delete[] tmpPath;
+#else
+	struct stat buf;
 	if(stat(path.c_str(), &buf) == 0)
 		return 1;
+#endif
+
 	return 0;
 }
 
