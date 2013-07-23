@@ -6,6 +6,8 @@
 #ifdef HAS_IPP
 #include <ipp.h>
 #endif
+
+#include <algorithm>
 const char* THUMB_EXTENSIONS_JPEG[] = THUMB_EXTENSIONS_JPEG_D;
 using namespace std;
 void Image::cleanup() {
@@ -45,21 +47,22 @@ Image::Image(const string& filename) {
 }
 
 void Image::changeType(const string& filename) {
-	
+	string f = filename;
+	std::transform(f.begin(), f.end(),f.begin(), ::tolower);
 	for(int i = 0; THUMB_EXTENSIONS_JPEG[i] != NULL; i++) {
-		if(endsWith(filename, THUMB_EXTENSIONS_JPEG[i])) {
+		if(endsWith(f, THUMB_EXTENSIONS_JPEG[i])) {
 			imageType = IMAGE_TYPE_JPEG;
 		}
 	}
 
-	if(endsWith(filename, ".png")) {
+	if(endsWith(f, ".png")) {
 		if(imageType >= 0 && imageType != IMAGE_TYPE_PNG) {
 			regenRowPointers();
 		}
 		imageType = IMAGE_TYPE_PNG;
 	}
 
-	if(endsWith(filename, ".gif")) {
+	if(endsWith(f, ".gif")) {
 		//PNG/JPG->GIF
 		if(imageType >= 0 && imageType != IMAGE_TYPE_GIF) {
 			gif = EGifOpen(NULL, 0, NULL);

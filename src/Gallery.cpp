@@ -256,7 +256,13 @@ int Gallery::genThumb(const char* file, double shortmax, double longmax) {
 	string storepath = database->select(SELECT_SYSTEM("store_path")).response->at(0).at(0);
 	string thumbspath = database->select(SELECT_SYSTEM("thumbs_path")).response->at(0).at(0);
 	string imagepath = basepath + PATHSEP + storepath + PATHSEP + file;
+	string thumbpath = basepath + PATHSEP + thumbspath + PATHSEP + file;
 	
+	//Check if thumb already exists.
+	if(FileSystem::Exists(thumbpath)) {
+		return ERROR_SUCCESS;
+	}
+
 
 	Image image(imagepath);
 	int err = image.GetLastError();
@@ -287,7 +293,11 @@ int Gallery::genThumb(const char* file, double shortmax, double longmax) {
 
 
     image.resize(newWidth, newHeight);
-	image.save(basepath + PATHSEP + thumbspath + PATHSEP + file);
+	image.save(thumbpath);
+
+	if(!FileSystem::Exists(thumbpath)) {
+		logger->printf("An error occured generating %s.", thumbpath.c_str());
+	}
 
 	return ERROR_SUCCESS;
 }
@@ -336,6 +346,8 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& s) {
 		params.push_back(album);
 		Query q = database->select(SELECT_ALBUM_PATH, &params);
 		if(!q.response->empty()) {
+			QueryRow params;
+			params.push_back(album);
 			string path = q.response->at(0).at(0);
 			string recursive = q.response->at(0).at(1);
 
@@ -352,11 +364,10 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& s) {
 			}
 			
 
-			database->exec(existingFiles);
+			database->exec(existingFiles, &params);
 			
 	
-			QueryRow params;
-			params.push_back(album);
+
 
 			//Get a list of files in the album from db.
 			Query q_album = database->select(SELECT_PATHS_FROM_ALBUM, &params);

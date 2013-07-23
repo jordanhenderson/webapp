@@ -80,7 +80,7 @@ AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON a
 
 #define SELECT_ALBUM_PATH "SELECT path, recursive FROM albums WHERE id = ?;"
 
-#define DELETE_MISSING_FILES "DELETE FROM files WHERE path NOT IN ("
+#define DELETE_MISSING_FILES "DELETE FROM files f JOIN albumfiles alf ON alf.fileid = f.id WHERE alf.albumid = ? AND albumpath NOT IN ("
 
 #define PRAGMA_FOREIGN "PRAGMA foreign_keys = ON;"
 
