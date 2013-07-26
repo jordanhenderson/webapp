@@ -68,7 +68,7 @@ AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON a
 #define INC_ALBUM_VIEWS "UPDATE albums SET views = views + 1 WHERE id = ?"
 
 #define CONDITION_FILE_GROUPED " AND al.type = " XSTR(ALBUM_RANDOM) " OR al.type = " XSTR(ALBUM_SET) \
-" AND f.id IN (SELECT fileid FROM albumfiles WHERE albumid=al.id ORDER BY id DESC LIMIT 1) "
+" AND f.id IN (SELECT fileid FROM albumfiles WHERE albumid=al.id ORDER BY id ASC LIMIT 1) "
 
 
 #define SELECT_ALBUM_DETAILS "SELECT al.id AS id, name, added, lastedited, type, rating, recursive, views, al.path AS path, \
@@ -80,16 +80,16 @@ AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON a
 
 #define SELECT_ALBUM_PATH "SELECT path, recursive FROM albums WHERE id = ?;"
 
-#define DELETE_MISSING_FILES "DELETE FROM files f JOIN albumfiles alf ON alf.fileid = f.id WHERE alf.albumid = ? AND albumpath NOT IN ("
+#define DELETE_MISSING_FILES "DELETE FROM files WHERE id IN (SELECT fileid FROM albumfiles alf WHERE alf.albumid = ?) AND path NOT IN ("
 
 #define PRAGMA_FOREIGN "PRAGMA foreign_keys = ON;"
 
 #define SELECT_PATHS_FROM_ALBUM "SELECT path FROM files JOIN albumfiles ON albumfiles.fileid = files.id WHERE albumid = ?;"
 
 #define DEFAULT_PAGE_LIMIT 32
+#define MAX_PAGE_LIMIT 100
 
-
-#define CONDITION_N_FILE(op) " AND f.id = (SELECT fileid FROM albumfiles WHERE id = (SELECT alf.id FROM albumfiles alf JOIN files f ON f.id = fileid WHERE fileid " op " ? AND f.enabled = 1 LIMIT 1))"
+#define CONDITION_N_FILE(op, kwd) " AND f.id = (SELECT " kwd "(f.id) FROM albumfiles alf JOIN files f ON f.id = fileid WHERE fileid " op " ? AND f.enabled = 1 AND alf.albumid = ? LIMIT 1)"
 
 #define SELECT_ALBUM_ID_WITH_FILE "SELECT al.id FROM albums al JOIN albumfiles alf ON alf.albumid = al.id JOIN files f ON alf.fileid = f.id WHERE f.id = ?"
 

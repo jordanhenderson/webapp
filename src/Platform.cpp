@@ -69,4 +69,25 @@ void add_days(time_t& t, int days) {
 	t += days * 24 * 3600;
 }
 
+//Copypasta'd from http://stackoverflow.com/questions/154536/encode-decode-urls-in-c
+string url_decode(const string& src) {
+ string ret;
+    char ch;
+    int i, ii;
+    for (i=0; i<src.length(); i++) {
+        if (int(src[i])==37) {
+            sscanf(src.substr(i+1,2).c_str(), "%x", &ii);
+            ch=static_cast<char>(ii);
+            ret+=ch;
+            i=i+2;
+        } else if(int(src[i]=='+')) {
+			ret+=' ';
+        } else {
+			ret+=src[i];
+		}
+    }
+
+    return (ret);
+}
+
 string empty = "";

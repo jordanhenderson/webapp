@@ -211,10 +211,7 @@ void Gallery::process(FCGX_Request* request) {
 
 		RequestVars v;
 		parseRequestVars(postdata, v);
-		for(auto outer = v.begin(); outer!= v.end(); ++outer) {
-			v[outer->first] = replaceAll(v[outer->first], "%2F", "/");
-			v[outer->first] = replaceAll(v[outer->first], "%0D%0A", "\n");
-		}
+
 		final = processVars(v, *store, createstore);
 		delete[] postdata;
 	}
@@ -411,7 +408,7 @@ int Gallery::search(RequestVars& vars, Response& r, SessionStore& s) {
 		if(vars["q"].empty()) {
 			query.append(CONDITION_FILE_ENABLED);
 		}
-		params.push_back("%" + vars["q"] + "%");
+		params.push_back("%" + url_decode(vars["q"]) + "%");
 	}
 
 	Query q(query, &params);
@@ -454,8 +451,8 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 		return 1;
 	int nRecurse = GETCHK(vars["recursive"]);
 	int nGenThumbs = GETCHK(vars["genthumbs"]);
-	string name = vars["name"];
-	string path = vars["path"];
+	string name = url_decode(vars["name"]);
+	string path = url_decode(vars["path"]);
 	int addStatus = 0;
 	Serializer serializer;
 	unordered_map<string, string> map;
@@ -551,13 +548,23 @@ int Gallery::getData(Query& query, RequestVars& vars, Response& r, SessionStore&
 	}
 
 	string limit = vars["limit"].empty() ? XSTR(DEFAULT_PAGE_LIMIT) : vars["limit"];
+	int nLimit = stoi(limit);
+	if(nLimit > MAX_PAGE_LIMIT) {
+		limit = XSTR(DEFAULT_PAGE_LIMIT);
+		nLimit = DEFAULT_PAGE_LIMIT;
+	}
+	
+	int nPage = vars["page"].empty() ? 0 : stoi(vars["page"]);
+	int page = nPage * nLimit;
+
+	query.params->push_back(to_string(page));
 	query.params->push_back(limit);
 
-	string order = vars["order"] == "ASC" ? "ASC" : "DESC" ;
+	string order = (vars["order"] == "asc") ? "ASC" : "DESC" ;
 	//TODO validate col
 	string col = vars["by"].empty() ? "id" : vars["by"];
 	query.dbq->append(ORDER_DEFAULT + col + " " + order);
-	query.dbq->append(" LIMIT ? ");
+	query.dbq->append(" LIMIT ?,? ");
 	query.description = new QueryRow();
 	query.response = new QueryResponse();
 	database->select(&query);
@@ -586,9 +593,10 @@ int Gallery::getFiles(RequestVars& vars, Response& r, SessionStore&s) {
 		string f = vars["f"];
 		if(!f.empty()) {
 			
-			if(f == "next") query.append(CONDITION_N_FILE(">"));
+			if(f == "next") query.append(CONDITION_N_FILE(">", "MIN"));
 				else 
-			if(f == "prev") query.append(CONDITION_N_FILE("<"));
+			if(f == "prev") query.append(CONDITION_N_FILE("<", "MAX"));
+			
 			
 			params.push_back(id);
 			Query q = database->select(SELECT_ALBUM_ID_WITH_FILE, &params);
