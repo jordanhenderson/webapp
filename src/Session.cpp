@@ -7,22 +7,14 @@
 using namespace std;
 using namespace CryptoPP;
 
-Session::Session() {
-
-	session_map = new LockableContainer<SessionMap>();
-
-}
-
 Session::~Session() {
 	//Delete maps within session_map
-	LockableContainerLock<SessionMap> lock(*session_map);
+	LockableContainerLock<SessionMap> lock(session_map);
 	for(SessionMap::iterator it = lock->begin();
 		it != lock->end(); ++it) {
 			it->second->destroy();
 			delete it->second;
 	}
-	lock.unlock();
-	delete session_map;
 }
 
 SessionStore* Session::new_session(char* host, char* user_agent) {
@@ -51,7 +43,7 @@ SessionStore* Session::new_session(char* host, char* user_agent) {
 	encoder.Put(digest, sizeof(digest));
 	encoder.MessageEnd();
 	//Create a new session store if one 
-	LockableContainerLock<SessionMap> lock(*session_map);
+	LockableContainerLock<SessionMap> lock(session_map);
 	SessionMap::iterator it = lock->find(output);
 	//Delete any existing map, if any (clean up possible existing orphan session data).
 	if(it != lock->end()) {
@@ -71,7 +63,7 @@ SessionStore* Session::new_session(char* host, char* user_agent) {
 
 SessionStore* Session::get_session(std::string& sessionid) {
 
-	LockableContainerLock<SessionMap> lock(*session_map);
+	LockableContainerLock<SessionMap> lock(session_map);
 
 	SessionMap::iterator it = lock->find(sessionid);
 	if(it != lock->end())

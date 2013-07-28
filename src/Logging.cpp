@@ -1,9 +1,9 @@
 #include "Logging.h"
 using namespace std;
 Logging::Logging(string logPath) {
+	abort = 0;
 	//Open a file for writing.
 	setFile(logPath);
-	status = LOGGER_STATUS_PROCESS;
 	//Create a logging thread that will continuously queue.pop().
 	logger = new thread(&Logging::process, this);
 	logger->detach();
@@ -11,8 +11,9 @@ Logging::Logging(string logPath) {
 }
 
 Logging::~Logging() {
-	//Abort the logger thread.
-	status = LOGGER_STATUS_FINISHED;
+	abort = 1;
+	cv.notify_all();
+
 	//Join the logging queue thread
 	if(logger->joinable())
 		logger->join();
@@ -32,8 +33,8 @@ Logging::~Logging() {
 }
 
 Logging::Logging() {
+	abort = 0;
 	//Empty logging instance. No logFile.
-	status = LOGGER_STATUS_PROCESS;
 	logger = new thread(&Logging::process, this);
 }
 
@@ -45,20 +46,29 @@ void Logging::setFile(string logPath) {
 }
 
 void Logging::process() {
-	while(status == LOGGER_STATUS_PROCESS) {
+
+	while(!abort) {
+		unique_lock<mutex> lk(m);
+		//Wait for a signal from log functions (pushers)
+		while(queue.empty() && !abort) 
+			cv.wait(lk);
+		if(abort) return;
+
 		string* msg;
 		if(queue.try_pop(msg))  {
 			FileSystem::WriteLine(&logFile, *msg);
 			delete msg;
-		}
-		this_thread::sleep_for(chrono::microseconds(100));
+		} 
 	}
 }
 
 void Logging::log(const string& msg) {
 	//Insert msg into our message queue for the Logging thread to handle.
+	lock_guard<mutex> lk(m);
+	bool const empty = queue.empty();
 	if(logFile.pszFile != NULL)
 		queue.push(new string(msg));
+	if(empty) cv.notify_one();
 }
 
 void Logging::printf(string format, ...) {

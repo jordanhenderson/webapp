@@ -144,6 +144,9 @@ private:
 	std::thread::id currentID;
 	std::thread* thread_process_queue;
 
+	//Process queue mutex/cv.
+	std::condition_variable cv;
+	std::mutex thread_process_mutex;
 
 	int genThumb(const char* file, double shortmax, double longmax);
 	int getDuplicates( std::string& name, std::string& path );

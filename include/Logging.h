@@ -4,7 +4,6 @@
 #include "Platform.h"
 #include "tbb/concurrent_queue.h"
 #include "FileSystem.h"
-#include <thread>
 
 #define LOGGER_STATUS_PROCESS 0
 #define LOGGER_STATUS_FINISHED 1
@@ -13,7 +12,10 @@ class Logging : public Internal {
 	tbb::concurrent_queue<std::string*> queue;
 	void process();
 	File logFile;
-	int status;
+	std::condition_variable cv;
+	std::mutex m;
+	int abort;
+
 public:
 	Logging(std::string logPath);
 	Logging();

@@ -10,7 +10,9 @@
 #include "stringbuffer.h"
 #include "decode.h"
 #include <sha.h>
-
+#if _DEBUG
+#include <vld.h>
+#endif
 using namespace rapidjson;
 using namespace std;
 using namespace base64;
@@ -37,20 +39,26 @@ Gallery::Gallery(Parameters* params) {
 
 	//Create/start process queue thread.
 	
-	 thread_process_queue = new thread([this]() {
+	thread_process_queue = new thread([this]() {
 		while(!abort) {
 			LockableContainerLock<queue<thread*>> lock(processQueue);
-			if(!lock->empty()) {
-				thread* t = lock->front();
-				lock->pop();
-				lock.unlock();
-				currentID = t->get_id();
-
-				t->join();
-				
-				delete t;
+			{
+				unique_lock<mutex> lk(thread_process_mutex);
+				//Wait for a signal from log functions (pushers)
+				while(lock->empty() && !abort) 
+					cv.wait(lk);
 			}
-			std::this_thread::yield();
+			if(abort) return;
+
+			thread* t = lock->front();
+			lock->pop();
+			lock.unlock();
+			currentID = t->get_id();
+
+			t->join();
+				
+			delete t;
+			
 		}
 	});
 
@@ -63,7 +71,10 @@ Gallery::Gallery(Parameters* params) {
 
 void Gallery::process_thread(std::thread* t) {
 	LockableContainerLock<queue<thread*>> lock(processQueue);
+	lock_guard<mutex> lk(thread_process_mutex);
+	bool const empty = lock->empty();
 	lock->push(t);
+	if(empty) cv.notify_one();
 }
 
 Gallery::~Gallery() {
@@ -295,9 +306,15 @@ Response Gallery::processVars(RequestVars& vars, SessionStore& session, int publ
 	int hasfunc = miter != m.end();
 	if((hasfunc && !auth) || (hasfunc && !session.get("auth").empty()) || (hasfunc && t == "login")) {
 		GallFunc f = miter->second;
-		r.append(END_HEADER);
-		(this->*f)(vars, r, session);
 
+		r.append(END_HEADER);
+#if _DEBUG
+		VLDEnable();
+#endif
+		(this->*f)(vars, r, session);
+#if _DEBUG
+		VLDDisable();
+#endif
 		return r;
 	} else {
 		r.append(END_HEADER "{}");

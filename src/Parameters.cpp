@@ -23,9 +23,6 @@ bool Parameters::hasParam(string param) {
 	if(get(param) != empty) return true;
 	return false;
 }
-Parameters::Parameters() {
-
-}
 
 size_t Parameters::getSize() {
 	LockableContainerLock<ParamMap> lock(params);
@@ -33,4 +30,5 @@ size_t Parameters::getSize() {
 }
 
 Parameters::~Parameters() {
+
 }

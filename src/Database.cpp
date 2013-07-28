@@ -30,7 +30,17 @@ Query::~Query() {
 }
 
 void Database::process() {
-	while(status == DATABASE_STATUS_PROCESS) {
+	while(!abort) {
+		{
+			unique_lock<mutex> lk(m);
+			//Wait for a signal from log functions (pushers)
+			while(queue.empty() && !abort) 
+				cv.wait(lk);
+		}
+
+		if(abort)
+			return; //abort!
+
 		Query* qry;
 
 		if(queue.try_pop(qry))  {
@@ -76,14 +86,19 @@ void Database::process() {
 			}
 
 			qry->lastrowid = sqlite3_last_insert_rowid(db);
-			qry->status = DATABASE_QUERY_FINISHED;
+			{
+				std::lock_guard<std::mutex> lk(m);
+				qry->status = DATABASE_QUERY_FINISHED;
+				cv.notify_one();
+			}
 			//Finally, destroy the statement.
 			sqlite3_finalize(stmt);
-		}
+		} 
 	}
 }
 
 Database::Database(const char* filename) {
+	abort = 0;
 	db = NULL;
 	sqlite3_open(filename, &db);
 	if(db == NULL) {
@@ -91,12 +106,13 @@ Database::Database(const char* filename) {
 		return;
 	}
 	//Create the db queue thread
-	status = DATABASE_STATUS_PROCESS;
+
 	dbthread = new thread(&Database::process, this);
 }
 
 Database::~Database() {
-	status = DATABASE_STATUS_FINISHED;
+	abort = 1;
+	cv.notify_all();
 	if(nError != ERROR_DB_FAILED) {
 		if(dbthread->joinable())
 			dbthread->join();
@@ -109,9 +125,20 @@ void Database::select(Query* query) {
 	if(nError != ERROR_DB_FAILED) {
 		//add it to the processing queue, wait for response
 		//Release the query object from management, add it to the queue.
-		queue.push(query);
-		//Wait for status to be set to DATABASE_QUERY_FINISHED (blocking the calling thread)
-		while(query->status != DATABASE_QUERY_FINISHED);	
+		{
+			lock_guard<mutex> lk(m);
+			bool const empty = queue.empty();
+			queue.push(query);
+			//Notify the process thread.
+			if(empty)
+				cv.notify_one();
+		}
+
+		//Wait for status to be set to DATABASE_QUERY_FINISHED (blocking the calling thread) 
+		{
+			std::unique_lock<std::mutex> lk(m);
+			cv.wait(lk, [query]{return query->status == DATABASE_QUERY_FINISHED;});
+		}
 	}
 }
 

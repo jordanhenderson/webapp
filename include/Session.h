@@ -19,10 +19,8 @@ public:
 typedef std::unordered_map<std::string, std::string> RamStorage;
 class RamSession : public SessionStore {
 private:
-	LockableContainer<RamStorage>* _store;
+	LockableContainer<RamStorage> _store;
 public:
-	RamSession();
-	~RamSession();
 	void create(std::string& sessionid);
 	void store(const std::string& key, const std::string& value);
 	std::string get(const std::string& key);
@@ -32,9 +30,8 @@ public:
 typedef std::unordered_map<std::string, SessionStore*> SessionMap;
 class Session {
 private:
-	LockableContainer<SessionMap>* session_map;
+	LockableContainer<SessionMap> session_map;
 public:
-	Session();
 	~Session();
 	//Create a new session based on the FCGX Request.
 	SessionStore* get_session(std::string& sessionid);

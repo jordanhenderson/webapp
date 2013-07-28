@@ -1,12 +1,11 @@
 #ifndef CONTAINER_H
 #define CONTAINER_H
-#include <tbb/mutex.h>
 //RAII Exception/thread safe container.
 template<typename C>
 class LockableContainer {
 private:
     C m_Container;
-    tbb::mutex Mutex;
+    std::mutex Mutex;
     template<typename C> friend class LockableContainerLock;
 };
 

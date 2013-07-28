@@ -27,7 +27,6 @@ public:
 	}
 	bool hasParam(std::string param);
 	size_t getSize();
-	Parameters();
 	~Parameters();
 private:
 	LockableContainer<ParamMap> params;

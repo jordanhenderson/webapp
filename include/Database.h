@@ -32,8 +32,9 @@ private:
 	std::thread* dbthread;
 	tbb::concurrent_queue<Query*> queue;
 	void process();
-	int status;
-	
+	std::condition_variable cv;
+	std::mutex m;
+	int abort;
 
 public:
 	Database(const char* filename);
