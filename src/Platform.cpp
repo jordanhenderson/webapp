@@ -32,6 +32,7 @@ string replaceAll( string const& original, string const& before, string const& a
 	return retval;
 }
 
+//You cannot use references with va_start according to C++ Standard 18.7/3.
 string string_format(const std::string fmt, ...) {
 	int size = 100;
 	std::string str;
@@ -78,7 +79,8 @@ string url_decode(const string& src) {
         if (int(src[i])==37) {
             sscanf(src.substr(i+1,2).c_str(), "%x", &ii);
             ch=static_cast<char>(ii);
-            ret+=ch;
+			if(ch != '\r')
+				ret+=ch;
             i=i+2;
         } else if(int(src[i]=='+')) {
 			ret+=' ';

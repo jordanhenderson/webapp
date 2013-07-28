@@ -30,7 +30,7 @@ public:
 	Parameters();
 	~Parameters();
 private:
-	LockableContainer<ParamMap>* params;
+	LockableContainer<ParamMap> params;
 };
 
 

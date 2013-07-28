@@ -294,8 +294,8 @@ EGifPutScreenDesc(GifFileType *GifFile,
     GifFile->SColorResolution = ColorRes;
     GifFile->SBackGroundColor = BackGround;
     if (ColorMap) {
-        GifFile->SColorMap = GifMakeMapObject(ColorMap->ColorCount,
-                                           ColorMap->Colors);
+		if(GifFile->SColorMap == NULL)
+			GifFile->SColorMap = GifMakeMapObject(ColorMap->ColorCount, ColorMap->Colors);
         if (GifFile->SColorMap == NULL) {
             GifFile->Error = E_GIF_ERR_NOT_ENOUGH_MEM;
             return GIF_ERROR;
@@ -379,8 +379,9 @@ EGifPutImageDesc(GifFileType *GifFile,
     GifFile->Image.Height = Height;
     GifFile->Image.Interlace = Interlace;
     if (ColorMap) {
-        GifFile->Image.ColorMap = GifMakeMapObject(ColorMap->ColorCount,
-                                                ColorMap->Colors);
+		if(GifFile->Image.ColorMap == NULL)
+			GifFile->Image.ColorMap = GifMakeMapObject(ColorMap->ColorCount,
+													ColorMap->Colors);
         if (GifFile->Image.ColorMap == NULL) {
             GifFile->Error = E_GIF_ERR_NOT_ENOUGH_MEM;
             return GIF_ERROR;
@@ -496,7 +497,7 @@ EGifPutPixel(GifFileType *GifFile, GifPixelType Pixel)
 int
 EGifPutComment(GifFileType *GifFile, const char *Comment)
 {
-    unsigned int length = strlen(Comment);
+    unsigned int length;
     char *buf;
 
     length = strlen(Comment);

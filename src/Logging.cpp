@@ -2,30 +2,45 @@
 using namespace std;
 Logging::Logging(string logPath) {
 	//Open a file for writing.
-	logFile = new File();
 	setFile(logPath);
 	status = LOGGER_STATUS_PROCESS;
 	//Create a logging thread that will continuously queue.pop().
-	logger = thread(&Logging::process, this);
-	logger.detach();
+	logger = new thread(&Logging::process, this);
+	logger->detach();
 
 }
 
 Logging::~Logging() {
-	delete logFile;
+	//Abort the logger thread.
+	status = LOGGER_STATUS_FINISHED;
+	//Join the logging queue thread
+	if(logger->joinable())
+		logger->join();
+
+	//Delete the thread object.
+	delete logger;
+
+	//Process any messages still on the queue
+	string* msg;
+	while(queue.try_pop(msg)) {
+		FileSystem::WriteLine(&logFile, *msg);
+		delete msg;
+	}
+	//Finally, close the file.
+	if(logFile.pszFile != NULL)
+		FileSystem::Close(&logFile);
 }
 
 Logging::Logging() {
 	//Empty logging instance. No logFile.
-	logFile = new File();
 	status = LOGGER_STATUS_PROCESS;
-	logger = thread(&Logging::process, this);
+	logger = new thread(&Logging::process, this);
 }
 
 void Logging::setFile(string logPath) {
-	if(logFile != NULL) 
-		FileSystem::Close(logFile);
-	FileSystem::Open(logPath, "w", logFile);
+	if(logFile.pszFile != NULL) 
+		FileSystem::Close(&logFile);
+	FileSystem::Open(logPath, "w", &logFile);
 
 }
 
@@ -33,7 +48,7 @@ void Logging::process() {
 	while(status == LOGGER_STATUS_PROCESS) {
 		string* msg;
 		if(queue.try_pop(msg))  {
-			FileSystem::WriteLine(logFile, *msg);
+			FileSystem::WriteLine(&logFile, *msg);
 			delete msg;
 		}
 		this_thread::sleep_for(chrono::microseconds(100));
@@ -42,13 +57,13 @@ void Logging::process() {
 
 void Logging::log(const string& msg) {
 	//Insert msg into our message queue for the Logging thread to handle.
-	if(logFile == NULL || logFile->pszFile != NULL)
+	if(logFile.pszFile != NULL)
 		queue.push(new string(msg));
 }
 
 void Logging::printf(string format, ...) {
 	//Format the string, then insert it into the log.
-	if(logFile == NULL || logFile->pszFile == NULL)
+	if(logFile.pszFile == NULL)
 		return;
 	char* buffer;
 	size_t sz;
@@ -64,19 +79,5 @@ void Logging::printf(string format, ...) {
 	
 }
 
-void Logging::finish() {
-	//Abort the logger thread.
-	status = LOGGER_STATUS_FINISHED;
-	//Join the logging queue thread
-	if(logger.joinable())
-		logger.join();
-	else return;
-	//Process any messages still on the queue
-	string* msg;
-	while(queue.try_pop(msg)) {
-		FileSystem::WriteLine(logFile, *msg);
-		delete msg;
-	}
-	//Finally, close the file.
-	FileSystem::Close(logFile);
-}
+//Define a global pointer for global logger access.
+Logging* logger;

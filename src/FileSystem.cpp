@@ -42,6 +42,10 @@ File::~File() {
 		fclose(pszFile);
 }
 
+File::File() {
+	pszFile = NULL;
+}
+
 void FileSystem::Close(File* file) {
 	if(file == NULL || file->pszFile == NULL)
 		return;
@@ -75,12 +79,11 @@ void FileSystem::Process(File* file, void* userdata, void* callback, FileData* o
 
 		if(callback != NULL) {
 			int baseBytes = 0;
-			int oldBaseBytes;
 			int count = 0;
 			while(!feof(tmpFile)) {
 					
 				//Read files line by line
-					oldBaseBytes = ftell(tmpFile);
+					int oldBaseBytes = ftell(tmpFile);
 					fgets(outData->data + baseBytes, 4096, tmpFile);
 					int nBytesRead = ftell(tmpFile) - oldBaseBytes;
 					baseBytes += nBytesRead;
@@ -88,7 +91,6 @@ void FileSystem::Process(File* file, void* userdata, void* callback, FileData* o
 					callbackFn(userdata, outData->data + (oldBaseBytes-count), nBytesRead);
 				} 
 				baseBytes--;
-				count = 1;
 				
 		}
 		else {
@@ -116,10 +118,10 @@ void FileSystem::WriteLine(File* file, const string& buffer) {
 int FileSystem::Exists(const string& path) {
 	
 #ifdef WIN32
-	struct _stat64i32 buf;
+	struct __stat64 buf;
 	wchar_t* tmpPath = strtowide(path.c_str());
 	
-	if(_wstat(tmpPath, &buf) == 0) {
+	if(_wstat64(tmpPath, &buf) == 0) {
 		delete[] tmpPath;
 		return 1;
 	}

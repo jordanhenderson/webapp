@@ -6,13 +6,15 @@ class Gallery;
 #define SERVER_THREADS 20
 
 class ServerHandler {
+protected:
+	int abort;
 public:
 	virtual void process(FCGX_Request* request) = 0;
+	friend class Server;
 };
 
 class Server : public Internal {
-
-	std::thread serverpool[SERVER_THREADS];
+	std::thread* serverpool[SERVER_THREADS];
 	ServerHandler* handler;
 public:
 	Server(ServerHandler*);

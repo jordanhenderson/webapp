@@ -24,10 +24,9 @@ private:
 	unsigned char** row_pointers; 
 	void regenRowPointers();
 	//GIF ONLY
-
+	int imagecount;
 	GifFileType* gif;
 	unsigned char** frames;
-	unsigned char** maps;
 	int gifGetTransparentColor(int frame);
 	void gifInsertFrame(int frame);
 	void gifMakeMap(unsigned char* image, int width, int height, unsigned char** map, unsigned char** raster);

@@ -5,21 +5,19 @@
 using namespace std;
 void Server::run(int nThread, int sock) {
 	FCGX_Request request;
-
-
-
+	if(handler == NULL)
+		return;
 
 	FCGX_InitRequest(&request, sock, 0);
-	for(;;) {
+	
+	while(!handler->abort) {
 		
 		int rc = FCGX_Accept_r(&request);
 		
 		if(rc < 0)
 			break;
-
-		if(handler != NULL)
-			handler->process(&request); 
 		
+		handler->process(&request); 
 		FCGX_Finish_r(&request);
 	}
 	
@@ -33,9 +31,10 @@ Server::Server(ServerHandler* handler) {
 	logger->log("Server Initialised. Creating FastCGI sockets...");
 	FCGX_Init();
 	int sock = FCGX_OpenSocket(":5000", 0);
+	
 	for(int n = 0; n < SERVER_THREADS; n++) {
 
-		serverpool[n] = thread(&Server::run, this, n, sock);
+		serverpool[n] = new thread(&Server::run, this, n, sock);
 	}
 	
 }
@@ -50,8 +49,9 @@ void Server::setHandler(ServerHandler* handler) {
 
 void Server::join() {
 	for(int n = 0; n < SERVER_THREADS; n++) {
-		if(serverpool[n].joinable())
-			serverpool[n].join();
+		if(serverpool[n]->joinable())
+			serverpool[n]->join();
+		delete serverpool[n];
 	}
 	return;
 }

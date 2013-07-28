@@ -9,7 +9,7 @@ extern "C" {
 void Image::gifInsertFrame(int frame) {
 	unsigned char bgcolor;
 	GifImageDesc* img = &gif->SavedImages[frame].ImageDesc;
-	int rastersize = gif->SWidth * gif->SHeight;
+	int rastersize = width * height;
 
 	
 	//Set color map to use local or global color map. Local overrides global.
@@ -28,7 +28,11 @@ void Image::gifInsertFrame(int frame) {
 
 	//Allocate the initial frame.
 	if(frame == 0) {
+#ifdef HAS_IPP
 		frames[frame] = ippsMalloc_8u(rastersize * 4);
+#else
+		frames[frame] = new unsigned char[rastersize*4];
+#endif
 		//Fill the frame transparent.
 		unsigned char target[4];
 		GifColorType c;
@@ -50,17 +54,17 @@ void Image::gifInsertFrame(int frame) {
 
 	}
 
-	unsigned char* framePixels = new unsigned char[gif->SWidth * gif->SHeight * 4]();
+	unsigned char* framePixels = new unsigned char[width * height * 4]();
 
 	for( int i = 0; i < img->Height; i++) {
 		int pixelRowNumber = i;	
 		pixelRowNumber += img->Top;
-		if( pixelRowNumber < gif->SHeight ) {
-			int k = pixelRowNumber * gif->SWidth;
+		if( pixelRowNumber < height ) {
+			int k = pixelRowNumber * width;
 			int dx = k + img->Left;
 			int dlim = dx + img->Width; 
-			if( (k + gif->SWidth) < dlim ) {
-				dlim = k + gif->SWidth; // past dest edge
+			if( (k + width) < dlim ) {
+				dlim = k + width; // past dest edge
 			}
 			int sx = i * img->Width;
 			while (dx < dlim) {
@@ -90,10 +94,10 @@ void Image::gifInsertFrame(int frame) {
 	}
 	
 	int count = 0;
-	for( int th = 0; th < gif->SHeight; th++ ) {
-		for( int tw = 0; tw < gif->SWidth; tw++ ) {
+	for( int th = 0; th < height; th++ ) {
+		for( int tw = 0; tw < width; tw++ ) {
 			if(framePixels[(count*4)+3] == 255) {
-				memcpy(&frames[frame][((th*gif->SWidth)+tw)*4], &framePixels[(count*4)], 4);
+				memcpy(&frames[frame][((th*width)+tw)*4], &framePixels[(count*4)], 4);
 			}
 			count++;
 		}
@@ -102,9 +106,12 @@ void Image::gifInsertFrame(int frame) {
 	
 
 
-	if(frame + 1 < gif->ImageCount) {
+	if(frame + 1 < imagecount) {
+		#ifdef HAS_IPP
 		frames[frame + 1] = ippsMalloc_8u(rastersize * 4);
-
+#else
+		frames[frame + 1] = new unsigned char[rastersize * 4]();
+#endif
 		
 		if(gcb.DisposalMode == DISPOSE_DO_NOT)
 			memcpy(frames[frame+1],frames[frame], rastersize*4);
@@ -136,6 +143,8 @@ void Image::gifInsertFrame(int frame) {
 	gcb.TransparentColor = -1;
 	//Remove disposal mode (unoptimised, but required for now).
 	gcb.DisposalMode = DISPOSE_BACKGROUND;
+	//Free the previous saved extension
+	GifFreeExtensions(&gif->SavedImages[frame].ExtensionBlockCount, &gif->SavedImages[frame].ExtensionBlocks);
 	EGifGCBToSavedExtension(&gcb, gif, frame);
 
 		delete[] framePixels;
@@ -183,7 +192,7 @@ void Image::gifMakeMap(unsigned char* image, int width, int height, unsigned cha
 		(GifColorType*)o);
 
 	//Allocate raster bits
-	int rasterSize = width*height;
+	int rasterSize = width*height*sizeof(GifByteType);
 	*raster = (GifByteType*)malloc(rasterSize);
 
 	//Write the frame to the savedImage's rasterbits.

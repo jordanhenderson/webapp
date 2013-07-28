@@ -35,48 +35,51 @@ void Database::process() {
 
 		if(queue.try_pop(qry))  {
 			sqlite3_stmt *stmt;
-			if(qry->status == DATABASE_QUERY_FINISHED)  {
+			if(qry->status == DATABASE_QUERY_FINISHED)
 				continue;
-			}
+
+			//Prepare the statement
 			if(sqlite3_prepare_v2(db, qry->dbq->c_str(), qry->dbq->length(), &stmt, 0)) {
+				//Error preparing statement.
 				qry->status = DATABASE_QUERY_FINISHED;
 				continue;
 			}
+
+			//Check for (and apply) parameters)
 			if(qry->params != NULL) {
-				
 				int m = qry->params->size();
-				for(int i = 0; i < m; i++) {
-					sqlite3_bind_text(stmt, i+1, (*qry->params)[i].c_str(), (*qry->params)[i].length(), SQLITE_STATIC);
-				}
+				for(int i = 0; i < m; i++)
+					sqlite3_bind_text(stmt, i+1, (*qry->params)[i].c_str(), (*qry->params)[i].length(), SQLITE_STATIC);	
 			}
 			
-				
-				int havedesc = 0;
-				int lasterror = sqlite3_step(stmt);
-				while(lasterror == SQLITE_ROW) {
-					if(qry->response != NULL) {
+			
+			int havedesc = 0;
+			int lasterror = sqlite3_step(stmt);
+			while(lasterror == SQLITE_ROW) {
+				if(qry->response != NULL) {
 					vector<string> row;
 					for(int col = 0; col < sqlite3_column_count(stmt); col++) {
-						if(qry->description != NULL && !havedesc) {
+						//Push back the column name
+						if(qry->description != NULL && !havedesc)
 							qry->description->push_back(sqlite3_column_name(stmt, col));
-							
-						}
+						//Push back the column text
 						const char* text = (const char*)sqlite3_column_text(stmt, col);
 						int size = sqlite3_column_bytes(stmt, col);
-						
 						row.push_back(string(text,size));
 					}
-					
+					//We have the column description after the first pass.
 					havedesc = 1;
+					//Push back the row retrieved.
 					qry->response->push_back(row);
-					}
-					lasterror = sqlite3_step(stmt);
 				}
-				sqlite3_finalize(stmt);
-				qry->lastrowid = sqlite3_last_insert_rowid(db);
-				qry->status = DATABASE_QUERY_FINISHED;
+				lasterror = sqlite3_step(stmt);
+			}
+
+			qry->lastrowid = sqlite3_last_insert_rowid(db);
+			qry->status = DATABASE_QUERY_FINISHED;
+			//Finally, destroy the statement.
+			sqlite3_finalize(stmt);
 		}
-		this_thread::sleep_for(chrono::milliseconds(1));
 	}
 }
 
@@ -89,13 +92,16 @@ Database::Database(const char* filename) {
 	}
 	//Create the db queue thread
 	status = DATABASE_STATUS_PROCESS;
-	dbthread = thread(&Database::process, this);
+	dbthread = new thread(&Database::process, this);
 }
 
 Database::~Database() {
 	status = DATABASE_STATUS_FINISHED;
-	if(dbthread.joinable())
-		dbthread.join();
+	if(nError != ERROR_DB_FAILED) {
+		if(dbthread->joinable())
+			dbthread->join();
+		delete dbthread;
+	}
 	sqlite3_close(db);
 }
 
@@ -105,9 +111,7 @@ void Database::select(Query* query) {
 		//Release the query object from management, add it to the queue.
 		queue.push(query);
 		//Wait for status to be set to DATABASE_QUERY_FINISHED (blocking the calling thread)
-		while(query->status != DATABASE_QUERY_FINISHED) {
-			this_thread::sleep_for(chrono::milliseconds(1));
-		}	
+		while(query->status != DATABASE_QUERY_FINISHED);	
 	}
 }
 

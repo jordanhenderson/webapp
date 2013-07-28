@@ -15,7 +15,8 @@
 #include <direct.h>
 #include <vector>
 #include <list>
-
+#include <queue>
+#include <thread>
 
 
 
@@ -28,13 +29,14 @@
 #define _wfopen fopen
 #endif
 
+#define DB_FUNC_RANDOM "RANDOM()"
 #define ERROR_SUCCESS 0L
 #define ERROR_FILE_NOT_FOUND 2L
 #define ERROR_SOCKET_FAILED 3L
 #define ERROR_DB_FAILED 4L
 #define ERROR_INVALID_IMAGE 5L
 #define ERROR_IMAGE_PROCESSING_FAILED 6L
-#define ERROR_NOT_SUPPORTED 7L
+#define ERROR_IMAGE_NOT_SUPPORTED 7L
 
 #define HTML_HEADER "Content-type: text/html\r\n"
 #define CSS_HEADER "Content-type: text/css; charset=UTF-8\r\n"
@@ -53,6 +55,7 @@ extern std::string empty;
 
 class Internal {
 public:
+	Internal() { nError = 0; };
 	int GetLastError();
 protected: int nError;
 };

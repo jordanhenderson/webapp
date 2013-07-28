@@ -8,7 +8,6 @@
 #include "Session.h"
 #include "Serializer.h"
 #include "document.h"
-
 #define TEMPLATE_VIDEO "video.html"
 #define TEMPLATE_IMAGE "image.html"
 #define TEMPLATE_FLASH "flash.html"
@@ -130,14 +129,21 @@ private:
 	std::string getPage(const char* page);
 	std::string loadFile(const std::string& file);
 	Database* database;
-	Session* session;
+	Session session;
 	RequestVars parseRequestVariables(char* vars, RequestVars& v);
 	Response processVars(RequestVars&, SessionStore&, int publishSession=0);
 	std::string user;
 	std::string pass;
 	std::string basepath;
 	std::string dbpath;
+	//Should authentication be enabled?
 	int auth;
+
+	//Process queue. Threads are executed one by one to ensure no write conflicts occur.
+	LockableContainer<std::queue<std::thread*>> processQueue;
+	std::thread::id currentID;
+	std::thread* thread_process_queue;
+
 
 	int genThumb(const char* file, double shortmax, double longmax);
 	int getDuplicates( std::string& name, std::string& path );
@@ -147,50 +153,24 @@ private:
 	void createFieldMap(Query& q, rapidjson::Value& v);
 	int hasAlbums();
 	int getData(Query& query, RequestVars&, Response&, SessionStore&);
+
+	//This function should be run in a thread.
 	template <typename T>
 	void addFiles(T& files, int nGenThumbs, const std::string& path, const std::string& albumID) {
 		std::string date = date_format("%Y%m%d",8);
 		std::string storepath = database->select(SELECT_SYSTEM("store_path")).response->at(0).at(0);
 		std::string thumbspath = database->select(SELECT_SYSTEM("thumbs_path")).response->at(0).at(0);
+
 		if(files.size() > 0) {
 			for (T::const_iterator it = files.begin(), end = files.end(); it != end; ++it) {
-
-				string thumbID;
-				//Generate thumb.
-				if(nGenThumbs) {
-					FileSystem::MakePath(basepath + PATHSEP + thumbspath + PATHSEP + path + PATHSEP + *it);
-					if(genThumb((path + PATHSEP + *it).c_str(), 200, 200) == ERROR_SUCCESS) {
-						QueryRow params;
-						params.push_back(path + PATHSEP + *it);
-						int nThumbID = database->exec(INSERT_THUMB, &params);
-						if(nThumbID > 0) {
-							thumbID = to_string(nThumbID);
-						}
-					}
-				}
-				//Insert file 
-				QueryRow params;
-				params.push_back(*it);
-				params.push_back(*it);
-				params.push_back(date);
-				int fileID;
-				if(!thumbID.empty()) {
-					params.push_back(thumbID);
-					fileID = database->exec(INSERT_FILE, &params);
-				} else {
-					fileID = database->exec(INSERT_FILE_NO_THUMB, &params);
-				}
-				//Add entry into albumFiles
-				QueryRow fparams;
-				fparams.push_back(albumID);
-				fparams.push_back(to_string(fileID));
-				database->exec(INSERT_ALBUM_FILE, &fparams);
-
+				addFile(*it, nGenThumbs, thumbspath, path, date, albumID);
 			}
 		}
+				
 	}
-
-
+	void addFile(const std::string&, int, const std::string&, const std::string&, const std::string&, const std::string&);
+	void process_thread(std::thread*);
+	
 
 public:
 	Gallery::Gallery(Parameters* params);

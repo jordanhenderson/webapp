@@ -31,8 +31,21 @@ void Image::cleanup() {
 		}
 		break;
 	case IMAGE_TYPE_GIF:
+			//Dealloc the frames
+		if(frames != NULL) {
+			for(int i = 0; i < imagecount; i++) {
+#ifdef HAS_IPP
+				ippsFree(frames[i]);
+#else
+				free(frames[i]);
+#endif
+			}
+			delete[] frames;
+		}
 		if(gif != NULL)
 			DGifCloseFile(gif);
+
+
 		break;
 	}
 }
@@ -41,6 +54,7 @@ Image::Image(const string& filename) {
 	imageType = -1; 
 	row_pointers = NULL;
 	pixels = NULL;
+	imagecount = 0;
 	load(filename);
 	return;
 	
@@ -65,16 +79,14 @@ void Image::changeType(const string& filename) {
 	if(endsWith(f, ".gif")) {
 		//PNG/JPG->GIF
 		if(imageType >= 0 && imageType != IMAGE_TYPE_GIF) {
+			if(frames != NULL)
+				delete[] frames;
+			if(gif)
+				DGifCloseFile(gif);
+			frames = new unsigned char*[1];
+			frames[0] = pixels;
 			gif = EGifOpen(NULL, 0, NULL);
-			gif->ImageCount = 1;
-			gif->SWidth = width;
-			gif->SHeight = height;
-			gif->SColorMap = GifMakeMapObject(1 << 8, NULL);
-			gif->SavedImages = (SavedImage*)malloc(sizeof(SavedImage));
-			memset((char *)&gif->SavedImages[0], '\0', sizeof(SavedImage));
-
-			gif->SavedImages[0].ImageDesc.Width = width;
-			gif->SavedImages[0].ImageDesc.Height = height;
+			imagecount = 1;
 
 		}
 		imageType = IMAGE_TYPE_GIF;
@@ -97,7 +109,7 @@ void Image::load(const string& filename) {
 	changeType(filename);
 
 	if(imageType == -1) {
-		nError = ERROR_NOT_SUPPORTED;
+		nError = ERROR_IMAGE_NOT_SUPPORTED;
 		return;
 	}
 	File file;
@@ -121,10 +133,8 @@ void Image::load(const string& filename) {
 			cinfo.out_color_space = JCS_EXT_RGBA;
 			jpeg_start_decompress(&cinfo);
 
-		
-
 			//Allocate pixels array.
-			nBytes = cinfo.output_width * cinfo.output_height * cinfo.output_components;
+			nBytes = width * height * 4;
 
 #ifdef HAS_IPP
 			pixels = ippsMalloc_8u(nBytes);
@@ -132,7 +142,7 @@ void Image::load(const string& filename) {
 			pixels = new unsigned char[nBytes];
 #endif
 			unsigned int scanline_count = 0;
-			unsigned int scanline_length = cinfo.output_width * cinfo.output_components;
+			unsigned int scanline_length = cinfo.output_width * 4;
 			while(cinfo.output_scanline < cinfo.output_height) {
 
 				output_data[0] = (pixels + (scanline_count * scanline_length));
@@ -140,6 +150,7 @@ void Image::load(const string& filename) {
 				scanline_count++;
 			}
 
+			imagecount = 1;
 			jpeg_finish_decompress(&cinfo);
 			jpeg_destroy_decompress(&cinfo);
 
@@ -201,7 +212,7 @@ void Image::load(const string& filename) {
 		   if (trns)
 			  png_set_expand(png_ptr);
 
-		   if(colorType == PNG_COLOR_TYPE_GRAY || colorType == PNG_COLOR_TYPE_RGB_ALPHA) {
+		   if(colorType == PNG_COLOR_TYPE_GRAY || colorType == PNG_COLOR_TYPE_RGB_ALPHA || colorType == PNG_COLOR_TYPE_GRAY_ALPHA) {
 			   png_set_gray_to_rgb(png_ptr);
 			   png_set_filler(png_ptr, 0xff, PNG_FILLER_AFTER);
 		   }
@@ -231,6 +242,7 @@ void Image::load(const string& filename) {
 				goto finish;
 			}
 
+			imagecount = 1;
 			regenRowPointers();
 
 			png_read_image(png_ptr, row_pointers);
@@ -240,8 +252,6 @@ void Image::load(const string& filename) {
 		break;
 	case IMAGE_TYPE_GIF: 
 		{
-
-			//DGifOpenFileHandle(file->pszFile);
 			int error;
 			gif = DGifOpenFileHandle(fileno(file.pszFile), &error);
 
@@ -260,17 +270,14 @@ void Image::load(const string& filename) {
 			width = gif->SWidth;
 			height = gif->SHeight;
 			bitdepth = 8;
-
+			imagecount = gif->ImageCount;
 			//Allocate our frame array.
-			frames = new unsigned char*[gif->ImageCount];
-			maps = new unsigned char*[gif->ImageCount];
-			for(int i = 0; i < gif->ImageCount; i++) {
+			frames = new unsigned char*[imagecount];
+			for(int i = 0; i < imagecount; i++) {
 				gifInsertFrame(i);
 			}
 			pixels = frames[0];
 
-			
-			
 			//File now handled by giflib.
 			file.pszFile = NULL;
 			
@@ -360,55 +367,64 @@ void Image::save(const string& filename) {
 
 		}
 		break;
-	case IMAGE_TYPE_GIF: {
-		int error;
-		GifFileType* output = EGifOpenFileHandle(fileno(file.pszFile), &error);
-		if(!output) {
-			nError = ERROR_IMAGE_PROCESSING_FAILED;
-			goto finish;
-		}
+	case IMAGE_TYPE_GIF: 
+		{
+			int error;
+			GifFileType* output = EGifOpenFileHandle(fileno(file.pszFile), &error);
+			if(!output) {
+				nError = ERROR_IMAGE_PROCESSING_FAILED;
+				goto finish;
+			}
 
-		output->SWidth = width;
-		output->SHeight = height;
-		output->SColorResolution = bitdepth;
-		output->SBackGroundColor = gif->SBackGroundColor;
+			output->SWidth = width;
+			output->SHeight = height;
+			
+			output->Image.Width = width;
+			output->Image.Height = height;
 
-	
-		output->SColorMap = GifMakeMapObject(gif->SColorMap->ColorCount, gif->SColorMap->Colors);
-		
+			output->SColorResolution = bitdepth;
+			output->SBackGroundColor = gif->SBackGroundColor;
+			//TODO: remove this.
+			output->SColorMap = GifMakeMapObject(gif->SColorMap->ColorCount, gif->SColorMap->Colors);
+			output->ImageCount = imagecount;
+			SavedImage* saved_images;
+			saved_images = output->SavedImages = (SavedImage *)malloc(sizeof(SavedImage)*imagecount);
 
-		output->ImageCount = gif->ImageCount;
-		
-        output->SavedImages = (SavedImage *)malloc(sizeof(SavedImage)*gif->ImageCount);
+			//TODO Disposal optimisation for animations.
+			for (int i = 0; i < imagecount; i++) {
+				memset(&saved_images[i], '\0', sizeof(SavedImage));
+				//Remove optimisation on savedimages.
+				saved_images[i].ImageDesc.Width = width;
+				saved_images[i].ImageDesc.Height = height;
+				saved_images[i].ExtensionBlockCount = gif->SavedImages[i].ExtensionBlockCount;
+				saved_images[i].ExtensionBlocks = gif->SavedImages[i].ExtensionBlocks;
+			
+				//Remove subimage rasterbits issues
+				gifMakeMap(frames[i], width, height, (unsigned char**)&saved_images[i].ImageDesc.ColorMap, (unsigned char**)&saved_images[i].RasterBits);
+				//Clean up rasterbits/maps.					
+			}
 
-		//TODO Disposal optimisation for animations.
-		for (int i = 0; i < gif->ImageCount; i++) {
-			memset(&output->SavedImages[i], '\0', sizeof(SavedImage));
-			//Remove optimisation on savedimages.
-			output->SavedImages[i].ImageDesc.ColorMap = GifMakeMapObject(256, NULL);
-			output->SavedImages[i].RasterBits = (unsigned char *)malloc(sizeof(GifPixelType) *
-                                                   width * height);
-			output->SavedImages[i].ImageDesc.Width = width;
-			output->SavedImages[i].ImageDesc.Height = height;
-			output->SavedImages[i].ImageDesc.Top = 0;
-			output->SavedImages[i].ImageDesc.Left = 0;
-			output->SavedImages[i].ImageDesc.Interlace = 0;
-			output->SavedImages[i].ExtensionBlockCount = gif->SavedImages[i].ExtensionBlockCount;
-			output->SavedImages[i].ExtensionBlocks = gif->SavedImages[i].ExtensionBlocks;
 			
 
-			
-			//Remove subimage rasterbits issues
-			gifMakeMap(frames[i], width, height, (unsigned char**)&output->SavedImages[i].ImageDesc.ColorMap, (unsigned char**)&output->SavedImages[i].RasterBits);
 
-		}
+			if(EGifSpew(output) != GIF_OK) {
+				nError = ERROR_IMAGE_PROCESSING_FAILED;
+			} else {
+				file.pszFile = NULL;
+			}
 
-		
-	if(EGifSpew(output) != GIF_OK) {
-			nError = ERROR_IMAGE_PROCESSING_FAILED;
-			goto finish;
-		}
-		file.pszFile = NULL;
+			//Clean up generated maps.
+			for(int i = 0; i < imagecount; i++) {
+				if (saved_images[i].ImageDesc.ColorMap != NULL) {
+					GifFreeMapObject(saved_images[i].ImageDesc.ColorMap);
+					saved_images[i].ImageDesc.ColorMap = NULL;
+				}
+
+				if (saved_images[i].RasterBits != NULL)
+					free((char *)saved_images[i].RasterBits);
+			}
+
+			free(saved_images);
 
 		}
 		break;
@@ -430,18 +446,15 @@ void Image::resize(int width, int height) {
 	}
 	else {
 		//Resize each frame.
-		for (int i = 0; i < gif->ImageCount; i++) {
+		for (int i = 0; i < imagecount; i++) {
 
-			unsigned char* newFrame = _resize(frames[i], width, height, gif->SWidth,
-				gif->SHeight);
+			unsigned char* newFrame = _resize(frames[i], width, height, this->width,
+				this->height);
 
 			if(newFrame == frames[i])
 				continue;
 			else
 				frames[i] = newFrame; 
-
-			gif->SavedImages[i].ImageDesc.Width = width;
-			gif->SavedImages[i].ImageDesc.Height = height;
 			
 		}
 		this->width = width;
@@ -459,7 +472,7 @@ void Image::resize(int width, int height) {
 
 void Image::regenRowPointers() {
 	if(row_pointers != NULL)
-		delete row_pointers;
+		delete[] row_pointers;
 	row_pointers = new png_bytep[height * sizeof(png_bytep)];
 	for(int i = 0; i < height; i++) {
 		row_pointers[i] = pixels + (i*width*4);
@@ -498,8 +511,6 @@ unsigned char* Image::_resize(unsigned char* image, int width, int height, int o
 	//Allocate the temporary buffer used to store resized image.
 	Ipp8u* tmpBuf = ippsMalloc_8u(width * height * 4);
 
-
-
 	if(pBuffer != NULL) {
 			status = ippiResizeLanczos_8u_C4R((const Ipp8u*)image, oldWidth*4, tmpBuf, width*4, dstOffset, dstsize, ippBorderRepl,0,pSpec, pBuffer );
 	}
@@ -509,8 +520,6 @@ unsigned char* Image::_resize(unsigned char* image, int width, int height, int o
 	ippsFree(pBuffer);
 	ippsFree(image);
 
-
-	
 	nBytes = width * height * 4;
 	return tmpBuf;
 #else

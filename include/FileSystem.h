@@ -9,6 +9,7 @@ public:
 	std::string fileName;
 	std::string flags;
 	~File();
+	File();
 };
 
 class FileData {

@@ -1,15 +1,12 @@
 #include "Logging.h"
 #include "Gallery.h"
 #include "Server.h"
-
-Logging* logger;
 using namespace std;
 #ifdef WIN32
 int wmain(int argc, wchar_t* argv[]) {
 #else
 int main(int argc, char* argv[]) {
 #endif
-	
 	setlocale(LC_ALL, "");
 	Parameters params;
 	//TODO convert params to file
@@ -30,16 +27,16 @@ int main(int argc, char* argv[]) {
 	
 	//Create logging instance
 	logger = new Logging(params.get("basepath") + PATHSEP + params.get("logfile"));
-	auto gallery = new Gallery(&params);
+	Gallery* gallery = new Gallery(&params);
 
 	//Create a fastcgi server.
 	Server* server = new Server(gallery);
 	server->setHandler(gallery);
 	server->join();
-	//Finish any remaining log messages
-	logger->finish();
+
 	delete server;
-	
+	delete gallery;
+	delete logger;
 	return 0;
 }
 

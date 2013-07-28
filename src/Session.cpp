@@ -21,6 +21,7 @@ Session::~Session() {
 			it->second->destroy();
 			delete it->second;
 	}
+	lock.unlock();
 	delete session_map;
 }
 

@@ -9,10 +9,10 @@
 #define LOGGER_STATUS_PROCESS 0
 #define LOGGER_STATUS_FINISHED 1
 class Logging : public Internal {
-	std::thread logger;
+	std::thread* logger;
 	tbb::concurrent_queue<std::string*> queue;
 	void process();
-	File* logFile;
+	File logFile;
 	int status;
 public:
 	Logging(std::string logPath);

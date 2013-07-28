@@ -29,7 +29,7 @@ public:
 class Database : public Internal {
 private:
 	sqlite3* db;
-	std::thread dbthread;
+	std::thread* dbthread;
 	tbb::concurrent_queue<Query*> queue;
 	void process();
 	int status;
