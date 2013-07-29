@@ -33,15 +33,11 @@ void Image::gifInsertFrame(int frame) {
 #else
 		frames[frame] = new unsigned char[rastersize*4];
 #endif
-		//Fill the frame transparent.
+		//Fill the frame using it's bg color.
 		unsigned char target[4];
 		GifColorType c;
-		if(alpha > -1) {
-			c = map->Colors[alpha];
-
-		} else {
-			c = map->Colors[bgcolor];
-		}
+		c = map->Colors[bgcolor];
+		
 		target[0] = c.Red;
 		target[1] = c.Green;
 		target[2] = c.Blue;
@@ -143,8 +139,7 @@ void Image::gifInsertFrame(int frame) {
 	gcb.TransparentColor = -1;
 	//Remove disposal mode (unoptimised, but required for now).
 	gcb.DisposalMode = DISPOSE_BACKGROUND;
-	//Free the previous saved extension
-	GifFreeExtensions(&gif->SavedImages[frame].ExtensionBlockCount, &gif->SavedImages[frame].ExtensionBlocks);
+
 	EGifGCBToSavedExtension(&gcb, gif, frame);
 
 		delete[] framePixels;

@@ -24,16 +24,15 @@ public:
 	int params_copy;
 	Query(const std::string& dbq, QueryRow* params=NULL, int copy = 0);
 	~Query();
+
 };
 
 class Database : public Internal {
 private:
 	sqlite3* db;
 	std::thread* dbthread;
-	tbb::concurrent_queue<Query*> queue;
-	void process();
-	std::condition_variable cv;
-	std::mutex m;
+
+	void process(Query*q);
 	int abort;
 
 public:

@@ -28,6 +28,7 @@ Gallery::Gallery(Parameters* params) {
 
 	//Enable pragma foreign keys.
 	database->exec(PRAGMA_FOREIGN);
+	database->exec(PRAGMA_LOCKING_EXCLUSIVE);
 
 	//Check authentication
 	user = params->get("user");
@@ -41,25 +42,31 @@ Gallery::Gallery(Parameters* params) {
 	
 	thread_process_queue = new thread([this]() {
 		while(!abort) {
-			LockableContainerLock<queue<thread*>> lock(processQueue);
 			{
 				unique_lock<mutex> lk(thread_process_mutex);
-				//Wait for a signal from log functions (pushers)
-				while(lock->empty() && !abort) 
+					//Wait for a signal from log functions (pushers)
+				while(processQueue.empty() && !abort) 
 					cv.wait(lk);
 			}
 			if(abort) return;
-
-			thread* t = lock->front();
-			lock->pop();
-			lock.unlock();
-			currentID = t->get_id();
-
-			t->join();
 				
-			delete t;
+			while(!processQueue.empty()) {
+				thread* t = processQueue.front();
+				{
+					std::lock_guard<std::mutex> lk(process_mutex);
+					currentID = t->get_id();
+				}
+				cv_proc.notify_all();
+				t->join();
+				delete t;
+				processQueue.pop();
+			}
 			
+		
+
+		
 		}
+		
 	});
 
 	thread_process_queue->detach();
@@ -70,15 +77,21 @@ Gallery::Gallery(Parameters* params) {
 }
 
 void Gallery::process_thread(std::thread* t) {
-	LockableContainerLock<queue<thread*>> lock(processQueue);
-	lock_guard<mutex> lk(thread_process_mutex);
-	bool const empty = lock->empty();
-	lock->push(t);
-	if(empty) cv.notify_one();
+	bool empty;
+	{
+		lock_guard<mutex> lk(thread_process_mutex);
+		empty = processQueue.empty();
+		processQueue.push(t);
+	}
+
+	if(empty) {
+		cv.notify_one();
+	}
 }
 
 Gallery::~Gallery() {
 	abort = 1;
+	cv.notify_all();
 	if(thread_process_queue->joinable())
 		thread_process_queue->join();
 	delete thread_process_queue;
@@ -413,8 +426,12 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& s) {
 	vector<string> albums;
 	tokenize(vars["a"],albums,",");
 	thread* refresh_albums = new thread([this, albums, nGenThumbs]() {
-		while(currentID != std::this_thread::get_id());
+		std::unique_lock<std::mutex> lk(process_mutex);
+		while(currentID != this_thread::get_id())
+			cv_proc.wait(lk);
+
 		string storepath = database->select(SELECT_SYSTEM("store_path")).response->at(0).at(0);
+		database->exec("BEGIN TRANSACTION");
 		for(string album: albums) {
 			QueryRow params;
 			params.push_back(album);
@@ -432,8 +449,8 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& s) {
 						existingFiles.append("\"" + *it + "\",");
 					}
 					existingFiles = existingFiles.substr(0, existingFiles.size()-1);
-					existingFiles.append(")");
 				}
+				existingFiles.append(")");
 				database->exec(existingFiles, &params);
 				//Get a list of files in the album from db.
 				Query q_album = database->select(SELECT_PATHS_FROM_ALBUM, &params);
@@ -452,6 +469,7 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& s) {
 				addFiles(files, nGenThumbs, path, album);
 			}
 		}
+		database->exec("COMMIT");
 	});
 	process_thread(refresh_albums);
 	unordered_map<string, string> map;
@@ -522,7 +540,7 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 	int nRecurse = GETCHK(vars["recursive"]);
 	int nGenThumbs = GETCHK(vars["genthumbs"]);
 	string name = url_decode(vars["name"]);
-	string path = url_decode(vars["path"]);
+	string path = replaceAll(url_decode(vars["path"]), "\\", "/");
 	int addStatus = 0;
 	Serializer serializer;
 	unordered_map<string, string> map;
@@ -535,7 +553,9 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 			addStatus = 2;
 		} else {
 			thread* add_album = new thread([this, name, path, type, nRecurse, nGenThumbs]() {
-				while(currentID != std::this_thread::get_id());
+				std::unique_lock<std::mutex> lk(process_mutex);
+				while(currentID != this_thread::get_id())
+					cv_proc.wait(lk);
 				string storepath = database->select(SELECT_SYSTEM("store_path")).response->at(0).at(0);
 				//Add the album.
 				QueryRow params;
@@ -548,11 +568,13 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 				params.push_back(path);
 				params.push_back(type);
 				params.push_back(to_string(nRecurse));
-
+				database->exec("BEGIN TRANSACTION");
 				int albumID = database->exec(INSERT_ALBUM, &params);
 				vector<string> files = FileSystem::GetFiles(basepath + PATHSEP + storepath + PATHSEP + path, "", nRecurse);
 			
 				addFiles(files, nGenThumbs, path, to_string(albumID));
+				database->exec("COMMIT");
+
 			});
 			process_thread(add_album);
 			map["msg"] = "ADDED_SUCCESS";
@@ -581,9 +603,12 @@ int Gallery::delAlbums(RequestVars& vars, Response& r, SessionStore&) {
 
 	thread* del_albums = new thread([this, albums, delThumbs, delFiles]() {
 		//Pause until ready.
-		while(currentID != std::this_thread::get_id());
+		std::unique_lock<std::mutex> lk(process_mutex);
+		while(currentID != this_thread::get_id())
+			cv_proc.wait(lk);
 		string storepath = database->select(SELECT_SYSTEM("store_path")).response->at(0).at(0);
 		string thumbspath = database->select(SELECT_SYSTEM("thumbs_path")).response->at(0).at(0);
+		database->exec("BEGIN TRANSACTION");
 		for(string album: albums) {
 			QueryRow params;
 
@@ -606,6 +631,7 @@ int Gallery::delAlbums(RequestVars& vars, Response& r, SessionStore&) {
 				}
 			}
 		}
+		database->exec("COMMIT");
 	});
 	process_thread(del_albums);
 

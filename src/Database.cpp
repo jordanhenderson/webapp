@@ -29,90 +29,78 @@ Query::~Query() {
 	delete dbq;
 }
 
-void Database::process() {
-	while(!abort) {
-		{
-			unique_lock<mutex> lk(m);
-			//Wait for a signal from log functions (pushers)
-			while(queue.empty() && !abort) 
-				cv.wait(lk);
-		}
+void Database::process(Query* qry) {
 
-		if(abort)
-			return; //abort!
+	if(abort) return;
+		
 
-		Query* qry;
-
-		if(queue.try_pop(qry))  {
-			sqlite3_stmt *stmt;
-			if(qry->status == DATABASE_QUERY_FINISHED)
-				continue;
-
-			//Prepare the statement
-			if(sqlite3_prepare_v2(db, qry->dbq->c_str(), qry->dbq->length(), &stmt, 0)) {
-				//Error preparing statement.
-				qry->status = DATABASE_QUERY_FINISHED;
-				continue;
-			}
-
-			//Check for (and apply) parameters)
-			if(qry->params != NULL) {
-				int m = qry->params->size();
-				for(int i = 0; i < m; i++)
-					sqlite3_bind_text(stmt, i+1, (*qry->params)[i].c_str(), (*qry->params)[i].length(), SQLITE_STATIC);	
-			}
-			
-			
-			int havedesc = 0;
-			int lasterror = sqlite3_step(stmt);
-			while(lasterror == SQLITE_ROW) {
-				if(qry->response != NULL) {
-					vector<string> row;
-					for(int col = 0; col < sqlite3_column_count(stmt); col++) {
-						//Push back the column name
-						if(qry->description != NULL && !havedesc)
-							qry->description->push_back(sqlite3_column_name(stmt, col));
-						//Push back the column text
-						const char* text = (const char*)sqlite3_column_text(stmt, col);
-						int size = sqlite3_column_bytes(stmt, col);
-						row.push_back(string(text,size));
-					}
-					//We have the column description after the first pass.
-					havedesc = 1;
-					//Push back the row retrieved.
-					qry->response->push_back(row);
-				}
-				lasterror = sqlite3_step(stmt);
-			}
-
-			qry->lastrowid = sqlite3_last_insert_rowid(db);
-			{
-				std::lock_guard<std::mutex> lk(m);
-				qry->status = DATABASE_QUERY_FINISHED;
-				cv.notify_one();
-			}
-			//Finally, destroy the statement.
-			sqlite3_finalize(stmt);
-		} 
+	sqlite3_stmt *stmt;
+	if(qry->status == DATABASE_QUERY_FINISHED) {
+		return;
 	}
-}
+
+	//Prepare the statement
+	if(sqlite3_prepare_v2(db, qry->dbq->c_str(), qry->dbq->length(), &stmt, 0)) {
+		//Error preparing statement.
+		qry->status = DATABASE_QUERY_FINISHED;
+		return;
+	}
+
+	//Check for (and apply) parameters)
+	if(qry->params != NULL) {
+		int m = qry->params->size();
+		for(int i = 0; i < m; i++)
+			sqlite3_bind_text(stmt, i+1, (*qry->params)[i].c_str(), (*qry->params)[i].length(), SQLITE_STATIC);	
+	}
+			
+			
+	int havedesc = 0;
+	int lasterror = sqlite3_step(stmt);
+	while(lasterror == SQLITE_ROW) {
+		if(qry->response != NULL) {
+			vector<string> row;
+			for(int col = 0; col < sqlite3_column_count(stmt); col++) {
+				//Push back the column name
+				if(qry->description != NULL && !havedesc)
+					qry->description->push_back(sqlite3_column_name(stmt, col));
+				//Push back the column text
+				const char* text = (const char*)sqlite3_column_text(stmt, col);
+				int size = sqlite3_column_bytes(stmt, col);
+				row.push_back(string(text,size));
+			}
+			//We have the column description after the first pass.
+			havedesc = 1;
+			//Push back the row retrieved.
+			qry->response->push_back(row);
+		}
+		lasterror = sqlite3_step(stmt);
+	}
+
+	qry->lastrowid = sqlite3_last_insert_rowid(db);
+			
+				
+	qry->status = DATABASE_QUERY_FINISHED;
+			
+	//Finally, destroy the statement.
+	sqlite3_finalize(stmt);
+} 
+
+	
+
 
 Database::Database(const char* filename) {
 	abort = 0;
 	db = NULL;
-	sqlite3_open(filename, &db);
-	if(db == NULL) {
+	int ret = sqlite3_open(filename, &db);
+	if(db == NULL || ret != SQLITE_OK) {
 		nError = ERROR_DB_FAILED;
 		return;
 	}
 	//Create the db queue thread
-
-	dbthread = new thread(&Database::process, this);
 }
 
 Database::~Database() {
 	abort = 1;
-	cv.notify_all();
 	if(nError != ERROR_DB_FAILED) {
 		if(dbthread->joinable())
 			dbthread->join();
@@ -123,22 +111,7 @@ Database::~Database() {
 
 void Database::select(Query* query) {
 	if(nError != ERROR_DB_FAILED) {
-		//add it to the processing queue, wait for response
-		//Release the query object from management, add it to the queue.
-		{
-			lock_guard<mutex> lk(m);
-			bool const empty = queue.empty();
-			queue.push(query);
-			//Notify the process thread.
-			if(empty)
-				cv.notify_one();
-		}
-
-		//Wait for status to be set to DATABASE_QUERY_FINISHED (blocking the calling thread) 
-		{
-			std::unique_lock<std::mutex> lk(m);
-			cv.wait(lk, [query]{return query->status == DATABASE_QUERY_FINISHED;});
-		}
+		process(query);
 	}
 }
 

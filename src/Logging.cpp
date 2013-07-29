@@ -48,14 +48,17 @@ void Logging::setFile(string logPath) {
 void Logging::process() {
 
 	while(!abort) {
-		unique_lock<mutex> lk(m);
-		//Wait for a signal from log functions (pushers)
-		while(queue.empty() && !abort) 
-			cv.wait(lk);
+		{
+			unique_lock<mutex> lk(m);
+			//Wait for a signal from log functions (pushers)
+			while(queue.empty() && !abort) 
+				cv.wait(lk);
+		}
 		if(abort) return;
-
+		
 		string* msg;
-		if(queue.try_pop(msg))  {
+		//Process all messages on the queue.
+		while(queue.try_pop(msg))  {
 			FileSystem::WriteLine(&logFile, *msg);
 			delete msg;
 		} 

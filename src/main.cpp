@@ -21,9 +21,12 @@ int main(int argc, char* argv[]) {
 		params.set("logfile", "gallery.log");
 		params.set("basepath", "gallery");
 		params.set("dbpath", "gallery.sqlite");
-		params.set("storepath", "store");
-		params.set("thumbspath", "thumbs");
+
 	}
+	string bp = params.get("basepath");
+	if(bp[bp.length()] != '/') bp.append("/");
+	//Create the base file structure
+	FileSystem::MakePath(bp);
 	
 	//Create logging instance
 	logger = new Logging(params.get("basepath") + PATHSEP + params.get("logfile"));

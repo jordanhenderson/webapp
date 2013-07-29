@@ -10,6 +10,11 @@
 #include <algorithm>
 const char* THUMB_EXTENSIONS_JPEG[] = THUMB_EXTENSIONS_JPEG_D;
 using namespace std;
+
+//JPEG jmp (hacky, but less code than official setjmp solution.)
+extern "C" {
+	jmp_buf buf;
+}
 void Image::cleanup() {
 	//Clean up various image allocations.
 	switch(imageType) {
@@ -118,6 +123,12 @@ void Image::load(const string& filename) {
 	switch(imageType) {
 	case IMAGE_TYPE_JPEG: 
 		{
+			int v = setjmp(buf);
+			if(v) {
+				//ERROR
+				nError = ERROR_INVALID_IMAGE;
+				goto finish;
+			}
 			struct jpeg_decompress_struct cinfo;
 			struct jpeg_error_mgr jerr;
 			unsigned char* output_data[1];

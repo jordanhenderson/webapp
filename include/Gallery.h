@@ -82,6 +82,7 @@ AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON a
 #define DELETE_MISSING_FILES "DELETE FROM files WHERE id IN (SELECT fileid FROM albumfiles alf WHERE alf.albumid = ?) AND path NOT IN ("
 
 #define PRAGMA_FOREIGN "PRAGMA foreign_keys = ON;"
+#define PRAGMA_LOCKING_EXCLUSIVE "PRAGMA locking_mode = EXCLUSIVE;"
 
 #define SELECT_PATHS_FROM_ALBUM "SELECT path FROM files JOIN albumfiles ON albumfiles.fileid = files.id WHERE albumid = ?;"
 
@@ -140,13 +141,17 @@ private:
 	int auth;
 
 	//Process queue. Threads are executed one by one to ensure no write conflicts occur.
-	LockableContainer<std::queue<std::thread*>> processQueue;
+	std::queue<std::thread*> processQueue;
 	std::thread::id currentID;
 	std::thread* thread_process_queue;
 
 	//Process queue mutex/cv.
 	std::condition_variable cv;
 	std::mutex thread_process_mutex;
+
+	//Process mutex
+	std::mutex process_mutex;
+	std::condition_variable cv_proc;
 
 	int genThumb(const char* file, double shortmax, double longmax);
 	int getDuplicates( std::string& name, std::string& path );
