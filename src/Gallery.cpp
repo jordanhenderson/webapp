@@ -26,6 +26,9 @@ Gallery::Gallery(Parameters* params) {
 	basepath = params->get("basepath");
 	database = new Database((basepath + PATHSEP + dbpath).c_str());
 
+	//Create the schema. Running this even when tables exist prevent issues later on.
+	database->exec(CREATE_DATABASE);
+
 	//Enable pragma foreign keys.
 	database->exec(PRAGMA_FOREIGN);
 	database->exec(PRAGMA_LOCKING_EXCLUSIVE);
