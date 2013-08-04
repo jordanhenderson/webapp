@@ -94,11 +94,11 @@ AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON a
 #define SELECT_ALBUM_ID_WITH_FILE "SELECT al.id FROM albums al JOIN albumfiles alf ON alf.albumid = al.id JOIN files f ON alf.fileid = f.id WHERE f.id = ?"
 
 #define CREATE_DATABASE "BEGIN; \
-CREATE TABLE IF NOT EXISTS 'albumfiles' ('id' INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL , 'albumid' INTEGER NOT NULL REFERENCES albums(id) ON DELETE CASCADE, 'fileid' INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE ); \
+CREATE TABLE IF NOT EXISTS 'thumbs' ('id' INTEGER PRIMARY KEY  NOT NULL , 'path' TEXT); \
 CREATE TABLE IF NOT EXISTS 'albums' ('id' INTEGER PRIMARY KEY  NOT NULL ,'name' TEXT,'added' DATETIME,'lastedited' DATETIME,'path' TEXT NOT NULL ,'type' INTEGER NOT NULL ,'thumbid' INTEGER REFERENCES thumbs(id) ON DELETE SET NULL,'rating' INTEGER NOT NULL  DEFAULT (0) ,'recursive' INTEGER NOT NULL , 'views' INTEGER DEFAULT 0); \
 CREATE TABLE IF NOT EXISTS 'files' ('id' INTEGER PRIMARY KEY  NOT NULL,'name' TEXT,'path' TEXT,'added' TEXT,'enabled' INTEGER NOT NULL  DEFAULT (1) ,'thumbid' INTEGER REFERENCES thumbs(id) ON DELETE SET NULL,'rating' INTEGER DEFAULT(0), 'views' INTEGER DEFAULT 0, 'lastedited' TEXT); \
+CREATE TABLE IF NOT EXISTS 'albumfiles' ('id' INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL , 'albumid' INTEGER NOT NULL REFERENCES albums(id) ON DELETE CASCADE, 'fileid' INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE ); \
 CREATE TABLE IF NOT EXISTS 'system' ('id' INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL , 'name' TEXT NOT NULL , 'value' TEXT); \
-CREATE TABLE IF NOT EXISTS 'thumbs' ('id' INTEGER PRIMARY KEY  NOT NULL , 'path' TEXT); \
 CREATE TRIGGER IF NOT EXISTS 'file_cleanup' AFTER DELETE ON 'albums' BEGIN DELETE FROM files WHERE id NOT IN (SELECT fileid FROM albumfiles); END; \
 CREATE TRIGGER IF NOT EXISTS 'thumbs_trigger_files' AFTER DELETE ON 'files' BEGIN DELETE FROM thumbs WHERE id NOT IN (SELECT thumbid FROM files f WHERE thumbid NOT NULL UNION SELECT thumbid FROM albums WHERE thumbid NOT NULL); END; \
 CREATE TRIGGER IF NOT EXISTS 'thumbs_trigger_albums' AFTER DELETE ON 'albums' BEGIN DELETE FROM thumbs WHERE id NOT IN (SELECT thumbid FROM files f WHERE thumbid NOT NULL UNION SELECT thumbid FROM albums WHERE thumbid NOT NULL); END; \
@@ -129,12 +129,11 @@ class Gallery : public ServerHandler, Internal {
 private:
 	
 	Parameters* params;
-	std::string getPage(const char* page);
-	std::string loadFile(const std::string& file);
+	Response getPage(const char* page, SessionStore&, int publishSession);
 	Database* database;
 	Session session;
 	RequestVars parseRequestVariables(char* vars, RequestVars& v);
-	Response processVars(RequestVars&, SessionStore&, int publishSession=0);
+	Response processVars(RequestVars&, SessionStore&, int publishSession);
 	std::string user;
 	std::string pass;
 	std::string basepath;

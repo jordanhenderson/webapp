@@ -10,6 +10,7 @@
 #include "stringbuffer.h"
 #include "decode.h"
 #include <sha.h>
+//#include <ctemplate/template.h>
 #if _DEBUG
 #include <vld.h>
 #endif
@@ -17,8 +18,8 @@ using namespace rapidjson;
 using namespace std;
 using namespace base64;
 
-
 Gallery::Gallery(Parameters* params) {
+
 	abort = 0;
 	this->params = params;
 	dbpath = params->get("dbpath");
@@ -26,13 +27,18 @@ Gallery::Gallery(Parameters* params) {
 	basepath = params->get("basepath");
 	database = new Database((basepath + PATHSEP + dbpath).c_str());
 
-	//Create the schema. Running this even when tables exist prevent issues later on.
-	database->exec(CREATE_DATABASE);
-
 	//Enable pragma foreign keys.
 	database->exec(PRAGMA_FOREIGN);
 	database->exec(PRAGMA_LOCKING_EXCLUSIVE);
 
+	//Create the schema. Running this even when tables exist prevent issues later on.
+	string schema = CREATE_DATABASE;
+	vector<string> schema_queries;
+	tokenize(schema, schema_queries, ";");
+	for(string s : schema_queries) {
+		database->exec(s);
+	}
+	
 	//Check authentication
 	user = params->get("user");
 	pass = params->get("pass");
@@ -110,50 +116,61 @@ string Gallery::genCookie(const string& name, const string& value, time_t* date)
 	}
 }
 
-string Gallery::getPage(const char* page) {
+Response Gallery::getPage(const char* page, SessionStore& session, int publishSession) {
 	char pageuri[255];
 	snprintf(pageuri, 255, "%s" PSEP "content" PSEP "%s.html", basepath.c_str(), page);
-	
+
+	Response r;
 	//Template parsing
 	if(FileSystem::Exists(pageuri)) {
-		string data = HTML_HEADER END_HEADER;
+			r = HTML_HEADER;
+			if(publishSession) {
+				time_t t; time(&t); add_days(t, 1);
+				r.append(genCookie("sessionid", session.sessionid, &t));
+			}
+			r.append(END_HEADER);
+
+			
 		File f;
 		FileSystem::Open(pageuri, "rb", &f);
 		FileData filedata;
 
 		FileSystem::Read(&f,&filedata);
-		data.append(filedata.data, filedata.size);
+
+		//ctemplate::TemplateDictionary dict
+		r.append(filedata.data, filedata.size);
 		FileSystem::Close(&f);
-
-		return data;
 	} else {
-		return loadFile(page);
-	}
-
-}
-
-string Gallery::loadFile(const string& uri) {
-	string fileuri = basepath + uri;
-	string data;
-
+		//Plain file handling.
+		r = HTML_HEADER;
+		string fileuri = basepath + page;
 		if(FileSystem::Exists(fileuri)) {
-			data = HTML_HEADER END_HEADER;
+			
+			if(endsWith(fileuri, ".css"))
+				r = CSS_HEADER;
+			else if(endsWith(fileuri, ".js"))
+				r = JS_HEADER;
 
-			if(endsWith(uri, ".css"))
-				data = CSS_HEADER END_HEADER;
-			else if(endsWith(uri, ".js"))
-				data = JS_HEADER END_HEADER;
+			if(publishSession) {
+				time_t t; time(&t); add_days(t, 1);
+				r.append(genCookie("sessionid", session.sessionid, &t));
+			}
+
+			r.append(END_HEADER);
+
 			File f;
 			FileSystem::Open(fileuri.c_str(), "rb", &f);
 			FileData filedata;
 			FileSystem::Read(&f, &filedata);
-			data.append(filedata.data, filedata.size);
+			r.append(filedata.data, filedata.size);
 			FileSystem::Close(&f);
 		} else {
-			data.append(HTML_404);
+			r.append(END_HEADER);
+			r.append(HTML_404);
 		}
-	
-	return data;
+	}
+	return r;
+
 }
 
 void Gallery::addFile(const string& file, int nGenThumbs, const string& thumbspath, const string& path, const string& date, const string& albumID) {
@@ -282,9 +299,9 @@ void Gallery::process(FCGX_Request* request) {
 			parseRequestVars(uri + 4, v);
 			final = processVars(v, *store, createstore);
 		} else if(uri[0] == PATHSEP && (uri[1] == '\0' || uri[1] == '?')) {
-			final = getPage("index");
+			final = getPage("index", *store, createstore);
 		} else {
-			final = getPage(uri);
+			final = getPage(uri, *store, createstore);
 		}
 	} else if(strcmp(method, "POST") == 0) {
 		//Read data from the input stream. (allocated using CONTENT_LENGTH)
@@ -333,7 +350,10 @@ Response Gallery::processVars(RequestVars& vars, SessionStore& session, int publ
 #endif
 		return r;
 	} else {
-		r.append(END_HEADER "{}");
+		Serializer s;
+		s.append("msg", "NO_AUTH");
+		r.append(END_HEADER);
+		r.append(s.get(RESPONSE_TYPE_FULL_MESSAGE));
 		return r;
 	}
 }
@@ -423,7 +443,7 @@ int Gallery::disableFiles(RequestVars& vars, Response& r, SessionStore& s) {
 	return 0;
 }
 
-int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& s) {
+int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& session) {
 
 	int nGenThumbs = GETCHK(vars["genthumbs"]);
 	vector<string> albums;
@@ -475,12 +495,13 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& s) {
 		database->exec("COMMIT");
 	});
 	process_thread(refresh_albums);
-	unordered_map<string, string> map;
-	map["msg"] = "REFRESH_SUCCESS";
-	map["close"] = "1";
-	Serializer serializer;
-	serializer.append(map);
-	r.append(serializer.get(RESPONSE_TYPE_MESSAGE));
+
+	Serializer s;
+	Value m;
+	s.append("msg", "REFRESH_SUCCESS", 0, &m);
+	s.append("close", "1", 1, &m);
+	r.append(s.get(RESPONSE_TYPE_MESSAGE));
+
 	return 0;
 }
 
@@ -506,12 +527,11 @@ int Gallery::login(RequestVars& vars, Response& r, SessionStore& store) {
 	string user = vars["user"];
 	string pass = vars["pass"];
 	Serializer s;
-	if(!user.empty() && !pass.empty()) {
-		if(user == this->user && pass == this->pass) {
-			store.store("auth", "TRUE");
-			s.append("msg", "LOGIN_SUCCESS", 1);
-
-		}
+	if(user == this->user && pass == this->pass) {
+		store.store("auth", "TRUE");
+		s.append("msg", "LOGIN_SUCCESS", 1);
+	} else {
+		s.append("msg", "LOGIN_FAILED", 1);
 	}
 	r.append(s.get(RESPONSE_TYPE_MESSAGE));
 	return 0;
@@ -545,14 +565,12 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 	string name = url_decode(vars["name"]);
 	string path = replaceAll(url_decode(vars["path"]), "\\", "/");
 	int addStatus = 0;
-	Serializer serializer;
-	unordered_map<string, string> map;
+	Serializer s;
 	if(!name.empty() && !path.empty()) {
 		//_addAlbum
 		int nDuplicates = getDuplicates(name, path);
 		if(nDuplicates > 0) {
-			map["msg"] = "DUPLICATE_ALBUM";
-			map["close"] = "0";
+			s.append("msg", "DUPLICATE_ALBUM");
 			addStatus = 2;
 		} else {
 			thread* add_album = new thread([this, name, path, type, nRecurse, nGenThumbs]() {
@@ -580,24 +598,23 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 
 			});
 			process_thread(add_album);
-			map["msg"] = "ADDED_SUCCESS";
-			map["close"] = "1";
+			Value m;
+			s.append("msg", "ADDED_SUCCESS", 0, &m);
+			s.append("close", "1", 1, &m);
 
 		}
 	} else {
-		map["msg"] = "FAILED";
-		map["close"] = "1";
+		Value m;
+		s.append("msg", "FAILED", 0, &m);
+		s.append("close", "1", 1, &m);
 		addStatus = 1;
 	}
-	serializer.append(map);
-	r.append(serializer.get(RESPONSE_TYPE_MESSAGE));
+	r.append(s.get(RESPONSE_TYPE_MESSAGE));
 	return addStatus;
 }
 
 int Gallery::delAlbums(RequestVars& vars, Response& r, SessionStore&) {
-	Serializer serializer;
-	unordered_map<string, string> map;
-
+	Serializer s;
 
 	int delThumbs = GETCHK(vars["delthumbs"]);
 	int delFiles = GETCHK(vars["delfiles"]);
@@ -638,10 +655,10 @@ int Gallery::delAlbums(RequestVars& vars, Response& r, SessionStore&) {
 	});
 	process_thread(del_albums);
 
-	map["msg"] = "DELETE_SUCCESS";
-	map["close"] = "1";
-	serializer.append(map);
-	r.append(serializer.get(RESPONSE_TYPE_MESSAGE));
+	Value m;
+	s.append("msg", "DELETE_SUCCESS", 0, &m);
+	s.append("close", "1", 1, &m);
+	r.append(s.get(RESPONSE_TYPE_MESSAGE));
 	return 0;
 }
 

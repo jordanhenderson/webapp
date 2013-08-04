@@ -92,9 +92,9 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;VC_EXTRALEAN;__TBB_BUILD;USE_WINTHREAD;__TBB_NO_IMPLICIT_LINKAGE;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;_DEBUG;USE_PRECOMPILED_HEADERS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>CTEMPLATE_DLL_DECL=;__TBB_BUILD;USE_WINTHREAD;__TBB_NO_IMPLICIT_LINKAGE;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;USE_PRECOMPILED_HEADERS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>include/vld;include;include/tbb;include/rml/include;include/fastcgi;include/sqlite;include/rapidjson;include/b64;include/zlib;include/lpng;include/jpeg;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;include/ctemplate/windows;include/ctemplate;include/tbb;include/rml/include;include/fastcgi;include/sqlite;include/rapidjson;include/b64;include/zlib;include/lpng;include/jpeg;include/gif;include/pngnq;include/tinydir;ext/cryptopp;include/vld</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
       <InterproceduralOptimization>NoIPO</InterproceduralOptimization>
@@ -116,9 +116,9 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;VC_EXTRALEAN;__TBB_BUILD;USE_WINTHREAD;__TBB_NO_IMPLICIT_LINKAGE;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;_DEBUG;USE_PRECOMPILED_HEADERS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>CTEMPLATE_DLL_DECL=;__TBB_BUILD;USE_WINTHREAD;__TBB_NO_IMPLICIT_LINKAGE;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;USE_PRECOMPILED_HEADERS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>include/vld;include;include/tbb;include/rml/include;include/fastcgi;include/sqlite;include/rapidjson;include/b64;include/zlib;include/lpng;include/jpeg;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;include/ctemplate/windows;include/ctemplate;include/tbb;include/rml/include;include/fastcgi;include/sqlite;include/rapidjson;include/b64;include/zlib;include/lpng;include/jpeg;include/gif;include/pngnq;include/tinydir;ext/cryptopp;include/vld</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
       <InterproceduralOptimization>NoIPO</InterproceduralOptimization>
@@ -142,16 +142,16 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>false</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;VC_EXTRALEAN;__TBB_BUILD;USE_WINTHREAD;__TBB_NO_IMPLICIT_LINKAGE;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>CTEMPLATE_DLL_DECL=;__TBB_BUILD;USE_WINTHREAD;__TBB_NO_IMPLICIT_LINKAGE;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>include;include/tbb;include/rml/include;include/fastcgi;include/sqlite;include/rapidjson;include/b64;include/zlib;include/lpng;include/jpeg;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;include/ctemplate/windows;include/ctemplate;include/tbb;include/rml/include;include/fastcgi;include/sqlite;include/rapidjson;include/b64;include/zlib;include/lpng;include/jpeg;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
       <OptimizeForWindowsApplication>false</OptimizeForWindowsApplication>
       <Parallelization>true</Parallelization>
       <UseIntelOptimizedHeaders>true</UseIntelOptimizedHeaders>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MultiProcessorCompilation>false</MultiProcessorCompilation>
       <C99Support>true</C99Support>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <UseProcessorExtensions>None</UseProcessorExtensions>
@@ -160,7 +160,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -169,6 +169,8 @@
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <AdditionalLibraryDirectories>lib/Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
+      <ForceFileOutput>MultiplyDefinedSymbolOnly</ForceFileOutput>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -178,9 +180,9 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;VC_EXTRALEAN;__TBB_BUILD;USE_WINTHREAD;__TBB_NO_IMPLICIT_LINKAGE;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>CTEMPLATE_DLL_DECL=;__TBB_BUILD;USE_WINTHREAD;__TBB_NO_IMPLICIT_LINKAGE;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;USE_PRECOMPILED_HEADERS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>include;include/tbb;include/rml/include;include/fastcgi;include/sqlite;include/rapidjson;include/b64;include/zlib;include/lpng;include/jpeg;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;include/ctemplate/windows;include/ctemplate;include/tbb;include/rml/include;include/fastcgi;include/sqlite;include/rapidjson;include/b64;include/zlib;include/lpng;include/jpeg;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
@@ -196,7 +198,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -204,10 +206,25 @@
       </IgnoreSpecificDefaultLibraries>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <AdditionalLibraryDirectories>lib/Win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ForceFileOutput>MultiplyDefinedSymbolOnly</ForceFileOutput>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="include\rml\client\rml_tbb.cpp" />
+    <ClCompile Include="src\ctemplate\base\cc_arena.cc" />
+    <ClCompile Include="src\ctemplate\htmlparser\htmlparser.cc" />
+    <ClCompile Include="src\ctemplate\htmlparser\jsparser.cc" />
+    <ClCompile Include="src\ctemplate\htmlparser\statemachine.cc" />
+    <ClCompile Include="src\ctemplate\per_expand_data.cc" />
+    <ClCompile Include="src\ctemplate\template.cc" />
+    <ClCompile Include="src\ctemplate\template_annotator.cc" />
+    <ClCompile Include="src\ctemplate\template_cache.cc" />
+    <ClCompile Include="src\ctemplate\template_dictionary.cc" />
+    <ClCompile Include="src\ctemplate\template_modifiers.cc" />
+    <ClCompile Include="src\ctemplate\template_namelist.cc" />
+    <ClCompile Include="src\ctemplate\template_pathops.cc" />
+    <ClCompile Include="src\ctemplate\template_string.cc" />
+    <ClCompile Include="src\ctemplate\windows\port.cc" />
     <ClCompile Include="src\Database.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
@@ -1405,6 +1422,37 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Container.h" />
+    <ClInclude Include="include\ctemplate\base\arena-inl.h" />
+    <ClInclude Include="include\ctemplate\base\arena.h" />
+    <ClInclude Include="include\ctemplate\base\fileutil.h" />
+    <ClInclude Include="include\ctemplate\base\macros.h" />
+    <ClInclude Include="include\ctemplate\base\manual_constructor.h" />
+    <ClInclude Include="include\ctemplate\base\mutex.h" />
+    <ClInclude Include="include\ctemplate\base\small_map.h" />
+    <ClInclude Include="include\ctemplate\base\thread_annotations.h" />
+    <ClInclude Include="include\ctemplate\base\util.h" />
+    <ClInclude Include="include\ctemplate\htmlparser\htmlparser.h" />
+    <ClInclude Include="include\ctemplate\htmlparser\htmlparser_cpp.h" />
+    <ClInclude Include="include\ctemplate\htmlparser\htmlparser_fsm.h" />
+    <ClInclude Include="include\ctemplate\htmlparser\jsparser.h" />
+    <ClInclude Include="include\ctemplate\htmlparser\jsparser_fsm.h" />
+    <ClInclude Include="include\ctemplate\htmlparser\statemachine.h" />
+    <ClInclude Include="include\ctemplate\windows\cc_config.h" />
+    <ClInclude Include="include\ctemplate\windows\ctemplate\find_ptr.h" />
+    <ClInclude Include="include\ctemplate\windows\ctemplate\per_expand_data.h" />
+    <ClInclude Include="include\ctemplate\windows\ctemplate\str_ref.h" />
+    <ClInclude Include="include\ctemplate\windows\ctemplate\template.h" />
+    <ClInclude Include="include\ctemplate\windows\ctemplate\template_annotator.h" />
+    <ClInclude Include="include\ctemplate\windows\ctemplate\template_cache.h" />
+    <ClInclude Include="include\ctemplate\windows\ctemplate\template_dictionary.h" />
+    <ClInclude Include="include\ctemplate\windows\ctemplate\template_dictionary_interface.h" />
+    <ClInclude Include="include\ctemplate\windows\ctemplate\template_emitter.h" />
+    <ClInclude Include="include\ctemplate\windows\ctemplate\template_enums.h" />
+    <ClInclude Include="include\ctemplate\windows\ctemplate\template_modifiers.h" />
+    <ClInclude Include="include\ctemplate\windows\ctemplate\template_namelist.h" />
+    <ClInclude Include="include\ctemplate\windows\ctemplate\template_pathops.h" />
+    <ClInclude Include="include\ctemplate\windows\ctemplate\template_string.h" />
+    <ClInclude Include="include\ctemplate\windows\port.h" />
     <ClInclude Include="include\Database.h" />
     <ClInclude Include="include\fastcgi\fastcgi.h" />
     <ClInclude Include="include\fastcgi\fcgiapp.h" />
