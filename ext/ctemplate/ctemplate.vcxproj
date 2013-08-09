@@ -268,46 +268,46 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\base\arena.cpp">
+    <ClCompile Include="src\base\arena.cc">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='LinuxDebug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\htmlparser\htmlparser.cpp">
+    <ClCompile Include="src\htmlparser\htmlparser.cc">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='LinuxDebug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\htmlparser\jsparser.cpp">
+    <ClCompile Include="src\htmlparser\jsparser.cc">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='LinuxDebug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\htmlparser\statemachine.cpp">
+    <ClCompile Include="src\htmlparser\statemachine.cc">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='LinuxDebug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\per_expand_data.cpp">
+    <ClCompile Include="src\per_expand_data.cc">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='LinuxDebug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\template.cpp">
+    <ClCompile Include="src\template.cc">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='LinuxDebug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\template_annotator.cpp">
+    <ClCompile Include="src\template_annotator.cc">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='LinuxDebug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\template_cache.cpp">
+    <ClCompile Include="src\template_cache.cc">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='LinuxDebug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\template_dictionary.cpp">
+    <ClCompile Include="src\template_dictionary.cc">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='LinuxDebug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\template_modifiers.cpp">
+    <ClCompile Include="src\template_modifiers.cc">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='LinuxDebug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\template_namelist.cpp">
+    <ClCompile Include="src\template_namelist.cc">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='LinuxDebug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\template_pathops.cpp">
+    <ClCompile Include="src\template_pathops.cc">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='LinuxDebug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\template_string.cpp">
+    <ClCompile Include="src\template_string.cc">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='LinuxDebug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\windows\port.cpp" />
+    <ClCompile Include="src\windows\port.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\base\arena-inl.h" />

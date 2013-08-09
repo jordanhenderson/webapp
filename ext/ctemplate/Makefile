@@ -3,7 +3,7 @@
 #All other changes you make in this file will be preserved.
 #Visit http://visualgdb.com/makefiles for more details
 
-SOURCEFILES := src/base/arena.cpp src/htmlparser/htmlparser.cpp src/htmlparser/jsparser.cpp src/htmlparser/statemachine.cpp src/per_expand_data.cpp src/template.cpp src/template_annotator.cpp src/template_cache.cpp src/template_dictionary.cpp src/template_modifiers.cpp src/template_namelist.cpp src/template_pathops.cpp src/template_string.cpp
+SOURCEFILES := src/base/arena.cc src/htmlparser/htmlparser.cc src/htmlparser/jsparser.cc src/htmlparser/statemachine.cc src/per_expand_data.cc src/template.cc src/template_annotator.cc src/template_cache.cc src/template_dictionary.cc src/template_modifiers.cc src/template_namelist.cc src/template_pathops.cc src/template_string.cc
 
 TARGETNAME := ctemplate
 #TARGETTYPE can be APP, STATIC or SHARED
@@ -68,7 +68,7 @@ else
 	all_source_files := $(STARTUPFILES) $(filter-out $(STARTUPFILES),$(SOURCEFILES))
 endif
 
-source_obj1 := $(all_source_files:.cpp=.o)
+source_obj1 := $(all_source_files:.cc=.o)
 source_obj2 := $(source_obj1:.c=.o)
 source_objs := $(source_obj2:.S=.o)
 
@@ -112,7 +112,7 @@ $(BINARYDIR):
 	mkdir $(BINARYDIR)
 
 #VisualGDB: FileSpecificTemplates		#<--- VisualGDB will use the following lines to define rules for source files in subdirectories
-$(BINARYDIR)/%.o : %.cpp $(all_make_files) |$(BINARYDIR)
+$(BINARYDIR)/%.o : %.cc $(all_make_files) |$(BINARYDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
 
 $(BINARYDIR)/%.o : %.c $(all_make_files) |$(BINARYDIR)
@@ -124,58 +124,58 @@ $(BINARYDIR)/%.o : %.S $(all_make_files) |$(BINARYDIR)
 #VisualGDB: GeneratedRules				#<--- All lines below are auto-generated
 
 
-$(BINARYDIR)/arena.o : src/base/arena.cpp $(all_make_files) |$(BINARYDIR)
+$(BINARYDIR)/arena.o : src/base/arena.cc $(all_make_files) |$(BINARYDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
 
 
-$(BINARYDIR)/htmlparser.o : src/htmlparser/htmlparser.cpp $(all_make_files) |$(BINARYDIR)
+$(BINARYDIR)/htmlparser.o : src/htmlparser/htmlparser.cc $(all_make_files) |$(BINARYDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
 
 
-$(BINARYDIR)/jsparser.o : src/htmlparser/jsparser.cpp $(all_make_files) |$(BINARYDIR)
+$(BINARYDIR)/jsparser.o : src/htmlparser/jsparser.cc $(all_make_files) |$(BINARYDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
 
 
-$(BINARYDIR)/statemachine.o : src/htmlparser/statemachine.cpp $(all_make_files) |$(BINARYDIR)
+$(BINARYDIR)/statemachine.o : src/htmlparser/statemachine.cc $(all_make_files) |$(BINARYDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
 
 
-$(BINARYDIR)/per_expand_data.o : src/per_expand_data.cpp $(all_make_files) |$(BINARYDIR)
+$(BINARYDIR)/per_expand_data.o : src/per_expand_data.cc $(all_make_files) |$(BINARYDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
 
 
-$(BINARYDIR)/template.o : src/template.cpp $(all_make_files) |$(BINARYDIR)
+$(BINARYDIR)/template.o : src/template.cc $(all_make_files) |$(BINARYDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
 
 
-$(BINARYDIR)/template_annotator.o : src/template_annotator.cpp $(all_make_files) |$(BINARYDIR)
+$(BINARYDIR)/template_annotator.o : src/template_annotator.cc $(all_make_files) |$(BINARYDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
 
 
-$(BINARYDIR)/template_cache.o : src/template_cache.cpp $(all_make_files) |$(BINARYDIR)
+$(BINARYDIR)/template_cache.o : src/template_cache.cc $(all_make_files) |$(BINARYDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
 
 
-$(BINARYDIR)/template_dictionary.o : src/template_dictionary.cpp $(all_make_files) |$(BINARYDIR)
+$(BINARYDIR)/template_dictionary.o : src/template_dictionary.cc $(all_make_files) |$(BINARYDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
 
 
-$(BINARYDIR)/template_modifiers.o : src/template_modifiers.cpp $(all_make_files) |$(BINARYDIR)
+$(BINARYDIR)/template_modifiers.o : src/template_modifiers.cc $(all_make_files) |$(BINARYDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
 
 
-$(BINARYDIR)/template_namelist.o : src/template_namelist.cpp $(all_make_files) |$(BINARYDIR)
+$(BINARYDIR)/template_namelist.o : src/template_namelist.cc $(all_make_files) |$(BINARYDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
 
 
-$(BINARYDIR)/template_pathops.o : src/template_pathops.cpp $(all_make_files) |$(BINARYDIR)
+$(BINARYDIR)/template_pathops.o : src/template_pathops.cc $(all_make_files) |$(BINARYDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
 
 
-$(BINARYDIR)/template_string.o : src/template_string.cpp $(all_make_files) |$(BINARYDIR)
+$(BINARYDIR)/template_string.o : src/template_string.cc $(all_make_files) |$(BINARYDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
 
 
-$(BINARYDIR)/port.o : src/windows/port.cpp $(all_make_files) |$(BINARYDIR)
+$(BINARYDIR)/port.o : src/windows/port.cc $(all_make_files) |$(BINARYDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
 
