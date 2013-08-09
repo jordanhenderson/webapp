@@ -1,0 +1,304 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="array.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="charset-def.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="charset.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="checksum.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="errors.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hash.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="list.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mf_cache.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mf_dirname.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mf_fn_ext.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mf_format.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mf_getdate.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mf_iocache.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mf_iocache2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mf_keycache.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mf_keycaches.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mf_loadpath.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mf_pack.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mf_path.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mf_qsort.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mf_qsort2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mf_radix.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mf_same.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mf_sort.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mf_soundex.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mf_arr_appstr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mf_tempdir.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mf_tempfile.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mf_unixpath.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mf_wcomp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mulalloc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_access.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_alloc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_bit.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_bitmap.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_chsize.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_compress.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_copy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_create.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_delete.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_div.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_error.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_file.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_fopen.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_fstream.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_gethwaddr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_getsystime.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_getwd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_compare.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_init.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_isnan.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_lib.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_lock.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_malloc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_mess.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_mkdir.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_mmap.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_once.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_open.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_pread.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_pthread.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_read.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_redel.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_rename.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_seek.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_sleep.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_static.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_symlink.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_symlink2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_sync.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_thr_init.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_write.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ptr_cmp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="queues.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stacktrace.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="string.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="thr_alarm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="thr_lock.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="thr_mutex.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="thr_rwlock.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tree.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="typelib.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="base64.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_memmem.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_getpagesize.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lf_alloc-pin.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lf_dynarray.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="lf_hash.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_getncpus.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_rdtsc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="psi_noop.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_syslog.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_winthread.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_wincond.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_winerr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_winfile.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_windac.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="my_conio.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{1931EFAC-FDC6-44DE-983F-0B932CD5EF09}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

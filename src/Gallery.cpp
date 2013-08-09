@@ -8,7 +8,6 @@
 #include "document.h"
 #include "prettywriter.h"
 #include "stringbuffer.h"
-#include "decode.h"
 #include <sha.h>
 
 #if _DEBUG
@@ -16,7 +15,6 @@
 #endif
 using namespace rapidjson;
 using namespace std;
-using namespace base64;
 
 Gallery::Gallery(Parameters* params) : dict("") {
 

@@ -74,6 +74,7 @@
       <AdditionalIncludeDirectories>include;</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996;</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -87,6 +88,7 @@
       <AdditionalIncludeDirectories>include;</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996;</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -102,6 +104,7 @@
       <AdditionalIncludeDirectories>include;</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996;</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -119,6 +122,7 @@
       <AdditionalIncludeDirectories>include;</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996;</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

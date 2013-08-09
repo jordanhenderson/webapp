@@ -37,9 +37,6 @@
     <Filter Include="Source Files\lpng">
       <UniqueIdentifier>{5bf94894-2981-411f-a9b3-f64477627dae}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\jpeg">
-      <UniqueIdentifier>{b7602135-4b18-466e-b24a-5e48d6c818f2}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\gif">
       <UniqueIdentifier>{00e8a9d4-153a-485d-97ba-d10a11de7210}</UniqueIdentifier>
     </Filter>
@@ -54,21 +51,6 @@
     </Filter>
     <Filter Include="Header Files\tinydir">
       <UniqueIdentifier>{36d2bc81-0681-4816-8e7a-8d6cf802bba8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\tbb">
-      <UniqueIdentifier>{e504ffa1-0a6f-45f9-a3d2-ed301bb6395f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\tbb\ia32">
-      <UniqueIdentifier>{eb516ef8-1d27-4aae-af29-218f48f4be58}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\tbb\intel64">
-      <UniqueIdentifier>{c448ac2a-77b9-42fe-aebb-dcff8bd02a20}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\ctemplate">
-      <UniqueIdentifier>{4cc2a560-5f18-4b13-88bb-b151099c818f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\ctemplate">
-      <UniqueIdentifier>{5b00a9ec-16d1-4b03-8766-9b7f9229b548}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -195,117 +177,6 @@
     <ClCompile Include="src\RamSession.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\tbb\concurrent_queue.cpp">
-      <Filter>Source Files\tbb</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tbb\concurrent_monitor.cpp">
-      <Filter>Source Files\tbb</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tbb\semaphore.cpp">
-      <Filter>Source Files\tbb</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tbb\tbb_misc.cpp">
-      <Filter>Source Files\tbb</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tbb\cache_aligned_allocator.cpp">
-      <Filter>Source Files\tbb</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tbb\itt_notify.cpp">
-      <Filter>Source Files\tbb</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tbb\dynamic_link.cpp">
-      <Filter>Source Files\tbb</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tbb\tbb_main.cpp">
-      <Filter>Source Files\tbb</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tbb\scheduler.cpp">
-      <Filter>Source Files\tbb</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tbb\tbb_statistics.cpp">
-      <Filter>Source Files\tbb</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tbb\observer_proxy.cpp">
-      <Filter>Source Files\tbb</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tbb\mutex.cpp">
-      <Filter>Source Files\tbb</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tbb\task_group_context.cpp">
-      <Filter>Source Files\tbb</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tbb\task.cpp">
-      <Filter>Source Files\tbb</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tbb\market.cpp">
-      <Filter>Source Files\tbb</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tbb\governor.cpp">
-      <Filter>Source Files\tbb</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tbb\tbb_misc_ex.cpp">
-      <Filter>Source Files\tbb</Filter>
-    </ClCompile>
-    <ClCompile Include="include\rml\client\rml_tbb.cpp">
-      <Filter>Source Files\tbb</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tbb\concurrent_vector.cpp">
-      <Filter>Source Files\tbb</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tbb\private_server.cpp">
-      <Filter>Source Files\tbb</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tbb\spin_rw_mutex.cpp">
-      <Filter>Source Files\tbb</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tbb\spin_mutex.cpp">
-      <Filter>Source Files\tbb</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ctemplate\htmlparser\htmlparser.cc">
-      <Filter>Source Files\ctemplate</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ctemplate\htmlparser\jsparser.cc">
-      <Filter>Source Files\ctemplate</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ctemplate\per_expand_data.cc">
-      <Filter>Source Files\ctemplate</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ctemplate\windows\port.cc">
-      <Filter>Source Files\ctemplate</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ctemplate\htmlparser\statemachine.cc">
-      <Filter>Source Files\ctemplate</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ctemplate\template_dictionary.cc">
-      <Filter>Source Files\ctemplate</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ctemplate\template_modifiers.cc">
-      <Filter>Source Files\ctemplate</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ctemplate\template_namelist.cc">
-      <Filter>Source Files\ctemplate</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ctemplate\template_pathops.cc">
-      <Filter>Source Files\ctemplate</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ctemplate\template_string.cc">
-      <Filter>Source Files\ctemplate</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ctemplate\template.cc">
-      <Filter>Source Files\ctemplate</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ctemplate\template_annotator.cc">
-      <Filter>Source Files\ctemplate</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ctemplate\template_cache.cc">
-      <Filter>Source Files\ctemplate</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ctemplate\base\cc_arena.cc">
-      <Filter>Source Files\ctemplate</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tbb\arena.cpp">
-      <Filter>Source Files\tbb</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Logging.h">
@@ -398,69 +269,6 @@
     <ClInclude Include="include\Image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\jpeg\bmp.h">
-      <Filter>Header Files\jpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="include\jpeg\cderror.h">
-      <Filter>Header Files\jpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="include\jpeg\cdjpeg.h">
-      <Filter>Header Files\jpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="include\jpeg\config.h">
-      <Filter>Header Files\jpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="include\jpeg\jchuff.h">
-      <Filter>Header Files\jpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="include\jpeg\jconfig.h">
-      <Filter>Header Files\jpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="include\jpeg\jdct.h">
-      <Filter>Header Files\jpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="include\jpeg\jdhuff.h">
-      <Filter>Header Files\jpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="include\jpeg\jerror.h">
-      <Filter>Header Files\jpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="include\jpeg\jinclude.h">
-      <Filter>Header Files\jpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="include\jpeg\jmemsys.h">
-      <Filter>Header Files\jpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="include\jpeg\jmorecfg.h">
-      <Filter>Header Files\jpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="include\jpeg\jpegcomp.h">
-      <Filter>Header Files\jpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="include\jpeg\jpegint.h">
-      <Filter>Header Files\jpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="include\jpeg\jpeglib.h">
-      <Filter>Header Files\jpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="include\jpeg\jsimd.h">
-      <Filter>Header Files\jpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="include\jpeg\jsimddct.h">
-      <Filter>Header Files\jpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="include\jpeg\jversion.h">
-      <Filter>Header Files\jpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="include\jpeg\tjutil.h">
-      <Filter>Header Files\jpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="include\jpeg\transupp.h">
-      <Filter>Header Files\jpeg</Filter>
-    </ClInclude>
-    <ClInclude Include="include\jpeg\turbojpeg.h">
-      <Filter>Header Files\jpeg</Filter>
-    </ClInclude>
     <ClInclude Include="include\gif\gif_hash.h">
       <Filter>Header Files\gif</Filter>
     </ClInclude>
@@ -485,112 +293,5 @@
     <ClInclude Include="include\Container.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\ctemplate\windows\ctemplate\find_ptr.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\windows\ctemplate\per_expand_data.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\windows\ctemplate\str_ref.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\windows\ctemplate\template.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\windows\ctemplate\template_annotator.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\windows\ctemplate\template_cache.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\windows\ctemplate\template_dictionary.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\windows\ctemplate\template_dictionary_interface.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\windows\ctemplate\template_emitter.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\windows\ctemplate\template_enums.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\windows\ctemplate\template_modifiers.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\windows\ctemplate\template_namelist.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\windows\ctemplate\template_pathops.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\windows\ctemplate\template_string.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\windows\port.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\base\fileutil.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\base\macros.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\base\manual_constructor.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\base\mutex.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\base\small_map.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\base\thread_annotations.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\base\util.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\base\arena.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\base\arena-inl.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\htmlparser\htmlparser_fsm.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\htmlparser\jsparser.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\htmlparser\jsparser_fsm.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\htmlparser\statemachine.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\htmlparser\htmlparser.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\htmlparser\htmlparser_cpp.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ctemplate\windows\cc_config.h">
-      <Filter>Header Files\ctemplate</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <MASM Include="src\tbb\ia32-masm\lock_byte.asm">
-      <Filter>Source Files\tbb\ia32</Filter>
-    </MASM>
-    <MASM Include="src\tbb\ia32-masm\atomic_support.asm">
-      <Filter>Source Files\tbb\ia32</Filter>
-    </MASM>
-    <MASM Include="src\tbb\intel64-masm\atomic_support.asm">
-      <Filter>Source Files\tbb\intel64</Filter>
-    </MASM>
-    <MASM Include="src\tbb\intel64-masm\intel64_misc.asm">
-      <Filter>Source Files\tbb\intel64</Filter>
-    </MASM>
   </ItemGroup>
 </Project>

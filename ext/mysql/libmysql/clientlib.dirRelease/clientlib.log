@@ -1,0 +1,37 @@
+﻿Build started 9/08/2013 7:00:00 PM.
+     1>Project "D:\Development\GitRepos\gallery\ext\mysql\libmysql\clientlib.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Intel\Composer XE 2013\bin\ia32\icl.exe /c /Qvc11 /Qlocation,link,"C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\\bin" /I../include/ /I../libmysql /I../regex /I../sql /I../strings /I../yassl/include /I../taocrypt/include /I../taocrypt/mySTL /I../../zlib/include /Zi /nologo /W3 /MP /O2 /Ob2 /Qftz- /D __INTEL_COMPILER=1310 /D WIN32 /D _WINDOWS /D NDEBUG /D DBUG_OFF /D HAVE_YASSL /D YASSL_PREFIX /D HAVE_OPENSSL /D MULTI_THREADED /D _CRT_SECURE_NO_DEPRECATE /D _WIN32_WINNT=0x0502 /D WIN32_LEAN_AND_MEAN /D HAVE_GETCURRENTPROCESSORNUMBER=1 /D HAVE_CONFIG_H /D AUTHENTICATION_WIN /D "CMAKE_INTDIR=\"Release\"" /D _MBCS /EHsc /MT /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /Fo"clientlib.dirRelease\\" /Fd"d:/Users/hendo/Desktop/mysql/libmysql/Release/clientlib.pdb" /Gd /TC /Qdiag-disable:4800,4805,4996 get_password.c libmysql.c errmsg.c "..\sql-common\client.c" "..\sql-common\my_time.c" "..\sql-common\client_plugin.c" "..\sql-common\pack.c" ..\sql\auth\password.c
+         get_password.c
+         libmysql.c
+         errmsg.c
+         client.c
+     1>..\sql-common\client.c(3156): warning #791: calling convention specified more than once
+           CLI_MYSQL_REAL_CONNECT(MYSQL *mysql,const char *host, const char *user,
+           ^
+         
+         my_time.c
+         client_plugin.c
+         pack.c
+         password.c
+         C:\Program Files (x86)\Intel\Composer XE 2013\bin\ia32\icl.exe /c /Qvc11 /Qlocation,link,"C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\\bin" /I../include/ /I../libmysql /I../regex /I../sql /I../strings /I../yassl/include /I../taocrypt/include /I../taocrypt/mySTL /I../../zlib/include /Zi /nologo /W3 /MP /O2 /Ob2 /Qftz- /D __INTEL_COMPILER=1310 /D WIN32 /D _WINDOWS /D NDEBUG /D DBUG_OFF /D HAVE_YASSL /D YASSL_PREFIX /D HAVE_OPENSSL /D MULTI_THREADED /D _CRT_SECURE_NO_DEPRECATE /D _WIN32_WINNT=0x0502 /D WIN32_LEAN_AND_MEAN /D HAVE_GETCURRENTPROCESSORNUMBER=1 /D HAVE_CONFIG_H /D AUTHENTICATION_WIN /D "CMAKE_INTDIR=\"Release\"" /D _MBCS /EHsc /MT /GS /fp:precise /Zc:wchar_t /Zc:forScope /GR /Fo"clientlib.dirRelease\\" /Fd"d:/Users/hendo/Desktop/mysql/libmysql/Release/clientlib.pdb" /Gd /TP /Qdiag-disable:4800,4805,4996 "..\sql-common\client_authentication.cc" ..\sql\net_serv.cc
+         client_authentication.cc
+         net_serv.cc
+       Lib:
+         C:\Program Files (x86)\Intel\Composer XE 2013\bin\ia32\xilib.exe /OUT:"D:\Development\GitRepos\gallery\ext\mysql\libmysql\\Release\clientlib.lib" /NOLOGO clientlib.dirRelease\get_password.obj
+         clientlib.dirRelease\libmysql.obj
+         clientlib.dirRelease\errmsg.obj
+         clientlib.dirRelease\client.obj
+         clientlib.dirRelease\my_time.obj
+         clientlib.dirRelease\client_plugin.obj
+         clientlib.dirRelease\client_authentication.obj
+         clientlib.dirRelease\net_serv.obj
+         clientlib.dirRelease\pack.obj
+         clientlib.dirRelease\password.obj
+         xilib: executing 'lib'
+         clientlib.vcxproj -> D:\Development\GitRepos\gallery\ext\mysql\libmysql\\Release\clientlib.lib
+     1>Done Building Project "D:\Development\GitRepos\gallery\ext\mysql\libmysql\clientlib.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:06.04

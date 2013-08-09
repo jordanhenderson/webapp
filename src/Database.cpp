@@ -1,5 +1,6 @@
 #include "Database.h"
-
+#include "my_global.h"
+#include "mysql.h"
 using namespace std;
 
 Query::Query(const string& dbq, QueryRow* p, int copy) {
@@ -89,6 +90,9 @@ void Database::process(Query* qry) {
 
 
 Database::Database(const char* filename) {
+	MYSQL* mdb = mysql_init(NULL);
+
+	
 	abort = 0;
 	db = NULL;
 	int ret = sqlite3_open(filename, &db);
