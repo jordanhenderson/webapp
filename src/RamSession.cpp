@@ -24,6 +24,6 @@ string RamSession::get(const string& key) {
 			if(it->first == key)
 				return it->second;
 	}
-	return empty;
+	return EMPTY;
 }
 

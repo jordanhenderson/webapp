@@ -23,8 +23,8 @@ typedef void (*FILE_LINE_CALLBACK)(void*, char*, int);
 
 namespace FileSystem {
 
-	//Load a file, returning a File* to the handle.
-	void Open(const std::string& fileName, const std::string& flags, File* outFile);
+	//Load a file, writing file pointer, etc to outFile. Returns success of opening.
+	int Open(const std::string& fileName, const std::string& flags="rb", File* outFile=NULL);
 	//Read an entire file, returning a char* of it's contents.
 	//Same as calling ProcessFile with null callback.
 	//Process a file, using a callback function to process each line.
@@ -38,10 +38,6 @@ namespace FileSystem {
 	void Close(File*  file);
 	void Write(File*  file, const std::string& buffer);
 	void WriteLine(File*  file, const std::string& buffer);
-	int Exists(const std::string& path);
-	inline int Exists(std::string& path) {
-		return Exists(path.c_str());	
-	};
 	long Size(File* file);
 	void MakePath(const std::string& path);
 	void DeletePath(const std::string& path);

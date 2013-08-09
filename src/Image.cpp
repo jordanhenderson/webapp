@@ -100,10 +100,7 @@ void Image::changeType(const string& filename) {
 }
 
 void Image::load(const string& filename) {
-	if(!FileSystem::Exists(filename)){
-		nError = ERROR_FILE_NOT_FOUND;
-		return;
-	}
+
 	//Check image extension. Use IMAGE_TYPE_JPEG for bmp/gif/jpg/jpeg, IMAGE_TYPE_PNG for png.
 	//nError = ERROR_IMAGE_TYPE_NOT_SUPPORTED if image extension not recognised.
 	width = height = nBytes = bitdepth = 0;
@@ -117,9 +114,13 @@ void Image::load(const string& filename) {
 		nError = ERROR_IMAGE_NOT_SUPPORTED;
 		return;
 	}
-	File file;
-	FileSystem::Open(filename, "rb", &file);
 
+	File file;
+	if(!FileSystem::Open(filename, "rb", &file)){
+		nError = ERROR_FILE_NOT_FOUND;
+		return;
+	}
+	
 	switch(imageType) {
 	case IMAGE_TYPE_JPEG: 
 		{

@@ -10,9 +10,8 @@ int main(int argc, char* argv[]) {
 	setlocale(LC_ALL, "");
 	Parameters params;
 	//TODO convert params to file
-	if(FileSystem::Exists("gallery.conf")) {
-		File conf;
-		FileSystem::Open("gallery.conf", "rb", &conf);
+	File conf;
+	if(FileSystem::Open("gallery.conf", "rb", &conf)) {
 		FileData data;
 		FileSystem::Process(&conf, &params, (void*)Parameters::parseBuffer, &data);
 		FileSystem::Close(&conf);

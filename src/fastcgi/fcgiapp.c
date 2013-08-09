@@ -44,7 +44,7 @@ static const char rcsid[] = "$Id: fcgiapp.c,v 1.35 2003/06/22 00:16:43 robs Exp 
 #endif
 
 #ifdef _WIN32
-#define DLLAPI
+#define DLLAPI  __declspec(dllexport)
 #endif
 
 #include "fcgimisc.h"

@@ -92,4 +92,4 @@ string url_decode(const string& src) {
     return (ret);
 }
 
-string empty = "";
+const string EMPTY = "";

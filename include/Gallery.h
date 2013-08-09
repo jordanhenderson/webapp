@@ -8,6 +8,7 @@
 #include "Session.h"
 #include "Serializer.h"
 #include "document.h"
+#include <ctemplate/template.h>
 #define TEMPLATE_VIDEO "video.html"
 #define TEMPLATE_IMAGE "image.html"
 #define TEMPLATE_FLASH "flash.html"
@@ -117,10 +118,10 @@ COMMIT;"
 	m["getFiles"] = &Gallery::getFiles; \
 	m["search"] = &Gallery::search; \
 	m["refreshAlbums"] = &Gallery::refreshAlbums; \
-	m["disableFiles"] = &Gallery::disableFiles;
+	m["disableFiles"] = &Gallery::disableFiles; \
+	m["clearCache"] = &Gallery::clearCache;
 #define GETCHK(s) s.empty() ? 0 : 1
 typedef std::unordered_map<std::string, std::string> RequestVars;
-typedef std::unordered_map<std::string, std::string> CookieVars;
 typedef std::string Response;
 typedef int(Gallery::*GallFunc)(RequestVars&, Response&, SessionStore&);
 class Logging;
@@ -129,7 +130,7 @@ class Gallery : public ServerHandler, Internal {
 private:
 	
 	Parameters* params;
-	Response getPage(const char* page, SessionStore&, int publishSession);
+	Response getPage(const std::string& page, SessionStore&, int publishSession);
 	Database* database;
 	Session session;
 	RequestVars parseRequestVariables(char* vars, RequestVars& v);
@@ -157,11 +158,20 @@ private:
 	int genThumb(const char* file, double shortmax, double longmax);
 	int getDuplicates( std::string& name, std::string& path );
 	std::string genCookie(const std::string& name, const std::string& value, time_t* date=NULL);
-	CookieVars parseCookies(const char* cookies);
+	std::string getCookieValue(const char* cookies, const char* key);
 	std::map<std::string, GallFunc> m;
 	void createFieldMap(Query& q, rapidjson::Value& v);
 	int hasAlbums();
 	int getData(Query& query, RequestVars&, Response&, SessionStore&);
+
+	//template dictionary
+	ctemplate::TemplateDictionary dict;
+	//Keeps track of sub dictionary (templates/.*) addIncludeDictionary
+	std::vector<ctemplate::TemplateDictionary*> sub_dicts;
+	//(content) template filename vector
+	std::vector<std::string> content_list;
+	
+
 
 	//This function should be run in a thread.
 	template <typename T>
@@ -179,6 +189,7 @@ private:
 	}
 	void addFile(const std::string&, int, const std::string&, const std::string&, const std::string&, const std::string&);
 	void process_thread(std::thread*);
+	void load_templates();
 	
 
 public:
@@ -198,6 +209,7 @@ public:
 	int search(RequestVars&, Response&, SessionStore&);
 	int refreshAlbums(RequestVars&, Response&, SessionStore&);
 	int disableFiles(RequestVars&, Response&, SessionStore&);
+	int clearCache(RequestVars&, Response&, SessionStore&);
 };
 
 #endif

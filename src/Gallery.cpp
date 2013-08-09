@@ -10,7 +10,7 @@
 #include "stringbuffer.h"
 #include "decode.h"
 #include <sha.h>
-//#include <ctemplate/template.h>
+
 #if _DEBUG
 #include <vld.h>
 #endif
@@ -18,7 +18,7 @@ using namespace rapidjson;
 using namespace std;
 using namespace base64;
 
-Gallery::Gallery(Parameters* params) {
+Gallery::Gallery(Parameters* params) : dict("") {
 
 	abort = 0;
 	this->params = params;
@@ -70,14 +70,10 @@ Gallery::Gallery(Parameters* params) {
 				delete t;
 				processQueue.pop();
 			}
-			
-		
-
-		
 		}
 		
 	});
-
+	load_templates();
 	thread_process_queue->detach();
 	currentID = std::this_thread::get_id();
 	//Create function map.
@@ -99,6 +95,11 @@ void Gallery::process_thread(std::thread* t) {
 }
 
 Gallery::~Gallery() {
+	//Clean up sub dictionaries.
+	for(ctemplate::TemplateDictionary* dict : sub_dicts) {
+		delete(dict);
+	}
+
 	abort = 1;
 	cv.notify_all();
 	if(thread_process_queue->joinable())
@@ -116,55 +117,53 @@ string Gallery::genCookie(const string& name, const string& value, time_t* date)
 	}
 }
 
-Response Gallery::getPage(const char* page, SessionStore& session, int publishSession) {
-	char pageuri[255];
-	snprintf(pageuri, 255, "%s" PSEP "content" PSEP "%s.html", basepath.c_str(), page);
+Response Gallery::getPage(const string& page, SessionStore& session, int publishSession) {
+
 
 	Response r;
+
+	if(publishSession) {
+		time_t t; time(&t); add_days(t, 1);
+		r = genCookie("sessionid", session.sessionid, &t);
+	}
+
 	//Template parsing
-	if(FileSystem::Exists(pageuri)) {
-			r = HTML_HEADER;
-			if(publishSession) {
-				time_t t; time(&t); add_days(t, 1);
-				r.append(genCookie("sessionid", session.sessionid, &t));
-			}
-			r.append(END_HEADER);
+	if(contains(content_list, page + ".html")) {
+		r = HTML_HEADER + r + END_HEADER;
+		string output;
+		ctemplate::TemplateDictionary* d = dict.MakeCopy("");
+		
+		if(!session.get("auth").empty() || !auth)
+			d->ShowSection("LOGGED_IN");
+		else
+			d->ShowSection("NOT_LOGGED_IN");
 
-			
-		File f;
-		FileSystem::Open(pageuri, "rb", &f);
-		FileData filedata;
-
-		FileSystem::Read(&f,&filedata);
-
-		//ctemplate::TemplateDictionary dict
-		r.append(filedata.data, filedata.size);
-		FileSystem::Close(&f);
+		ctemplate::PerExpandData data;
+		
+		ctemplate::ExpandWithData(basepath + PSEP + "content" + PSEP + page + ".html", ctemplate::DO_NOT_STRIP, d, &data, &output);
+		r.append(output);
+		delete d;
 	} else {
 		//Plain file handling.
-		r = HTML_HEADER;
 		string fileuri = basepath + page;
-		if(FileSystem::Exists(fileuri)) {
-			
+		File f;
+		FileSystem::Open(fileuri.c_str(), "rb", &f);
+		if(f.pszFile != NULL) {
 			if(endsWith(fileuri, ".css"))
-				r = CSS_HEADER;
+				r = CSS_HEADER + r;
 			else if(endsWith(fileuri, ".js"))
-				r = JS_HEADER;
-
-			if(publishSession) {
-				time_t t; time(&t); add_days(t, 1);
-				r.append(genCookie("sessionid", session.sessionid, &t));
-			}
+				r = JS_HEADER + r;
+			else
+				r = HTML_HEADER + r;
 
 			r.append(END_HEADER);
 
-			File f;
-			FileSystem::Open(fileuri.c_str(), "rb", &f);
 			FileData filedata;
 			FileSystem::Read(&f, &filedata);
 			r.append(filedata.data, filedata.size);
 			FileSystem::Close(&f);
 		} else {
+			//File doesn't exists. 404.
 			r.append(END_HEADER);
 			r.append(HTML_404);
 		}
@@ -245,28 +244,25 @@ void parseRequestVars(char* vars, RequestVars& varmap) {
 	return;
 }
 
-CookieVars Gallery::parseCookies(const char* cookies){
-	CookieVars v;
-	if(cookies == NULL)
-		return v;
-	int c = 0, i;
-	string key;
-	string val;
+std::string Gallery::getCookieValue(const char* cookies, const char* key){
+	if(cookies == NULL || key == NULL)
+		return EMPTY;
+
+	int len = strlen(key);
+	int i;
 	for(i = 0; cookies[i] != '\0'; i++) {
-		if(cookies[i] == '=') {
-			key = string(cookies + c, i-c);
-			c = i;
-		} else if(cookies[i] == ';') {
-			val = string(cookies + c + 1, i-c-1);
-			v.insert(make_pair(key, val));
-			c = i;
+		if(cookies[i] == '=' && i >= len) {
+			const char* k = cookies + i - len;
+
+			if(strncmp(k, key, len) == 0) {
+				//Find the end character.
+				int c;
+				for (c = i + 1; cookies[c] != '\0' && cookies[c] != ';'; c++);
+				return string(k+len+1, c - i - 1);
+			}
 		}
 	}
-	if(c < i) {
-		val = string(cookies + c + 1, i-c-1);
-		v.insert(make_pair(key,val));
-	}
-	return v;
+	return EMPTY;
 }
 
 
@@ -276,12 +272,11 @@ void Gallery::process(FCGX_Request* request) {
 	char* cookie_str = FCGX_GetParam("HTTP_COOKIE", request->envp);
 	//Get/set the session id.
 	
-	CookieVars cookies = parseCookies(cookie_str);
-	CookieVars::iterator it = cookies.find("sessionid");
+	string sessionid = getCookieValue(cookie_str, "sessionid");
 	SessionStore* store = NULL;
 	int createstore = 0;
-	if(it != cookies.end()) {
-		store = session.get_session(it->second);
+	if(!sessionid.empty()) {
+		store = session.get_session(sessionid);
 	}
 	//Create a new session.
 	if(store == NULL) {
@@ -298,10 +293,10 @@ void Gallery::process(FCGX_Request* request) {
 			RequestVars v;
 			parseRequestVars(uri + 4, v);
 			final = processVars(v, *store, createstore);
-		} else if(uri[0] == PATHSEP && (uri[1] == '\0' || uri[1] == '?')) {
+		} else if(uri[0] == '/' && (uri[1] == '\0' || uri[1] == '?')) {
 			final = getPage("index", *store, createstore);
 		} else {
-			final = getPage(uri, *store, createstore);
+			final = getPage(uri+1, *store, createstore);
 		}
 	} else if(strcmp(method, "POST") == 0) {
 		//Read data from the input stream. (allocated using CONTENT_LENGTH)
@@ -351,9 +346,14 @@ Response Gallery::processVars(RequestVars& vars, SessionStore& session, int publ
 		return r;
 	} else {
 		Serializer s;
-		s.append("msg", "NO_AUTH");
+		
 		r.append(END_HEADER);
-		r.append(s.get(RESPONSE_TYPE_FULL_MESSAGE));
+		if(hasfunc) {
+			s.append("msg", "NO_AUTH");
+			r.append(s.get(RESPONSE_TYPE_FULL_MESSAGE));
+		} else {
+			r.append("{}");
+		}
 		return r;
 	}
 }
@@ -369,9 +369,9 @@ int Gallery::genThumb(const char* file, double shortmax, double longmax) {
 	string thumbpath = basepath + PATHSEP + thumbspath + PATHSEP + file;
 	
 	//Check if thumb already exists.
-	if(FileSystem::Exists(thumbpath)) {
+
+	if(FileSystem::Open(thumbpath))
 		return ERROR_SUCCESS;
-	}
 
 	Image image(imagepath);
 	int err = image.GetLastError();
@@ -404,7 +404,7 @@ int Gallery::genThumb(const char* file, double shortmax, double longmax) {
     image.resize(newWidth, newHeight);
 	image.save(thumbpath);
 
-	if(!FileSystem::Exists(thumbpath)) {
+	if(!FileSystem::Open(thumbpath)) {
 		logger->printf("An error occured generating %s.", thumbpath.c_str());
 	}
 
@@ -420,6 +420,31 @@ int Gallery::hasAlbums() {
 	return 1;
 }
 
+void Gallery::load_templates() {
+	//Load content files (applicable templates)
+	content_list.clear();
+	content_list = FileSystem::GetFiles(basepath + PSEP + "content" + PSEP, "", 0);
+	for(string s : content_list) {
+		//Preload templates.
+		ctemplate::LoadTemplate(basepath + PSEP + "content" + PSEP + s, ctemplate::DO_NOT_STRIP);
+	}
+
+	for(ctemplate::TemplateDictionary* dict : sub_dicts) {
+		delete(dict);
+	}
+
+	sub_dicts.clear();
+	string path = basepath + PSEP + "templates" + PSEP + "server" + PSEP;
+	//Load templates
+	for(string s: FileSystem::GetFiles(path, "", 0)) {
+		size_t pos = s.find_last_of(".");
+		ctemplate::TemplateDictionary* d = dict.AddIncludeDictionary(s.substr(0, pos));
+		sub_dicts.push_back(d);
+		d->SetFilename(path + s);
+
+	}
+}
+
 //Public API functions.
 int Gallery::disableFiles(RequestVars& vars, Response& r, SessionStore& s) {
 	string query = TOGGLE_FILES;
@@ -428,19 +453,29 @@ int Gallery::disableFiles(RequestVars& vars, Response& r, SessionStore& s) {
 	string album = vars["album"];
 	string id = vars["id"];
 	if(!album.empty() && id.empty()) {
-		query.append(CONDITION_ALBUM);
+		query.append(CONDITION_ALBUM ")");
 		params.push_back(album);
 	}
 	else if(!id.empty()) {
-		query.append(CONDITION_FILEID);
+		query.append(CONDITION_FILEID ")");
 		params.push_back(id);
 		//Increment views.
 	} 
-	query.append(")");
 
 	database->exec(query, &params);
 	r.append("{}");
 	return 0;
+}
+
+int Gallery::clearCache(RequestVars& vars, Response& r, SessionStore& session) {
+
+	load_templates();
+	Serializer s;
+	Value m;
+	s.append("msg", "CACHE_CLEARED", 0, &m);
+	s.append("close", "1", 1, &m);
+	r.append(s.get(RESPONSE_TYPE_MESSAGE));
+	return 1;
 }
 
 int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& session) {
@@ -454,7 +489,6 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& session
 			cv_proc.wait(lk);
 
 		string storepath = database->select(SELECT_SYSTEM("store_path")).response->at(0).at(0);
-		database->exec("BEGIN TRANSACTION");
 		for(string album: albums) {
 			QueryRow params;
 			params.push_back(album);
@@ -492,7 +526,6 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& session
 				addFiles(files, nGenThumbs, path, album);
 			}
 		}
-		database->exec("COMMIT");
 	});
 	process_thread(refresh_albums);
 
@@ -529,7 +562,10 @@ int Gallery::login(RequestVars& vars, Response& r, SessionStore& store) {
 	Serializer s;
 	if(user == this->user && pass == this->pass) {
 		store.store("auth", "TRUE");
-		s.append("msg", "LOGIN_SUCCESS", 1);
+		Value m;
+		s.append("msg", "LOGIN_SUCCESS", 0, &m);
+		s.append("close", "1", 0, &m);
+		s.append("refresh", "1", 1, &m);
 	} else {
 		s.append("msg", "LOGIN_FAILED", 1);
 	}
@@ -589,12 +625,10 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 				params.push_back(path);
 				params.push_back(type);
 				params.push_back(to_string(nRecurse));
-				database->exec("BEGIN TRANSACTION");
 				int albumID = database->exec(INSERT_ALBUM, &params);
 				vector<string> files = FileSystem::GetFiles(basepath + PATHSEP + storepath + PATHSEP + path, "", nRecurse);
 			
 				addFiles(files, nGenThumbs, path, to_string(albumID));
-				database->exec("COMMIT");
 
 			});
 			process_thread(add_album);
@@ -628,7 +662,6 @@ int Gallery::delAlbums(RequestVars& vars, Response& r, SessionStore&) {
 			cv_proc.wait(lk);
 		string storepath = database->select(SELECT_SYSTEM("store_path")).response->at(0).at(0);
 		string thumbspath = database->select(SELECT_SYSTEM("thumbs_path")).response->at(0).at(0);
-		database->exec("BEGIN TRANSACTION");
 		for(string album: albums) {
 			QueryRow params;
 
@@ -651,7 +684,6 @@ int Gallery::delAlbums(RequestVars& vars, Response& r, SessionStore&) {
 				}
 			}
 		}
-		database->exec("COMMIT");
 	});
 	process_thread(del_albums);
 

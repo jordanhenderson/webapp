@@ -1,36 +1,34 @@
 #include "FileSystem.h"
 #include "tinydir.h"
 using namespace std;
-void FileSystem::Open(const string& fileName, const string& flags, File* outFile) {
-	//Ensure outFile != NULL
-	if(outFile == NULL) return;
-
+int FileSystem::Open(const string& fileName, const string& flags, File* outFile) {
 	//ensure file is opened in binary mode
 	int flen = flags.length();
 	string actualFlag = flags;
 	if(flags[flen-1] != 'b') {
 		actualFlag.append("b");
 	}
-
+	FILE* tmpFile;
 #ifdef WIN32
 	wchar_t* wfileName, *wflags;
 	wfileName = strtowide(fileName.c_str());
 	wflags = strtowide(flags.c_str());
 
-	outFile->pszFile = _wfopen(wfileName, wflags);
+	tmpFile = _wfopen(wfileName, wflags);
 	delete[] wfileName;
 	delete[] wflags;
 #else
-	outFile.pszFile = fopen(fileName, flags);
+	tmpFile = fopen(fileName, flags);
 #endif
-	outFile->fileName = fileName;
-	outFile->flags = actualFlag;
-		//Debug Message: File Access error: $fileName could not be opened for $errType.
-		
+	int success = (tmpFile != NULL);
+	if(success && outFile != NULL) {
+		outFile->fileName = fileName;
+		outFile->flags = actualFlag;
+		outFile->pszFile = tmpFile;
+	} else if(success) 
+		fclose(tmpFile);
 	
-
-	//Debug Message: File $fileName opened successfully. Flags: $flags.
-	return;
+	return success;
 }
 
 FileData::~FileData() {
@@ -114,26 +112,6 @@ void FileSystem::WriteLine(File* file, const string& buffer) {
 	string tmp = string(buffer);
 	Write(file, tmp.append(ENV_NEWLINE));
 }
-//Returns true if the specified path exists and can be read.
-int FileSystem::Exists(const string& path) {
-	
-#ifdef WIN32
-	struct __stat64 buf;
-	wchar_t* tmpPath = strtowide(path.c_str());
-	
-	if(_wstat64(tmpPath, &buf) == 0) {
-		delete[] tmpPath;
-		return 1;
-	}
-	delete[] tmpPath;
-#else
-	struct stat buf;
-	if(stat(path.c_str(), &buf) == 0)
-		return 1;
-#endif
-
-	return 0;
-}
 
 void FileSystem::MakePath(const string& path) {
 	//Recurisvely make a path structure.
@@ -155,9 +133,6 @@ void FileSystem::MakePath(const string& path) {
 }
 
 void FileSystem::DeletePath(const string& path) {
-	if(!FileSystem::Exists(path))
-		return;
-
 	tinydir_dir dir;
 	tinydir_open(&dir, path.c_str());
 

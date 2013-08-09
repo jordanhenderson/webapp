@@ -54,7 +54,7 @@
 
 
 
-extern std::string empty;
+extern const std::string EMPTY;
 
 class Internal {
 public:
@@ -62,6 +62,8 @@ public:
 	int GetLastError();
 protected: int nError;
 };
+
+#define contains(v, x) (std::find(v.begin(), v.end(), x) != v.end())
 
 bool endsWith(const std::string &a, const std::string &b);
 bool is_number(const std::string &a);

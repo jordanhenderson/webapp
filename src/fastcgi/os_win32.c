@@ -17,12 +17,10 @@
  *  significantly more enjoyable.)
  */
 #ifndef lint
-static const char rcsid[] = "$Id: os_win32.c,v 1.34 2003/06/22 00:16:43 robs Exp $";
+static const char rcsid[] = "$Id: os_win32.c,v 1.36 2009/09/28 01:09:57 robs Exp $";
 #endif /* not lint */
 
-#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN 
-#endif
 #include <windows.h>
 #include <winsock2.h>
 #include <stdlib.h>
@@ -30,8 +28,9 @@ static const char rcsid[] = "$Id: os_win32.c,v 1.34 2003/06/22 00:16:43 robs Exp
 #include <stdio.h>
 #include <sys/timeb.h>
 #include <process.h>
+#include <signal.h>
 
-#define DLLAPI 
+#define DLLAPI  __declspec(dllexport)
 
 #include "fcgimisc.h"
 #include "fcgios.h"
@@ -278,6 +277,9 @@ static void ShutdownRequestThread(void * arg)
     WaitForSingleObject(shutdownEvent, INFINITE);
 
     shutdownPending = TRUE;
+
+    // emulate the unix behaviour
+    raise(SIGTERM);
 
     if (listenType == FD_PIPE_SYNC)
     {
@@ -648,7 +650,7 @@ static void Win32FreeDescriptor(int fd)
 static short getPort(const char * bindPath)
 {
     short port = 0;
-    const char * p = strchr(bindPath, ':');
+    char * p = strchr(bindPath, ':');
 
     if (p && *++p) 
     {
@@ -746,7 +748,7 @@ int OS_CreateLocalIpcFd(const char *bindPath, int backlog)
     else
     {
         HANDLE hListenPipe = INVALID_HANDLE_VALUE;
-        char *pipePath = (char*)malloc(strlen(bindPathPrefix) + strlen(bindPath) + 1);
+        char *pipePath = malloc(strlen(bindPathPrefix) + strlen(bindPath) + 1);
         
         if (! pipePath) 
         {
@@ -820,10 +822,9 @@ int OS_FcgiConnect(char *bindPath)
         if (*bindPath != ':')
         {
             char * p = strchr(bindPath, ':');
-            int len = p - bindPath + 1;
-
-            host = malloc(len);
-            strncpy(host, bindPath, len);
+            int len = p - bindPath;
+            host = malloc(len + 1);
+            memcpy(host, bindPath, len);
             host[len] = '\0';
         }
         
@@ -866,7 +867,7 @@ int OS_FcgiConnect(char *bindPath)
     }
     else
     {
-        char *pipePath = (char*)malloc(strlen(bindPathPrefix) + strlen(bindPath) + 1);
+        char *pipePath = malloc(strlen(bindPathPrefix) + strlen(bindPath) + 1);
         HANDLE hPipe;
         
         if (! pipePath) 

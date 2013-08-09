@@ -19,9 +19,7 @@
 #define _FCGIOS_H
 
 #ifdef _WIN32
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
+#define WIN32_LEAN_AND_MEAN 
 #include <windows.h>
 #include <winsock2.h>
 #endif
@@ -52,7 +50,11 @@ extern "C" {
 #endif /* !_WIN32 */
 
 #ifndef DLLAPI
+#ifdef _WIN32
+#define DLLAPI __declspec(dllimport)
+#else
 #define DLLAPI
+#endif
 #endif
 
 
