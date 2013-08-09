@@ -152,5 +152,18 @@
     <Filter Include="Header Files">
       <UniqueIdentifier>{AE257502-8573-4D17-A0B4-82874A66C709}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Make files">
+      <UniqueIdentifier>{05df3773-b62c-45ed-860e-a0e32a78cb7f}</UniqueIdentifier>
+      <Extensions>*.mak</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile" />
+    <None Include="linuxdebug.mak">
+      <Filter>Make files</Filter>
+    </None>
+    <None Include="linuxrelease.mak">
+      <Filter>Make files</Filter>
+    </None>
   </ItemGroup>
 </Project>

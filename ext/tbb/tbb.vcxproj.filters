@@ -19,6 +19,10 @@
     <Filter Include="Source Files\intel64">
       <UniqueIdentifier>{191a831f-f188-463f-ba28-cf2de5e970c9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Make files">
+      <UniqueIdentifier>{772409cb-48a8-431b-be3c-1cd1e9a84b8c}</UniqueIdentifier>
+      <Extensions>*.mak</Extensions>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\arena.cpp">
@@ -101,13 +105,17 @@
     <MASM Include="src\ia32-masm\lock_byte.asm">
       <Filter>Source Files\ia32</Filter>
     </MASM>
+    <MASM Include="src\intel64-masm\atomic_support.asm">
+      <Filter>Source Files\intel64</Filter>
+    </MASM>
+    <MASM Include="src\intel64-masm\intel64_misc.asm">
+      <Filter>Source Files\intel64</Filter>
+    </MASM>
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\intel64-masm\intel64_misc.asm">
-      <Filter>Source Files\intel64</Filter>
-    </None>
-    <None Include="src\intel64-masm\atomic_support.asm">
-      <Filter>Source Files\intel64</Filter>
+    <None Include="Makefile" />
+    <None Include="linuxdebug.mak">
+      <Filter>Make files</Filter>
     </None>
   </ItemGroup>
 </Project>

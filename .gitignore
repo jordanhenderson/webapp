@@ -29,6 +29,9 @@ local.properties
 .buildpath
 
 
+Makefile.old
+linuxdebug.mak.old
+linuxrelease.mak.old
 #################
 ## Visual Studio
 #################
@@ -44,6 +47,9 @@ local.properties
 # Build results
 [Dd]ebug/
 [Rr]elease/
+Linux[Dd]ebug/
+Linux[Rr]elease/
+VisualGDBCache/
 *_i.c
 *_p.c
 *.ilk

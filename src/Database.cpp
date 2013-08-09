@@ -90,9 +90,6 @@ void Database::process(Query* qry) {
 
 
 Database::Database(const char* filename) {
-	MYSQL* mdb = mysql_init(NULL);
-
-	
 	abort = 0;
 	db = NULL;
 	int ret = sqlite3_open(filename, &db);

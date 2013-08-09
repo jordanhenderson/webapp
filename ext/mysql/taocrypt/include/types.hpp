@@ -37,10 +37,23 @@ namespace TaoCrypt {
     #define LITTLE_ENDIAN_ORDER
 #endif
 
-
 typedef unsigned char  byte;
 typedef unsigned short word16;
 typedef unsigned int   word32;
+
+/* try to set SIZEOF_LONG or LONG_LONG if user didn't */
+#if !defined(_MSC_VER) && !defined(__BCPLUSPLUS__)
+    #if !defined(SIZEOF_LONG_LONG) && !defined(SIZEOF_LONG)
+        #if (defined(__alpha__) || defined(__ia64__) || defined(_ARCH_PPC64) \
+                || defined(__mips64) || defined(__x86_64__))
+            /* long should be 64bit */
+            #define SIZEOF_LONG 8
+        #elif defined(__i386__) || defined(__CORTEX_M3__)
+            /* long long should be 64bit */
+            #define SIZEOF_LONG_LONG 8
+        #endif
+    #endif
+#endif
 
 #if defined(_MSC_VER) || defined(__BCPLUSPLUS__)
     #define WORD64_AVAILABLE

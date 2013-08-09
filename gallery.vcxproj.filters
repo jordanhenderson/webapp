@@ -52,6 +52,10 @@
     <Filter Include="Header Files\tinydir">
       <UniqueIdentifier>{36d2bc81-0681-4816-8e7a-8d6cf802bba8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Make files">
+      <UniqueIdentifier>{329e381a-9fa0-4b8a-8754-4bb7595d49ee}</UniqueIdentifier>
+      <Extensions>*.mak</Extensions>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Logging.cpp">
@@ -293,5 +297,14 @@
     <ClInclude Include="include\Container.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile" />
+    <None Include="linuxdebug.mak">
+      <Filter>Make files</Filter>
+    </None>
+    <None Include="linuxrelease.mak">
+      <Filter>Make files</Filter>
+    </None>
   </ItemGroup>
 </Project>
