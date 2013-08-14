@@ -168,13 +168,13 @@ vector<string> FileSystem::GetFiles(const string& base, const string& path, int 
 	vector<string> files;
 
 	tinydir_dir dir;
-	string abase = base + PATHSEP + path;
+	string abase = base + '/' + path;
 	tinydir_open(&dir, abase.c_str());
 	while(dir.has_next) {
 		
 		tinydir_file file;
 		tinydir_readfile(&dir, &file);
-		string dpath = path.empty() ? file.name : path + PATHSEP + file.name;
+		string dpath = path.empty() ? file.name : path + '/' + file.name;
 		if(!file.is_dir) 
 			files.push_back(dpath);
 		else if(recurse && file.name[0] != '.') {
@@ -196,13 +196,13 @@ list<string> FileSystem::GetFilesAsList(const string& base, const string& path, 
 	list<string> files;
 
 	tinydir_dir dir;
-	string abase = base + PATHSEP + path;
+	string abase = base + '/' + path;
 	tinydir_open(&dir, abase.c_str());
 	while(dir.has_next) {
 		
 		tinydir_file file;
 		tinydir_readfile(&dir, &file);
-		string dpath = path.empty() ? file.name : path + PATHSEP + file.name;
+		string dpath = path.empty() ? file.name : path + '/' + file.name;
 		if(!file.is_dir) 
 			files.push_back(dpath);
 		else if(recurse && file.name[0] != '.') {

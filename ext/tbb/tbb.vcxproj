@@ -329,8 +329,52 @@
     </MASM>
   </ItemGroup>
   <ItemGroup>
+    <None Include="include\tbb\version_string.ver" />
     <None Include="linuxdebug.mak" />
     <None Include="Makefile" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\tbb\aligned_space.h" />
+    <ClInclude Include="include\tbb\arena.h" />
+    <ClInclude Include="include\tbb\atomic.h" />
+    <ClInclude Include="include\tbb\blocked_range.h" />
+    <ClInclude Include="include\tbb\cache_aligned_allocator.h" />
+    <ClInclude Include="include\tbb\cilk-tbb-interop.h" />
+    <ClInclude Include="include\tbb\concurrent_monitor.h" />
+    <ClInclude Include="include\tbb\concurrent_queue.h" />
+    <ClInclude Include="include\tbb\concurrent_vector.h" />
+    <ClInclude Include="include\tbb\custom_scheduler.h" />
+    <ClInclude Include="include\tbb\dynamic_link.h" />
+    <ClInclude Include="include\tbb\governor.h" />
+    <ClInclude Include="include\tbb\intrusive_list.h" />
+    <ClInclude Include="include\tbb\itt_notify.h" />
+    <ClInclude Include="include\tbb\mailbox.h" />
+    <ClInclude Include="include\tbb\market.h" />
+    <ClInclude Include="include\tbb\mutex.h" />
+    <ClInclude Include="include\tbb\observer_proxy.h" />
+    <ClInclude Include="include\tbb\partitioner.h" />
+    <ClInclude Include="include\tbb\scheduler.h" />
+    <ClInclude Include="include\tbb\scheduler_common.h" />
+    <ClInclude Include="include\tbb\scheduler_utility.h" />
+    <ClInclude Include="include\tbb\semaphore.h" />
+    <ClInclude Include="include\tbb\spin_mutex.h" />
+    <ClInclude Include="include\tbb\spin_rw_mutex.h" />
+    <ClInclude Include="include\tbb\task.h" />
+    <ClInclude Include="include\tbb\task_scheduler_init.h" />
+    <ClInclude Include="include\tbb\task_scheduler_observer.h" />
+    <ClInclude Include="include\tbb\task_stream.h" />
+    <ClInclude Include="include\tbb\tbb_allocator.h" />
+    <ClInclude Include="include\tbb\tbb_assert_impl.h" />
+    <ClInclude Include="include\tbb\tbb_config.h" />
+    <ClInclude Include="include\tbb\tbb_exception.h" />
+    <ClInclude Include="include\tbb\tbb_machine.h" />
+    <ClInclude Include="include\tbb\tbb_main.h" />
+    <ClInclude Include="include\tbb\tbb_misc.h" />
+    <ClInclude Include="include\tbb\tbb_profiling.h" />
+    <ClInclude Include="include\tbb\tbb_statistics.h" />
+    <ClInclude Include="include\tbb\tbb_stddef.h" />
+    <ClInclude Include="include\tbb\tbb_version.h" />
+    <ClInclude Include="include\tbb\tls.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

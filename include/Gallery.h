@@ -46,10 +46,10 @@
 #define DELETE_ALBUM "DELETE FROM albums WHERE id = ?;"
 
 #define SELECT_FILE_DETAILS "SELECT f.id AS id, al.id as aid, f.name, f.rating as rating, f.views as views, \
-(SELECT (" SELECT_SYSTEM("store_path") ") || " XSTR(PSEP) " || al.path || " XSTR(PSEP) " || f.path) AS path, \
+(SELECT (" SELECT_SYSTEM("store_path") ") || / || al.path || / || f.path) AS path, \
 	COALESCE(\
-		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || " XSTR(PSEP) " || th.path FROM thumbs th JOIN files ON files.thumbid = th.id AND files.id = f.id), \
-		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || " XSTR(PSEP) " || (" SELECT_SYSTEM("default_thumb") "))) \
+		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || / || th.path FROM thumbs th JOIN files ON files.thumbid = th.id AND files.id = f.id), \
+		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || / || (" SELECT_SYSTEM("default_thumb") "))) \
 AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON al.id=alf.albumid WHERE 1 "
 
 #define CONDITION_FILE_ENABLED " AND f.enabled = 1 "
@@ -73,10 +73,10 @@ AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON a
 
 #define SELECT_ALBUM_DETAILS "SELECT al.id AS id, name, added, lastedited, type, rating, recursive, views, al.path AS path, \
 	COALESCE(\
-		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || " XSTR(PSEP) " || th.path FROM thumbs th JOIN albums ON albums.thumbid = th.id AND albums.id = al.id),\
-		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || " XSTR(PSEP) " || th.path FROM thumbs th JOIN files f ON f.thumbid = th.id JOIN albumfiles alf ON alf.fileid=f.id AND alf.id IN \
+		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || / || th.path FROM thumbs th JOIN albums ON albums.thumbid = th.id AND albums.id = al.id),\
+		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || / || th.path FROM thumbs th JOIN files f ON f.thumbid = th.id JOIN albumfiles alf ON alf.fileid=f.id AND alf.id IN \
 			(SELECT id FROM albumfiles WHERE albumid=al.id ORDER BY id ASC LIMIT 1) JOIN albums ON albums.id = al.id),\
-		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || " XSTR(PSEP) " || (" SELECT_SYSTEM("default_thumb") "))) AS thumb FROM albums al WHERE 1 "
+		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || /|| (" SELECT_SYSTEM("default_thumb") "))) AS thumb FROM albums al WHERE 1 "
 
 #define SELECT_ALBUM_PATH "SELECT path, recursive FROM albums WHERE id = ?;"
 
@@ -99,11 +99,14 @@ CREATE TABLE IF NOT EXISTS 'thumbs' ('id' INTEGER PRIMARY KEY  NOT NULL , 'path'
 CREATE TABLE IF NOT EXISTS 'albums' ('id' INTEGER PRIMARY KEY  NOT NULL ,'name' TEXT,'added' DATETIME,'lastedited' DATETIME,'path' TEXT NOT NULL ,'type' INTEGER NOT NULL ,'thumbid' INTEGER REFERENCES thumbs(id) ON DELETE SET NULL,'rating' INTEGER NOT NULL  DEFAULT (0) ,'recursive' INTEGER NOT NULL , 'views' INTEGER DEFAULT 0); \
 CREATE TABLE IF NOT EXISTS 'files' ('id' INTEGER PRIMARY KEY  NOT NULL,'name' TEXT,'path' TEXT,'added' TEXT,'enabled' INTEGER NOT NULL  DEFAULT (1) ,'thumbid' INTEGER REFERENCES thumbs(id) ON DELETE SET NULL,'rating' INTEGER DEFAULT(0), 'views' INTEGER DEFAULT 0, 'lastedited' TEXT); \
 CREATE TABLE IF NOT EXISTS 'albumfiles' ('id' INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL , 'albumid' INTEGER NOT NULL REFERENCES albums(id) ON DELETE CASCADE, 'fileid' INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE ); \
-CREATE TABLE IF NOT EXISTS 'system' ('id' INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL , 'name' TEXT NOT NULL , 'value' TEXT); \
+CREATE TABLE IF NOT EXISTS 'system' ('id' INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL , 'name' TEXT NOT NULL , 'value' TEXT, UNIQUE(name) ON CONFLICT IGNORE); \
 CREATE TRIGGER IF NOT EXISTS 'file_cleanup' AFTER DELETE ON 'albums' BEGIN DELETE FROM files WHERE id NOT IN (SELECT fileid FROM albumfiles); END; \
 CREATE TRIGGER IF NOT EXISTS 'thumbs_trigger_files' AFTER DELETE ON 'files' BEGIN DELETE FROM thumbs WHERE id NOT IN (SELECT thumbid FROM files f WHERE thumbid NOT NULL UNION SELECT thumbid FROM albums WHERE thumbid NOT NULL); END; \
 CREATE TRIGGER IF NOT EXISTS 'thumbs_trigger_albums' AFTER DELETE ON 'albums' BEGIN DELETE FROM thumbs WHERE id NOT IN (SELECT thumbid FROM files f WHERE thumbid NOT NULL UNION SELECT thumbid FROM albums WHERE thumbid NOT NULL); END; \
 CREATE UNIQUE INDEX IF NOT EXISTS 'alf_index' ON 'albumfiles' ('albumid' ASC, 'fileid' ASC); \
+INSERT INTO 'system' ('name', 'value') VALUES ('default_thumb','default.png'); \
+INSERT INTO 'system' ('name', 'value') VALUES ('thumbs_path','thumbs'); \
+INSERT INTO 'system' ('name', 'value') VALUES ('store_path','store'); \
 COMMIT;"
 
 
@@ -139,6 +142,10 @@ private:
 	std::string pass;
 	std::string basepath;
 	std::string dbpath;
+
+	//Dynamic function map for public API.
+	std::map<std::string, GallFunc> functionMap;
+
 	//Should authentication be enabled?
 	int auth;
 
@@ -159,7 +166,7 @@ private:
 	int getDuplicates( std::string& name, std::string& path );
 	std::string genCookie(const std::string& name, const std::string& value, time_t* date=NULL);
 	std::string getCookieValue(const char* cookies, const char* key);
-	std::map<std::string, GallFunc> m;
+	
 	void createFieldMap(Query& q, rapidjson::Value& v);
 	int hasAlbums();
 	int getData(Query& query, RequestVars&, Response&, SessionStore&);
@@ -167,18 +174,18 @@ private:
 	//template dictionary
 	ctemplate::TemplateDictionary dict;
 	//Keeps track of sub dictionary (templates/.*) addIncludeDictionary
-	std::vector<ctemplate::TemplateDictionary*> sub_dicts;
+	std::vector<ctemplate::TemplateDictionary*> subDicts;
 	//(content) template filename vector
-	std::vector<std::string> content_list;
-	
-
+	std::vector<std::string> contentList;
 
 	//This function should be run in a thread.
 	template <typename T>
 	void addFiles(T& files, int nGenThumbs, const std::string& path, const std::string& albumID) {
 		std::string date = date_format("%Y%m%d",8);
-		std::string storepath = database->select(SELECT_SYSTEM("store_path")).response->at(0).at(0);
-		std::string thumbspath = database->select(SELECT_SYSTEM("thumbs_path")).response->at(0).at(0);
+		Query q_store_path(SELECT_SYSTEM("store_path"));
+		Query q_thumb_path(SELECT_SYSTEM("thumbs_path"));
+		std::string storepath = database->select(&q_store_path)->response->at(0).at(0);
+		std::string thumbspath = database->select(&q_thumb_path)->response->at(0).at(0);
 
 		if(files.size() > 0) {
 			for (T::const_iterator it = files.begin(), end = files.end(); it != end; ++it) {

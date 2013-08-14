@@ -1,15 +1,20 @@
 #ifndef DATABASE_H
 #define DATABASE_H
 
-#include "tbb/concurrent_queue.h"
-#include "sqlite3.h"
 #include "Platform.h"
+#include "sqlite3.h"
 #include <thread>
 
 #define DATABASE_STATUS_PROCESS 0
 #define DATABASE_STATUS_FINISHED 1
 #define DATABASE_QUERY_STARTED 0
 #define DATABASE_QUERY_FINISHED 1
+
+#define DATABASE_TYPE_SQLITE 0
+#define DATABASE_TYPE_MYSQL 1
+
+struct st_mysql;
+typedef struct st_mysql MYSQL;
 
 typedef std::vector<std::vector<std::string>> QueryResponse;
 typedef std::vector<std::string> QueryRow;
@@ -29,19 +34,19 @@ public:
 
 class Database : public Internal {
 private:
-	sqlite3* db;
+	sqlite3* sqlite_db;
+	MYSQL* mysql_db;
 	std::thread* dbthread;
 
 	void process(Query*q);
 	int abort;
+	int db_type;
 
 public:
-	Database(const char* filename);
+	Database(int database_type, const std::string& host, const std::string& username="", const std::string& password="", const std::string& database="");
 	~Database();
-	void select(Query* query);
 	int exec(Query* query);
 	int exec(const std::string& query, QueryRow* params=NULL);
-	Query select(const std::string& query, int desc = 0);
-	Query select(const std::string& query, QueryRow* params, int desc = 0);
+	Query* select(Query* query, QueryRow* params=NULL, int desc = 0);
 };
 #endif

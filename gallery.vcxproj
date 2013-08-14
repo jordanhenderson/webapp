@@ -146,9 +146,9 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>__TBB_BUILD;SQLITE_THREADSAFE=1;CTEMPLATE_DLL_DECL=;USE_WINTHREAD;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;USE_PRECOMPILED_HEADERS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>ext/mysql/include;ext/tbb/include/;ext/libjpeg/include;ext/zlib/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/lpng;include/gif;include/pngnq;include/tinydir;ext/cryptopp;include/vld</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext/mysql/include;ext/tbb/include/;ext/libjpeg/include;ext/zlib/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/lpng;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
       <InterproceduralOptimization>NoIPO</InterproceduralOptimization>
@@ -161,8 +161,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>vld.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>lib/Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -170,9 +170,9 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>__TBB_BUILD;SQLITE_THREADSAFE=1;CTEMPLATE_DLL_DECL=;USE_WINTHREAD;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;USE_PRECOMPILED_HEADERS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>ext/mysql/include;ext/tbb/include/;ext/libjpeg/include;ext/zlib/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/lpng;include/gif;include/pngnq;include/tinydir;ext/cryptopp;include/vld</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext/mysql/include;ext/tbb/include/;ext/libjpeg/include;ext/zlib/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/lpng;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
       <InterproceduralOptimization>NoIPO</InterproceduralOptimization>
@@ -196,7 +196,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>false</IntrinsicFunctions>
-      <PreprocessorDefinitions>__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;CTEMPLATE_DLL_DECL=;USE_WINTHREAD;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>ext/mysql/include;ext/tbb/include/;ext/libjpeg/include;ext/zlib/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/lpng;include/gif;include/pngnq;include/tinydir;ext/cryptopp;</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -234,7 +234,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>__TBB_BUILD;SQLITE_THREADSAFE=1;CTEMPLATE_DLL_DECL=;USE_WINTHREAD;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;USE_PRECOMPILED_HEADERS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;USE_PRECOMPILED_HEADERS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>ext/mysql/include;ext/tbb/include/;ext/libjpeg/include;ext/zlib/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/lpng;include/gif;include/pngnq;include/tinydir;ext/cryptopp;</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>

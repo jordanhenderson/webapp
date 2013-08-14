@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
 	FileSystem::MakePath(bp);
 	
 	//Create logging instance
-	logger = new Logging(params.get("basepath") + PATHSEP + params.get("logfile"));
+	logger = new Logging(params.get("basepath") + '/' + params.get("logfile"));
 	Gallery* gallery = new Gallery(&params);
 
 	//Create a fastcgi server.

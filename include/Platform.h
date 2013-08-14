@@ -21,7 +21,8 @@
 #include <condition_variable>
 		
 
-
+//#define DATABASE_SQLITE
+#define DATABASE_MYSQL
 
 #ifdef WIN32
 #define ENV_NEWLINE "\r\n"
@@ -49,9 +50,6 @@
 #define HTML_404 "Status: 404 Not Found\r\n\r\nThe page you requested cannot be found (404)."
 #define XSTR(a) STR(a)
 #define STR(a) #a
-#define PSEP "/"
-#define PATHSEP PSEP[0]
-
 
 
 extern const std::string EMPTY;

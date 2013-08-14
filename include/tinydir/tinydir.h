@@ -468,7 +468,7 @@ _TINYDIR_FUNC int tinydir_todir(char* path, int len) {
 	//Remove last block from path.
 	int i = len;
 	for(; i > 0; i--) {
-		if(path[i] == PATHSEP) {
+		if(path[i] == '/') {
 			path[i] = 0;
 			break;
 		}

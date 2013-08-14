@@ -10,9 +10,6 @@
 #include "stringbuffer.h"
 #include <sha.h>
 
-#if _DEBUG
-#include <vld.h>
-#endif
 using namespace rapidjson;
 using namespace std;
 
@@ -23,7 +20,7 @@ Gallery::Gallery(Parameters* params) : dict("") {
 	dbpath = params->get("dbpath");
 	
 	basepath = params->get("basepath");
-	database = new Database((basepath + PATHSEP + dbpath).c_str());
+	database = new Database(DATABASE_TYPE_SQLITE, (basepath + '/' + dbpath).c_str());
 
 	//Enable pragma foreign keys.
 	database->exec(PRAGMA_FOREIGN);
@@ -75,7 +72,7 @@ Gallery::Gallery(Parameters* params) : dict("") {
 	thread_process_queue->detach();
 	currentID = std::this_thread::get_id();
 	//Create function map.
-	GALLERYMAP(m);
+	GALLERYMAP(functionMap);
 	
 }
 
@@ -94,7 +91,7 @@ void Gallery::process_thread(std::thread* t) {
 
 Gallery::~Gallery() {
 	//Clean up sub dictionaries.
-	for(ctemplate::TemplateDictionary* dict : sub_dicts) {
+	for(ctemplate::TemplateDictionary* dict : subDicts) {
 		delete(dict);
 	}
 
@@ -126,21 +123,22 @@ Response Gallery::getPage(const string& page, SessionStore& session, int publish
 	}
 
 	//Template parsing
-	if(contains(content_list, page + ".html")) {
+	if(contains(contentList, page + ".html")) {
 		r = HTML_HEADER + r + END_HEADER;
 		string output;
-		ctemplate::TemplateDictionary* d = dict.MakeCopy("");
+		ctemplate::TemplateDictionary d("");
+		d.include_dict_ = dict.include_dict_;
 		
 		if(!session.get("auth").empty() || !auth)
-			d->ShowSection("LOGGED_IN");
+			d.ShowSection("LOGGED_IN");
 		else
-			d->ShowSection("NOT_LOGGED_IN");
+			d.ShowSection("NOT_LOGGED_IN");
 
 		ctemplate::PerExpandData data;
 		
-		ctemplate::ExpandWithData(basepath + PSEP + "content" + PSEP + page + ".html", ctemplate::DO_NOT_STRIP, d, &data, &output);
+		ctemplate::ExpandWithData(basepath + "/content/" + page + ".html", ctemplate::DO_NOT_STRIP, &d, &data, &output);
 		r.append(output);
-		delete d;
+		
 	} else {
 		//Plain file handling.
 		string fileuri = basepath + page;
@@ -174,10 +172,10 @@ void Gallery::addFile(const string& file, int nGenThumbs, const string& thumbspa
 	string thumbID;
 	//Generate thumb.
 	if(nGenThumbs) {
-		FileSystem::MakePath(basepath + PATHSEP + thumbspath + PATHSEP + path + PATHSEP + file);
-		if(genThumb((path + PATHSEP + file).c_str(), 200, 200) == ERROR_SUCCESS) {
+		FileSystem::MakePath(basepath + '/' + thumbspath + '/' + path + '/' + file);
+		if(genThumb((path + '/' + file).c_str(), 200, 200) == ERROR_SUCCESS) {
 			QueryRow params;
-			params.push_back(path + PATHSEP + file);
+			params.push_back(path + '/' + file);
 			int nThumbID = database->exec(INSERT_THUMB, &params);
 			if(nThumbID > 0) {
 				thumbID = to_string(nThumbID);
@@ -206,9 +204,9 @@ int Gallery::getDuplicates( string& name, string& path ) {
 	QueryRow params;
 	params.push_back(name);
 	params.push_back(path);
-	
-	Query query = database->select(SELECT_DUPLICATE_ALBUM_COUNT, &params);
-	return stoi((*query.response)[0].at(0));
+	Query dup_query(SELECT_DUPLICATE_ALBUM_COUNT);
+	Query* query = database->select(&dup_query, &params);
+	return stoi((*query->response)[0].at(0));
 }
 
 void parseRequestVars(char* vars, RequestVars& varmap) {
@@ -328,19 +326,13 @@ Response Gallery::processVars(RequestVars& vars, SessionStore& session, int publ
 		r.append(genCookie("sessionid", session.sessionid, &t));
 	}
 
-	map<string, GallFunc>::const_iterator miter = m.find(t);
-	int hasfunc = miter != m.end();
+	map<string, GallFunc>::const_iterator miter = functionMap.find(t);
+	int hasfunc = miter != functionMap.end();
 	if((hasfunc && !auth) || (hasfunc && !session.get("auth").empty()) || (hasfunc && t == "login")) {
 		GallFunc f = miter->second;
 
 		r.append(END_HEADER);
-#if _DEBUG
-		VLDEnable();
-#endif
 		(this->*f)(vars, r, session);
-#if _DEBUG
-		VLDDisable();
-#endif
 		return r;
 	} else {
 		Serializer s;
@@ -360,11 +352,12 @@ int Gallery::genThumb(const char* file, double shortmax, double longmax) {
 #ifndef HAS_IPP
 	return ERROR_IMAGE_PROCESSING_FAILED;
 #endif
-
-	string storepath = database->select(SELECT_SYSTEM("store_path")).response->at(0).at(0);
-	string thumbspath = database->select(SELECT_SYSTEM("thumbs_path")).response->at(0).at(0);
-	string imagepath = basepath + PATHSEP + storepath + PATHSEP + file;
-	string thumbpath = basepath + PATHSEP + thumbspath + PATHSEP + file;
+	Query store_q(SELECT_SYSTEM("store_path"));
+	Query thumbs_q(SELECT_SYSTEM("thumbs_path"));
+	string storepath = database->select(&store_q)->response->at(0).at(0);
+	string thumbspath = database->select(&thumbs_q)->response->at(0).at(0);
+	string imagepath = basepath + '/' + storepath + '/' + file;
+	string thumbpath = basepath + '/' + thumbspath + '/' + file;
 	
 	//Check if thumb already exists.
 
@@ -410,8 +403,9 @@ int Gallery::genThumb(const char* file, double shortmax, double longmax) {
 }
 
 int Gallery::hasAlbums() {
-	Query query = database->select(SELECT_ALBUM_COUNT);
-	int nAlbums = stoi(((*query.response)[0][0]));
+	Query album_count_q(SELECT_ALBUM_COUNT);
+	Query* query = database->select(&album_count_q);
+	int nAlbums = stoi((*query->response)[0][0]);
 	if(nAlbums == 0) {
 		return 0;
 	}
@@ -420,27 +414,31 @@ int Gallery::hasAlbums() {
 
 void Gallery::load_templates() {
 	//Load content files (applicable templates)
-	content_list.clear();
-	content_list = FileSystem::GetFiles(basepath + PSEP + "content" + PSEP, "", 0);
-	for(string s : content_list) {
+	contentList.clear();
+	string basepath = basepath + '/';
+	string contentpath = basepath + "content/";
+	contentList = FileSystem::GetFiles(contentpath, "", 0);
+	for(string s : contentList) {
 		//Preload templates.
-		ctemplate::LoadTemplate(basepath + PSEP + "content" + PSEP + s, ctemplate::DO_NOT_STRIP);
+		ctemplate::LoadTemplate(contentpath + s, ctemplate::DO_NOT_STRIP);
 	}
 
-	for(ctemplate::TemplateDictionary* dict : sub_dicts) {
+	for(ctemplate::TemplateDictionary* dict : subDicts) {
 		delete(dict);
 	}
 
-	sub_dicts.clear();
-	string path = basepath + PSEP + "templates" + PSEP + "server" + PSEP;
-	//Load templates
+	subDicts.clear();
+	string templatepath = basepath + "templates/";
+	string path = basepath + "templates/server/";
+	//Load server templates
 	for(string s: FileSystem::GetFiles(path, "", 0)) {
 		size_t pos = s.find_last_of(".");
 		ctemplate::TemplateDictionary* d = dict.AddIncludeDictionary(s.substr(0, pos));
-		sub_dicts.push_back(d);
 		d->SetFilename(path + s);
-
+		subDicts.push_back(d);
 	}
+
+	
 }
 
 //Public API functions.
@@ -485,12 +483,14 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& session
 		std::unique_lock<std::mutex> lk(process_mutex);
 		while(currentID != this_thread::get_id())
 			cv_proc.wait(lk);
-
-		string storepath = database->select(SELECT_SYSTEM("store_path")).response->at(0).at(0);
+		Query q_store_path = SELECT_SYSTEM("store_path");
+		string storepath = database->select(&q_store_path)->response->at(0).at(0);
 		for(string album: albums) {
 			QueryRow params;
 			params.push_back(album);
-			Query q = database->select(SELECT_ALBUM_PATH, &params);
+
+			Query q(SELECT_ALBUM_PATH);
+			database->select(&q, &params);
 			if(!q.response->empty()) {
 				QueryRow params;
 				params.push_back(album);
@@ -498,7 +498,7 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& session
 				string recursive = q.response->at(0).at(1);
 				//Delete nonexistent paths stored in database.
 				string existingFiles = DELETE_MISSING_FILES;
-				list<string> files = FileSystem::GetFilesAsList(basepath + PATHSEP + storepath + PATHSEP + path, "", stoi(recursive));
+				list<string> files = FileSystem::GetFilesAsList(basepath + '/' + storepath + '/' + path, "", stoi(recursive));
 				if(!files.empty()) {
 					for (std::list<string>::const_iterator it = files.begin(), end = files.end(); it != end; ++it) {
 						existingFiles.append("\"" + *it + "\",");
@@ -508,7 +508,8 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& session
 				existingFiles.append(")");
 				database->exec(existingFiles, &params);
 				//Get a list of files in the album from db.
-				Query q_album = database->select(SELECT_PATHS_FROM_ALBUM, &params);
+				Query q_album(SELECT_PATHS_FROM_ALBUM);
+				database->select(&q_album, &params);
 
 				for(int i = 0; i < q_album.response->size(); i++) {
 					vector<string> row = q_album.response->at(i);
@@ -611,7 +612,8 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 				std::unique_lock<std::mutex> lk(process_mutex);
 				while(currentID != this_thread::get_id())
 					cv_proc.wait(lk);
-				string storepath = database->select(SELECT_SYSTEM("store_path")).response->at(0).at(0);
+				Query q_store_path(SELECT_SYSTEM("store_path"));
+				string storepath = database->select(&q_store_path)->response->at(0).at(0);
 				//Add the album.
 				QueryRow params;
 				//get the date.
@@ -624,7 +626,7 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 				params.push_back(type);
 				params.push_back(to_string(nRecurse));
 				int albumID = database->exec(INSERT_ALBUM, &params);
-				vector<string> files = FileSystem::GetFiles(basepath + PATHSEP + storepath + PATHSEP + path, "", nRecurse);
+				vector<string> files = FileSystem::GetFiles(basepath + '/' + storepath + '/' + path, "", nRecurse);
 			
 				addFiles(files, nGenThumbs, path, to_string(albumID));
 
@@ -658,13 +660,16 @@ int Gallery::delAlbums(RequestVars& vars, Response& r, SessionStore&) {
 		std::unique_lock<std::mutex> lk(process_mutex);
 		while(currentID != this_thread::get_id())
 			cv_proc.wait(lk);
-		string storepath = database->select(SELECT_SYSTEM("store_path")).response->at(0).at(0);
-		string thumbspath = database->select(SELECT_SYSTEM("thumbs_path")).response->at(0).at(0);
+		Query q_store_path(SELECT_SYSTEM("store_path"));
+		Query q_thumb_path(SELECT_SYSTEM("thumbs_path"));
+		string storepath = database->select(&q_store_path)->response->at(0).at(0);
+		string thumbspath = database->select(&q_thumb_path)->response->at(0).at(0);
 		for(string album: albums) {
 			QueryRow params;
 
 			params.push_back(album);
-			Query delquery = database->select(SELECT_ALBUM_PATH, &params);
+			Query delquery(SELECT_ALBUM_PATH);
+			database->select(&delquery, &params);
 			if(delquery.response->size() > 0) {
 
 				string path = delquery.response->at(0).at(0);
@@ -674,11 +679,11 @@ int Gallery::delAlbums(RequestVars& vars, Response& r, SessionStore&) {
 
 				if(delFiles) {
 					//Delete the albums' files.
-					FileSystem::DeletePath(basepath + PATHSEP + storepath + PATHSEP + path);
+					FileSystem::DeletePath(basepath + '/' + storepath + '/' + path);
 				}
 				if(delThumbs) {
 					//Wait for thumb thread to finish.
-					FileSystem::DeletePath(basepath + PATHSEP + thumbspath + PATHSEP + path);
+					FileSystem::DeletePath(basepath + '/' + thumbspath + '/' + path);
 				}
 			}
 		}
@@ -758,7 +763,8 @@ int Gallery::getFiles(RequestVars& vars, Response& r, SessionStore&s) {
 			
 			
 			params.push_back(id);
-			Query q = database->select(SELECT_ALBUM_ID_WITH_FILE, &params);
+			Query q(SELECT_ALBUM_ID_WITH_FILE);
+			database->select(&q, &params);
 			if(!q.response->empty()) 
 				params.push_back(q.response->at(0).at(0));
 		} else {
