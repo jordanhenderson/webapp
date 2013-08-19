@@ -426,10 +426,7 @@ class CTEMPLATE_DLL_DECL TemplateDictionary : public TemplateDictionaryInterface
   // The three dictionaries that I own -- for vars, sections, and template-incs
   VariableDict* variable_dict_;
   SectionDict* section_dict_;
-  public:
   IncludeDict* include_dict_;
-
-  private:
 
   // The template_global_dict is consulted if a lookup in the variable, section,
   // or include dicts named above fails. It forms a convenient place to store

@@ -13,7 +13,7 @@
 using namespace rapidjson;
 using namespace std;
 
-Gallery::Gallery(Parameters* params) : dict("") {
+Gallery::Gallery(Parameters* params) : serverTemplates("") {
 
 	abort = 0;
 	this->params = params;
@@ -90,10 +90,11 @@ void Gallery::process_thread(std::thread* t) {
 }
 
 Gallery::~Gallery() {
-	//Clean up sub dictionaries.
-	for(ctemplate::TemplateDictionary* dict : subDicts) {
-		delete(dict);
+	//Clean up client template files.
+	for(FileData* data: clientTemplateFiles) {
+		delete(data);
 	}
+
 
 	abort = 1;
 	cv.notify_all();
@@ -113,8 +114,6 @@ string Gallery::genCookie(const string& name, const string& value, time_t* date)
 }
 
 Response Gallery::getPage(const string& page, SessionStore& session, int publishSession) {
-
-
 	Response r;
 
 	if(publishSession) {
@@ -126,18 +125,19 @@ Response Gallery::getPage(const string& page, SessionStore& session, int publish
 	if(contains(contentList, page + ".html")) {
 		r = HTML_HEADER + r + END_HEADER;
 		string output;
-		ctemplate::TemplateDictionary d("");
-		d.include_dict_ = dict.include_dict_;
+		ctemplate::TemplateDictionary* d = serverTemplates.MakeCopy("");
 		
+		//Do additional template logic processing here (NOTE_LUA)
 		if(!session.get("auth").empty() || !auth)
-			d.ShowSection("LOGGED_IN");
+			d->ShowSection("LOGGED_IN");
 		else
-			d.ShowSection("NOT_LOGGED_IN");
+			d->ShowSection("NOT_LOGGED_IN");
 
 		ctemplate::PerExpandData data;
 		
-		ctemplate::ExpandWithData(basepath + "/content/" + page + ".html", ctemplate::DO_NOT_STRIP, &d, &data, &output);
+		ctemplate::ExpandWithData(basepath + "/content/" + page + ".html", ctemplate::DO_NOT_STRIP, d, &data, &output);
 		r.append(output);
+		delete d;
 		
 	} else {
 		//Plain file handling.
@@ -413,31 +413,45 @@ int Gallery::hasAlbums() {
 }
 
 void Gallery::load_templates() {
+	//Force reload templates
+	ctemplate::mutable_default_template_cache()->ReloadAllIfChanged(ctemplate::TemplateCache::IMMEDIATE_RELOAD);
+
 	//Load content files (applicable templates)
 	contentList.clear();
-	string basepath = basepath + '/';
-	string contentpath = basepath + "content/";
-	contentList = FileSystem::GetFiles(contentpath, "", 0);
+	string basepath = this->basepath + '/';
+	string templatepath = basepath + "content/";
+	contentList = FileSystem::GetFiles(templatepath, "", 0);
 	for(string s : contentList) {
 		//Preload templates.
-		ctemplate::LoadTemplate(contentpath + s, ctemplate::DO_NOT_STRIP);
+		ctemplate::LoadTemplate(templatepath + s, ctemplate::DO_NOT_STRIP);
 	}
 
-	for(ctemplate::TemplateDictionary* dict : subDicts) {
-		delete(dict);
-	}
 
-	subDicts.clear();
-	string templatepath = basepath + "templates/";
-	string path = basepath + "templates/server/";
-	//Load server templates
-	for(string s: FileSystem::GetFiles(path, "", 0)) {
+	//Load server templates (See ctemplate Include Dictionaries)
+	templatepath = basepath + "templates/server/";
+	for(string s: FileSystem::GetFiles(templatepath, "", 0)) {
 		size_t pos = s.find_last_of(".");
-		ctemplate::TemplateDictionary* d = dict.AddIncludeDictionary(s.substr(0, pos));
-		d->SetFilename(path + s);
-		subDicts.push_back(d);
+		ctemplate::TemplateDictionary* d = serverTemplates.AddIncludeDictionary(s.substr(0, pos));
+		d->SetFilename(templatepath + s);
 	}
 
+	//Load client templates (inline insertion into content templates) - these are Handbrake (JS) templates.
+	//First delete existing filedata. This should be optimised later.
+	for(FileData* data: clientTemplateFiles) {
+		delete data;
+	}
+	clientTemplateFiles.clear();
+
+	templatepath = basepath + "templates/client/";
+	for(string s: FileSystem::GetFiles(templatepath, "", 0)) {
+		File f;
+		FileData* data = new FileData();
+		FileSystem::Open(templatepath + s, "rb", &f);
+		string template_name = s.substr(0, s.find_last_of("."));
+		FileSystem::Read(&f, data);
+		std::transform(template_name.begin(), template_name.end(), template_name.begin(), ::toupper);
+		serverTemplates.SetValueWithoutCopy("T_" + template_name, ctemplate::TemplateString(data->data,data->size));
+	}
 	
 }
 

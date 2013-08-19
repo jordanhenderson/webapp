@@ -46,10 +46,10 @@
 #define DELETE_ALBUM "DELETE FROM albums WHERE id = ?;"
 
 #define SELECT_FILE_DETAILS "SELECT f.id AS id, al.id as aid, f.name, f.rating as rating, f.views as views, \
-(SELECT (" SELECT_SYSTEM("store_path") ") || / || al.path || / || f.path) AS path, \
+(SELECT (" SELECT_SYSTEM("store_path") ") || '/' || al.path || '/' || f.path) AS path, \
 	COALESCE(\
-		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || / || th.path FROM thumbs th JOIN files ON files.thumbid = th.id AND files.id = f.id), \
-		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || / || (" SELECT_SYSTEM("default_thumb") "))) \
+		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || '/' || th.path FROM thumbs th JOIN files ON files.thumbid = th.id AND files.id = f.id), \
+		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || '/' || (" SELECT_SYSTEM("default_thumb") "))) \
 AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON al.id=alf.albumid WHERE 1 "
 
 #define CONDITION_FILE_ENABLED " AND f.enabled = 1 "
@@ -73,10 +73,10 @@ AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON a
 
 #define SELECT_ALBUM_DETAILS "SELECT al.id AS id, name, added, lastedited, type, rating, recursive, views, al.path AS path, \
 	COALESCE(\
-		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || / || th.path FROM thumbs th JOIN albums ON albums.thumbid = th.id AND albums.id = al.id),\
-		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || / || th.path FROM thumbs th JOIN files f ON f.thumbid = th.id JOIN albumfiles alf ON alf.fileid=f.id AND alf.id IN \
+		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || '/' || th.path FROM thumbs th JOIN albums ON albums.thumbid = th.id AND albums.id = al.id),\
+		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || '/' || th.path FROM thumbs th JOIN files f ON f.thumbid = th.id JOIN albumfiles alf ON alf.fileid=f.id AND alf.id IN \
 			(SELECT id FROM albumfiles WHERE albumid=al.id ORDER BY id ASC LIMIT 1) JOIN albums ON albums.id = al.id),\
-		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || /|| (" SELECT_SYSTEM("default_thumb") "))) AS thumb FROM albums al WHERE 1 "
+		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || '/' || (" SELECT_SYSTEM("default_thumb") "))) AS thumb FROM albums al WHERE 1 "
 
 #define SELECT_ALBUM_PATH "SELECT path, recursive FROM albums WHERE id = ?;"
 
@@ -172,11 +172,12 @@ private:
 	int getData(Query& query, RequestVars&, Response&, SessionStore&);
 
 	//template dictionary
-	ctemplate::TemplateDictionary dict;
-	//Keeps track of sub dictionary (templates/.*) addIncludeDictionary
-	std::vector<ctemplate::TemplateDictionary*> subDicts;
+	ctemplate::TemplateDictionary serverTemplates;
 	//(content) template filename vector
 	std::vector<std::string> contentList;
+	//Client Template filedata vector (stores templates for later de-allocation).
+	std::vector<FileData*> clientTemplateFiles;
+
 
 	//This function should be run in a thread.
 	template <typename T>

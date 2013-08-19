@@ -383,7 +383,12 @@
     <ClCompile Include="src\rdcolmap.c" />
     <ClCompile Include="src\rdgif.c" />
     <ClCompile Include="src\rdppm.c" />
-    <ClCompile Include="src\rdrle.c" />
+    <ClCompile Include="src\rdrle.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="src\rdswitch.c" />
     <ClCompile Include="src\rdtarga.c" />
     <ClCompile Include="src\tjutil.c" />
@@ -392,7 +397,12 @@
     <ClCompile Include="src\wrbmp.c" />
     <ClCompile Include="src\wrgif.c" />
     <ClCompile Include="src\wrppm.c" />
-    <ClCompile Include="src\wrrle.c" />
+    <ClCompile Include="src\wrrle.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="src\wrtarga.c" />
   </ItemGroup>
   <ItemGroup>
