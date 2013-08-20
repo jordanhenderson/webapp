@@ -19,7 +19,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA */
   The exported function  my_osmaperr() is modelled after and borrows
   heavily from undocumented _dosmaperr()(found of the static Microsoft C runtime).
 */
-
+#ifdef _WIN32
 #include <my_global.h>
 #include <my_sys.h>
 
@@ -128,3 +128,4 @@ void my_osmaperr( unsigned long oserrno)
   my_winerr= oserrno;
   errno= get_errno_from_oserr(oserrno);
 }
+#endif

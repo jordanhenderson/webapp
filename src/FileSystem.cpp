@@ -18,7 +18,7 @@ int FileSystem::Open(const string& fileName, const string& flags, File* outFile)
 	delete[] wfileName;
 	delete[] wflags;
 #else
-	tmpFile = fopen(fileName, flags);
+	tmpFile = fopen(fileName.c_str(), flags.c_str());
 #endif
 	int success = (tmpFile != NULL);
 	if(success && outFile != NULL) {
@@ -113,7 +113,7 @@ void FileSystem::WriteLine(File* file, const string& buffer) {
 	Write(file, tmp.append(ENV_NEWLINE));
 }
 
-void FileSystem::MakePath(const string& path) {
+int FileSystem::MakePath(const string& path) {
 	//Recurisvely make a path structure.
 	string tmpPath = string(path);
 	int nFilename = tinydir_todir((char*)tmpPath.c_str(), tmpPath.length());
@@ -124,12 +124,13 @@ void FileSystem::MakePath(const string& path) {
 			tinydir_dir dir;
 			if(tinydir_open(&dir, tmpPath.c_str()) == -1) {
 				//make the directory
-				tinydir_create(tmpPath.c_str());
+				if(!tinydir_create(tmpPath.c_str())) return 0;
 			}
 			tinydir_close(&dir);
 			tmpPath[i] = '/';
 		}
 	}
+	return 1;
 }
 
 void FileSystem::DeletePath(const string& path) {

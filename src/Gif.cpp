@@ -3,8 +3,9 @@
 extern "C" {
 #include "neuquant32.h"
 }
+#ifdef HAS_IPP
 #include <ipp.h>
-
+#endif
 
 void Image::gifInsertFrame(int frame) {
 	unsigned char bgcolor;

@@ -76,17 +76,18 @@
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='LinuxDebug|Win32'">
     <ConfigurationType>Makefile</ConfigurationType>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='LinuxRelease|Win32'">
     <ConfigurationType>Makefile</ConfigurationType>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='LinuxDebug|x64'">
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='LinuxRelease|x64'">
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
+    <ConfigurationType>Makefile</ConfigurationType>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -125,7 +126,7 @@
     <IncludePath />
     <ReferencePath />
     <LibraryPath />
-    <NMakeIncludeSearchPath>d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\192.168.253.131\0000\include\c++\4.7;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\192.168.253.131\0000\include\x86_64-linux-gnu\c++\4.7;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\192.168.253.131\0000\include\c++\4.7\backward;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\192.168.253.131\0001\include;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\192.168.253.131\0003\include;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\192.168.253.131\0002\include-fixed;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\192.168.253.131\0000\include\x86_64-linux-gnu;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\192.168.253.131\0000\include;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\c++\4.8;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\x86_64-linux-gnu\c++\4.8;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\c++\4.8\backward;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0001\include;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0003\include;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0002\include-fixed;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\x86_64-linux-gnu;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include;D:\Development\GitRepos\gallery\.\include\gif\;D:\Development\GitRepos\gallery\.\include\;D:\Development\GitRepos\gallery\.\include\sqlite\;D:\Development\GitRepos\gallery\.\include\tinydir\;D:\Development\GitRepos\gallery\.\include\fastcgi\;D:\Development\GitRepos\gallery\.\include\rapidjson\;D:\Development\GitRepos\gallery\.\include\pngnq\;D:\Development\GitRepos\gallery\.\ext\ctemplate\include\;D:\Development\GitRepos\gallery\.\ext\libjpeg\include\;D:\Development\GitRepos\gallery\.\ext\tbb\include\;D:\Development\GitRepos\gallery\.\ext\zlib\include\;D:\Development\GitRepos\gallery\.\ext\mysql\include\;D:\Development\GitRepos\gallery\.\ext\lpng\include\;D:\Development\GitRepos\gallery\.\ext\cryptopp\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakeForcedIncludes>$(ProjectDir)\gcc_LinuxDebug.h;$(VISUALGDB_DIR)\gcc_compat.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <NMakePreprocessorDefinitions>__VisualGDB_CFG_LinuxDebug;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
@@ -137,7 +138,16 @@
     <IncludePath />
     <ReferencePath />
     <LibraryPath />
-    <NMakeIncludeSearchPath>d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\192.168.253.131\0000\include\c++\4.7;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\192.168.253.131\0000\include\x86_64-linux-gnu\c++\4.7;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\192.168.253.131\0000\include\c++\4.7\backward;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\192.168.253.131\0001\include;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\192.168.253.131\0003\include;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\192.168.253.131\0002\include-fixed;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\192.168.253.131\0000\include\x86_64-linux-gnu;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\192.168.253.131\0000\include;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\c++\4.8;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\x86_64-linux-gnu\c++\4.8;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\c++\4.8\backward;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0001\include;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0003\include;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0002\include-fixed;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\x86_64-linux-gnu;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes>$(ProjectDir)\gcc_LinuxRelease.h;$(VISUALGDB_DIR)\gcc_compat.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
+    <NMakePreprocessorDefinitions>__VisualGDB_CFG_LinuxRelease;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='LinuxRelease|x64'">
+    <NMakeBuildCommandLine>"$(VISUALGDB_DIR)\VisualGDB.exe" /build "$(ProjectPath)" "/solution:$(SolutionPath)" "/config:$(Configuration)" "/platform:$(Platform)"</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>"$(VISUALGDB_DIR)\VisualGDB.exe" /clean "$(ProjectPath)" "/solution:$(SolutionPath)" "/config:$(Configuration)" "/platform:$(Platform)"</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>"$(VISUALGDB_DIR)\VisualGDB.exe" /rebuild "$(ProjectPath)" "/solution:$(SolutionPath)" "/config:$(Configuration)" "/platform:$(Platform)"</NMakeReBuildCommandLine>
+    <NMakeOutput>$(ProjectDir)gallery-LinuxRelease.vgdbsettings</NMakeOutput>
+    <NMakeIncludeSearchPath>d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\c++\4.8;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\x86_64-linux-gnu\c++\4.8;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\c++\4.8\backward;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0001\include;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0003\include;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0002\include-fixed;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\x86_64-linux-gnu;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include;D:\Development\GitRepos\gallery\.\include\gif\;D:\Development\GitRepos\gallery\.\include\;D:\Development\GitRepos\gallery\.\include\sqlite\;D:\Development\GitRepos\gallery\.\include\tinydir\;D:\Development\GitRepos\gallery\.\include\fastcgi\;D:\Development\GitRepos\gallery\.\include\rapidjson\;D:\Development\GitRepos\gallery\.\include\pngnq\;D:\Development\GitRepos\gallery\.\ext\ctemplate\include\;D:\Development\GitRepos\gallery\.\ext\libjpeg\include\;D:\Development\GitRepos\gallery\.\ext\tbb\include\;D:\Development\GitRepos\gallery\.\ext\zlib\include\;D:\Development\GitRepos\gallery\.\ext\mysql\include\;D:\Development\GitRepos\gallery\.\ext\lpng\include\;D:\Development\GitRepos\gallery\.\ext\cryptopp\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakeForcedIncludes>$(ProjectDir)\gcc_LinuxRelease.h;$(VISUALGDB_DIR)\gcc_compat.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <NMakePreprocessorDefinitions>__VisualGDB_CFG_LinuxRelease;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
@@ -148,7 +158,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>ext/mysql/include;ext/tbb/include/;ext/libjpeg/include;ext/zlib/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/lpng;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext/mysql/include;ext/tbb/include/;ext/libjpeg/include;ext/zlib/include;ext/lpng/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;ext/cryptopp;</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
       <InterproceduralOptimization>NoIPO</InterproceduralOptimization>
@@ -172,7 +182,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>ext/mysql/include;ext/tbb/include/;ext/libjpeg/include;ext/zlib/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/lpng;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext/mysql/include;ext/tbb/include/;ext/libjpeg/include;ext/zlib/include;ext/lpng/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;ext/cryptopp;</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
       <InterproceduralOptimization>NoIPO</InterproceduralOptimization>
@@ -198,7 +208,7 @@
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <PreprocessorDefinitions>CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>ext/mysql/include;ext/tbb/include/;ext/libjpeg/include;ext/zlib/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/lpng;include/gif;include/pngnq;include/tinydir;ext/cryptopp;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext/mysql/include;ext/tbb/include/;ext/libjpeg/include;ext/zlib/include;ext/lpng/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;ext/cryptopp;</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
@@ -236,7 +246,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;USE_PRECOMPILED_HEADERS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>ext/mysql/include;ext/tbb/include/;ext/libjpeg/include;ext/zlib/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/lpng;include/gif;include/pngnq;include/tinydir;ext/cryptopp;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext/mysql/include;ext/tbb/include/;ext/libjpeg/include;ext/zlib/include;ext/lpng/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;ext/cryptopp;</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
@@ -278,6 +288,7 @@
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </AdditionalOptions>
     </ClCompile>
+    <ClCompile Include="src\fastcgi\os_unix.c" />
     <ClCompile Include="src\fastcgi\os_win32.c">
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </AdditionalOptions>
@@ -372,156 +383,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\lpng\png.c">
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </AdditionalOptions>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngerror.c">
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </AdditionalOptions>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngget.c">
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </AdditionalOptions>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngmem.c">
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </AdditionalOptions>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngpread.c">
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </AdditionalOptions>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngread.c">
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </AdditionalOptions>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngrio.c">
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </AdditionalOptions>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngrtran.c">
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </AdditionalOptions>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngrutil.c">
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </AdditionalOptions>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngset.c">
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </AdditionalOptions>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngtrans.c">
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </AdditionalOptions>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngwio.c">
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </AdditionalOptions>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngwrite.c">
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </AdditionalOptions>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngwtran.c">
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </AdditionalOptions>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngwutil.c">
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </AdditionalOptions>
-    </ClCompile>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Platform.cpp" />
     <ClCompile Include="src\pngnq\neuquant32.c">
@@ -543,7 +404,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="src\Session.cpp" />
-    <ClCompile Include="src\Socket.cpp" />
     <ClCompile Include="src\sqlite\sqlite3.c">
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </AdditionalOptions>
@@ -570,13 +430,6 @@
     <ClInclude Include="include\gif\gif_lib_private.h" />
     <ClInclude Include="include\gif\stdbool.h" />
     <ClInclude Include="include\Image.h" />
-    <ClInclude Include="include\lpng\png.h" />
-    <ClInclude Include="include\lpng\pngconf.h" />
-    <ClInclude Include="include\lpng\pngdebug.h" />
-    <ClInclude Include="include\lpng\pnginfo.h" />
-    <ClInclude Include="include\lpng\pnglibconf.h" />
-    <ClInclude Include="include\lpng\pngpriv.h" />
-    <ClInclude Include="include\lpng\pngstruct.h" />
     <ClInclude Include="include\pngnq\neuquant32.h" />
     <ClInclude Include="include\rapidjson\document.h" />
     <ClInclude Include="include\rapidjson\filestream.h" />
@@ -591,9 +444,13 @@
     <ClInclude Include="include\Parameters.h" />
     <ClInclude Include="include\Platform.h" />
     <ClInclude Include="include\Session.h" />
-    <ClInclude Include="include\Socket.h" />
     <ClInclude Include="include\sqlite\sqlite3.h" />
     <ClInclude Include="include\tinydir\tinydir.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="linuxdebug.mak" />
+    <None Include="linuxrelease.mak" />
+    <None Include="Makefile" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="ext\cryptopp\cryptlib.vcxproj">
@@ -604,6 +461,9 @@
     </ProjectReference>
     <ProjectReference Include="ext\libjpeg\libjpeg.vcxproj">
       <Project>{b0b26364-78fe-4685-aa71-403bd9f57dfa}</Project>
+    </ProjectReference>
+    <ProjectReference Include="ext\lpng\lpng.vcxproj">
+      <Project>{29148696-dffe-47f1-9a04-c277a6b1d042}</Project>
     </ProjectReference>
     <ProjectReference Include="ext\mysql\authentication_win\auth_win_client.vcxproj">
       <Project>{24b6b0be-1820-4f51-87d6-df829db976b7}</Project>
@@ -641,11 +501,6 @@
     <ProjectReference Include="ext\zlib\zlib.vcxproj">
       <Project>{feb2ad73-a264-450a-97a3-e1810a14e08b}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="linuxdebug.mak" />
-    <None Include="linuxrelease.mak" />
-    <None Include="Makefile" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

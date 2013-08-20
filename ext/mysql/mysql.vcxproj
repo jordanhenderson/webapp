@@ -37,10 +37,11 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{D41C7740-F659-4020-9B7B-DA7FC80E2CBF}</ProjectGuid>
     <RootNamespace>mysql</RootNamespace>
+    <ProjectName>mysql_dist</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
     <CharacterSet>NotSet</CharacterSet>
@@ -52,7 +53,7 @@
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
     <CharacterSet>NotSet</CharacterSet>
@@ -64,7 +65,7 @@
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -78,7 +79,7 @@
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -243,20 +244,6 @@
     <None Include="linuxdebug.mak" />
     <None Include="linuxrelease.mak" />
     <None Include="Makefile" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\zlib\zlib.vcxproj">
-      <Project>{feb2ad73-a264-450a-97a3-e1810a14e08b}</Project>
-    </ProjectReference>
-    <ProjectReference Include="libmysql\clientlib.vcxproj">
-      <Project>{8ebd82e0-ad73-40f0-acc1-80ec3371ffb1}</Project>
-    </ProjectReference>
-    <ProjectReference Include="taocrypt\taocrypt.vcxproj">
-      <Project>{eb3b9576-a5e3-41be-99a3-0715f26c5606}</Project>
-    </ProjectReference>
-    <ProjectReference Include="yassl\yassl.vcxproj">
-      <Project>{9012748d-9a90-4205-a0e9-ab7213cf33bd}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

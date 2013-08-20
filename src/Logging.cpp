@@ -1,6 +1,6 @@
 #include "Logging.h"
 using namespace std;
-Logging::Logging(string logPath) {
+Logging::Logging(const string& logPath) {
 	abort = 0;
 	//Open a file for writing.
 	setFile(logPath);

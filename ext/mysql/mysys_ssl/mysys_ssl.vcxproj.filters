@@ -30,5 +30,18 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{1931EFAC-FDC6-44DE-983F-0B932CD5EF09}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Make files">
+      <UniqueIdentifier>{393b5a08-eab1-4f2a-8009-9f670284749a}</UniqueIdentifier>
+      <Extensions>*.mak</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile" />
+    <None Include="linuxdebug.mak">
+      <Filter>Make files</Filter>
+    </None>
+    <None Include="linuxrelease.mak">
+      <Filter>Make files</Filter>
+    </None>
   </ItemGroup>
 </Project>

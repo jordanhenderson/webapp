@@ -6,7 +6,7 @@
 #VisualGDB: AutoSourceFiles		#<--- remove this line to disable auto-updating of SOURCEFILES and EXTERNAL_LIBS
 SOURCEFILES := include/rml/client/rml_omp.cpp include/rml/client/rml_tbb.cpp src/arena.cpp src/cache_aligned_allocator.cpp src/concurrent_monitor.cpp src/concurrent_queue.cpp src/concurrent_vector.cpp src/dynamic_link.cpp src/governor.cpp src/itt_notify.cpp src/market.cpp src/mutex.cpp src/observer_proxy.cpp src/private_server.cpp src/scheduler.cpp src/semaphore.cpp src/spin_mutex.cpp src/spin_rw_mutex.cpp src/task.cpp src/task_group_context.cpp src/tbb_main.cpp src/tbb_misc.cpp src/tbb_misc_ex.cpp src/tbb_statistics.cpp
 
-TARGETNAME := tbb
+TARGETNAME := tbb.a
 #TARGETTYPE can be APP, STATIC or SHARED
 TARGETTYPE := STATIC
 

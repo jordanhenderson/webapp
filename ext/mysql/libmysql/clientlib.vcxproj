@@ -519,6 +519,11 @@
     <None Include="linuxrelease.mak" />
     <None Include="Makefile" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\mysql.vcxproj">
+      <Project>{d41c7740-f659-4020-9b7b-da7fc80e2cbf}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

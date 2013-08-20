@@ -5,7 +5,7 @@
 
 SOURCEFILES := src/base/arena.cc src/htmlparser/htmlparser.cc src/htmlparser/jsparser.cc src/htmlparser/statemachine.cc src/per_expand_data.cc src/template.cc src/template_annotator.cc src/template_cache.cc src/template_dictionary.cc src/template_modifiers.cc src/template_namelist.cc src/template_pathops.cc src/template_string.cc
 
-TARGETNAME := ctemplate
+TARGETNAME := ctemplate.a
 #TARGETTYPE can be APP, STATIC or SHARED
 TARGETTYPE := STATIC
 

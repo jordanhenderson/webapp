@@ -16,6 +16,7 @@
  * (Special thanks to Karen and Bill.  They made my job much easier and
  *  significantly more enjoyable.)
  */
+#ifdef _WIN32
 #ifndef lint
 static const char rcsid[] = "$Id: os_win32.c,v 1.36 2009/09/28 01:09:57 robs Exp $";
 #endif /* not lint */
@@ -1894,3 +1895,4 @@ void OS_SetFlags(int fd, int flags)
     return;
 }
 
+#endif

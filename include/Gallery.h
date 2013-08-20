@@ -83,7 +83,6 @@ AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON a
 #define DELETE_MISSING_FILES "DELETE FROM files WHERE id IN (SELECT fileid FROM albumfiles alf WHERE alf.albumid = ?) AND path NOT IN ("
 
 #define PRAGMA_FOREIGN "PRAGMA foreign_keys = ON;"
-#define PRAGMA_LOCKING_EXCLUSIVE "PRAGMA locking_mode = EXCLUSIVE;"
 
 #define SELECT_PATHS_FROM_ALBUM "SELECT path FROM files JOIN albumfiles ON albumfiles.fileid = files.id WHERE albumid = ?;"
 
@@ -96,8 +95,8 @@ AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON a
 
 #define CREATE_DATABASE "BEGIN; \
 CREATE TABLE IF NOT EXISTS 'thumbs' ('id' INTEGER PRIMARY KEY  NOT NULL , 'path' TEXT); \
-CREATE TABLE IF NOT EXISTS 'albums' ('id' INTEGER PRIMARY KEY  NOT NULL ,'name' TEXT,'added' DATETIME,'lastedited' DATETIME,'path' TEXT NOT NULL ,'type' INTEGER NOT NULL ,'thumbid' INTEGER REFERENCES thumbs(id) ON DELETE SET NULL,'rating' INTEGER NOT NULL  DEFAULT (0) ,'recursive' INTEGER NOT NULL , 'views' INTEGER DEFAULT 0); \
-CREATE TABLE IF NOT EXISTS 'files' ('id' INTEGER PRIMARY KEY  NOT NULL,'name' TEXT,'path' TEXT,'added' TEXT,'enabled' INTEGER NOT NULL  DEFAULT (1) ,'thumbid' INTEGER REFERENCES thumbs(id) ON DELETE SET NULL,'rating' INTEGER DEFAULT(0), 'views' INTEGER DEFAULT 0, 'lastedited' TEXT); \
+CREATE TABLE IF NOT EXISTS 'albums' ('id' INTEGER PRIMARY KEY  NOT NULL ,'name' TEXT,'added' DATETIME,'lastedited' DATETIME,'path' TEXT NOT NULL ,'type' INTEGER NOT NULL ,'thumbid' INTEGER REFERENCES thumbs(id) ON DELETE SET NULL,'rating' DOUBLE DEFAULT (0) ,'recursive' INTEGER NOT NULL , 'views' INTEGER DEFAULT 0); \
+CREATE TABLE IF NOT EXISTS 'files' ('id' INTEGER PRIMARY KEY  NOT NULL,'name' TEXT,'path' TEXT,'added' TEXT,'enabled' INTEGER NOT NULL  DEFAULT (1) ,'thumbid' INTEGER REFERENCES thumbs(id) ON DELETE SET NULL,'rating' DOUBLE DEFAULT(0), 'views' INTEGER DEFAULT 0, 'lastedited' TEXT); \
 CREATE TABLE IF NOT EXISTS 'albumfiles' ('id' INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL , 'albumid' INTEGER NOT NULL REFERENCES albums(id) ON DELETE CASCADE, 'fileid' INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE ); \
 CREATE TABLE IF NOT EXISTS 'system' ('id' INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL , 'name' TEXT NOT NULL , 'value' TEXT, UNIQUE(name) ON CONFLICT IGNORE); \
 CREATE TRIGGER IF NOT EXISTS 'file_cleanup' AFTER DELETE ON 'albums' BEGIN DELETE FROM files WHERE id NOT IN (SELECT fileid FROM albumfiles); END; \
@@ -172,7 +171,9 @@ private:
 	int getData(Query& query, RequestVars&, Response&, SessionStore&);
 
 	//template dictionary
-	ctemplate::TemplateDictionary serverTemplates;
+	ctemplate::TemplateDictionary* serverTemplates;
+	std::mutex serverTemplatesLock;
+
 	//(content) template filename vector
 	std::vector<std::string> contentList;
 	//Client Template filedata vector (stores templates for later de-allocation).
@@ -189,7 +190,7 @@ private:
 		std::string thumbspath = database->select(&q_thumb_path)->response->at(0).at(0);
 
 		if(files.size() > 0) {
-			for (T::const_iterator it = files.begin(), end = files.end(); it != end; ++it) {
+			for (typename T::const_iterator it = files.begin(), end = files.end(); it != end; ++it) {
 				addFile(*it, nGenThumbs, thumbspath, path, date, albumID);
 			}
 		}
@@ -201,8 +202,8 @@ private:
 	
 
 public:
-	Gallery::Gallery(Parameters* params);
-	Gallery::~Gallery();
+	Gallery(Parameters* params);
+	~Gallery();
 	void process(FCGX_Request* request);
 	
 

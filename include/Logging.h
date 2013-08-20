@@ -17,7 +17,7 @@ class Logging : public Internal {
 	int abort;
 
 public:
-	Logging(std::string logPath);
+	Logging(const std::string& logPath);
 	Logging();
 	~Logging();
 	void printf(std::string format, ...);

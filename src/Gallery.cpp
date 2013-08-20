@@ -13,7 +13,7 @@
 using namespace rapidjson;
 using namespace std;
 
-Gallery::Gallery(Parameters* params) : serverTemplates("") {
+Gallery::Gallery(Parameters* params) {
 
 	abort = 0;
 	this->params = params;
@@ -24,7 +24,6 @@ Gallery::Gallery(Parameters* params) : serverTemplates("") {
 
 	//Enable pragma foreign keys.
 	database->exec(PRAGMA_FOREIGN);
-	database->exec(PRAGMA_LOCKING_EXCLUSIVE);
 
 	//Create the schema. Running this even when tables exist prevent issues later on.
 	string schema = CREATE_DATABASE;
@@ -68,6 +67,10 @@ Gallery::Gallery(Parameters* params) : serverTemplates("") {
 		}
 		
 	});
+	serverTemplatesLock.lock();
+	serverTemplates = new ctemplate::TemplateDictionary("");
+	serverTemplatesLock.unlock();
+
 	load_templates();
 	thread_process_queue->detach();
 	currentID = std::this_thread::get_id();
@@ -94,6 +97,8 @@ Gallery::~Gallery() {
 	for(FileData* data: clientTemplateFiles) {
 		delete(data);
 	}
+
+	delete serverTemplates;
 
 
 	abort = 1;
@@ -125,8 +130,10 @@ Response Gallery::getPage(const string& page, SessionStore& session, int publish
 	if(contains(contentList, page + ".html")) {
 		r = HTML_HEADER + r + END_HEADER;
 		string output;
-		ctemplate::TemplateDictionary* d = serverTemplates.MakeCopy("");
-		
+		serverTemplatesLock.lock();
+		ctemplate::TemplateDictionary* d = serverTemplates->MakeCopy("");
+		serverTemplatesLock.unlock();
+
 		//Do additional template logic processing here (NOTE_LUA)
 		if(!session.get("auth").empty() || !auth)
 			d->ShowSection("LOGGED_IN");
@@ -426,14 +433,18 @@ void Gallery::load_templates() {
 		ctemplate::LoadTemplate(templatepath + s, ctemplate::DO_NOT_STRIP);
 	}
 
-
+	serverTemplatesLock.lock();
+	delete serverTemplates;
+	serverTemplates = new ctemplate::TemplateDictionary("");
 	//Load server templates (See ctemplate Include Dictionaries)
 	templatepath = basepath + "templates/server/";
 	for(string s: FileSystem::GetFiles(templatepath, "", 0)) {
 		size_t pos = s.find_last_of(".");
-		ctemplate::TemplateDictionary* d = serverTemplates.AddIncludeDictionary(s.substr(0, pos));
+		ctemplate::TemplateDictionary* d = serverTemplates->AddIncludeDictionary(s.substr(0, pos));
+		
 		d->SetFilename(templatepath + s);
 	}
+	
 
 	//Load client templates (inline insertion into content templates) - these are Handbrake (JS) templates.
 	//First delete existing filedata. This should be optimised later.
@@ -450,9 +461,9 @@ void Gallery::load_templates() {
 		string template_name = s.substr(0, s.find_last_of("."));
 		FileSystem::Read(&f, data);
 		std::transform(template_name.begin(), template_name.end(), template_name.begin(), ::toupper);
-		serverTemplates.SetValueWithoutCopy("T_" + template_name, ctemplate::TemplateString(data->data,data->size));
+		serverTemplates->SetValueWithoutCopy("T_" + template_name, ctemplate::TemplateString(data->data,data->size));
 	}
-	
+	serverTemplatesLock.unlock();
 }
 
 //Public API functions.
@@ -497,7 +508,7 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& session
 		std::unique_lock<std::mutex> lk(process_mutex);
 		while(currentID != this_thread::get_id())
 			cv_proc.wait(lk);
-		Query q_store_path = SELECT_SYSTEM("store_path");
+		Query q_store_path(SELECT_SYSTEM("store_path"));
 		string storepath = database->select(&q_store_path)->response->at(0).at(0);
 		for(string album: albums) {
 			QueryRow params;
@@ -528,7 +539,7 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& session
 				for(int i = 0; i < q_album.response->size(); i++) {
 					vector<string> row = q_album.response->at(i);
 					//For every row, look for a match in files. Remove from files when match found.
-					for (std::list<string>::const_iterator it = files.begin(), end = files.end(); it != end;) {
+					for (std::list<string>::iterator it = files.begin(), end = files.end(); it != end;) {
 						if(row.at(0) == *it) {
 							it = files.erase(it);
 						} else {

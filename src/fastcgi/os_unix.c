@@ -15,7 +15,7 @@
  *  Bill Snapper
  *  snapper@openmarket.com
  */
-
+#ifndef _WIN32
 #ifndef lint
 static const char rcsid[] = "$Id: os_unix.c,v 1.40 2009/10/05 23:34:50 robs Exp $";
 #endif /* not lint */
@@ -1317,3 +1317,4 @@ void OS_SetFlags(int fd, int flags)
         exit(errno);
     }
 }
+#endif

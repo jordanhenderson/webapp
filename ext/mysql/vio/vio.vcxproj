@@ -48,7 +48,7 @@
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='LinuxDebug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Makefile</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>NotSet</CharacterSet>
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
@@ -72,7 +72,7 @@
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='LinuxRelease|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Makefile</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>NotSet</CharacterSet>
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
@@ -84,7 +84,7 @@
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='LinuxRelease|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Makefile</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>NotSet</CharacterSet>
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
@@ -122,6 +122,39 @@
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='LinuxRelease|Win32'">.lib</TargetExt>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.lib</TargetExt>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='LinuxRelease|x64'">.lib</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='LinuxDebug|Win32'">
+    <NMakeBuildCommandLine>"$(VISUALGDB_DIR)\VisualGDB.exe" /build "$(ProjectPath)" "/solution:$(SolutionPath)" "/config:$(Configuration)" "/platform:$(Platform)"</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>"$(VISUALGDB_DIR)\VisualGDB.exe" /clean "$(ProjectPath)" "/solution:$(SolutionPath)" "/config:$(Configuration)" "/platform:$(Platform)"</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>"$(VISUALGDB_DIR)\VisualGDB.exe" /rebuild "$(ProjectPath)" "/solution:$(SolutionPath)" "/config:$(Configuration)" "/platform:$(Platform)"</NMakeReBuildCommandLine>
+    <NMakeOutput>$(ProjectDir)vio-LinuxDebug.vgdbsettings</NMakeOutput>
+    <IncludePath />
+    <ReferencePath />
+    <LibraryPath />
+    <NMakeIncludeSearchPath>d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\c++\4.8;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\x86_64-linux-gnu\c++\4.8;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\c++\4.8\backward;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0001\include;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0003\include;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0002\include-fixed;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\x86_64-linux-gnu;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include;D:\Development\GitRepos\gallery\ext\mysql\vio\..\include\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes>$(ProjectDir)\gcc_LinuxDebug.h;$(VISUALGDB_DIR)\gcc_compat.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
+    <NMakePreprocessorDefinitions>__VisualGDB_CFG_LinuxDebug;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='LinuxRelease|Win32'">
+    <NMakeBuildCommandLine>"$(VISUALGDB_DIR)\VisualGDB.exe" /build "$(ProjectPath)" "/solution:$(SolutionPath)" "/config:$(Configuration)" "/platform:$(Platform)"</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>"$(VISUALGDB_DIR)\VisualGDB.exe" /clean "$(ProjectPath)" "/solution:$(SolutionPath)" "/config:$(Configuration)" "/platform:$(Platform)"</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>"$(VISUALGDB_DIR)\VisualGDB.exe" /rebuild "$(ProjectPath)" "/solution:$(SolutionPath)" "/config:$(Configuration)" "/platform:$(Platform)"</NMakeReBuildCommandLine>
+    <NMakeOutput>$(ProjectDir)vio-LinuxRelease.vgdbsettings</NMakeOutput>
+    <IncludePath />
+    <ReferencePath />
+    <LibraryPath />
+    <NMakeIncludeSearchPath>d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\c++\4.8;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\x86_64-linux-gnu\c++\4.8;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\c++\4.8\backward;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0001\include;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0003\include;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0002\include-fixed;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\x86_64-linux-gnu;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes>$(ProjectDir)\gcc_LinuxRelease.h;$(VISUALGDB_DIR)\gcc_compat.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
+    <NMakePreprocessorDefinitions>__VisualGDB_CFG_LinuxRelease;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='LinuxRelease|x64'">
+    <NMakeBuildCommandLine>"$(VISUALGDB_DIR)\VisualGDB.exe" /build "$(ProjectPath)" "/solution:$(SolutionPath)" "/config:$(Configuration)" "/platform:$(Platform)"</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>"$(VISUALGDB_DIR)\VisualGDB.exe" /clean "$(ProjectPath)" "/solution:$(SolutionPath)" "/config:$(Configuration)" "/platform:$(Platform)"</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>"$(VISUALGDB_DIR)\VisualGDB.exe" /rebuild "$(ProjectPath)" "/solution:$(SolutionPath)" "/config:$(Configuration)" "/platform:$(Platform)"</NMakeReBuildCommandLine>
+    <NMakeOutput>$(ProjectDir)vio-LinuxRelease.vgdbsettings</NMakeOutput>
+    <NMakeIncludeSearchPath>d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\c++\4.8;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\x86_64-linux-gnu\c++\4.8;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\c++\4.8\backward;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0001\include;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0003\include;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0002\include-fixed;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\x86_64-linux-gnu;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include;D:\Development\GitRepos\gallery\ext\mysql\vio\..\include\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes>$(ProjectDir)\gcc_LinuxRelease.h;$(VISUALGDB_DIR)\gcc_compat.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
+    <NMakePreprocessorDefinitions>__VisualGDB_CFG_LinuxRelease;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -382,6 +415,16 @@
     <ClCompile Include="viopipe.c" />
     <ClCompile Include="vioshm.c" />
     <ClCompile Include="viosslfactories.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\mysql.vcxproj">
+      <Project>{d41c7740-f659-4020-9b7b-da7fc80e2cbf}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="linuxdebug.mak" />
+    <None Include="linuxrelease.mak" />
+    <None Include="Makefile" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

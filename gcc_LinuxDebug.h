@@ -30,7 +30,7 @@
 #define __SIG_ATOMIC_TYPE__ int
 #define __DBL_MIN_10_EXP__ (-307)
 #define __FINITE_MATH_ONLY__ 0
-#define __GNUC_PATCHLEVEL__ 3
+#define __GNUC_PATCHLEVEL__ 1
 #define __UINT_FAST8_MAX__ 255
 #define __DEC64_MAX_EXP__ 385
 #define __UINT_LEAST64_MAX__ 18446744073709551615UL
@@ -62,6 +62,9 @@
 #define __DEC32_MAX__ 9.999999E96DF
 #define __INT32_MAX__ 2147483647
 #define __SIZEOF_LONG__ 8
+#define __STDC_IEC_559__ 1
+#define __STDC_ISO_10646__ 201103L
+#define _PREDEFS_H 
 #define __DECIMAL_DIG__ 21
 #define __gnu_linux__ 1
 #define __LDBL_HAS_QUIET_NAN__ 1
@@ -86,8 +89,11 @@
 #define __DBL_MAX_EXP__ 1024
 #define __DEC128_EPSILON__ 1E-33DL
 #define __SSE2_MATH__ 1
+#define __ATOMIC_HLE_RELEASE 131072
 #define __PTRDIFF_MAX__ 9223372036854775807L
 #define __amd64 1
+#define __STDC_NO_THREADS__ 1
+#define __ATOMIC_HLE_ACQUIRE 65536
 #define __GNUG__ 4
 #define __LONG_LONG_MAX__ 9223372036854775807LL
 #define __SIZEOF_SIZE_T__ 8
@@ -106,9 +112,11 @@
 #define __UINT8_TYPE__ unsigned char
 #define __NO_INLINE__ 1
 #define __FLT_MANT_DIG__ 24
-#define __VERSION__ "4.7.3"
+#define __VERSION__ "4.8.1"
+#define _STDC_PREDEF_H 1
 #define __GCC_ATOMIC_INT_LOCK_FREE 2
 #define __FLOAT_WORD_ORDER__ __ORDER_LITTLE_ENDIAN__
+#define __STDC_IEC_559_COMPLEX__ 1
 #define __DEC64_EPSILON__ 1E-15DD
 #define __ORDER_PDP_ENDIAN__ 3412
 #define __DEC128_MIN_EXP__ (-6142)
@@ -183,7 +191,6 @@
 #define __SSE__ 1
 #define __LDBL_MIN_EXP__ (-16381)
 #define __INT_LEAST8_MAX__ 127
-#define __SSP__ 1
 #define __SIZEOF_INT128__ 16
 #define __LDBL_MAX_10_EXP__ 4932
 #define __ATOMIC_RELAXED 0
@@ -194,6 +201,7 @@
 #define __UINT64_TYPE__ long unsigned int
 #define __INT_FAST8_TYPE__ signed char
 #define __DBL_DECIMAL_DIG__ 17
+#define __FXSR__ 1
 #define __DEC_EVAL_METHOD__ 2
 #define __INTMAX_MAX__ 9223372036854775807L
 #define __BYTE_ORDER__ __ORDER_LITTLE_ENDIAN__
@@ -207,7 +215,7 @@
 #define __INTMAX_TYPE__ long int
 #define __DEC128_MAX_EXP__ 6145
 #define __ATOMIC_CONSUME 1
-#define __GNUC_MINOR__ 7
+#define __GNUC_MINOR__ 8
 #define __UINTMAX_MAX__ 18446744073709551615UL
 #define __DEC32_MANT_DIG__ 7
 #define __DBL_MAX_10_EXP__ 308
@@ -236,18 +244,32 @@
 #endif
 
 // --- Include directories begin --- //
-///usr/include/c++/4.7
-///usr/include/x86_64-linux-gnu/c++/4.7
-///usr/include/c++/4.7/backward
-///usr/lib/gcc/x86_64-linux-gnu/4.7/include
+///usr/include/c++/4.8
+///usr/include/x86_64-linux-gnu/c++/4.8
+///usr/include/c++/4.8/backward
+///usr/lib/gcc/x86_64-linux-gnu/4.8/include
 ///usr/local/include
-///usr/lib/gcc/x86_64-linux-gnu/4.7/include-fixed
+///usr/lib/gcc/x86_64-linux-gnu/4.8/include-fixed
 ///usr/include/x86_64-linux-gnu
 ///usr/include
+//./include/gif/
+//./include/
+//./include/sqlite/
+//./include/tinydir/
+//./include/fastcgi/
+//./include/rapidjson/
+//./include/pngnq/
+//./ext/ctemplate/include/
+//./ext/libjpeg/include/
+//./ext/tbb/include/
+//./ext/zlib/include/
+//./ext/mysql/include/
+//./ext/lpng/include/
+//./ext/cryptopp/
 // --- Library directories end --- //
 
 
 // --- Library directories begin --- //
-///usr/lib/gcc/x86_64-linux-gnu/4.7/:/usr/lib/gcc/x86_64-linux-gnu/4.7/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/4.7/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/4.7/../../../:/lib/:/usr/lib/
+///usr/lib/gcc/x86_64-linux-gnu/4.8/:/usr/lib/gcc/x86_64-linux-gnu/4.8/../../../x86_64-linux-gnu/:/usr/lib/gcc/x86_64-linux-gnu/4.8/../../../../lib/:/lib/x86_64-linux-gnu/:/lib/../lib/:/usr/lib/x86_64-linux-gnu/:/usr/lib/../lib/:/usr/lib/gcc/x86_64-linux-gnu/4.8/../../../:/lib/:/usr/lib/
 // --- Library directories begin --- //
 

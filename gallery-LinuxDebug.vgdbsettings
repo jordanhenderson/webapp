@@ -7,16 +7,16 @@
       <PathStyle>RemoteUnix</PathStyle>
     </CustomSourceDirectories>
     <BuildHost>
-      <HostName>192.168.253.131</HostName>
+      <HostName>shinobi-linux</HostName>
       <Transport>SSH</Transport>
-      <UserName>hendo</UserName>
+      <UserName>root</UserName>
     </BuildHost>
     <MainSourceTransferCommand>
       <SkipWhenRunningCommandList>false</SkipWhenRunningCommandList>
       <RemoteHost>
-        <HostName>192.168.253.131</HostName>
+        <HostName>shinobi-linux</HostName>
         <Transport>SSH</Transport>
-        <UserName>hendo</UserName>
+        <UserName>root</UserName>
       </RemoteHost>
       <LocalDirectory>$(ProjectDir)</LocalDirectory>
       <RemoteDirectory>/tmp/VisualGDB/$(ProjectDirUnixStyle)</RemoteDirectory>
@@ -29,6 +29,7 @@
       </FileMasks>
       <TransferNewFilesOnly>true</TransferNewFilesOnly>
       <IncludeSubdirectories>true</IncludeSubdirectories>
+      <SelectedDirectories />
     </MainSourceTransferCommand>
     <AllowChangingHostForMainCommands>false</AllowChangingHostForMainCommands>
     <SkipBuildIfNoSourceFilesChanged>false</SkipBuildIfNoSourceFilesChanged>
@@ -36,8 +37,9 @@
   <Build xsi:type="com.visualgdb.build.make">
     <MakeFilePathRelativeToSourceDir>Makefile</MakeFilePathRelativeToSourceDir>
     <MakeConfigurationName>LinuxDebug</MakeConfigurationName>
+    <AdditionalMakeArguments />
     <Toolchain>
-      <Name>Default GCC toolchain on 192.168.253.131</Name>
+      <Name>Default GCC toolchain on shinobi-linux</Name>
       <UnixSystem>true</UnixSystem>
       <GCC>gcc</GCC>
       <GXX>g++</GXX>
@@ -68,6 +70,11 @@
     </Toolchain>
     <MakeCommandTemplate>
       <SkipWhenRunningCommandList>false</SkipWhenRunningCommandList>
+      <RemoteHost>
+        <HostName>shinobi-linux</HostName>
+        <Transport>SSH</Transport>
+        <UserName>root</UserName>
+      </RemoteHost>
       <Command>make</Command>
       <Environment>
         <Records>
@@ -107,19 +114,12 @@
       <StepIntoNewInstanceEntry>main</StepIntoNewInstanceEntry>
     </AdditionalGDBSettings>
     <LaunchGDBSettings xsi:type="GDBLaunchParametersNewInstance">
-      <GDBEnvironment>
-        <Records>
-          <Record>
-            <VariableName>LANG</VariableName>
-            <Value>en_US.UTF-8</Value>
-          </Record>
-        </Records>
-      </GDBEnvironment>
       <DebuggedProgram>$(TargetPath)</DebuggedProgram>
       <GDBServerPort>2000</GDBServerPort>
       <ProgramArguments />
     </LaunchGDBSettings>
     <GenerateCtrlBreakInsteadOfCtrlC>false</GenerateCtrlBreakInsteadOfCtrlC>
+    <DeploymentTargetPath />
     <X11WindowMode>Local</X11WindowMode>
     <KeepConsoleAfterExit>false</KeepConsoleAfterExit>
     <RunGDBUnderSudo>false</RunGDBUnderSudo>

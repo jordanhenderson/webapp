@@ -3,10 +3,9 @@
 #All other changes you make in this file will be preserved.
 #Visit http://visualgdb.com/makefiles for more details
 
-#VisualGDB: AutoSourceFiles		#<--- remove this line to disable auto-updating of SOURCEFILES and EXTERNAL_LIBS
-SOURCEFILES := get_password.c libmysql.c errmsg.c ../sql-common/client.c ../sql-common/my_time.c ../sql-common/client_plugin.c ../sql-common/pack.c ../sql/auth/password.c
+SOURCEFILES := get_password.c libmysql.c ../sql/net_serv.cc errmsg.c ../sql-common/client.c ../sql-common/my_time.c ../sql-common/client_plugin.c ../sql-common/pack.c ../sql/auth/password.c
 
-TARGETNAME := clientlib
+TARGETNAME := clientlib.a
 #TARGETTYPE can be APP, STATIC or SHARED
 TARGETTYPE := STATIC
 
@@ -71,7 +70,8 @@ endif
 
 source_obj1 := $(all_source_files:.cpp=.o)
 source_obj2 := $(source_obj1:.c=.o)
-source_objs := $(source_obj2:.S=.o)
+source_obj3 := $(source_obj2:.cc=.o)
+source_objs := $(source_obj3:.S=.o)
 
 all_objs := $(addprefix $(BINARYDIR)/, $(notdir $(source_objs)))
 
@@ -136,6 +136,9 @@ $(BINARYDIR)/my_time.o : ../sql-common/my_time.c $(all_make_files) |$(BINARYDIR)
 $(BINARYDIR)/client_plugin.o : ../sql-common/client_plugin.c $(all_make_files) |$(BINARYDIR)
 	$(CC) $(CFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
 
+
+$(BINARYDIR)/net_serv.o : ../sql/net_serv.cc $(all_make_files) |$(BINARYDIR)
+	$(CC) $(CFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
 
 $(BINARYDIR)/pack.o : ../sql-common/pack.c $(all_make_files) |$(BINARYDIR)
 	$(CC) $(CFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)

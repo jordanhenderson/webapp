@@ -12,18 +12,18 @@ AR := ar
 OBJCOPY := objcopy
 
 #Additional flags
-PREPROCESSOR_MACROS := 
-INCLUDE_DIRS := 
-LIBRARY_DIRS := 
-LIBRARY_NAMES := 
-ADDITIONAL_LINKER_INPUTS := 
-MACOS_FRAMEWORKS := 
+PREPROCESSOR_MACROS :=
+INCLUDE_DIRS :=./include/gif/ ./include/ ./include/sqlite/ ./include/tinydir/ ./include/fastcgi/ ./include/rapidjson/ ./include/pngnq/ ./ext/ctemplate/include/ ./ext/libjpeg/include/ ./ext/tbb/include/ ./ext/zlib/include/ ./ext/mysql/include/ ./ext/lpng/include/ ./ext/cryptopp/
+LIBRARY_DIRS :=
+LIBRARY_NAMES :=pthread dl
+ADDITIONAL_LINKER_INPUTS :=
+MACOS_FRAMEWORKS :=
 
 CFLAGS := -ggdb -ffunction-sections
-CXXFLAGS := -ggdb -ffunction-sections
-ASFLAGS := 
+CXXFLAGS := -ggdb -ffunction-sections -std=c++11
+ASFLAGS :=
 LDFLAGS := -Wl,-gc-sections
-COMMONFLAGS := 
+COMMONFLAGS :=
 
 START_GROUP := -Wl,--start-group
 END_GROUP := -Wl,--end-group

@@ -453,15 +453,17 @@ int _tinydir_file_cmp(const void *a, const void *b)
 	return strncasecmp(fa->name, fb->name, _TINYDIR_FILENAME_MAX);
 }
 
-_TINYDIR_FUNC void tinydir_create(const char* path) {
-#ifdef WIN32
-	//utf8 char*->wchar_t
+_TINYDIR_FUNC int tinydir_create(const char* path) {
+#ifdef _MSC_VER
 	wchar_t* aDir = strtowide(path);
 #else
-	char* aDir = path;
+	const char* aDir = path;
 #endif
-	mkdir(aDir);
+	int ret = mkdir(aDir);
+#ifdef _MSC_VER
 	delete[] aDir;
+#endif
+	return ret == 0;
 }
 
 _TINYDIR_FUNC int tinydir_todir(char* path, int len) {

@@ -6,7 +6,7 @@
 #VisualGDB: AutoSourceFiles		#<--- remove this line to disable auto-updating of SOURCEFILES and EXTERNAL_LIBS
 SOURCEFILES := src/buffer.cpp src/cert_wrapper.cpp src/crypto_wrapper.cpp src/get_password.c src/handshake.cpp src/lock.cpp src/log.cpp src/socket_wrapper.cpp src/ssl.cpp src/timer.cpp src/yassl_error.cpp src/yassl_imp.cpp src/yassl_int.cpp
 
-TARGETNAME := yassl
+TARGETNAME := yassl.a
 #TARGETTYPE can be APP, STATIC or SHARED
 TARGETTYPE := STATIC
 

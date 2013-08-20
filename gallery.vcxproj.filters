@@ -28,14 +28,8 @@
     <Filter Include="Source Files\fastcgi">
       <UniqueIdentifier>{ef0c2b2f-dd7e-4f44-b097-d1604ecd8341}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\lpng">
-      <UniqueIdentifier>{c31709b7-9f90-47e4-bf3a-ac1a70baaa80}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\jpeg">
       <UniqueIdentifier>{21654ff6-86e3-47b8-ac69-1b5d8596e83f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\lpng">
-      <UniqueIdentifier>{5bf94894-2981-411f-a9b3-f64477627dae}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\gif">
       <UniqueIdentifier>{00e8a9d4-153a-485d-97ba-d10a11de7210}</UniqueIdentifier>
@@ -62,9 +56,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Parameters.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Socket.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Gallery.cpp">
@@ -99,51 +90,6 @@
     </ClCompile>
     <ClCompile Include="src\Serializer.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lpng\png.c">
-      <Filter>Source Files\lpng</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngerror.c">
-      <Filter>Source Files\lpng</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngget.c">
-      <Filter>Source Files\lpng</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngmem.c">
-      <Filter>Source Files\lpng</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngpread.c">
-      <Filter>Source Files\lpng</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngread.c">
-      <Filter>Source Files\lpng</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngrio.c">
-      <Filter>Source Files\lpng</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngrtran.c">
-      <Filter>Source Files\lpng</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngrutil.c">
-      <Filter>Source Files\lpng</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngset.c">
-      <Filter>Source Files\lpng</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngtrans.c">
-      <Filter>Source Files\lpng</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngwio.c">
-      <Filter>Source Files\lpng</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngwrite.c">
-      <Filter>Source Files\lpng</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngwtran.c">
-      <Filter>Source Files\lpng</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lpng\pngwutil.c">
-      <Filter>Source Files\lpng</Filter>
     </ClCompile>
     <ClCompile Include="src\Image.cpp">
       <Filter>Source Files</Filter>
@@ -181,6 +127,9 @@
     <ClCompile Include="src\RamSession.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\fastcgi\os_unix.c">
+      <Filter>Source Files\fastcgi</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Logging.h">
@@ -190,9 +139,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\Platform.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Socket.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\Gallery.h">
@@ -248,27 +194,6 @@
     </ClInclude>
     <ClInclude Include="include\Serializer.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\lpng\png.h">
-      <Filter>Header Files\lpng</Filter>
-    </ClInclude>
-    <ClInclude Include="include\lpng\pngconf.h">
-      <Filter>Header Files\lpng</Filter>
-    </ClInclude>
-    <ClInclude Include="include\lpng\pngdebug.h">
-      <Filter>Header Files\lpng</Filter>
-    </ClInclude>
-    <ClInclude Include="include\lpng\pnginfo.h">
-      <Filter>Header Files\lpng</Filter>
-    </ClInclude>
-    <ClInclude Include="include\lpng\pngpriv.h">
-      <Filter>Header Files\lpng</Filter>
-    </ClInclude>
-    <ClInclude Include="include\lpng\pngstruct.h">
-      <Filter>Header Files\lpng</Filter>
-    </ClInclude>
-    <ClInclude Include="include\lpng\pnglibconf.h">
-      <Filter>Header Files\lpng</Filter>
     </ClInclude>
     <ClInclude Include="include\Image.h">
       <Filter>Header Files</Filter>

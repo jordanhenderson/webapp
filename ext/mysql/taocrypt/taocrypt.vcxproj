@@ -84,7 +84,7 @@
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='LinuxRelease|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Makefile</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>NotSet</CharacterSet>
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
@@ -146,6 +146,12 @@
     <NMakeIncludeSearchPath>d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\192.168.253.131\0000\include\c++\4.7;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\192.168.253.131\0000\include\x86_64-linux-gnu\c++\4.7;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\192.168.253.131\0000\include\c++\4.7\backward;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\192.168.253.131\0001\include;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\192.168.253.131\0003\include;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\192.168.253.131\0002\include-fixed;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\192.168.253.131\0000\include\x86_64-linux-gnu;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\192.168.253.131\0000\include;D:\Development\GitRepos\gallery\ext\mysql\taocrypt\.\include\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakeForcedIncludes>$(ProjectDir)\gcc_LinuxRelease.h;$(VISUALGDB_DIR)\gcc_compat.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <NMakePreprocessorDefinitions>__VisualGDB_CFG_LinuxRelease;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='LinuxRelease|x64'">
+    <NMakeBuildCommandLine>"$(VISUALGDB_DIR)\VisualGDB.exe" /build "$(ProjectPath)" "/solution:$(SolutionPath)" "/config:$(Configuration)" "/platform:$(Platform)"</NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>"$(VISUALGDB_DIR)\VisualGDB.exe" /clean "$(ProjectPath)" "/solution:$(SolutionPath)" "/config:$(Configuration)" "/platform:$(Platform)"</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>"$(VISUALGDB_DIR)\VisualGDB.exe" /rebuild "$(ProjectPath)" "/solution:$(SolutionPath)" "/config:$(Configuration)" "/platform:$(Platform)"</NMakeReBuildCommandLine>
+    <NMakeOutput>$(ProjectDir)taocrypt-LinuxRelease.vgdbsettings</NMakeOutput>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -468,6 +474,11 @@
     <None Include="linuxdebug.mak" />
     <None Include="linuxrelease.mak" />
     <None Include="Makefile" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\mysql.vcxproj">
+      <Project>{d41c7740-f659-4020-9b7b-da7fc80e2cbf}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

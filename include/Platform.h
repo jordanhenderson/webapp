@@ -8,18 +8,16 @@
 #include <vector>
 #include <unordered_map>
 #include <string>
-
+#include <string.h>
 #include <map>
 #include <cstdio>
 #include <cstdarg>
-#include <direct.h>
 #include <vector>
 #include <list>
 #include <queue>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
-		
 
 //#define DATABASE_SQLITE
 #define DATABASE_MYSQL
@@ -31,6 +29,7 @@
 #else
 #define ENV_NEWLINE "\n"
 #define _wfopen fopen
+#include <unistd.h>
 #endif
 
 #define DB_FUNC_RANDOM "RANDOM()"
@@ -71,6 +70,7 @@ template < class ContainerT >
 void tokenize(const std::string& str, ContainerT& tokens,
 			  const std::string& delimiters = " ", bool trimEmpty = false) 
 {
+	typedef ContainerT Base; typedef typename Base::value_type ValueType; typedef typename ValueType::size_type SizeType;
 	std::string::size_type pos, lastPos = 0;
 	while(true)
 	{
@@ -80,16 +80,16 @@ void tokenize(const std::string& str, ContainerT& tokens,
 			pos = str.length();
 
 			if(pos != lastPos || !trimEmpty)
-				tokens.push_back(ContainerT::value_type(str.data()+lastPos,
-				(ContainerT::value_type::size_type)pos-lastPos ));
+				tokens.push_back(ValueType(str.data()+lastPos,
+				(SizeType)pos-lastPos ));
 
 			break;
 		}
 		else
 		{
 			if(pos != lastPos || !trimEmpty)
-				tokens.push_back(ContainerT::value_type(str.data()+lastPos,
-				(ContainerT::value_type::size_type)pos-lastPos ));
+				tokens.push_back(ValueType(str.data()+lastPos,
+				(SizeType)pos-lastPos ));
 		}
 
 		lastPos = pos + 1;

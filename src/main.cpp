@@ -25,10 +25,10 @@ int main(int argc, char* argv[]) {
 	string bp = params.get("basepath");
 	if(bp[bp.length()] != '/') bp.append("/");
 	//Create the base file structure
-	FileSystem::MakePath(bp);
-	
+	if(!FileSystem::MakePath(bp)) return 1;
+	string logPath = params.get("basepath") + '/' + params.get("logfile");
 	//Create logging instance
-	logger = new Logging(params.get("basepath") + '/' + params.get("logfile"));
+	logger = new Logging(logPath);
 	Gallery* gallery = new Gallery(&params);
 
 	//Create a fastcgi server.

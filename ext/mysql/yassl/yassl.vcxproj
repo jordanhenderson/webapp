@@ -451,6 +451,9 @@
     <None Include="Makefile" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\mysql.vcxproj">
+      <Project>{d41c7740-f659-4020-9b7b-da7fc80e2cbf}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\taocrypt\taocrypt.vcxproj">
       <Project>{eb3b9576-a5e3-41be-99a3-0715f26c5606}</Project>
     </ProjectReference>
