@@ -325,8 +325,7 @@ void Gallery::process(FCGX_Request* request) {
 
 Response Gallery::processVars(RequestVars& vars, SessionStore& session, int publishSession) {
 	string t = vars["t"];
-	
-	
+
 	Response r = JSON_HEADER;
 	if(publishSession) {
 		time_t t; time(&t); add_days(t, 1);
@@ -488,8 +487,41 @@ int Gallery::disableFiles(RequestVars& vars, Response& r, SessionStore& s) {
 	return 0;
 }
 
-int Gallery::clearCache(RequestVars& vars, Response& r, SessionStore& session) {
+int Gallery::updateAlbum(RequestVars& vars, Response& r, SessionStore &session) {
+	string album = vars["id"];
+	string field = vars["field"];
+	string v = vars["v"];
+	QueryRow params;
+	if(album.empty() || field.empty() || v.empty()) {
+		Serializer s;
+		Value m;
+		s.append("msg", "INVALID_PARAM", 0, &m);
+		s.append("close", "1", 1, &m);
+		r.append(s.get(RESPONSE_TYPE_MESSAGE));
+		return 0;
+	}
 
+	char query[255];
+	snprintf(query, 255, UPDATE_ALBUM, field.c_str());
+
+	params.push_back(v);
+	params.push_back(album);
+	Query q(query, &params);
+	database->exec(&q);
+
+	RequestVars data_vars;
+	return getAlbums(data_vars, r, session);
+
+	
+}
+
+int Gallery::getBoth(RequestVars& vars, Response& r, SessionStore& s) {
+	QueryRow params;
+	Query q(SELECT_BOTH_DETAILS, &params);
+	return getData(q, vars, r, s);
+}
+
+int Gallery::clearCache(RequestVars& vars, Response& r, SessionStore& session) {
 	load_templates();
 	Serializer s;
 	Value m;
@@ -500,7 +532,6 @@ int Gallery::clearCache(RequestVars& vars, Response& r, SessionStore& session) {
 }
 
 int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& session) {
-
 	int nGenThumbs = GETCHK(vars["genthumbs"]);
 	vector<string> albums;
 	tokenize(vars["a"],albums,",");
@@ -561,8 +592,6 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& session
 
 	return 0;
 }
-
-
 
 int Gallery::search(RequestVars& vars, Response& r, SessionStore& s) {
 	string query = SELECT_FILE_DETAILS;
@@ -781,29 +810,24 @@ int Gallery::getFiles(RequestVars& vars, Response& r, SessionStore&s) {
 	else if(!id.empty()) {
 		string f = vars["f"];
 		if(!f.empty()) {
-			
 			if(f == "next") query.append(CONDITION_N_FILE(">", "MIN"));
 				else 
 			if(f == "prev") query.append(CONDITION_N_FILE("<", "MAX"));
-			
-			
 			params.push_back(id);
 			Query q(SELECT_ALBUM_ID_WITH_FILE);
 			database->select(&q, &params);
 			if(!q.response->empty()) 
 				params.push_back(q.response->at(0).at(0));
 		} else {
-		query.append(CONDITION_FILEID);
-		params.push_back(id);
+			query.append(CONDITION_FILEID);
+			params.push_back(id);
 		}
 
 		//Increment views.
 		QueryRow incParams;
 		incParams.push_back(id);
 		database->exec(INC_FILE_VIEWS, &incParams);
-	} else if(vars["o"] == "grouped") {
-		query.append(CONDITION_FILE_GROUPED);
-	}
+	} 
 	
 
 	Query q(query, &params);

@@ -45,12 +45,22 @@
 
 #define DELETE_ALBUM "DELETE FROM albums WHERE id = ?;"
 
-#define SELECT_FILE_DETAILS "SELECT f.id AS id, al.id as aid, f.name, f.rating as rating, f.views as views, \
+#define SELECT_FILE_DETAILS "SELECT f.id AS id, al.id AS aid, f.name AS name, f.rating AS rating, f.views AS views, \
 (SELECT (" SELECT_SYSTEM("store_path") ") || '/' || al.path || '/' || f.path) AS path, \
 	COALESCE(\
 		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || '/' || th.path FROM thumbs th JOIN files ON files.thumbid = th.id AND files.id = f.id), \
 		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || '/' || (" SELECT_SYSTEM("default_thumb") "))) \
 AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON al.id=alf.albumid WHERE 1 "
+
+#define SELECT_BOTH_DETAILS "SELECT f.id AS id, al.id AS aid, CASE al.type WHEN " XSTR(ALBUM_RANDOM) " THEN f.name WHEN " XSTR(ALBUM_SET) " THEN al.name END AS name, \
+CASE al.type WHEN " XSTR(ALBUM_RANDOM) " THEN f.rating WHEN " XSTR(ALBUM_SET) " THEN al.rating END AS rating, \
+CASE al.type WHEN " XSTR(ALBUM_RANDOM) " THEN f.views WHEN " XSTR(ALBUM_SET) " THEN al.views END AS views, \
+(SELECT (" SELECT_SYSTEM("store_path") ") || '/' || al.path || '/' || f.path) AS path, \
+	COALESCE(\
+		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || '/' || th.path FROM thumbs th JOIN files ON files.thumbid = th.id AND files.id = f.id), \
+		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || '/' || (" SELECT_SYSTEM("default_thumb") "))) \
+AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON al.id=alf.albumid WHERE al.type = " XSTR(ALBUM_RANDOM) " OR (al.type = " \
+XSTR(ALBUM_SET) " AND f.id IN (SELECT fileid FROM albumfiles WHERE albumid=al.id ORDER BY id ASC LIMIT 1)) "
 
 #define CONDITION_FILE_ENABLED " AND f.enabled = 1 "
 
@@ -67,8 +77,7 @@ AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON a
 #define INC_FILE_VIEWS "UPDATE files SET views = views + 1 WHERE id = ?"
 #define INC_ALBUM_VIEWS "UPDATE albums SET views = views + 1 WHERE id = ?"
 
-#define CONDITION_FILE_GROUPED " AND al.type = " XSTR(ALBUM_RANDOM) " OR al.type = " XSTR(ALBUM_SET) \
-" AND f.id IN (SELECT fileid FROM albumfiles WHERE albumid=al.id ORDER BY id ASC LIMIT 1) "
+#define CONDITION_FILE_GROUPED 
 
 
 #define SELECT_ALBUM_DETAILS "SELECT al.id AS id, name, added, lastedited, type, rating, recursive, views, al.path AS path, \
@@ -92,6 +101,8 @@ AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON a
 #define CONDITION_N_FILE(op, kwd) " AND f.id = (SELECT " kwd "(f.id) FROM albumfiles alf JOIN files f ON f.id = fileid WHERE fileid " op " ? AND f.enabled = 1 AND alf.albumid = ? LIMIT 1)"
 
 #define SELECT_ALBUM_ID_WITH_FILE "SELECT al.id FROM albums al JOIN albumfiles alf ON alf.albumid = al.id JOIN files f ON alf.fileid = f.id WHERE f.id = ?"
+
+#define UPDATE_ALBUM "UPDATE albums SET %s = ? WHERE id = ?"  
 
 #define CREATE_DATABASE "BEGIN; \
 CREATE TABLE IF NOT EXISTS 'thumbs' ('id' INTEGER PRIMARY KEY  NOT NULL , 'path' TEXT); \
@@ -121,8 +132,11 @@ COMMIT;"
 	m["search"] = &Gallery::search; \
 	m["refreshAlbums"] = &Gallery::refreshAlbums; \
 	m["disableFiles"] = &Gallery::disableFiles; \
-	m["clearCache"] = &Gallery::clearCache;
+	m["clearCache"] = &Gallery::clearCache; \
+	m["getBoth"] = &Gallery::getBoth; \
+	m["updateAlbum"] = &Gallery::updateAlbum;
 #define GETCHK(s) s.empty() ? 0 : 1
+#define RESPONSE_VARS RequestVars&, Response&, SessionStore&
 typedef std::unordered_map<std::string, std::string> RequestVars;
 typedef std::string Response;
 typedef int(Gallery::*GallFunc)(RequestVars&, Response&, SessionStore&);
@@ -208,17 +222,19 @@ public:
 	
 
 	//Main response functions.
-	int getAlbums(RequestVars&, Response&, SessionStore&);
-	int addAlbum(RequestVars&, Response&, SessionStore&);
-	int addBulkAlbums(RequestVars&, Response&, SessionStore&);
-	int delAlbums(RequestVars&, Response&, SessionStore&);
-	int login(RequestVars&, Response&, SessionStore&);
-	int setThumb(RequestVars&, Response&, SessionStore&);
-	int getFiles(RequestVars&, Response&, SessionStore&);
-	int search(RequestVars&, Response&, SessionStore&);
-	int refreshAlbums(RequestVars&, Response&, SessionStore&);
-	int disableFiles(RequestVars&, Response&, SessionStore&);
-	int clearCache(RequestVars&, Response&, SessionStore&);
+	int getAlbums(RESPONSE_VARS);
+	int addAlbum(RESPONSE_VARS);
+	int addBulkAlbums(RESPONSE_VARS);
+	int delAlbums(RESPONSE_VARS);
+	int login(RESPONSE_VARS);
+	int setThumb(RESPONSE_VARS);
+	int getFiles(RESPONSE_VARS);
+	int search(RESPONSE_VARS);
+	int refreshAlbums(RESPONSE_VARS);
+	int disableFiles(RESPONSE_VARS);
+	int clearCache(RESPONSE_VARS);
+	int getBoth(RESPONSE_VARS);
+	int updateAlbum(RESPONSE_VARS);
 };
 
 #endif

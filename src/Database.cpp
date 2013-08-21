@@ -215,7 +215,6 @@ int Database::exec(Query* query) {
 
 int Database::exec(const string& query, QueryRow* params) {
 	Query q(query, params);
-	//Bypass unique_ptr handling
 	int nRet = exec(&q);
 	return nRet;
 }
