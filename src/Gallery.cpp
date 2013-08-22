@@ -355,9 +355,6 @@ Response Gallery::processVars(RequestVars& vars, SessionStore& session, int publ
 }
 
 int Gallery::genThumb(const char* file, double shortmax, double longmax) {
-#ifndef HAS_IPP
-	return ERROR_IMAGE_PROCESSING_FAILED;
-#endif
 	Query store_q(SELECT_SYSTEM("store_path"));
 	Query thumbs_q(SELECT_SYSTEM("thumbs_path"));
 	string storepath = database->select(&store_q)->response->at(0).at(0);

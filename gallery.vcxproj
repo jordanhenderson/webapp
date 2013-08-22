@@ -45,16 +45,12 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
-    <UseIntelTBB>false</UseIntelTBB>
-    <UseIntelIPP>Sequential</UseIntelIPP>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
-    <UseIntelTBB>false</UseIntelTBB>
-    <UseIntelIPP>Sequential</UseIntelIPP>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -62,8 +58,6 @@
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <UseIntelTBB>false</UseIntelTBB>
-    <UseIntelIPP>Sequential</UseIntelIPP>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -71,8 +65,6 @@
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <UseIntelTBB>false</UseIntelTBB>
-    <UseIntelIPP>Sequential</UseIntelIPP>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='LinuxDebug|Win32'">
     <ConfigurationType>Makefile</ConfigurationType>
@@ -158,7 +150,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>ext/mysql/include;ext/tbb/include/;ext/libjpeg/include;ext/zlib/include;ext/lpng/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;ext/cryptopp;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext/opencv/modules/core/include;ext/opencv/modules/imgproc/include;ext/mysql/include;ext/tbb/include;ext/libjpeg/include;ext/zlib/include;ext/lpng/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
       <InterproceduralOptimization>NoIPO</InterproceduralOptimization>
@@ -182,7 +174,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>ext/mysql/include;ext/tbb/include/;ext/libjpeg/include;ext/zlib/include;ext/lpng/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;ext/cryptopp;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext/opencv/modules/core/include;ext/opencv/modules/imgproc/include;ext/mysql/include;ext/tbb/include;ext/libjpeg/include;ext/zlib/include;ext/lpng/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
       <InterproceduralOptimization>NoIPO</InterproceduralOptimization>
@@ -208,7 +200,7 @@
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <PreprocessorDefinitions>CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>ext/mysql/include;ext/tbb/include/;ext/libjpeg/include;ext/zlib/include;ext/lpng/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;ext/cryptopp;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext/opencv/modules/core/include;ext/opencv/modules/imgproc/include;ext/mysql/include;ext/tbb/include;ext/libjpeg/include;ext/zlib/include;ext/lpng/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
@@ -246,7 +238,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;USE_PRECOMPILED_HEADERS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>ext/mysql/include;ext/tbb/include/;ext/libjpeg/include;ext/zlib/include;ext/lpng/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;ext/cryptopp;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext/opencv/modules/core/include;ext/opencv/modules/imgproc/include;ext/mysql/include;ext/tbb/include;ext/libjpeg/include;ext/zlib/include;ext/lpng/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
@@ -494,6 +486,9 @@
     </ProjectReference>
     <ProjectReference Include="ext\mysql\yassl\yassl.vcxproj">
       <Project>{9012748d-9a90-4205-a0e9-ab7213cf33bd}</Project>
+    </ProjectReference>
+    <ProjectReference Include="ext\opencv\opencv.vcxproj">
+      <Project>{988071aa-3875-4cfe-8a08-a31953b820b3}</Project>
     </ProjectReference>
     <ProjectReference Include="ext\tbb\tbb.vcxproj">
       <Project>{575c06fe-c2e0-4645-8f05-38e7d139d743}</Project>

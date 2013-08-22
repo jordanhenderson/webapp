@@ -3,9 +3,6 @@
 extern "C" {
 #include "neuquant32.h"
 }
-#ifdef HAS_IPP
-#include <ipp.h>
-#endif
 
 void Image::gifInsertFrame(int frame) {
 	unsigned char bgcolor;
@@ -29,11 +26,8 @@ void Image::gifInsertFrame(int frame) {
 
 	//Allocate the initial frame.
 	if(frame == 0) {
-#ifdef HAS_IPP
-		frames[frame] = ippsMalloc_8u(rastersize * 4);
-#else
 		frames[frame] = new unsigned char[rastersize*4];
-#endif
+
 		//Fill the frame using it's bg color.
 		unsigned char target[4];
 		GifColorType c;
@@ -104,12 +98,8 @@ void Image::gifInsertFrame(int frame) {
 
 
 	if(frame + 1 < imagecount) {
-		#ifdef HAS_IPP
-		frames[frame + 1] = ippsMalloc_8u(rastersize * 4);
-#else
 		frames[frame + 1] = new unsigned char[rastersize * 4]();
-#endif
-		
+
 		if(gcb.DisposalMode == DISPOSE_DO_NOT)
 			memcpy(frames[frame+1],frames[frame], rastersize*4);
 		else if(gcb.DisposalMode == DISPOSE_BACKGROUND) {

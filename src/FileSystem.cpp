@@ -143,7 +143,9 @@ void FileSystem::DeletePath(const string& path) {
 		tinydir_readfile(&dir, &f);
 		if(!f.is_dir) {
 #ifdef WIN32
-			_wunlink(strtowide(f.path));
+			wchar_t* file = strtowide(f.path);
+			_wunlink(file);
+			delete[] file;
 #else
 			unlink(f.path);
 #endif
@@ -156,9 +158,9 @@ void FileSystem::DeletePath(const string& path) {
 	
 	tinydir_close(&dir);
 #ifdef WIN32
-	wstring wPath;
-	wPath.assign(path.begin(), path.end());
-	_wrmdir(wPath.c_str());
+	wchar_t* wPath = strtowide(path.c_str());
+	_wrmdir(wPath);
+	delete[] wPath;
 #else
 	rmdir(path.c_str());
 #endif

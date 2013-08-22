@@ -1,12 +1,9 @@
+#include <opencv2/imgproc.hpp>
 #include "Image.h"
 #include "jpeglib.h"
 #include "jerror.h"
 #include "png.h"
 #include "gif_lib.h"
-#ifdef HAS_IPP
-#include <ipp.h>
-#endif
-
 #include <algorithm>
 const char* THUMB_EXTENSIONS_JPEG[] = THUMB_EXTENSIONS_JPEG_D;
 using namespace std;
@@ -27,11 +24,7 @@ void Image::cleanup() {
 		//No break; intentional.
 	case IMAGE_TYPE_JPEG:
 		if(pixels != NULL) {
-#ifdef HAS_IPP
-			ippsFree(pixels);
-#else
 			delete[] pixels;
-#endif
 			pixels = NULL;
 		}
 		break;
@@ -39,11 +32,7 @@ void Image::cleanup() {
 			//Dealloc the frames
 		if(frames != NULL) {
 			for(int i = 0; i < imagecount; i++) {
-#ifdef HAS_IPP
-				ippsFree(frames[i]);
-#else
 				free(frames[i]);
-#endif
 			}
 			delete[] frames;
 		}
@@ -148,11 +137,7 @@ void Image::load(const string& filename) {
 			//Allocate pixels array.
 			nBytes = width * height * 4;
 
-#ifdef HAS_IPP
-			pixels = ippsMalloc_8u(nBytes);
-#else	
 			pixels = new unsigned char[nBytes];
-#endif
 			unsigned int scanline_count = 0;
 			unsigned int scanline_length = cinfo.output_width * 4;
 			while(cinfo.output_scanline < cinfo.output_height) {
@@ -243,11 +228,7 @@ void Image::load(const string& filename) {
 			nBytes = height * scanline_length;
 
 			//Allocate the pixel dump
-#ifdef HAS_IPP
-			pixels = ippsMalloc_8u(nBytes);
-#else
 			pixels = new unsigned char[nBytes];
-#endif
 
 			if(row_pointers != NULL) {
 				nError = ERROR_IMAGE_PROCESSING_FAILED;
@@ -492,57 +473,18 @@ void Image::regenRowPointers() {
 }
 
 unsigned char* Image::_resize(unsigned char* image, int width, int height, int oldWidth, int oldHeight) {
-#ifdef HAS_IPP
 	if(width == oldWidth && height == oldHeight)
 		return image;
 
-	//Store constants in required structs.
-	IppiRect srect = {0,0,oldWidth, oldHeight};
-	IppiRect drect = {0,0,width,height};
-	IppiSize size = {oldWidth, oldHeight};
-	IppiSize dstsize = {width, height};
-	IppiPoint dstOffset = {0,0};
-	IppStatus status = ippStsNoErr;
-
-	int bufsize;
-	int specSize;
-
-	ippiResizeGetSize_8u(size, dstsize, ippLanczos, 0, &specSize, &bufsize);
-	Ipp8u *initBuf = ippsMalloc_8u(bufsize);
-
-	//Create resize spec structure
-	IppiResizeSpec_32f* pSpec = (IppiResizeSpec_32f*)ippsMalloc_8u(specSize);
-
-	//Set lanczos scaling mode
-	ippiResizeLanczosInit_8u(size, dstsize, 3, pSpec, initBuf);
-
-	//Get the size required for the pBuffer, allocate it
-	ippiResizeGetBufferSize_8u(pSpec,dstsize,4,&bufsize);
-	Ipp8u* pBuffer=ippsMalloc_8u(bufsize);
-
-	//Allocate the temporary buffer used to store resized image.
-	Ipp8u* tmpBuf = ippsMalloc_8u(width * height * 4);
-
-	if(pBuffer != NULL) {
-			status = ippiResizeLanczos_8u_C4R((const Ipp8u*)image, oldWidth*4, tmpBuf, width*4, dstOffset, dstsize, ippBorderRepl,0,pSpec, pBuffer );
-	}
-
-	ippsFree(initBuf);
-	ippsFree(pSpec);
-	ippsFree(pBuffer);
-	ippsFree(image);
-
+	//Allocate new buffer
+	unsigned char* tmpBuf = new unsigned char[width * height * 4];
+	cv::Mat input(oldHeight, oldWidth, CV_8UC4, image);
+	cv::Mat output(height, width, CV_8UC4, tmpBuf);
+	cv::resize(input, output, output.size(), 0, 0, cv::INTER_AREA);
+	
+	delete[] image;
 	nBytes = width * height * 4;
 	return tmpBuf;
-#else
-#warning Resize not implemented for non-IPP platforms.
-	//Just realloc the buffer instead (for now).
-	nBytes = width * height * 4;
-	image = (unsigned char*)realloc(image, nBytes);
-	return image;
-	
-
-#endif
 }
 
 Image::~Image() {
