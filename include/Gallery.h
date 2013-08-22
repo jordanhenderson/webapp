@@ -46,6 +46,7 @@
 #define DELETE_ALBUM "DELETE FROM albums WHERE id = ?;"
 
 #define SELECT_FILE_DETAILS "SELECT f.id AS id, al.id AS aid, f.name AS name, f.rating AS rating, f.views AS views, \
+0 AS s_type, \
 (SELECT (" SELECT_SYSTEM("store_path") ") || '/' || al.path || '/' || f.path) AS path, \
 	COALESCE(\
 		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || '/' || th.path FROM thumbs th JOIN files ON files.thumbid = th.id AND files.id = f.id), \
@@ -55,6 +56,7 @@ AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON a
 #define SELECT_BOTH_DETAILS "SELECT f.id AS id, al.id AS aid, CASE al.type WHEN " XSTR(ALBUM_RANDOM) " THEN f.name WHEN " XSTR(ALBUM_SET) " THEN al.name END AS name, \
 CASE al.type WHEN " XSTR(ALBUM_RANDOM) " THEN f.rating WHEN " XSTR(ALBUM_SET) " THEN al.rating END AS rating, \
 CASE al.type WHEN " XSTR(ALBUM_RANDOM) " THEN f.views WHEN " XSTR(ALBUM_SET) " THEN al.views END AS views, \
+1 AS s_type, \
 (SELECT (" SELECT_SYSTEM("store_path") ") || '/' || al.path || '/' || f.path) AS path, \
 	COALESCE(\
 		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || '/' || th.path FROM thumbs th JOIN files ON files.thumbid = th.id AND files.id = f.id), \
@@ -81,6 +83,7 @@ XSTR(ALBUM_SET) " AND f.id IN (SELECT fileid FROM albumfiles WHERE albumid=al.id
 
 
 #define SELECT_ALBUM_DETAILS "SELECT al.id AS id, name, added, lastedited, type, rating, recursive, views, al.path AS path, \
+1 AS s_type, \
 	COALESCE(\
 		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || '/' || th.path FROM thumbs th JOIN albums ON albums.thumbid = th.id AND albums.id = al.id),\
 		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || '/' || th.path FROM thumbs th JOIN files f ON f.thumbid = th.id JOIN albumfiles alf ON alf.fileid=f.id AND alf.id IN \
@@ -103,6 +106,7 @@ XSTR(ALBUM_SET) " AND f.id IN (SELECT fileid FROM albumfiles WHERE albumid=al.id
 #define SELECT_ALBUM_ID_WITH_FILE "SELECT al.id FROM albums al JOIN albumfiles alf ON alf.albumid = al.id JOIN files f ON alf.fileid = f.id WHERE f.id = ?"
 
 #define UPDATE_ALBUM "UPDATE albums SET %s = ? WHERE id = ?"  
+#define UPDATE_FILE "UPDATE files SET %s = ? WHERE id = ?"
 
 #define CREATE_DATABASE "BEGIN; \
 CREATE TABLE IF NOT EXISTS 'thumbs' ('id' INTEGER PRIMARY KEY  NOT NULL , 'path' TEXT); \
@@ -134,7 +138,8 @@ COMMIT;"
 	m["disableFiles"] = &Gallery::disableFiles; \
 	m["clearCache"] = &Gallery::clearCache; \
 	m["getBoth"] = &Gallery::getBoth; \
-	m["updateAlbum"] = &Gallery::updateAlbum;
+	m["updateAlbum"] = &Gallery::updateAlbum; \
+	m["updateFile"] = &Gallery::updateFile;
 #define GETCHK(s) s.empty() ? 0 : 1
 #define RESPONSE_VARS RequestVars&, Response&, SessionStore&
 typedef std::unordered_map<std::string, std::string> RequestVars;
@@ -235,6 +240,7 @@ public:
 	int clearCache(RESPONSE_VARS);
 	int getBoth(RESPONSE_VARS);
 	int updateAlbum(RESPONSE_VARS);
+	int updateFile(RESPONSE_VARS);
 };
 
 #endif

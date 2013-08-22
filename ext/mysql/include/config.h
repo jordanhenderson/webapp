@@ -237,10 +237,16 @@
 /* #undef HAVE_TAILQFOREACH */
 
 /* #undef HAVE_VALGRIND */
-
+#ifndef _WIN64
 #define SIZEOF_LONG   4
 #define SIZEOF_VOIDP  4
 #define SIZEOF_CHARP  4
+#else
+#define SIZEOF_LONG   4
+#define SIZEOF_VOIDP  8
+#define SIZEOF_CHARP  8
+#endif
+
 
 #define SIZEOF_CHAR 1
 #define HAVE_CHAR 1
@@ -710,10 +716,15 @@
 #define HAVE_TAILQFOREACH 1
 
 /* #undef HAVE_VALGRIND */
-
+#ifdef __LP64__
 #define SIZEOF_LONG   8
 #define SIZEOF_VOIDP  8
 #define SIZEOF_CHARP  8
+#else
+#define SIZEOF_LONG   4
+#define SIZEOF_VOIDP  4
+#define SIZEOF_CHARP  4
+#endif
 
 #define SIZEOF_CHAR 1
 #define HAVE_CHAR 1

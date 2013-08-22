@@ -12,8 +12,7 @@
  You should have received a copy of the GNU General Public License
  along with this program; if not, write to the Free Software
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA */
-
-#ifdef _WIN32
+#if defined(_MSC_VER) 
 #ifndef MY_CONFIG_H
 #define MY_CONFIG_H
 #define DOT_FRM_VERSION 6
@@ -239,9 +238,15 @@
 
 /* #undef HAVE_VALGRIND */
 
+#ifndef _WIN64
 #define SIZEOF_LONG   4
 #define SIZEOF_VOIDP  4
 #define SIZEOF_CHARP  4
+#else
+#define SIZEOF_LONG   4
+#define SIZEOF_VOIDP  8
+#define SIZEOF_CHARP  8
+#endif
 
 #define SIZEOF_CHAR 1
 #define HAVE_CHAR 1
@@ -726,10 +731,15 @@
 #define HAVE_TAILQFOREACH 1
 
 /* #undef HAVE_VALGRIND */
-
+#ifdef __LP64__
 #define SIZEOF_LONG   8
 #define SIZEOF_VOIDP  8
 #define SIZEOF_CHARP  8
+#else
+#define SIZEOF_LONG   4
+#define SIZEOF_VOIDP  4
+#define SIZEOF_CHARP  4
+#endif
 
 #define SIZEOF_CHAR 1
 #define HAVE_CHAR 1

@@ -206,7 +206,7 @@
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
       <OptimizeForWindowsApplication>false</OptimizeForWindowsApplication>
       <Parallelization>true</Parallelization>
-      <UseIntelOptimizedHeaders>true</UseIntelOptimizedHeaders>
+      <UseIntelOptimizedHeaders>false</UseIntelOptimizedHeaders>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <C99Support>true</C99Support>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
@@ -387,6 +387,7 @@
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </AdditionalOptions>
     </ClCompile>
+    <ClCompile Include="src\Public.cpp" />
     <ClCompile Include="src\RamSession.cpp" />
     <ClCompile Include="src\Serializer.cpp" />
     <ClCompile Include="src\Server.cpp" />

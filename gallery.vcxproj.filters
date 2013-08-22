@@ -130,6 +130,9 @@
     <ClCompile Include="src\fastcgi\os_unix.c">
       <Filter>Source Files\fastcgi</Filter>
     </ClCompile>
+    <ClCompile Include="src\Public.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Logging.h">
