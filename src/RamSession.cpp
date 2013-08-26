@@ -9,7 +9,8 @@ void RamSession::create(string& sessionid) {
 }
 
 void RamSession::destroy() {
-
+	LockableContainerLock<RamStorage> lock(_store);
+	lock->clear();
 }
 
 void RamSession::store(const string& key, const string& value) {

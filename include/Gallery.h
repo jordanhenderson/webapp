@@ -22,7 +22,6 @@
 #define HTTP_NO_AUTH "Status: 401 Unauthorized\r\n\r\nUnauthorised access."
 #define RESPONSE_TYPE_DATA 0
 #define RESPONSE_TYPE_MESSAGE 1
-#define RESPONSE_TYPE_FULL_MESSAGE 2
 
 //QUERY DEFINTIONS
 #define SELECT_RANDOM_ALBUMIDS "SELECT id FROM albums WHERE type = " XSTR(ALBUM_RANDOM) ";"
@@ -53,7 +52,7 @@
 		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || '/' || (" SELECT_SYSTEM("default_thumb") "))) \
 AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON al.id=alf.albumid WHERE 1 "
 
-#define SELECT_BOTH_DETAILS "SELECT f.id AS id, al.id AS aid, CASE al.type WHEN " XSTR(ALBUM_RANDOM) " THEN f.name WHEN " XSTR(ALBUM_SET) " THEN al.name END AS name, \
+#define _SELECT_BOTH_DETAILS(COND, COND2) "SELECT f.id AS id, al.id AS aid, CASE al.type WHEN " XSTR(ALBUM_RANDOM) " THEN f.name WHEN " XSTR(ALBUM_SET) " THEN al.name END AS name, \
 CASE al.type WHEN " XSTR(ALBUM_RANDOM) " THEN f.rating WHEN " XSTR(ALBUM_SET) " THEN al.rating END AS rating, \
 CASE al.type WHEN " XSTR(ALBUM_RANDOM) " THEN f.views WHEN " XSTR(ALBUM_SET) " THEN al.views END AS views, \
 1 AS s_type, \
@@ -61,8 +60,12 @@ CASE al.type WHEN " XSTR(ALBUM_RANDOM) " THEN f.views WHEN " XSTR(ALBUM_SET) " T
 	COALESCE(\
 		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || '/' || th.path FROM thumbs th JOIN files ON files.thumbid = th.id AND files.id = f.id), \
 		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || '/' || (" SELECT_SYSTEM("default_thumb") "))) \
-AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON al.id=alf.albumid WHERE al.type = " XSTR(ALBUM_RANDOM) " OR (al.type = " \
-XSTR(ALBUM_SET) " AND f.id IN (SELECT fileid FROM albumfiles WHERE albumid=al.id ORDER BY id ASC LIMIT 1)) "
+AS thumb FROM files f JOIN albumfiles alf ON f.id=alf.fileID JOIN albums al ON al.id=alf.albumid WHERE ((al.type = " XSTR(ALBUM_RANDOM) COND ") OR (al.type = " \
+XSTR(ALBUM_SET) " AND f.id IN (SELECT fileid FROM albumfiles WHERE albumid=al.id ORDER BY id ASC LIMIT 1) " COND2 ")) "
+
+#define SELECT_BOTH_DETAILS _SELECT_BOTH_DETAILS("", "")
+
+#define SELECT_SEARCH _SELECT_BOTH_DETAILS(" AND f.name LIKE ?", "AND al.name LIKE ?") 
 
 #define CONDITION_FILE_ENABLED " AND f.enabled = 1 "
 
@@ -70,7 +73,6 @@ XSTR(ALBUM_SET) " AND f.id IN (SELECT fileid FROM albumfiles WHERE albumid=al.id
 
 #define ORDER_DEFAULT " ORDER BY "
 
-#define CONDITION_SEARCH " AND f.id IN (SELECT f.id FROM files f WHERE f.name LIKE ?) "
 
 #define CONDITION_FILEID " AND f.id = ? "
 
@@ -139,7 +141,9 @@ COMMIT;"
 	m["clearCache"] = &Gallery::clearCache; \
 	m["getBoth"] = &Gallery::getBoth; \
 	m["updateAlbum"] = &Gallery::updateAlbum; \
-	m["updateFile"] = &Gallery::updateFile;
+	m["updateFile"] = &Gallery::updateFile; \
+	m["logout"] = &Gallery::logout;
+
 #define GETCHK(s) s.empty() ? 0 : 1
 #define RESPONSE_VARS RequestVars&, Response&, SessionStore&
 typedef std::unordered_map<std::string, std::string> RequestVars;
@@ -232,6 +236,7 @@ public:
 	int addBulkAlbums(RESPONSE_VARS);
 	int delAlbums(RESPONSE_VARS);
 	int login(RESPONSE_VARS);
+	int logout(RESPONSE_VARS);
 	int setThumb(RESPONSE_VARS);
 	int getFiles(RESPONSE_VARS);
 	int search(RESPONSE_VARS);

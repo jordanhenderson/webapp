@@ -39,9 +39,7 @@ int Gallery::updateFile(RequestVars& vars, Response& r, SessionStore &session) {
 	QueryRow params;
 	if(file.empty() || field.empty() || v.empty()) {
 		Serializer s;
-		Value m;
-		s.append("msg", "INVALID_PARAM", 0, &m);
-		s.append("close", "1", 1, &m);
+		s.append("msg", "INVALID_PARAM", 1);
 		r.append(s.get(RESPONSE_TYPE_MESSAGE));
 		return 0;
 	}
@@ -65,9 +63,7 @@ int Gallery::updateAlbum(RequestVars& vars, Response& r, SessionStore &session) 
 	QueryRow params;
 	if(album.empty() || field.empty() || v.empty()) {
 		Serializer s;
-		Value m;
-		s.append("msg", "INVALID_PARAM", 0, &m);
-		s.append("close", "1", 1, &m);
+		s.append("msg", "INVALID_PARAM", 1);
 		r.append(s.get(RESPONSE_TYPE_MESSAGE));
 		return 0;
 	}
@@ -93,9 +89,7 @@ int Gallery::getBoth(RequestVars& vars, Response& r, SessionStore& s) {
 int Gallery::clearCache(RequestVars& vars, Response& r, SessionStore& session) {
 	load_templates();
 	Serializer s;
-	Value m;
-	s.append("msg", "CACHE_CLEARED", 0, &m);
-	s.append("close", "1", 1, &m);
+	s.append("msg", "CACHE_CLEARED", 1);
 	r.append(s.get(RESPONSE_TYPE_MESSAGE));
 	return 1;
 }
@@ -154,24 +148,19 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& session
 	process_thread(refresh_albums);
 
 	Serializer s;
-	Value m;
-	s.append("msg", "REFRESH_SUCCESS", 0, &m);
-	s.append("close", "1", 1, &m);
+	s.append("msg", "REFRESH_SUCCESS", 1);
 	r.append(s.get(RESPONSE_TYPE_MESSAGE));
 
 	return 0;
 }
 
 int Gallery::search(RequestVars& vars, Response& r, SessionStore& s) {
-	string query = SELECT_FILE_DETAILS;
+	string query = SELECT_SEARCH;
 	QueryRow params;
-	if(vars["t"] == "search") {
-		query.append(CONDITION_SEARCH);
-		if(vars["q"].empty()) {
-			query.append(CONDITION_FILE_ENABLED);
-		}
-		params.push_back("%" + url_decode(vars["q"]) + "%");
-	}
+	
+	string search_str = "%" + url_decode(vars["q"]) + "%";
+	params.push_back(search_str);
+	params.push_back(search_str);
 
 	Query q(query, &params);
 	return getData(q, vars, r, s);
@@ -184,13 +173,22 @@ int Gallery::login(RequestVars& vars, Response& r, SessionStore& store) {
 	Serializer s;
 	if(user == this->user && pass == this->pass) {
 		store.store("auth", "TRUE");
-		Value m;
-		s.append("msg", "LOGIN_SUCCESS", 0, &m);
-		s.append("close", "1", 0, &m);
-		s.append("refresh", "1", 1, &m);
+		s.append("msg", "LOGIN_SUCCESS", 1);
 	} else {
 		s.append("msg", "LOGIN_FAILED", 1);
 	}
+	r.append(s.get(RESPONSE_TYPE_MESSAGE));
+	return 0;
+}
+
+int Gallery::logout(RequestVars& vars, Response& r, SessionStore& store) {
+	string user = vars["user"];
+	string pass = vars["pass"];
+	Serializer s;
+	
+	store.destroy();
+	s.append("msg", "LOGOUT_SUCCESS", 1);
+
 	r.append(s.get(RESPONSE_TYPE_MESSAGE));
 	return 0;
 }
@@ -255,15 +253,11 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 
 			});
 			process_thread(add_album);
-			Value m;
-			s.append("msg", "ADDED_SUCCESS", 0, &m);
-			s.append("close", "1", 1, &m);
+			s.append("msg", "ADDED_SUCCESS", 1);
 
 		}
 	} else {
-		Value m;
-		s.append("msg", "FAILED", 0, &m);
-		s.append("close", "1", 1, &m);
+		s.append("msg", "FAILED", 1);
 		addStatus = 1;
 	}
 	r.append(s.get(RESPONSE_TYPE_MESSAGE));
@@ -313,9 +307,7 @@ int Gallery::delAlbums(RequestVars& vars, Response& r, SessionStore&) {
 	});
 	process_thread(del_albums);
 
-	Value m;
-	s.append("msg", "DELETE_SUCCESS", 0, &m);
-	s.append("close", "1", 1, &m);
+	s.append("msg", "DELETE_SUCCESS", 1);
 	r.append(s.get(RESPONSE_TYPE_MESSAGE));
 	return 0;
 }
@@ -325,7 +317,7 @@ int Gallery::getData(Query& query, RequestVars& vars, Response& r, SessionStore&
 
 	if(!hasAlbums()) {
 		serializer.append("msg", "NO_ALBUMS", 1);
-		r.append(serializer.get(RESPONSE_TYPE_FULL_MESSAGE));
+		r.append(serializer.get(RESPONSE_TYPE_MESSAGE));
 		return 0;
 	}
 

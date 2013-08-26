@@ -343,7 +343,7 @@ Response Gallery::processVars(RequestVars& vars, SessionStore& session, int publ
 		r.append(END_HEADER);
 		if(hasfunc) {
 			s.append("msg", "NO_AUTH");
-			r.append(s.get(RESPONSE_TYPE_FULL_MESSAGE));
+			r.append(s.get(RESPONSE_TYPE_MESSAGE));
 		} else {
 			r.append("{}");
 		}
