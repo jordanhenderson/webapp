@@ -1,0 +1,2 @@
+-- thumbs/imdb.lua
+-- Pull thumbs from imdb.

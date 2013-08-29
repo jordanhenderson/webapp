@@ -6,12 +6,15 @@
 #include "prettywriter.h"
 #include "stringbuffer.h"
 #include <sha.h>
+#include <lua.h>
+#include <lualib.h>
+#include <lauxlib.h>
+#include "PluginHooks.h"
 
 using namespace rapidjson;
 using namespace std;
 
 Gallery::Gallery(Parameters* params) {
-
 	abort = 0;
 	this->params = params;
 	dbpath = params->get("dbpath");
@@ -75,6 +78,17 @@ Gallery::Gallery(Parameters* params) {
 	currentID = std::this_thread::get_id();
 	//Create function map.
 	GALLERYMAP(functionMap);
+
+	//Do lua stuff.
+	lua_State* L = luaL_newstate();
+	if(L != NULL) {
+		luaL_openlibs(L);
+		luaL_requiref(L, "ioCore", &luaopen_ioCore, 1);
+		lua_pushlightuserdata(L, this);
+		lua_setglobal(L, "gallery");
+		luaL_dofile(L, "./plugins/thumbs/default.lua");
+		lua_close(L);
+	}
 	
 }
 

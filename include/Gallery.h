@@ -1,6 +1,7 @@
 #ifndef GALLERY_H
 #define GALLERY_H
 #include "Platform.h"
+#include "FileSystem.h"
 #include "Parameters.h"
 #include "Server.h"
 #include "Database.h"
@@ -9,6 +10,7 @@
 #include "Serializer.h"
 #include "document.h"
 #include <ctemplate/template.h>
+
 #define TEMPLATE_VIDEO "video.html"
 #define TEMPLATE_IMAGE "image.html"
 #define TEMPLATE_FLASH "flash.html"
