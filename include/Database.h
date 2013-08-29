@@ -46,7 +46,10 @@ public:
 	Database(int database_type, const std::string& host, const std::string& username="", const std::string& password="", const std::string& database="");
 	~Database();
 	int exec(Query* query);
+	//Returns last row ID inserted
 	int exec(const std::string& query, QueryRow* params=NULL);
 	Query* select(Query* query, QueryRow* params=NULL, int desc = 0);
+	//Return the first cell in the first row of the response as a string.
+	std::string select(const std::string& query, QueryRow* params = NULL, int desc = 0);
 };
 #endif

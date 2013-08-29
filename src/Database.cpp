@@ -210,13 +210,12 @@ int Database::exec(Query* query) {
 	select(query, NULL);
 	if(nError != ERROR_DB_FAILED)
 		return query->lastrowid;
-	return 0;
+	return -1;
 }
 
 int Database::exec(const string& query, QueryRow* params) {
 	Query q(query, params);
-	int nRet = exec(&q);
-	return nRet;
+	return exec(&q);
 }
 
 
@@ -234,3 +233,8 @@ Query* Database::select(Query* q, QueryRow* params, int desc) {
 	return q;
 }
 
+string Database::select(const std::string& query, QueryRow* params, int desc) {
+	Query q(query);
+	select(&q, params, desc);
+	return q.response->at(0).at(0);
+}

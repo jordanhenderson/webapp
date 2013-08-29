@@ -98,12 +98,12 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& session
 	int nGenThumbs = GETCHK(vars["genthumbs"]);
 	vector<string> albums;
 	tokenize(vars["a"],albums,",");
+
 	thread* refresh_albums = new thread([this, albums, nGenThumbs]() {
-		std::unique_lock<std::mutex> lk(process_mutex);
+		std::unique_lock<std::mutex> lk(mutex_thread_start);
 		while(currentID != this_thread::get_id())
-			cv_proc.wait(lk);
-		Query q_store_path(SELECT_SYSTEM("store_path"));
-		string storepath = database->select(&q_store_path)->response->at(0).at(0);
+			cv_thread_start.wait(lk);
+		string storepath = database->select(SELECT_SYSTEM("store_path"));
 		for(string album: albums) {
 			QueryRow params;
 			params.push_back(album);
@@ -230,11 +230,11 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 			addStatus = 2;
 		} else {
 			thread* add_album = new thread([this, name, path, type, nRecurse, nGenThumbs]() {
-				std::unique_lock<std::mutex> lk(process_mutex);
+				std::unique_lock<std::mutex> lk(mutex_thread_start);
 				while(currentID != this_thread::get_id())
-					cv_proc.wait(lk);
-				Query q_store_path(SELECT_SYSTEM("store_path"));
-				string storepath = database->select(&q_store_path)->response->at(0).at(0);
+					cv_thread_start.wait(lk);
+				
+				string storepath = database->select(SELECT_SYSTEM("store_path"));
 				//Add the album.
 				QueryRow params;
 				//get the date.
@@ -273,14 +273,12 @@ int Gallery::delAlbums(RequestVars& vars, Response& r, SessionStore&) {
 	tokenize(vars["a"],albums,",");
 
 	thread* del_albums = new thread([this, albums, delThumbs, delFiles]() {
-		//Pause until ready.
-		std::unique_lock<std::mutex> lk(process_mutex);
+		std::unique_lock<std::mutex> lk(mutex_thread_start);
 		while(currentID != this_thread::get_id())
-			cv_proc.wait(lk);
-		Query q_store_path(SELECT_SYSTEM("store_path"));
-		Query q_thumb_path(SELECT_SYSTEM("thumbs_path"));
-		string storepath = database->select(&q_store_path)->response->at(0).at(0);
-		string thumbspath = database->select(&q_thumb_path)->response->at(0).at(0);
+			cv_thread_start.wait(lk);
+
+		string storepath = database->select(SELECT_SYSTEM("store_path"));
+		string thumbspath = database->select(SELECT_SYSTEM("thumbs_path"));
 		for(string album: albums) {
 			QueryRow params;
 

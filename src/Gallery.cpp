@@ -39,37 +39,39 @@ Gallery::Gallery(Parameters* params) {
 		auth = 0;
 
 	//Create/start process queue thread.
-	
 	thread_process_queue = new thread([this]() {
 		while(!abort) {
 			{
-				unique_lock<mutex> lk(thread_process_mutex);
-					//Wait for a signal from log functions (pushers)
+				unique_lock<mutex> lk(mutex_queue_add);
+				//Wait for a signal from log functions (pushers)
 				while(processQueue.empty() && !abort) 
-					cv.wait(lk);
+					cv_queue_add.wait(lk);
 			}
 			if(abort) return;
 				
 			while(!processQueue.empty()) {
 				thread* t = processQueue.front();
 				{
-					std::lock_guard<std::mutex> lk(process_mutex);
+					std::lock_guard<std::mutex> lk(mutex_thread_start);
 					currentID = t->get_id();
 				}
-				cv_proc.notify_all();
+				cv_thread_start.notify_all();
 				t->join();
 				delete t;
 				processQueue.pop();
 			}
 		}
-		
 	});
-	serverTemplatesLock.lock();
-	serverTemplates = new ctemplate::TemplateDictionary("");
-	serverTemplatesLock.unlock();
+
+	thread_process_queue->detach();
+
+	//Create the server templates.
+	contentTemplatesLock.lock();
+	contentTemplates = new ctemplate::TemplateDictionary("");
+	contentTemplatesLock.unlock();
 
 	load_templates();
-	thread_process_queue->detach();
+	
 	currentID = std::this_thread::get_id();
 	//Create function map.
 	GALLERYMAP(functionMap);
@@ -79,13 +81,13 @@ Gallery::Gallery(Parameters* params) {
 void Gallery::process_thread(std::thread* t) {
 	bool empty;
 	{
-		lock_guard<mutex> lk(thread_process_mutex);
+		lock_guard<mutex> lk(mutex_queue_add);
 		empty = processQueue.empty();
 		processQueue.push(t);
 	}
 
 	if(empty) {
-		cv.notify_one();
+		cv_queue_add.notify_one();
 	}
 }
 
@@ -95,11 +97,11 @@ Gallery::~Gallery() {
 		delete(data);
 	}
 
-	delete serverTemplates;
+	delete contentTemplates;
 
 
 	abort = 1;
-	cv.notify_all();
+	cv_queue_add.notify_all();
 	if(thread_process_queue->joinable())
 		thread_process_queue->join();
 	delete thread_process_queue;
@@ -127,9 +129,7 @@ Response Gallery::getPage(const string& page, SessionStore& session, int publish
 	if(contains(contentList, page + ".html")) {
 		r = HTML_HEADER + r + END_HEADER;
 		string output;
-		serverTemplatesLock.lock();
-		ctemplate::TemplateDictionary* d = serverTemplates->MakeCopy("");
-		serverTemplatesLock.unlock();
+		ctemplate::TemplateDictionary* d = contentTemplates->MakeCopy("");
 
 		//Do additional template logic processing here (NOTE_LUA)
 		if(!session.get("auth").empty() || !auth)
@@ -186,6 +186,7 @@ void Gallery::addFile(const string& file, int nGenThumbs, const string& thumbspa
 			}
 		}
 	}
+
 	//Insert file 
 	QueryRow params;
 	params.push_back(file);
@@ -208,9 +209,8 @@ int Gallery::getDuplicates( string& name, string& path ) {
 	QueryRow params;
 	params.push_back(name);
 	params.push_back(path);
-	Query dup_query(SELECT_DUPLICATE_ALBUM_COUNT);
-	Query* query = database->select(&dup_query, &params);
-	return stoi((*query->response)[0].at(0));
+	string dupAlbumStr = database->select(SELECT_DUPLICATE_ALBUM_COUNT, &params);
+	return stoi(dupAlbumStr);
 }
 
 void parseRequestVars(char* vars, RequestVars& varmap) {
@@ -352,10 +352,8 @@ Response Gallery::processVars(RequestVars& vars, SessionStore& session, int publ
 }
 
 int Gallery::genThumb(const char* file, double shortmax, double longmax) {
-	Query store_q(SELECT_SYSTEM("store_path"));
-	Query thumbs_q(SELECT_SYSTEM("thumbs_path"));
-	string storepath = database->select(&store_q)->response->at(0).at(0);
-	string thumbspath = database->select(&thumbs_q)->response->at(0).at(0);
+	string storepath = database->select(SELECT_SYSTEM("store_path"));
+	string thumbspath = database->select(SELECT_SYSTEM("thumbs_path"));
 	string imagepath = basepath + '/' + storepath + '/' + file;
 	string thumbpath = basepath + '/' + thumbspath + '/' + file;
 	
@@ -403,9 +401,8 @@ int Gallery::genThumb(const char* file, double shortmax, double longmax) {
 }
 
 int Gallery::hasAlbums() {
-	Query album_count_q(SELECT_ALBUM_COUNT);
-	Query* query = database->select(&album_count_q);
-	int nAlbums = stoi((*query->response)[0][0]);
+	string albumsStr = database->select(SELECT_ALBUM_COUNT);
+	int nAlbums = stoi(albumsStr);
 	if(nAlbums == 0) {
 		return 0;
 	}
@@ -426,14 +423,14 @@ void Gallery::load_templates() {
 		ctemplate::LoadTemplate(templatepath + s, ctemplate::DO_NOT_STRIP);
 	}
 
-	serverTemplatesLock.lock();
-	delete serverTemplates;
-	serverTemplates = new ctemplate::TemplateDictionary("");
+	contentTemplatesLock.lock();
+	delete contentTemplates;
+	contentTemplates = new ctemplate::TemplateDictionary("");
 	//Load server templates (See ctemplate Include Dictionaries)
 	templatepath = basepath + "templates/server/";
 	for(string s: FileSystem::GetFiles(templatepath, "", 0)) {
 		size_t pos = s.find_last_of(".");
-		ctemplate::TemplateDictionary* d = serverTemplates->AddIncludeDictionary(s.substr(0, pos));
+		ctemplate::TemplateDictionary* d = contentTemplates->AddIncludeDictionary(s.substr(0, pos));
 		
 		d->SetFilename(templatepath + s);
 	}
@@ -454,7 +451,7 @@ void Gallery::load_templates() {
 		string template_name = s.substr(0, s.find_last_of("."));
 		FileSystem::Read(&f, data);
 		std::transform(template_name.begin(), template_name.end(), template_name.begin(), ::toupper);
-		serverTemplates->SetValueWithoutCopy("T_" + template_name, ctemplate::TemplateString(data->data,data->size));
+		contentTemplates->SetValueWithoutCopy("T_" + template_name, ctemplate::TemplateString(data->data,data->size));
 	}
-	serverTemplatesLock.unlock();
+	contentTemplatesLock.unlock();
 }

@@ -146,6 +146,7 @@ COMMIT;"
 
 #define GETCHK(s) s.empty() ? 0 : 1
 #define RESPONSE_VARS RequestVars&, Response&, SessionStore&
+
 typedef std::unordered_map<std::string, std::string> RequestVars;
 typedef std::string Response;
 typedef int(Gallery::*GallFunc)(RequestVars&, Response&, SessionStore&);
@@ -176,13 +177,14 @@ private:
 	std::thread::id currentID;
 	std::thread* thread_process_queue;
 
-	//Process queue mutex/cv.
-	std::condition_variable cv;
-	std::mutex thread_process_mutex;
+	//Process queue 'add' mutex and condition variable.
+	std::condition_variable cv_queue_add;
+	std::mutex mutex_queue_add;
 
-	//Process mutex
-	std::mutex process_mutex;
-	std::condition_variable cv_proc;
+	//Process mutex used by the main thread queue. Held by both the process queue and individual processes.
+	std::mutex mutex_thread_start;
+	//Condition variable used by the main thread queue to signal a thread should begin.
+	std::condition_variable cv_thread_start;
 
 	int genThumb(const char* file, double shortmax, double longmax);
 	int getDuplicates( std::string& name, std::string& path );
@@ -193,12 +195,15 @@ private:
 	int hasAlbums();
 	int getData(Query& query, RequestVars&, Response&, SessionStore&);
 
-	//template dictionary
-	ctemplate::TemplateDictionary* serverTemplates;
-	std::mutex serverTemplatesLock;
+	//template dictionary used by all 'content' templates.
+	ctemplate::TemplateDictionary* contentTemplates;
+	//We need to ocassionally lock the contentTemplates (possibly from other threads). We will use a mutex.
+	std::mutex contentTemplatesLock;
 
 	//(content) template filename vector
 	std::vector<std::string> contentList;
+
+
 	//Client Template filedata vector (stores templates for later de-allocation).
 	std::vector<FileData*> clientTemplateFiles;
 
@@ -207,10 +212,8 @@ private:
 	template <typename T>
 	void addFiles(T& files, int nGenThumbs, const std::string& path, const std::string& albumID) {
 		std::string date = date_format("%Y%m%d",8);
-		Query q_store_path(SELECT_SYSTEM("store_path"));
-		Query q_thumb_path(SELECT_SYSTEM("thumbs_path"));
-		std::string storepath = database->select(&q_store_path)->response->at(0).at(0);
-		std::string thumbspath = database->select(&q_thumb_path)->response->at(0).at(0);
+		std::string storepath = database->select(SELECT_SYSTEM("store_path"));
+		std::string thumbspath = database->select(SELECT_SYSTEM("thumbs_path"));
 
 		if(files.size() > 0) {
 			for (typename T::const_iterator it = files.begin(), end = files.end(); it != end; ++it) {
