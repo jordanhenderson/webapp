@@ -71,6 +71,7 @@
     <CustomBuildAfterTargets>
     </CustomBuildAfterTargets>
     <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
+    <IntDir>$(ProjectName)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(ProjectDir)src\</OutDir>
@@ -78,6 +79,7 @@
     <CustomBuildAfterTargets>
     </CustomBuildAfterTargets>
     <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
+    <IntDir>$(ProjectName)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(ProjectDir)src\</OutDir>
@@ -85,6 +87,7 @@
     <CustomBuildAfterTargets>
     </CustomBuildAfterTargets>
     <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
+    <IntDir>$(ProjectName)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(ProjectDir)src\</OutDir>
@@ -92,6 +95,7 @@
     <CustomBuildAfterTargets>
     </CustomBuildAfterTargets>
     <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
+    <IntDir>$(ProjectName)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -111,7 +115,7 @@
       <Command>echo "Building host/buildvm_arch.h..." &amp;&amp; cd src &amp;&amp; minilua ../dynasm/dynasm.lua -LN -D WIN -D JIT -D FFI -o host/buildvm_arch.h vm_x86.dasc</Command>
     </CustomBuildStep>
     <CustomBuildStep>
-      <Outputs>./src/host/buildvm_arch.h</Outputs>
+      <Outputs>src/host/buildvm_arch.h</Outputs>
       <Message>Building host/buildvm_arch.h...</Message>
       <Inputs>
       </Inputs>

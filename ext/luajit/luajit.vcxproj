@@ -104,8 +104,7 @@
     <CustomBuildStep>
       <Message>BuildVM</Message>
       <Command>echo Building VM &amp;&amp; cd src &amp;&amp; buildvm -m peobj -o lj_vm.obj &amp;&amp; buildvm -m bcdef -o lj_bcdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; buildvm -m ffdef -o lj_ffdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; buildvm -m libdef -o lj_libdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; buildvm -m recdef -o lj_recdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; buildvm -m vmdef -o jit\vmdef.lua lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; buildvm -m folddef -o lj_folddef.h lj_opt_fold.c</Command>
-      <Outputs>
-      </Outputs>
+      <Outputs>src/lj_vm.obj</Outputs>
       <Inputs>
       </Inputs>
     </CustomBuildStep>
@@ -132,7 +131,7 @@
     </Lib>
     <CustomBuildStep>
       <Message>BuildVM</Message>
-      <Command>echo Building VM &amp;&amp; cd src &amp;&amp; buildvm -m peobj -o lj_vm.obj &amp;&amp; buildvm -m bcdef -o lj_bcdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; buildvm -m ffdef -o lj_ffdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; buildvm -m libdef -o lj_libdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; buildvm -m recdef -o lj_recdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; buildvm -m vmdef -o jit\vmdef.lua lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; buildvm -m folddef -o lj_folddef.h lj_opt_fold.c</Command>
+      <Command>call build_luajit.bat</Command>
       <Outputs>
       </Outputs>
       <Inputs>
@@ -163,7 +162,7 @@
     </Lib>
     <CustomBuildStep>
       <Message>BuildVM</Message>
-      <Command>echo Building VM &amp;&amp; cd src &amp;&amp; buildvm -m peobj -o lj_vm.obj &amp;&amp; buildvm -m bcdef -o lj_bcdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; buildvm -m ffdef -o lj_ffdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; buildvm -m libdef -o lj_libdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; buildvm -m recdef -o lj_recdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; buildvm -m vmdef -o jit\vmdef.lua lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; buildvm -m folddef -o lj_folddef.h lj_opt_fold.c</Command>
+      <Command>call build_luajit.bat</Command>
       <Outputs>
       </Outputs>
       <Inputs>
@@ -193,7 +192,7 @@
     </Lib>
     <CustomBuildStep>
       <Message>BuildVM</Message>
-      <Command>echo Building VM &amp;&amp; cd src &amp;&amp; buildvm -m peobj -o lj_vm.obj &amp;&amp; buildvm -m bcdef -o lj_bcdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; buildvm -m ffdef -o lj_ffdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; buildvm -m libdef -o lj_libdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; buildvm -m recdef -o lj_recdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; buildvm -m vmdef -o jit\vmdef.lua lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; buildvm -m folddef -o lj_folddef.h lj_opt_fold.c</Command>
+      <Command>call build_luajit.bat</Command>
       <Outputs>
       </Outputs>
       <Inputs>
