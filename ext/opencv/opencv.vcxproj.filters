@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\opencv\modules\imgproc\src\imgwarp.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="modules\core\src\stl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -106,6 +103,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="modules\core\src\rand.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="modules\imgproc\src\imgwarp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

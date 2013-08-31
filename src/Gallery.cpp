@@ -6,10 +6,12 @@
 #include "prettywriter.h"
 #include "stringbuffer.h"
 #include <sha.h>
+
+extern "C" {
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
-#include "PluginHooks.h"
+}
 
 using namespace rapidjson;
 using namespace std;
@@ -33,14 +35,6 @@ Gallery::Gallery(Parameters* params) {
 		database->exec(s);
 	}
 	
-	//Check authentication
-	user = params->get("user");
-	pass = params->get("pass");
-	if(!user.empty() && !pass.empty()) {
-		auth = 1;
-	} else
-		auth = 0;
-
 	//Create/start process queue thread.
 	thread_process_queue = new thread([this]() {
 		while(!abort) {
@@ -73,7 +67,7 @@ Gallery::Gallery(Parameters* params) {
 	contentTemplates = new ctemplate::TemplateDictionary("");
 	contentTemplatesLock.unlock();
 
-	load_templates();
+	refresh_templates();
 	
 	currentID = std::this_thread::get_id();
 	//Create function map.
@@ -83,10 +77,9 @@ Gallery::Gallery(Parameters* params) {
 	lua_State* L = luaL_newstate();
 	if(L != NULL) {
 		luaL_openlibs(L);
-		luaL_requiref(L, "ioCore", &luaopen_ioCore, 1);
 		lua_pushlightuserdata(L, this);
 		lua_setglobal(L, "gallery");
-		luaL_dofile(L, "./plugins/thumbs/default.lua");
+		luaL_dofile(L, "./gallery/plugins/thumbs/default.lua");
 		lua_close(L);
 	}
 	
@@ -146,7 +139,7 @@ Response Gallery::getPage(const string& page, SessionStore& session, int publish
 		ctemplate::TemplateDictionary* d = contentTemplates->MakeCopy("");
 
 		//Do additional template logic processing here (NOTE_LUA)
-		if(!session.get("auth").empty() || !auth)
+		if(!session.get("auth").empty() || !(params->get("user").empty() && params->get("pass").empty()))
 			d->ShowSection("LOGGED_IN");
 		else
 			d->ShowSection("NOT_LOGGED_IN");
@@ -345,7 +338,8 @@ Response Gallery::processVars(RequestVars& vars, SessionStore& session, int publ
 
 	map<string, GallFunc>::const_iterator miter = functionMap.find(t);
 	int hasfunc = miter != functionMap.end();
-	if((hasfunc && !auth) || (hasfunc && !session.get("auth").empty()) || (hasfunc && t == "login")) {
+	if((hasfunc && !(params->get("user").empty() && params->get("pass").empty())) || 
+		(hasfunc && !session.get("auth").empty()) || (hasfunc && t == "login")) {
 		GallFunc f = miter->second;
 
 		r.append(END_HEADER);
@@ -372,7 +366,6 @@ int Gallery::genThumb(const char* file, double shortmax, double longmax) {
 	string thumbpath = basepath + '/' + thumbspath + '/' + file;
 	
 	//Check if thumb already exists.
-
 	if(FileSystem::Open(thumbpath))
 		return ERROR_SUCCESS;
 
@@ -423,7 +416,7 @@ int Gallery::hasAlbums() {
 	return 1;
 }
 
-void Gallery::load_templates() {
+void Gallery::refresh_templates() {
 	//Force reload templates
 	ctemplate::mutable_default_template_cache()->ReloadAllIfChanged(ctemplate::TemplateCache::IMMEDIATE_RELOAD);
 
@@ -449,7 +442,6 @@ void Gallery::load_templates() {
 		d->SetFilename(templatepath + s);
 	}
 	
-
 	//Load client templates (inline insertion into content templates) - these are Handbrake (JS) templates.
 	//First delete existing filedata. This should be optimised later.
 	for(FileData* data: clientTemplateFiles) {
@@ -468,4 +460,9 @@ void Gallery::load_templates() {
 		contentTemplates->SetValueWithoutCopy("T_" + template_name, ctemplate::TemplateString(data->data,data->size));
 	}
 	contentTemplatesLock.unlock();
+}
+
+//Refresh the plugins.
+void Gallery::refresh_plugins() {
+
 }

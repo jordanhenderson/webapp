@@ -150,7 +150,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>ext/lua/include;ext/opencv/modules/core/include;ext/opencv/modules/imgproc/include;ext/mysql/include;ext/tbb/include;ext/libjpeg/include;ext/zlib/include;ext/lpng/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext/luajit/include;ext/opencv/modules/core/include;ext/opencv/modules/imgproc/include;ext/mysql/include;ext/tbb/include;ext/libjpeg/include;ext/zlib/include;ext/lpng/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
       <InterproceduralOptimization>NoIPO</InterproceduralOptimization>
@@ -163,7 +163,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;./ext/luajit/src/lj_vm.obj;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -174,7 +174,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>ext/lua/include;ext/opencv/modules/core/include;ext/opencv/modules/imgproc/include;ext/mysql/include;ext/tbb/include;ext/libjpeg/include;ext/zlib/include;ext/lpng/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext/luajit/include;ext/opencv/modules/core/include;ext/opencv/modules/imgproc/include;ext/mysql/include;ext/tbb/include;ext/libjpeg/include;ext/zlib/include;ext/lpng/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
       <InterproceduralOptimization>NoIPO</InterproceduralOptimization>
@@ -200,7 +200,7 @@
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <PreprocessorDefinitions>CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>ext/lua/include;ext/opencv/modules/core/include;ext/opencv/modules/imgproc/include;ext/mysql/include;ext/tbb/include;ext/libjpeg/include;ext/zlib/include;ext/lpng/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext/luajit/include;ext/opencv/modules/core/include;ext/opencv/modules/imgproc/include;ext/mysql/include;ext/tbb/include;ext/libjpeg/include;ext/zlib/include;ext/lpng/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
@@ -238,7 +238,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;USE_PRECOMPILED_HEADERS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>ext/lua/include;ext/opencv/modules/core/include;ext/opencv/modules/imgproc/include;ext/mysql/include;ext/tbb/include;ext/libjpeg/include;ext/zlib/include;ext/lpng/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>ext/luajit/include;ext/opencv/modules/core/include;ext/opencv/modules/imgproc/include;ext/mysql/include;ext/tbb/include;ext/libjpeg/include;ext/zlib/include;ext/lpng/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
@@ -377,7 +377,7 @@
     </ClCompile>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Platform.cpp" />
-    <ClCompile Include="src\PluginHooks.cpp" />
+    <ClCompile Include="src\Hooks.cpp" />
     <ClCompile Include="src\pngnq\neuquant32.c">
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </AdditionalOptions>
@@ -424,7 +424,7 @@
     <ClInclude Include="include\gif\gif_lib_private.h" />
     <ClInclude Include="include\gif\stdbool.h" />
     <ClInclude Include="include\Image.h" />
-    <ClInclude Include="include\PluginHooks.h" />
+    <ClInclude Include="include\Hooks.h" />
     <ClInclude Include="include\pngnq\neuquant32.h" />
     <ClInclude Include="include\rapidjson\document.h" />
     <ClInclude Include="include\rapidjson\filestream.h" />
@@ -460,7 +460,7 @@
     <ProjectReference Include="ext\lpng\lpng.vcxproj">
       <Project>{29148696-dffe-47f1-9a04-c277a6b1d042}</Project>
     </ProjectReference>
-    <ProjectReference Include="ext\lua\lua.vcxproj">
+    <ProjectReference Include="ext\luajit\luajit.vcxproj">
       <Project>{2468767e-a143-4d7a-82a0-5346a5b1fc14}</Project>
     </ProjectReference>
     <ProjectReference Include="ext\mysql\authentication_win\auth_win_client.vcxproj">

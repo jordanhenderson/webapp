@@ -171,9 +171,6 @@ private:
 	//Dynamic function map for public API.
 	std::map<std::string, GallFunc> functionMap;
 
-	//Should authentication be enabled?
-	int auth;
-
 	//Process queue. Threads are executed one by one to ensure no write conflicts occur.
 	std::queue<std::thread*> processQueue;
 	std::thread::id currentID;
@@ -226,7 +223,8 @@ private:
 	}
 	void addFile(const std::string&, int, const std::string&, const std::string&, const std::string&, const std::string&);
 	void process_thread(std::thread*);
-	void load_templates();
+	void refresh_templates();
+	void refresh_plugins();
 	
 
 public:

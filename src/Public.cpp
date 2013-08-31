@@ -87,7 +87,8 @@ int Gallery::getBoth(RequestVars& vars, Response& r, SessionStore& s) {
 }
 
 int Gallery::clearCache(RequestVars& vars, Response& r, SessionStore& session) {
-	load_templates();
+	refresh_templates();
+	refresh_plugins();
 	Serializer s;
 	s.append("msg", "CACHE_CLEARED", 1);
 	r.append(s.get(RESPONSE_TYPE_MESSAGE));

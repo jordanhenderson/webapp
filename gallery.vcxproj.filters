@@ -133,7 +133,7 @@
     <ClCompile Include="src\Public.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\PluginHooks.cpp">
+    <ClCompile Include="src\Hooks.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -228,7 +228,7 @@
     <ClInclude Include="include\Container.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\PluginHooks.h">
+    <ClInclude Include="include\Hooks.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

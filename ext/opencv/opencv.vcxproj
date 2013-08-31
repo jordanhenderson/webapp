@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\opencv\modules\imgproc\src\imgwarp.cpp" />
     <ClCompile Include="modules\core\src\algorithm.cpp" />
     <ClCompile Include="modules\core\src\alloc.cpp" />
     <ClCompile Include="modules\core\src\arithm.cpp" />
@@ -50,6 +49,7 @@
     <ClCompile Include="modules\core\src\system.cpp" />
     <ClCompile Include="modules\core\src\tables.cpp" />
     <ClCompile Include="modules\core\src\types.cpp" />
+    <ClCompile Include="modules\imgproc\src\imgwarp.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{988071AA-3875-4CFE-8A08-A31953B820B3}</ProjectGuid>
