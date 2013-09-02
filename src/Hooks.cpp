@@ -5,7 +5,19 @@ extern "C" {
 #include "Hooks.h"
 }
 using namespace ctemplate;
-APIEXPORT int Template_ShowSection(TemplateDictionary* dict, const char* section) {
+using namespace std;
+int Template_ShowGlobalSection(TemplateDictionary* dict, const char* section) {
+	dict->ShowTemplateGlobalSection(section);
+	return 0;
+}
+
+int Template_ShowSection(TemplateDictionary* dict, const char* section) {
 	dict->ShowSection(section);
 	return 0;
+}
+
+const char* Session_Get(SessionStore* session, const char* key) {
+	string s = session->get(key);
+	if(s.empty()) return NULL;
+	return s.c_str();
 }

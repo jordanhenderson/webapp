@@ -8,17 +8,19 @@
 #include <sha.h>
 
 using namespace std;
+using namespace ctemplate;
 
-void Gallery::runScript(const string& filename, vector<LuaParam*>* params) {
+void Gallery::runScript(const char* filename, LuaParam* params, int nArgs) {
 	for(LuaChunk* c: loadedScripts) {
 		if(c->filename == filename) {
 			lua_State* L = luaL_newstate();
 			luaL_openlibs(L);
-			luaL_loadbuffer(L, c->bytecode.c_str(), c->bytecode.length(), filename.c_str());
+			luaL_loadbuffer(L, c->bytecode.c_str(), c->bytecode.length(), filename);
 			if(params != NULL) {
-				for(LuaParam* p : *params) {
+				for(int i = 0; i < nArgs; i++) {
+					LuaParam* p = params + i;
 					lua_pushlightuserdata(L, p->d);
-					lua_setglobal(L, p->p.c_str());
+					lua_setglobal(L, p->p);
 				}
 			}
 			lua_pcall(L, 0, 0, 0);
@@ -73,10 +75,7 @@ Gallery::Gallery(Parameters* params) {
 
 	thread_process_queue->detach();
 
-	//Create the server templates.
-	contentTemplatesLock.lock();
-	contentTemplates = new ctemplate::TemplateDictionary("");
-	contentTemplatesLock.unlock();
+	contentTemplates = new TemplateDictionary("");
 
 	refresh_templates();
 	
@@ -103,8 +102,8 @@ void Gallery::process_thread(std::thread* t) {
 
 Gallery::~Gallery() {
 	//Clean up client template files.
-	for(FileData* data: clientTemplateFiles) {
-		delete(data);
+	for(TemplateData data: clientTemplateFiles) {
+		delete(data.data);
 	}
 
 	delete contentTemplates;
@@ -139,13 +138,17 @@ Response Gallery::getPage(const string& page, SessionStore& session, int publish
 	if(contains(contentList, page + ".html")) {
 		r = HTML_HEADER + r + END_HEADER;
 		string output;
-		ctemplate::TemplateDictionary* d = contentTemplates->MakeCopy("");
-		vector<LuaParam*> params;
-		LuaParam p("template", d);
-		params.push_back(&p);
-		runScript("core/template.lua", &params);
+		TemplateDictionary* d = contentTemplates->MakeCopy("");
+		for(string data: serverTemplateFiles) {
+			d->AddIncludeDictionary(data)->SetFilename(data);
+		}
+		for(TemplateData file: clientTemplateFiles) {
+			d->SetValueWithoutCopy(file.name, TemplateString(file.data->data, file.data->size));
+		}
+		LuaParam luaparams[] = {{"template", d}, {"session", &session}};
 
-		ctemplate::ExpandTemplate(basepath + "/content/" + page + ".html", ctemplate::DO_NOT_STRIP, d, &output);
+		runScript("core/template.lua", (LuaParam*)luaparams, 2);
+		ExpandTemplate(basepath + "/content/" + page + ".html", STRIP_WHITESPACE, d, &output);
 		r.append(output);
 		delete d;
 		
@@ -356,8 +359,7 @@ int Gallery::hasAlbums() {
 
 void Gallery::refresh_templates() {
 	//Force reload templates
-	ctemplate::mutable_default_template_cache()->ReloadAllIfChanged(ctemplate::TemplateCache::IMMEDIATE_RELOAD);
-
+	mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::IMMEDIATE_RELOAD);
 	//Load content files (applicable templates)
 	contentList.clear();
 	string basepath = this->basepath + '/';
@@ -365,25 +367,31 @@ void Gallery::refresh_templates() {
 	contentList = FileSystem::GetFiles(templatepath, "", 0);
 	for(string s : contentList) {
 		//Preload templates.
-		ctemplate::LoadTemplate(templatepath + s, ctemplate::DO_NOT_STRIP);
+		LoadTemplate(templatepath + s, STRIP_WHITESPACE);
 	}
 
-	contentTemplatesLock.lock();
-	delete contentTemplates;
-	contentTemplates = new ctemplate::TemplateDictionary("");
-	//Load server templates (See ctemplate Include Dictionaries)
+	//Load server templates.
 	templatepath = basepath + "templates/server/";
+	
+	serverTemplateFiles.clear();
+	
 	for(string s: FileSystem::GetFiles(templatepath, "", 0)) {
-		size_t pos = s.find_last_of(".");
-		ctemplate::TemplateDictionary* d = contentTemplates->AddIncludeDictionary(s.substr(0, pos));
-		
-		d->SetFilename(templatepath + s);
+		File f;
+		FileData data;
+		FileSystem::Open(templatepath + s, "rb", &f);
+		string template_name = "T_" + s.substr(0, s.find_last_of("."));
+		FileSystem::Read(&f, &data);
+		std::transform(template_name.begin(), template_name.end(), template_name.begin(), ::toupper);
+		mutable_default_template_cache()->Delete(template_name);
+		StringToTemplateCache(template_name, data.data, data.size, STRIP_WHITESPACE);
+		serverTemplateFiles.push_back(template_name);
 	}
+
 	
 	//Load client templates (inline insertion into content templates) - these are Handbrake (JS) templates.
 	//First delete existing filedata. This should be optimised later.
-	for(FileData* data: clientTemplateFiles) {
-		delete data;
+	for(TemplateData data: clientTemplateFiles) {
+		delete data.data;
 	}
 	clientTemplateFiles.clear();
 
@@ -392,12 +400,13 @@ void Gallery::refresh_templates() {
 		File f;
 		FileData* data = new FileData();
 		FileSystem::Open(templatepath + s, "rb", &f);
-		string template_name = s.substr(0, s.find_last_of("."));
+		string template_name = "T_" + s.substr(0, s.find_last_of("."));
 		FileSystem::Read(&f, data);
 		std::transform(template_name.begin(), template_name.end(), template_name.begin(), ::toupper);
-		contentTemplates->SetValueWithoutCopy("T_" + template_name, ctemplate::TemplateString(data->data,data->size));
+		TemplateData d = {template_name, data};
+		clientTemplateFiles.push_back(d);
 	}
-	contentTemplatesLock.unlock();
+	
 }
 
 //Refresh the LUA plugins

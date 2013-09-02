@@ -168,12 +168,13 @@ public:
 };
 
 struct LuaParam {
-	std::string p;
+	const char* p;
 	void* d;
-	LuaParam(const std::string& parameter, void* data) {
-		p = parameter;
-		d = data;
-	}
+};
+
+struct TemplateData {
+	std::string name;
+	FileData* data;
 };
 
 class Gallery : public ServerHandler, Internal {
@@ -216,15 +217,15 @@ private:
 
 	//template dictionary used by all 'content' templates.
 	ctemplate::TemplateDictionary* contentTemplates;
-	//We need to ocassionally lock the contentTemplates (possibly from other threads). We will use a mutex.
-	std::mutex contentTemplatesLock;
 
 	//(content) template filename vector
 	std::vector<std::string> contentList;
 
 
 	//Client Template filedata vector (stores templates for later de-allocation).
-	std::vector<FileData*> clientTemplateFiles;
+	std::vector<TemplateData> clientTemplateFiles;
+
+	std::vector<std::string> serverTemplateFiles;
 
 	//Store lua plugin bytecode in a vector.
 	std::vector<LuaChunk*> loadedScripts;
@@ -253,7 +254,7 @@ public:
 	Gallery(Parameters* params);
 	~Gallery();
 	void process(FCGX_Request* request);
-	void runScript(const std::string& filename, std::vector<LuaParam*>* params = NULL);
+	void runScript(const char* filename, LuaParam* params = NULL, int nArgs = 0);
 
 	//Main response functions.
 	int getAlbums(RESPONSE_VARS);
