@@ -11,6 +11,12 @@
 #include "document.h"
 #include <ctemplate/template.h>
 
+extern "C" {
+#include <lua.h>
+#include <lualib.h>
+#include <lauxlib.h>
+}
+
 #define TEMPLATE_VIDEO "video.html"
 #define TEMPLATE_IMAGE "image.html"
 #define TEMPLATE_FLASH "flash.html"
@@ -83,9 +89,6 @@ XSTR(ALBUM_SET) " AND f.id IN (SELECT fileid FROM albumfiles WHERE albumid=al.id
 #define INC_FILE_VIEWS "UPDATE files SET views = views + 1 WHERE id = ?"
 #define INC_ALBUM_VIEWS "UPDATE albums SET views = views + 1 WHERE id = ?"
 
-#define CONDITION_FILE_GROUPED 
-
-
 #define SELECT_ALBUM_DETAILS "SELECT al.id AS id, name, added, lastedited, type, rating, recursive, views, al.path AS path, \
 1 AS s_type, \
 	COALESCE(\
@@ -154,6 +157,25 @@ typedef std::string Response;
 typedef int(Gallery::*GallFunc)(RequestVars&, Response&, SessionStore&);
 class Logging;
 
+class LuaChunk {
+public:
+	std::string bytecode;
+	std::string filename;
+	~LuaChunk() {};
+	LuaChunk(const std::string& filename) {
+		this->filename = std::string(filename);
+	};
+};
+
+struct LuaParam {
+	std::string p;
+	void* d;
+	LuaParam(const std::string& parameter, void* data) {
+		p = parameter;
+		d = data;
+	}
+};
+
 class Gallery : public ServerHandler, Internal {
 private:
 	
@@ -163,8 +185,6 @@ private:
 	Session session;
 	RequestVars parseRequestVariables(char* vars, RequestVars& v);
 	Response processVars(RequestVars&, SessionStore&, int publishSession);
-	std::string user;
-	std::string pass;
 	std::string basepath;
 	std::string dbpath;
 
@@ -206,6 +226,8 @@ private:
 	//Client Template filedata vector (stores templates for later de-allocation).
 	std::vector<FileData*> clientTemplateFiles;
 
+	//Store lua plugin bytecode in a vector.
+	std::vector<LuaChunk*> loadedScripts;
 
 	//This function should be run in a thread.
 	template <typename T>
@@ -224,14 +246,14 @@ private:
 	void addFile(const std::string&, int, const std::string&, const std::string&, const std::string&, const std::string&);
 	void process_thread(std::thread*);
 	void refresh_templates();
-	void refresh_plugins();
-	
+	void refresh_scripts();
+	static int LuaWriter(lua_State* L, const void* p, size_t sz, void* ud);
 
 public:
 	Gallery(Parameters* params);
 	~Gallery();
 	void process(FCGX_Request* request);
-	
+	void runScript(const std::string& filename, std::vector<LuaParam*>* params = NULL);
 
 	//Main response functions.
 	int getAlbums(RESPONSE_VARS);

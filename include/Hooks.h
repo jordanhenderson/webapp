@@ -1,12 +1,17 @@
 #ifndef HOOKS_H
 #define HOOKS_H
-
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
-#define APIEXPORT __declspec(dllexport)
+#include <ctemplate/template.h>
+#if defined _WIN32 || defined __CYGWIN__
+    #ifdef __GNUC__
+      #define APIEXPORT __attribute__ ((dllexport))
+    #else
+      #define APIEXPORT __declspec(dllexport)
+    #endif
 #else
-#define APIEXPORT
+  #if __GNUC__ >= 4
+    #define APIEXPORT __attribute__ ((visibility ("default")))
+  #endif
 #endif
-
-APIEXPORT int derp(Gallery* g);
+APIEXPORT int Template_ShowSection(Gallery*, ctemplate::TemplateDictionary*);
 
 #endif

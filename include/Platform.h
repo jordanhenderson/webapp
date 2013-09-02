@@ -24,7 +24,6 @@
 
 #ifdef WIN32
 #define ENV_NEWLINE "\r\n"
-#define snprintf _snprintf
 #else
 #define ENV_NEWLINE "\n"
 #define _wfopen fopen

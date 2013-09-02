@@ -7,7 +7,6 @@
 #include "stringbuffer.h"
 #include <sha.h>
 
-using namespace rapidjson;
 using namespace std;
 
 //Public API functions.
@@ -44,8 +43,7 @@ int Gallery::updateFile(RequestVars& vars, Response& r, SessionStore &session) {
 		return 0;
 	}
 
-	char query[255];
-	snprintf(query, 255, UPDATE_FILE, field.c_str());
+	string query = replaceAll(UPDATE_FILE, "%s", field);
 
 	params.push_back(v);
 	params.push_back(file);
@@ -68,8 +66,7 @@ int Gallery::updateAlbum(RequestVars& vars, Response& r, SessionStore &session) 
 		return 0;
 	}
 
-	char query[255];
-	snprintf(query, 255, UPDATE_ALBUM, field.c_str());
+	string query = replaceAll(UPDATE_ALBUM, "%s", field);
 
 	params.push_back(v);
 	params.push_back(album);
@@ -88,7 +85,7 @@ int Gallery::getBoth(RequestVars& vars, Response& r, SessionStore& s) {
 
 int Gallery::clearCache(RequestVars& vars, Response& r, SessionStore& session) {
 	refresh_templates();
-	refresh_plugins();
+	refresh_scripts();
 	Serializer s;
 	s.append("msg", "CACHE_CLEARED", 1);
 	r.append(s.get(RESPONSE_TYPE_MESSAGE));
@@ -102,7 +99,7 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& session
 
 	thread* refresh_albums = new thread([this, albums, nGenThumbs]() {
 		std::unique_lock<std::mutex> lk(mutex_thread_start);
-		while(currentID != this_thread::get_id())
+		while(currentID != this_thread::get_id() && !abort)
 			cv_thread_start.wait(lk);
 		string storepath = database->select(SELECT_SYSTEM("store_path"));
 		for(string album: albums) {
@@ -172,7 +169,7 @@ int Gallery::login(RequestVars& vars, Response& r, SessionStore& store) {
 	string user = vars["user"];
 	string pass = vars["pass"];
 	Serializer s;
-	if(user == this->user && pass == this->pass) {
+	if(user == params->get("user") && pass == params->get("pass")) {
 		store.store("auth", "TRUE");
 		s.append("msg", "LOGIN_SUCCESS", 1);
 	} else {
@@ -232,7 +229,7 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 		} else {
 			thread* add_album = new thread([this, name, path, type, nRecurse, nGenThumbs]() {
 				std::unique_lock<std::mutex> lk(mutex_thread_start);
-				while(currentID != this_thread::get_id())
+				while(currentID != this_thread::get_id() && !abort)
 					cv_thread_start.wait(lk);
 				
 				string storepath = database->select(SELECT_SYSTEM("store_path"));
@@ -275,7 +272,7 @@ int Gallery::delAlbums(RequestVars& vars, Response& r, SessionStore&) {
 
 	thread* del_albums = new thread([this, albums, delThumbs, delFiles]() {
 		std::unique_lock<std::mutex> lk(mutex_thread_start);
-		while(currentID != this_thread::get_id())
+		while(currentID != this_thread::get_id() && !abort)
 			cv_thread_start.wait(lk);
 
 		string storepath = database->select(SELECT_SYSTEM("store_path"));
@@ -419,15 +416,58 @@ int Gallery::setThumb(RequestVars& vars, Response& r, SessionStore&) {
 
 	QueryRow params;
 	params.push_back(path);
-	int thumbID = database->exec(INSERT_THUMB, &params);
+	string thumbID = to_string(database->exec(INSERT_THUMB, &params));
 
 	params.clear();
-	params.push_back(to_string(thumbID));
+	params.push_back(thumbID);
 	params.push_back(id);
 	//Update the album/file thumb ID.
-	char thumbquery[255];
-	snprintf(thumbquery, 255, UPDATE_THUMB, thumbID);
+	string thumbquery = replaceAll(UPDATE_THUMB, "%s", thumbID);
 	database->exec(thumbquery, &params);
 
 	return 0;
+}
+
+//Gallery specific functionality
+int Gallery::getDuplicates( string& name, string& path ) {
+	QueryRow params;
+	params.push_back(name);
+	params.push_back(path);
+	string dupAlbumStr = database->select(SELECT_DUPLICATE_ALBUM_COUNT, &params);
+	return stoi(dupAlbumStr);
+}
+
+
+void Gallery::addFile(const string& file, int nGenThumbs, const string& thumbspath, const string& path, const string& date, const string& albumID) {
+	string thumbID;
+	//Generate thumb.
+	if(nGenThumbs) {
+		FileSystem::MakePath(basepath + '/' + thumbspath + '/' + path + '/' + file);
+		if(genThumb((path + '/' + file).c_str(), 200, 200) == ERROR_SUCCESS) {
+			QueryRow params;
+			params.push_back(path + '/' + file);
+			int nThumbID = database->exec(INSERT_THUMB, &params);
+			if(nThumbID > 0) {
+				thumbID = to_string(nThumbID);
+			}
+		}
+	}
+
+	//Insert file 
+	QueryRow params;
+	params.push_back(file);
+	params.push_back(file);
+	params.push_back(date);
+	int fileID;
+	if(!thumbID.empty()) {
+		params.push_back(thumbID);
+		fileID = database->exec(INSERT_FILE, &params);
+	} else {
+		fileID = database->exec(INSERT_FILE_NO_THUMB, &params);
+	}
+	//Add entry into albumFiles
+	QueryRow fparams;
+	fparams.push_back(albumID);
+	fparams.push_back(to_string(fileID));
+	database->exec(INSERT_ALBUM_FILE, &fparams);
 }

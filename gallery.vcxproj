@@ -423,8 +423,8 @@
     <ClInclude Include="include\gif\gif_lib.h" />
     <ClInclude Include="include\gif\gif_lib_private.h" />
     <ClInclude Include="include\gif\stdbool.h" />
-    <ClInclude Include="include\Image.h" />
     <ClInclude Include="include\Hooks.h" />
+    <ClInclude Include="include\Image.h" />
     <ClInclude Include="include\pngnq\neuquant32.h" />
     <ClInclude Include="include\rapidjson\document.h" />
     <ClInclude Include="include\rapidjson\filestream.h" />

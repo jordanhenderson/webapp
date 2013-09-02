@@ -4,12 +4,8 @@
 extern "C" {
 #include "Hooks.h"
 }
-
-APIEXPORT int derp(Gallery* g) {
-	RequestVars v;
-	Response r;
-	RamSession s;
-	g->clearCache(v, r, s);
-	printf("Derp %s", r.c_str());
+using namespace ctemplate;
+APIEXPORT int Template_ShowSection(TemplateDictionary* dict, const char* section) {
+	dict->ShowSection(section);
 	return 0;
 }

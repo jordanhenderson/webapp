@@ -7,14 +7,25 @@
 #include "stringbuffer.h"
 #include <sha.h>
 
-extern "C" {
-#include <lua.h>
-#include <lualib.h>
-#include <lauxlib.h>
-}
-
-using namespace rapidjson;
 using namespace std;
+
+void Gallery::runScript(const string& filename, vector<LuaParam*>* params) {
+	for(LuaChunk* c: loadedScripts) {
+		if(c->filename == filename) {
+			lua_State* L = luaL_newstate();
+			luaL_openlibs(L);
+			luaL_loadbuffer(L, c->bytecode.c_str(), c->bytecode.length(), filename.c_str());
+			if(params != NULL) {
+				for(LuaParam* p : *params) {
+					lua_pushlightuserdata(L, p->d);
+					lua_setglobal(L, p->p.c_str());
+				}
+			}
+			lua_pcall(L, 0, 0, 0);
+			return;
+		}
+	}
+}
 
 Gallery::Gallery(Parameters* params) {
 	abort = 0;
@@ -73,15 +84,7 @@ Gallery::Gallery(Parameters* params) {
 	//Create function map.
 	GALLERYMAP(functionMap);
 
-	//Do lua stuff.
-	lua_State* L = luaL_newstate();
-	if(L != NULL) {
-		luaL_openlibs(L);
-		lua_pushlightuserdata(L, this);
-		lua_setglobal(L, "gallery");
-		luaL_dofile(L, "./gallery/plugins/thumbs/default.lua");
-		lua_close(L);
-	}
+	refresh_scripts();
 	
 }
 
@@ -137,87 +140,22 @@ Response Gallery::getPage(const string& page, SessionStore& session, int publish
 		r = HTML_HEADER + r + END_HEADER;
 		string output;
 		ctemplate::TemplateDictionary* d = contentTemplates->MakeCopy("");
+		vector<LuaParam*> params;
+		LuaParam p("template", d);
+		params.push_back(&p);
+		runScript("core/template.lua", &params);
 
-		//Do additional template logic processing here (NOTE_LUA)
-		if(!session.get("auth").empty() || !(params->get("user").empty() && params->get("pass").empty()))
-			d->ShowSection("LOGGED_IN");
-		else
-			d->ShowSection("NOT_LOGGED_IN");
-
-		ctemplate::PerExpandData data;
-		
-		ctemplate::ExpandWithData(basepath + "/content/" + page + ".html", ctemplate::DO_NOT_STRIP, d, &data, &output);
+		ctemplate::ExpandTemplate(basepath + "/content/" + page + ".html", ctemplate::DO_NOT_STRIP, d, &output);
 		r.append(output);
 		delete d;
 		
 	} else {
-		//Plain file handling.
-		string fileuri = basepath + page;
-		File f;
-		FileSystem::Open(fileuri.c_str(), "rb", &f);
-		if(f.pszFile != NULL) {
-			if(endsWith(fileuri, ".css"))
-				r = CSS_HEADER + r;
-			else if(endsWith(fileuri, ".js"))
-				r = JS_HEADER + r;
-			else
-				r = HTML_HEADER + r;
-
-			r.append(END_HEADER);
-
-			FileData filedata;
-			FileSystem::Read(&f, &filedata);
-			r.append(filedata.data, filedata.size);
-			FileSystem::Close(&f);
-		} else {
 			//File doesn't exists. 404.
 			r.append(END_HEADER);
 			r.append(HTML_404);
-		}
 	}
 	return r;
 
-}
-
-void Gallery::addFile(const string& file, int nGenThumbs, const string& thumbspath, const string& path, const string& date, const string& albumID) {
-	string thumbID;
-	//Generate thumb.
-	if(nGenThumbs) {
-		FileSystem::MakePath(basepath + '/' + thumbspath + '/' + path + '/' + file);
-		if(genThumb((path + '/' + file).c_str(), 200, 200) == ERROR_SUCCESS) {
-			QueryRow params;
-			params.push_back(path + '/' + file);
-			int nThumbID = database->exec(INSERT_THUMB, &params);
-			if(nThumbID > 0) {
-				thumbID = to_string(nThumbID);
-			}
-		}
-	}
-
-	//Insert file 
-	QueryRow params;
-	params.push_back(file);
-	params.push_back(file);
-	params.push_back(date);
-	int fileID;
-	if(!thumbID.empty()) {
-		params.push_back(thumbID);
-		fileID = database->exec(INSERT_FILE, &params);
-	} else {
-		fileID = database->exec(INSERT_FILE_NO_THUMB, &params);
-	}
-	//Add entry into albumFiles
-	QueryRow fparams;
-	fparams.push_back(albumID);
-	fparams.push_back(to_string(fileID));
-	database->exec(INSERT_ALBUM_FILE, &fparams);
-}
-int Gallery::getDuplicates( string& name, string& path ) {
-	QueryRow params;
-	params.push_back(name);
-	params.push_back(path);
-	string dupAlbumStr = database->select(SELECT_DUPLICATE_ALBUM_COUNT, &params);
-	return stoi(dupAlbumStr);
 }
 
 void parseRequestVars(char* vars, RequestVars& varmap) {
@@ -338,7 +276,7 @@ Response Gallery::processVars(RequestVars& vars, SessionStore& session, int publ
 
 	map<string, GallFunc>::const_iterator miter = functionMap.find(t);
 	int hasfunc = miter != functionMap.end();
-	if((hasfunc && !(params->get("user").empty() && params->get("pass").empty())) || 
+	if((hasfunc && (params->get("user").empty() || params->get("pass").empty())) || 
 		(hasfunc && !session.get("auth").empty()) || (hasfunc && t == "login")) {
 		GallFunc f = miter->second;
 
@@ -462,7 +400,33 @@ void Gallery::refresh_templates() {
 	contentTemplatesLock.unlock();
 }
 
-//Refresh the plugins.
-void Gallery::refresh_plugins() {
+//Refresh the LUA plugins
+void Gallery::refresh_scripts() {
+	for(LuaChunk* b: loadedScripts) {
+		delete b;
+	}
 
+	loadedScripts.clear();
+
+	string basepath = this->basepath + '/';
+	string pluginpath = basepath + "plugins/";
+
+	for(string s: FileSystem::GetFiles(pluginpath, "", 1)) {
+		LuaChunk* b = new LuaChunk(s);
+		lua_State* L = luaL_newstate();
+		if(L != NULL) {
+			luaL_openlibs(L);
+			luaL_loadfile(L, (pluginpath + s).c_str());
+			lua_dump(L, LuaWriter, b);
+			lua_close(L);
+			//Bytecode loaded. push back for later.
+			loadedScripts.push_back(b);
+		} else delete b;
+	}
+}
+
+int Gallery::LuaWriter(lua_State* L, const void* p, size_t sz, void* ud) {
+	LuaChunk* b = (LuaChunk*)ud;
+	b->bytecode.append((const char*)p, sz);
+	return 0;
 }
