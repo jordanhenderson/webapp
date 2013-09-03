@@ -99,7 +99,7 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& session
 
 	thread* refresh_albums = new thread([this, albums, nGenThumbs]() {
 		std::unique_lock<std::mutex> lk(mutex_thread_start);
-		while(currentID != this_thread::get_id() && !abort)
+		while(currentID != this_thread::get_id() && !shutdown_handler)
 			cv_thread_start.wait(lk);
 		string storepath = database->select(SELECT_SYSTEM("store_path"));
 		for(string album: albums) {
@@ -229,7 +229,7 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 		} else {
 			thread* add_album = new thread([this, name, path, type, nRecurse, nGenThumbs]() {
 				std::unique_lock<std::mutex> lk(mutex_thread_start);
-				while(currentID != this_thread::get_id() && !abort)
+				while(currentID != this_thread::get_id() && !shutdown_handler)
 					cv_thread_start.wait(lk);
 				
 				string storepath = database->select(SELECT_SYSTEM("store_path"));
@@ -272,7 +272,7 @@ int Gallery::delAlbums(RequestVars& vars, Response& r, SessionStore&) {
 
 	thread* del_albums = new thread([this, albums, delThumbs, delFiles]() {
 		std::unique_lock<std::mutex> lk(mutex_thread_start);
-		while(currentID != this_thread::get_id() && !abort)
+		while(currentID != this_thread::get_id() && !shutdown_handler)
 			cv_thread_start.wait(lk);
 
 		string storepath = database->select(SELECT_SYSTEM("store_path"));

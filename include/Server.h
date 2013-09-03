@@ -7,7 +7,7 @@ class Gallery;
 
 class ServerHandler {
 protected:
-	int abort;
+	int shutdown_handler;
 public:
 	virtual void process(FCGX_Request* request) = 0;
 	friend class Server;

@@ -30,7 +30,7 @@ void Gallery::runScript(const char* filename, LuaParam* params, int nArgs) {
 }
 
 Gallery::Gallery(Parameters* params) {
-	abort = 0;
+	shutdown_handler = 0;
 	this->params = params;
 	dbpath = params->get("dbpath");
 	
@@ -50,14 +50,14 @@ Gallery::Gallery(Parameters* params) {
 	
 	//Create/start process queue thread.
 	thread_process_queue = new thread([this]() {
-		while(!abort) {
+		while(!shutdown_handler) {
 			{
 				unique_lock<mutex> lk(mutex_queue_add);
 				//Wait for a signal from log functions (pushers)
-				while(processQueue.empty() && !abort) 
+				while(processQueue.empty() && !shutdown_handler) 
 					cv_queue_add.wait(lk);
 			}
-			if(abort) return;
+			if(shutdown_handler) return;
 				
 			while(!processQueue.empty()) {
 				thread* t = processQueue.front();
@@ -84,7 +84,6 @@ Gallery::Gallery(Parameters* params) {
 	GALLERYMAP(functionMap);
 
 	refresh_scripts();
-	
 }
 
 void Gallery::process_thread(std::thread* t) {
@@ -109,7 +108,7 @@ Gallery::~Gallery() {
 	delete contentTemplates;
 
 
-	abort = 1;
+	shutdown_handler = 1;
 	cv_queue_add.notify_all();
 	if(thread_process_queue->joinable())
 		thread_process_queue->join();

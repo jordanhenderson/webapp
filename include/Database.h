@@ -27,7 +27,7 @@ public:
 	int status;
 	int lastrowid;
 	int params_copy;
-	Query(const std::string& dbq, QueryRow* params=NULL, int copy = 0);
+	Query(const std::string& dbq, QueryRow* params=NULL);
 	~Query();
 
 };
@@ -38,8 +38,8 @@ private:
 	MYSQL* mysql_db;
 	std::thread* dbthread;
 
-	void process(Query*q);
-	int abort;
+	void process(Query* q);
+	int shutdown_database;
 	int db_type;
 
 public:

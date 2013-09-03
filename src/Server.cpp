@@ -10,7 +10,7 @@ void Server::run(int nThread, int sock) {
 
 	FCGX_InitRequest(&request, sock, 0);
 	
-	while(!handler->abort) {
+	while(!handler->shutdown_handler) {
 		
 		int rc = FCGX_Accept_r(&request);
 		

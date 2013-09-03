@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <VisualGDBProjectSettings2 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ConfigurationName>LinuxRelease</ConfigurationName>
+  <ConfigurationName>LinuxDebug</ConfigurationName>
   <Project xsi:type="com.visualgdb.project.linux">
     <CustomSourceDirectories>
       <Directories />
@@ -26,8 +26,9 @@
         <string>*.c</string>
         <string>*.mak</string>
         <string>Makefile</string>
+        <string>*.cc</string>
         <string>*.hpp</string>
-        <string>*.ih</string>
+        <string>*.inc</string>
       </FileMasks>
       <TransferNewFilesOnly>true</TransferNewFilesOnly>
       <IncludeSubdirectories>true</IncludeSubdirectories>
@@ -38,9 +39,10 @@
   </Project>
   <Build xsi:type="com.visualgdb.build.make">
     <MakeFilePathRelativeToSourceDir>Makefile</MakeFilePathRelativeToSourceDir>
-    <MakeConfigurationName>LinuxRelease</MakeConfigurationName>
+    <MakeConfigurationName>LinuxDebug</MakeConfigurationName>
+    <AdditionalMakeArguments />
     <Toolchain>
-      <Name>Default GCC toolchain on 192.168.253.131</Name>
+      <Name>Default GCC toolchain on shinobi-linux</Name>
       <UnixSystem>true</UnixSystem>
       <GCC>gcc</GCC>
       <GXX>g++</GXX>
@@ -71,6 +73,11 @@
     </Toolchain>
     <MakeCommandTemplate>
       <SkipWhenRunningCommandList>false</SkipWhenRunningCommandList>
+      <RemoteHost>
+        <HostName>shinobi-linux</HostName>
+        <Transport>SSH</Transport>
+        <UserName>root</UserName>
+      </RemoteHost>
       <Command>make</Command>
       <Environment>
         <Records>

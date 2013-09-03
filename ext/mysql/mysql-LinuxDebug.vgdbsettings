@@ -28,6 +28,7 @@
         <string>Makefile</string>
         <string>*.hpp</string>
         <string>*.cc</string>
+        <string>*.ih</string>
       </FileMasks>
       <TransferNewFilesOnly>true</TransferNewFilesOnly>
       <IncludeSubdirectories>true</IncludeSubdirectories>

@@ -25,9 +25,8 @@
         <string>*.h</string>
         <string>*.c</string>
         <string>*.mak</string>
-        <string>Makefile</string>
-        <string>*.hpp</string>
-        <string>*.ih</string>
+        <string>Makefile.*</string>
+        <string>*.cc</string>
       </FileMasks>
       <TransferNewFilesOnly>true</TransferNewFilesOnly>
       <IncludeSubdirectories>true</IncludeSubdirectories>
@@ -37,10 +36,11 @@
     <SkipBuildIfNoSourceFilesChanged>false</SkipBuildIfNoSourceFilesChanged>
   </Project>
   <Build xsi:type="com.visualgdb.build.make">
-    <MakeFilePathRelativeToSourceDir>Makefile</MakeFilePathRelativeToSourceDir>
+    <MakeFilePathRelativeToSourceDir>Makefile.minilua</MakeFilePathRelativeToSourceDir>
     <MakeConfigurationName>LinuxRelease</MakeConfigurationName>
+    <AdditionalMakeArguments />
     <Toolchain>
-      <Name>Default GCC toolchain on 192.168.253.131</Name>
+      <Name>Default GCC toolchain on shinobi-linux</Name>
       <UnixSystem>true</UnixSystem>
       <GCC>gcc</GCC>
       <GXX>g++</GXX>
@@ -71,6 +71,11 @@
     </Toolchain>
     <MakeCommandTemplate>
       <SkipWhenRunningCommandList>false</SkipWhenRunningCommandList>
+      <RemoteHost>
+        <HostName>shinobi-linux</HostName>
+        <Transport>SSH</Transport>
+        <UserName>root</UserName>
+      </RemoteHost>
       <Command>make</Command>
       <Environment>
         <Records>

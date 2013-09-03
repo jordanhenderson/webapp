@@ -3,14 +3,10 @@
 #include "mysql.h"
 using namespace std;
 
-Query::Query(const string& dbq, QueryRow* p, int copy) {
+Query::Query(const string& dbq, QueryRow* p) {
 	this->dbq = new string(dbq);
 	if(p != NULL) {
-		params_copy = copy;
-		if(copy) 
-			params = new QueryRow(*p);
-		else
-			params = p;
+		params = new QueryRow(*p);
 	} else {
 		params = NULL;
 	}
@@ -20,7 +16,7 @@ Query::Query(const string& dbq, QueryRow* p, int copy) {
 }
 
 Query::~Query() {
-	if(params != NULL && params_copy)
+	if(params != NULL)
 		delete params;
 	if(response != NULL)
 		delete response;
@@ -32,7 +28,7 @@ Query::~Query() {
 
 void Database::process(Query* qry) {
 
-	if(abort) return;
+	if(shutdown_database) return;
 	void* stmt = NULL;
 	unsigned long* size_arr = NULL;
 	unsigned long* out_size_arr = NULL;
@@ -84,8 +80,6 @@ void Database::process(Query* qry) {
 		}
 	}
 			
-			
-
 	if(db_type == DATABASE_TYPE_SQLITE) {
 		while((lasterror = sqlite3_step((sqlite3_stmt*)stmt)) == SQLITE_ROW) {
 			vector<string> row;
@@ -168,7 +162,7 @@ cleanup:
 	
 
 Database::Database(int database_type, const std::string& host, const std::string& username, const std::string& password, const std::string& database) {
-	abort = 0;
+	shutdown_database = 0;
 	sqlite_db = NULL;
 	mysql_db = NULL;
 	db_type = database_type;
@@ -193,7 +187,7 @@ Database::Database(int database_type, const std::string& host, const std::string
 }
 
 Database::~Database() {
-	abort = 1;
+	shutdown_database = 1;
 	if(nError != ERROR_DB_FAILED) {
 		if(dbthread->joinable())
 			dbthread->join();
