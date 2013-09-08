@@ -3,18 +3,17 @@
 #All other changes you make in this file will be preserved.
 #Visit http://visualgdb.com/makefiles for more details
 
-#VisualGDB: AutoSourceFiles		#<--- remove this line to disable auto-updating of SOURCEFILES and EXTERNAL_LIBS
-SOURCEFILES := src/host/minilua.c
+SOURCEFILES := src/ljamalg.c
 
-TARGETNAME := minilua
+TARGETNAME := luajit.a
 #TARGETTYPE can be APP, STATIC or SHARED
-TARGETTYPE := APP
+TARGETTYPE := STATIC
 
 to_lowercase = $(subst A,a,$(subst B,b,$(subst C,c,$(subst D,d,$(subst E,e,$(subst F,f,$(subst G,g,$(subst H,h,$(subst I,i,$(subst J,j,$(subst K,k,$(subst L,l,$(subst M,m,$(subst N,n,$(subst O,o,$(subst P,p,$(subst Q,q,$(subst R,r,$(subst S,s,$(subst T,t,$(subst U,u,$(subst V,v,$(subst W,w,$(subst X,x,$(subst Y,y,$(subst Z,z,$1))))))))))))))))))))))))))
 
 CONFIG ?= DEBUG
 
-CONFIGURATION_FLAGS_FILE := $(call to_lowercase,$(TARGETNAME)-$(CONFIG)).mak
+CONFIGURATION_FLAGS_FILE := $(call to_lowercase,$(CONFIG)).mak
 
 include $(CONFIGURATION_FLAGS_FILE)
 include $(ADDITIONAL_MAKE_FILES)
@@ -61,7 +60,7 @@ else
 	LIBRARY_LDFLAGS += $(EXTERNAL_LIBS)
 endif
 
-all_make_files := Makefile.minilua $(CONFIGURATION_FLAGS_FILE) $(ADDITIONAL_MAKE_FILES)
+all_make_files := Makefile $(CONFIGURATION_FLAGS_FILE) $(ADDITIONAL_MAKE_FILES)
 
 ifeq ($(STARTUPFILES),)
 	all_source_files := $(SOURCEFILES)
@@ -82,7 +81,7 @@ $(BINARYDIR)/$(basename $(TARGETNAME)).bin: $(BINARYDIR)/$(TARGETNAME)
 	$(OBJCOPY) -O binary $< $@
 
 else
-all: $(BINARYDIR)/$(TARGETNAME)
+all: $(TARGETNAME) $(BINARYDIR)/$(TARGETNAME)
 endif
 
 ifeq ($(TARGETTYPE),APP)
@@ -112,6 +111,10 @@ endif
 $(BINARYDIR):
 	mkdir $(BINARYDIR)
 
+BUILDVM := ../$(BINARYDIR)/buildvm
+$(TARGETNAME):
+	echo "Building VM..."; cd src; $(BUILDVM) -m elfasm -o ../lj_vm.s; $(BUILDVM) -m bcdef -o ../include/lj_bcdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c; $(BUILDVM) -m ffdef -o ../include/lj_ffdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c; $(BUILDVM) -m libdef -o ../include/lj_libdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c; $(BUILDVM) -m recdef -o ../include/lj_recdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c; $(BUILDVM) -m vmdef -o jit/vmdef.lua lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c; $(BUILDVM) -m folddef -o ../include/lj_folddef.h lj_opt_fold.c
+
 #VisualGDB: FileSpecificTemplates		#<--- VisualGDB will use the following lines to define rules for source files in subdirectories
 $(BINARYDIR)/%.o : %.cpp $(all_make_files) |$(BINARYDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
@@ -125,6 +128,5 @@ $(BINARYDIR)/%.o : %.S $(all_make_files) |$(BINARYDIR)
 #VisualGDB: GeneratedRules				#<--- All lines below are auto-generated
 
 
-$(BINARYDIR)/minilua.o : src/host/minilua.c $(all_make_files) |$(BINARYDIR)
+$(BINARYDIR)/ljamalg.o : src/ljamalg.c $(all_make_files) |$(BINARYDIR)
 	$(CC) $(CFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
-

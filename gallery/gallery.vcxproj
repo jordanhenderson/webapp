@@ -118,7 +118,7 @@
     <IncludePath />
     <ReferencePath />
     <LibraryPath />
-    <NMakeIncludeSearchPath>d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\c++\4.8;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\x86_64-linux-gnu\c++\4.8;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\c++\4.8\backward;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0001\include;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0003\include;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0002\include-fixed;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\x86_64-linux-gnu;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include;D:\Development\GitRepos\gallery\.\include\gif\;D:\Development\GitRepos\gallery\.\include\;D:\Development\GitRepos\gallery\.\include\sqlite\;D:\Development\GitRepos\gallery\.\include\tinydir\;D:\Development\GitRepos\gallery\.\include\fastcgi\;D:\Development\GitRepos\gallery\.\include\rapidjson\;D:\Development\GitRepos\gallery\.\include\pngnq\;D:\Development\GitRepos\gallery\.\ext\ctemplate\include\;D:\Development\GitRepos\gallery\.\ext\libjpeg\include\;D:\Development\GitRepos\gallery\.\ext\tbb\include\;D:\Development\GitRepos\gallery\.\ext\zlib\include\;D:\Development\GitRepos\gallery\.\ext\mysql\include\;D:\Development\GitRepos\gallery\.\ext\lpng\include\;D:\Development\GitRepos\gallery\.\ext\cryptopp\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\c++\4.8;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\x86_64-linux-gnu\c++\4.8;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\c++\4.8\backward;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0001\include;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0003\include;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0002\include-fixed;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include\x86_64-linux-gnu;d:\Users\hendo\AppData\Local\VisualGDB\RemoteSourceCache\shinobi-linux\0000\include;D:\Development\GitRepos\gallery\gallery\include\gif\;D:\Development\GitRepos\gallery\gallery\include;D:\Development\GitRepos\gallery\gallery\include\sqlite\;D:\Development\GitRepos\gallery\gallery\include\tinydir;D:\Development\GitRepos\gallery\gallery\include\fastcgi;D:\Development\GitRepos\gallery\gallery\include\rapidjson;D:\Development\GitRepos\gallery\gallery\include\pngnq;D:\Development\GitRepos\gallery\gallery\..\ext\ctemplate\include\;D:\Development\GitRepos\gallery\gallery\..\ext\libjpeg\include;D:\Development\GitRepos\gallery\gallery\..\ext\tbb\include;D:\Development\GitRepos\gallery\gallery\..\ext\zlib\include;D:\Development\GitRepos\gallery\gallery\..\ext\mysql\include;D:\Development\GitRepos\gallery\gallery\..\ext\lpng\include;D:\Development\GitRepos\gallery\gallery\..\ext\cryptopp;D:\Development\GitRepos\gallery\gallery\..\ext\opencv\modules\core\include;D:\Development\GitRepos\gallery\gallery\..\ext\opencv\modules\imgproc\include;D:\Development\GitRepos\gallery\gallery\..\ext\luajit\include;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
     <NMakeForcedIncludes>$(ProjectDir)\gcc_LinuxDebug.h;$(VISUALGDB_DIR)\gcc_compat.h;$(NMakeForcedIncludes)</NMakeForcedIncludes>
     <NMakePreprocessorDefinitions>__VisualGDB_CFG_LinuxDebug;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
@@ -150,7 +150,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>ext/luajit/include;ext/opencv/modules/core/include;ext/opencv/modules/imgproc/include;ext/mysql/include;ext/tbb/include;ext/libjpeg/include;ext/zlib/include;ext/lpng/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/mysql/include;../ext/tbb/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;include;../ext/ctemplate/include/windows;../ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;../ext/cryptopp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
       <InterproceduralOptimization>NoIPO</InterproceduralOptimization>
@@ -163,7 +163,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>ws2_32.lib;./ext/luajit/src/lj_vm.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;../ext/luajit/lj_vm.obj;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -174,7 +174,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>ext/luajit/include;ext/opencv/modules/core/include;ext/opencv/modules/imgproc/include;ext/mysql/include;ext/tbb/include;ext/libjpeg/include;ext/zlib/include;ext/lpng/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/mysql/include;../ext/tbb/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;include;../ext/ctemplate/include/windows;../ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;../ext/cryptopp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
       <InterproceduralOptimization>NoIPO</InterproceduralOptimization>
@@ -187,7 +187,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>vld.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;../ext/luajit/lj_vm.obj;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>lib/Win64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -200,7 +200,7 @@
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <PreprocessorDefinitions>CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>ext/luajit/include;ext/opencv/modules/core/include;ext/opencv/modules/imgproc/include;ext/mysql/include;ext/tbb/include;ext/libjpeg/include;ext/zlib/include;ext/lpng/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/mysql/include;../ext/tbb/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;include;../ext/ctemplate/include/windows;../ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;../ext/cryptopp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
@@ -219,7 +219,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;../ext/luajit/lj_vm.obj;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
@@ -238,7 +238,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;USE_PRECOMPILED_HEADERS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>ext/luajit/include;ext/opencv/modules/core/include;ext/opencv/modules/imgproc/include;ext/mysql/include;ext/tbb/include;ext/libjpeg/include;ext/zlib/include;ext/lpng/include;include;ext/ctemplate/include/windows;ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;ext/cryptopp</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/mysql/include;../ext/tbb/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;include;../ext/ctemplate/include/windows;../ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;../ext/cryptopp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
@@ -257,7 +257,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;../ext/luajit/lj_vm.obj;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
@@ -448,58 +448,64 @@
     <None Include="Makefile" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="ext\cryptopp\cryptlib.vcxproj">
+    <ProjectReference Include="..\ext\cryptopp\cryptlib.vcxproj">
       <Project>{3423ec9a-52e4-4a4d-9753-edebc38785ef}</Project>
     </ProjectReference>
-    <ProjectReference Include="ext\ctemplate\ctemplate.vcxproj">
+    <ProjectReference Include="..\ext\ctemplate\ctemplate.vcxproj">
       <Project>{53d3361b-51d2-4f41-bf13-2a27cb061eeb}</Project>
     </ProjectReference>
-    <ProjectReference Include="ext\libjpeg\libjpeg.vcxproj">
+    <ProjectReference Include="..\ext\libjpeg\libjpeg.vcxproj">
       <Project>{b0b26364-78fe-4685-aa71-403bd9f57dfa}</Project>
     </ProjectReference>
-    <ProjectReference Include="ext\lpng\lpng.vcxproj">
+    <ProjectReference Include="..\ext\lpng\lpng.vcxproj">
       <Project>{29148696-dffe-47f1-9a04-c277a6b1d042}</Project>
     </ProjectReference>
-    <ProjectReference Include="ext\luajit\luajit.vcxproj">
+    <ProjectReference Include="..\ext\luajit\buildvm.vcxproj">
+      <Project>{b5a8e683-34eb-4d1e-a07c-280b79669ba6}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\ext\luajit\luajit.vcxproj">
       <Project>{2468767e-a143-4d7a-82a0-5346a5b1fc14}</Project>
     </ProjectReference>
-    <ProjectReference Include="ext\mysql\authentication_win\auth_win_client.vcxproj">
+    <ProjectReference Include="..\ext\luajit\minilua.vcxproj">
+      <Project>{bceb2de5-346c-4e4a-9816-e8bdca3079e8}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\ext\mysql\authentication_win\auth_win_client.vcxproj">
       <Project>{24b6b0be-1820-4f51-87d6-df829db976b7}</Project>
     </ProjectReference>
-    <ProjectReference Include="ext\mysql\dbug\dbug.vcxproj">
+    <ProjectReference Include="..\ext\mysql\dbug\dbug.vcxproj">
       <Project>{48c94b27-4abd-4011-86a0-edcac724c506}</Project>
     </ProjectReference>
-    <ProjectReference Include="ext\mysql\libmysql\clientlib.vcxproj">
+    <ProjectReference Include="..\ext\mysql\libmysql\clientlib.vcxproj">
       <Project>{8ebd82e0-ad73-40f0-acc1-80ec3371ffb1}</Project>
     </ProjectReference>
-    <ProjectReference Include="ext\mysql\mysys\mysys.vcxproj">
+    <ProjectReference Include="..\ext\mysql\mysys\mysys.vcxproj">
       <Project>{3af87dc8-5b44-46d3-b0a0-a0dfa68dc50a}</Project>
     </ProjectReference>
-    <ProjectReference Include="ext\mysql\mysys_ssl\mysys_ssl.vcxproj">
+    <ProjectReference Include="..\ext\mysql\mysys_ssl\mysys_ssl.vcxproj">
       <Project>{2e89d76d-fe22-4ae0-9aa0-81bb268d472a}</Project>
     </ProjectReference>
-    <ProjectReference Include="ext\mysql\regex\regex.vcxproj">
+    <ProjectReference Include="..\ext\mysql\regex\regex.vcxproj">
       <Project>{97b16ab4-f6ea-4aff-a264-d32a5936687f}</Project>
     </ProjectReference>
-    <ProjectReference Include="ext\mysql\strings\strings.vcxproj">
+    <ProjectReference Include="..\ext\mysql\strings\strings.vcxproj">
       <Project>{c4da45c3-1159-4919-b032-11e0c6ae001d}</Project>
     </ProjectReference>
-    <ProjectReference Include="ext\mysql\taocrypt\taocrypt.vcxproj">
+    <ProjectReference Include="..\ext\mysql\taocrypt\taocrypt.vcxproj">
       <Project>{eb3b9576-a5e3-41be-99a3-0715f26c5606}</Project>
     </ProjectReference>
-    <ProjectReference Include="ext\mysql\vio\vio.vcxproj">
+    <ProjectReference Include="..\ext\mysql\vio\vio.vcxproj">
       <Project>{19766fe5-a271-4be4-a06b-27f455bc96d8}</Project>
     </ProjectReference>
-    <ProjectReference Include="ext\mysql\yassl\yassl.vcxproj">
+    <ProjectReference Include="..\ext\mysql\yassl\yassl.vcxproj">
       <Project>{9012748d-9a90-4205-a0e9-ab7213cf33bd}</Project>
     </ProjectReference>
-    <ProjectReference Include="ext\opencv\opencv.vcxproj">
+    <ProjectReference Include="..\ext\opencv\opencv.vcxproj">
       <Project>{988071aa-3875-4cfe-8a08-a31953b820b3}</Project>
     </ProjectReference>
-    <ProjectReference Include="ext\tbb\tbb.vcxproj">
+    <ProjectReference Include="..\ext\tbb\tbb.vcxproj">
       <Project>{575c06fe-c2e0-4645-8f05-38e7d139d743}</Project>
     </ProjectReference>
-    <ProjectReference Include="ext\zlib\zlib.vcxproj">
+    <ProjectReference Include="..\ext\zlib\zlib.vcxproj">
       <Project>{feb2ad73-a264-450a-97a3-e1810a14e08b}</Project>
     </ProjectReference>
   </ItemGroup>

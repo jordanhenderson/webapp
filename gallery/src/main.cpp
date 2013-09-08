@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
 	} else {
 		//DEFAULT PARAMETERS
 		params.set("logfile", "gallery.log");
-		params.set("basepath", "gallery");
+		params.set("basepath", ".");
 		params.set("dbpath", "gallery.sqlite");
 
 	}

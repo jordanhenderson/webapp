@@ -4,7 +4,7 @@
 #Visit http://visualgdb.com/makefiles for more details
 
 #VisualGDB: AutoSourceFiles		#<--- remove this line to disable auto-updating of SOURCEFILES and EXTERNAL_LIBS
-SOURCEFILES := src/Database.cpp src/fastcgi/fcgiapp.c src/fastcgi/os_unix.c src/fastcgi/os_win32.c src/FileSystem.cpp src/Gallery.cpp src/Gif.cpp src/gif/dgif_lib.c src/gif/egif_lib.c src/gif/gifalloc.c src/gif/gif_err.c src/gif/gif_font.c src/gif/gif_hash.c src/gif/quantize.c src/Image.cpp src/Internal.cpp src/main.cpp src/Platform.cpp src/pngnq/neuquant32.c src/RamSession.cpp src/Serializer.cpp src/Server.cpp src/Logging.cpp src/Parameters.cpp src/Session.cpp src/sqlite/sqlite3.c
+SOURCEFILES := src/Database.cpp src/fastcgi/fcgiapp.c src/fastcgi/os_unix.c src/fastcgi/os_win32.c src/FileSystem.cpp src/Gallery.cpp src/Gif.cpp src/gif/dgif_lib.c src/gif/egif_lib.c src/gif/gifalloc.c src/gif/gif_err.c src/gif/gif_font.c src/gif/gif_hash.c src/gif/quantize.c src/Image.cpp src/Internal.cpp src/main.cpp src/Platform.cpp src/Hooks.cpp src/pngnq/neuquant32.c src/Public.cpp src/RamSession.cpp src/Serializer.cpp src/Server.cpp src/Logging.cpp src/Parameters.cpp src/Session.cpp src/sqlite/sqlite3.c
 
 TARGETNAME := gallery
 #TARGETTYPE can be APP, STATIC or SHARED
@@ -24,9 +24,8 @@ error:
 	$(error Invalid configuration, please check your inputs)
 endif
 
-EXTERNAL_LIBS := ext/ctemplate/$(BINARYDIR)/ctemplate.a ext/mysql/dbug/$(BINARYDIR)/dbug.a ext/libjpeg/$(BINARYDIR)/libjpeg.a ext/mysql/mysys_ssl/$(BINARYDIR)/mysys_ssl.a ext/zlib/$(BINARYDIR)/zlib.a ext/mysql/taocrypt/$(BINARYDIR)/taocrypt.a ext/mysql/yassl/$(BINARYDIR)/yassl.a ext/lpng/$(BINARYDIR)/lpng.a ext/cryptopp/$(BINARYDIR)/cryptlib.a ext/mysql/regex/$(BINARYDIR)/regex.a ext/mysql/strings/$(BINARYDIR)/strings.a ext/mysql/mysys/$(BINARYDIR)/mysys.a ext/mysql/libmysql/$(BINARYDIR)/clientlib.a ext/mysql/vio/$(BINARYDIR)/vio.a ext/tbb/$(BINARYDIR)/tbb.a
+EXTERNAL_LIBS := ../ext/ctemplate/$(BINARYDIR)/ctemplate.a ../ext/mysql/dbug/$(BINARYDIR)/dbug.a ../ext/libjpeg/$(BINARYDIR)/libjpeg.a ../ext/mysql/mysys_ssl/$(BINARYDIR)/mysys_ssl.a ../ext/zlib/$(BINARYDIR)/zlib.a ../ext/mysql/taocrypt/$(BINARYDIR)/taocrypt.a ../ext/luajit/$(BINARYDIR)/luajit.a ../ext/mysql/yassl/$(BINARYDIR)/yassl.a ../ext/lpng/$(BINARYDIR)/lpng.a ../ext/cryptopp/$(BINARYDIR)/cryptlib.a ../ext/opencv/$(BINARYDIR)/opencv ../ext/mysql/regex/$(BINARYDIR)/regex.a ../ext/mysql/strings/$(BINARYDIR)/strings.a ../ext/mysql/mysys/$(BINARYDIR)/mysys.a ../ext/mysql/libmysql/$(BINARYDIR)/clientlib.a ../ext/mysql/vio/$(BINARYDIR)/vio.a ../ext/tbb/$(BINARYDIR)/tbb.a
 EXTERNAL_LIBS_COPIED := $(foreach lib, $(EXTERNAL_LIBS),$(BINARYDIR)/$(notdir $(lib)))
-
 CFLAGS += $(COMMONFLAGS)
 CXXFLAGS += $(COMMONFLAGS)
 ASFLAGS += $(COMMONFLAGS)
@@ -49,7 +48,7 @@ LIBRARY_LDFLAGS = $(addprefix -l,$(LIBRARY_NAMES))
 
 ifeq ($(IS_LINUX_PROJECT),1)
 	RPATH_PREFIX := -Wl,--rpath='$$ORIGIN/../
-	LIBRARY_LDFLAGS += $(EXTERNAL_LIBS)
+	LIBRARY_LDFLAGS += $(EXTERNAL_LIBS) ../ext/luajit/lj_vm.s
 	LIBRARY_LDFLAGS += -Wl,--rpath='$$ORIGIN'
 	LIBRARY_LDFLAGS += $(addsuffix ',$(addprefix $(RPATH_PREFIX),$(dir $(EXTERNAL_LIBS))))
 	
@@ -197,8 +196,16 @@ $(BINARYDIR)/Platform.o : src/Platform.cpp $(all_make_files) |$(BINARYDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
 
 
+$(BINARYDIR)/Hooks.o : src/Hooks.cpp $(all_make_files) |$(BINARYDIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
+
+
 $(BINARYDIR)/neuquant32.o : src/pngnq/neuquant32.c $(all_make_files) |$(BINARYDIR)
 	$(CC) $(CFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
+
+
+$(BINARYDIR)/Public.o : src/Public.cpp $(all_make_files) |$(BINARYDIR)
+	$(CXX) $(CXXFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
 
 
 $(BINARYDIR)/RamSession.o : src/RamSession.cpp $(all_make_files) |$(BINARYDIR)
@@ -228,48 +235,54 @@ $(BINARYDIR)/Session.o : src/Session.cpp $(all_make_files) |$(BINARYDIR)
 $(BINARYDIR)/sqlite3.o : src/sqlite/sqlite3.c $(all_make_files) |$(BINARYDIR)
 	$(CC) $(CFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
 
-$(BINARYDIR)/ctemplate.a : ext/ctemplate/$(BINARYDIR)/ctemplate.a
-	$(CP) ext/ctemplate/$(BINARYDIR)/ctemplate.a $(BINARYDIR)/ctemplate.a
+$(BINARYDIR)/ctemplate.a : ../ext/ctemplate/$(BINARYDIR)/ctemplate.a
+	$(CP) ../ext/ctemplate/$(BINARYDIR)/ctemplate.a $(BINARYDIR)/ctemplate.a
 
-$(BINARYDIR)/dbug.a : ext/mysql/dbug/$(BINARYDIR)/dbug.a
-	$(CP) ext/mysql/dbug/$(BINARYDIR)/dbug.a $(BINARYDIR)/dbug.a
+$(BINARYDIR)/dbug.a : ../ext/mysql/dbug/$(BINARYDIR)/dbug.a
+	$(CP) ../ext/mysql/dbug/$(BINARYDIR)/dbug.a $(BINARYDIR)/dbug.a
 
-$(BINARYDIR)/libjpeg.a : ext/libjpeg/$(BINARYDIR)/libjpeg.a
-	$(CP) ext/libjpeg/$(BINARYDIR)/libjpeg.a $(BINARYDIR)/libjpeg.a
+$(BINARYDIR)/libjpeg.a : ../ext/libjpeg/$(BINARYDIR)/libjpeg.a
+	$(CP) ../ext/libjpeg/$(BINARYDIR)/libjpeg.a $(BINARYDIR)/libjpeg.a
 
-$(BINARYDIR)/mysys_ssl.a : ext/mysql/mysys_ssl/$(BINARYDIR)/mysys_ssl.a
-	$(CP) ext/mysql/mysys_ssl/$(BINARYDIR)/mysys_ssl.a $(BINARYDIR)/mysys_ssl.a
+$(BINARYDIR)/mysys_ssl.a : ../ext/mysql/mysys_ssl/$(BINARYDIR)/mysys_ssl.a
+	$(CP) ../ext/mysql/mysys_ssl/$(BINARYDIR)/mysys_ssl.a $(BINARYDIR)/mysys_ssl.a
 
-$(BINARYDIR)/zlib.a : ext/zlib/$(BINARYDIR)/zlib.a
-	$(CP) ext/zlib/$(BINARYDIR)/zlib.a $(BINARYDIR)/zlib.a
+$(BINARYDIR)/zlib.a : ../ext/zlib/$(BINARYDIR)/zlib.a
+	$(CP) ../ext/zlib/$(BINARYDIR)/zlib.a $(BINARYDIR)/zlib.a
 
-$(BINARYDIR)/taocrypt.a : ext/mysql/taocrypt/$(BINARYDIR)/taocrypt.a
-	$(CP) ext/mysql/taocrypt/$(BINARYDIR)/taocrypt.a $(BINARYDIR)/taocrypt.a
+$(BINARYDIR)/taocrypt.a : ../ext/mysql/taocrypt/$(BINARYDIR)/taocrypt.a
+	$(CP) ../ext/mysql/taocrypt/$(BINARYDIR)/taocrypt.a $(BINARYDIR)/taocrypt.a
 
-$(BINARYDIR)/yassl.a : ext/mysql/yassl/$(BINARYDIR)/yassl.a
-	$(CP) ext/mysql/yassl/$(BINARYDIR)/yassl.a $(BINARYDIR)/yassl.a
+$(BINARYDIR)/luajit.a : ../ext/luajit/$(BINARYDIR)/luajit.a
+	$(CP) ../ext/luajit/$(BINARYDIR)/luajit.a $(BINARYDIR)/luajit.a
 
-$(BINARYDIR)/lpng.a : ext/lpng/$(BINARYDIR)/lpng.a
-	$(CP) ext/lpng/$(BINARYDIR)/lpng.a $(BINARYDIR)/lpng.a
+$(BINARYDIR)/yassl.a : ../ext/mysql/yassl/$(BINARYDIR)/yassl.a
+	$(CP) ../ext/mysql/yassl/$(BINARYDIR)/yassl.a $(BINARYDIR)/yassl.a
 
-$(BINARYDIR)/cryptlib.a : ext/cryptopp/$(BINARYDIR)/cryptlib.a
-	$(CP) ext/cryptopp/$(BINARYDIR)/cryptlib.a $(BINARYDIR)/cryptlib.a
+$(BINARYDIR)/lpng.a : ../ext/lpng/$(BINARYDIR)/lpng.a
+	$(CP) ../ext/lpng/$(BINARYDIR)/lpng.a $(BINARYDIR)/lpng.a
 
-$(BINARYDIR)/regex.a : ext/mysql/regex/$(BINARYDIR)/regex.a
-	$(CP) ext/mysql/regex/$(BINARYDIR)/regex.a $(BINARYDIR)/regex.a
+$(BINARYDIR)/cryptlib.a : ../ext/cryptopp/$(BINARYDIR)/cryptlib.a
+	$(CP) ../ext/cryptopp/$(BINARYDIR)/cryptlib.a $(BINARYDIR)/cryptlib.a
 
-$(BINARYDIR)/strings.a : ext/mysql/strings/$(BINARYDIR)/strings.a
-	$(CP) ext/mysql/strings/$(BINARYDIR)/strings.a $(BINARYDIR)/strings.a
+$(BINARYDIR)/opencv : ../ext/opencv/$(BINARYDIR)/opencv
+	$(CP) ../ext/opencv/$(BINARYDIR)/opencv $(BINARYDIR)/opencv
 
-$(BINARYDIR)/mysys.a : ext/mysql/mysys/$(BINARYDIR)/mysys.a
-	$(CP) ext/mysql/mysys/$(BINARYDIR)/mysys.a $(BINARYDIR)/mysys.a
+$(BINARYDIR)/regex.a : ../ext/mysql/regex/$(BINARYDIR)/regex.a
+	$(CP) ../ext/mysql/regex/$(BINARYDIR)/regex.a $(BINARYDIR)/regex.a
 
-$(BINARYDIR)/clientlib.a : ext/mysql/libmysql/$(BINARYDIR)/clientlib.a
-	$(CP) ext/mysql/libmysql/$(BINARYDIR)/clientlib.a $(BINARYDIR)/clientlib.a
+$(BINARYDIR)/strings.a : ../ext/mysql/strings/$(BINARYDIR)/strings.a
+	$(CP) ../ext/mysql/strings/$(BINARYDIR)/strings.a $(BINARYDIR)/strings.a
 
-$(BINARYDIR)/vio.a : ext/mysql/vio/$(BINARYDIR)/vio.a
-	$(CP) ext/mysql/vio/$(BINARYDIR)/vio.a $(BINARYDIR)/vio.a
+$(BINARYDIR)/mysys.a : ../ext/mysql/mysys/$(BINARYDIR)/mysys.a
+	$(CP) ../ext/mysql/mysys/$(BINARYDIR)/mysys.a $(BINARYDIR)/mysys.a
 
-$(BINARYDIR)/tbb.a : ext/tbb/$(BINARYDIR)/tbb.a
-	$(CP) ext/tbb/$(BINARYDIR)/tbb.a $(BINARYDIR)/tbb.a
+$(BINARYDIR)/clientlib.a : ../ext/mysql/libmysql/$(BINARYDIR)/clientlib.a
+	$(CP) ../ext/mysql/libmysql/$(BINARYDIR)/clientlib.a $(BINARYDIR)/clientlib.a
+
+$(BINARYDIR)/vio.a : ../ext/mysql/vio/$(BINARYDIR)/vio.a
+	$(CP) ../ext/mysql/vio/$(BINARYDIR)/vio.a $(BINARYDIR)/vio.a
+
+$(BINARYDIR)/tbb.a : ../ext/tbb/$(BINARYDIR)/tbb.a
+	$(CP) ../ext/tbb/$(BINARYDIR)/tbb.a $(BINARYDIR)/tbb.a
 

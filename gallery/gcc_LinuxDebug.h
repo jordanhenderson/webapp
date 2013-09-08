@@ -252,20 +252,23 @@
 ///usr/lib/gcc/x86_64-linux-gnu/4.8/include-fixed
 ///usr/include/x86_64-linux-gnu
 ///usr/include
-//./include/gif/
-//./include/
-//./include/sqlite/
-//./include/tinydir/
-//./include/fastcgi/
-//./include/rapidjson/
-//./include/pngnq/
-//./ext/ctemplate/include/
-//./ext/libjpeg/include/
-//./ext/tbb/include/
-//./ext/zlib/include/
-//./ext/mysql/include/
-//./ext/lpng/include/
-//./ext/cryptopp/
+//include/gif/
+//include
+//include/sqlite/
+//include/tinydir
+//include/fastcgi
+//include/rapidjson
+//include/pngnq
+//../ext/ctemplate/include/
+//../ext/libjpeg/include
+//../ext/tbb/include
+//../ext/zlib/include
+//../ext/mysql/include
+//../ext/lpng/include
+//../ext/cryptopp
+//../ext/opencv/modules/core/include
+//../ext/opencv/modules/imgproc/include
+//../ext/luajit/include
 // --- Library directories end --- //
 
 

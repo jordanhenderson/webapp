@@ -25,8 +25,11 @@
         <string>*.h</string>
         <string>*.c</string>
         <string>*.mak</string>
-        <string>Makefile.*</string>
+        <string>Makefile</string>
         <string>*.cc</string>
+        <string>*.lua</string>
+        <string>Makefile.*</string>
+        <string>*.dasc</string>
       </FileMasks>
       <TransferNewFilesOnly>true</TransferNewFilesOnly>
       <IncludeSubdirectories>true</IncludeSubdirectories>
@@ -71,6 +74,11 @@
     </Toolchain>
     <MakeCommandTemplate>
       <SkipWhenRunningCommandList>false</SkipWhenRunningCommandList>
+      <RemoteHost>
+        <HostName>shinobi-linux</HostName>
+        <Transport>SSH</Transport>
+        <UserName>root</UserName>
+      </RemoteHost>
       <Command>make</Command>
       <Environment>
         <Records>

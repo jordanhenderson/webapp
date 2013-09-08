@@ -39,8 +39,8 @@
     <SkipBuildIfNoSourceFilesChanged>false</SkipBuildIfNoSourceFilesChanged>
   </Project>
   <Build xsi:type="com.visualgdb.build.make">
-    <MakeFilePathRelativeToSourceDir>Makefile.buildvm</MakeFilePathRelativeToSourceDir>
-    <MakeConfigurationName>buildvm-LinuxDebug</MakeConfigurationName>
+    <MakeFilePathRelativeToSourceDir>Makefile</MakeFilePathRelativeToSourceDir>
+    <MakeConfigurationName>LinuxDebug</MakeConfigurationName>
     <AdditionalMakeArguments />
     <Toolchain>
       <Name>Default GCC toolchain on shinobi-linux</Name>
@@ -118,13 +118,19 @@
       <StepIntoNewInstanceEntry>main</StepIntoNewInstanceEntry>
     </AdditionalGDBSettings>
     <LaunchGDBSettings xsi:type="GDBLaunchParametersNewInstance">
+      <GDBEnvironment>
+        <Records>
+          <Record>
+            <VariableName>LANG</VariableName>
+            <Value>en_US.UTF-8</Value>
+          </Record>
+        </Records>
+      </GDBEnvironment>
       <DebuggedProgram>$(TargetPath)</DebuggedProgram>
       <GDBServerPort>2000</GDBServerPort>
-      <ProgramArguments>-m recdef -o ../include/lj_recdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c</ProgramArguments>
-      <WorkingDirectory>/tmp/VisualGDB/$(ProjectDirUnixStyle)/src</WorkingDirectory>
+      <ProgramArguments />
     </LaunchGDBSettings>
     <GenerateCtrlBreakInsteadOfCtrlC>false</GenerateCtrlBreakInsteadOfCtrlC>
-    <DeploymentTargetPath />
     <X11WindowMode>Local</X11WindowMode>
     <KeepConsoleAfterExit>false</KeepConsoleAfterExit>
     <RunGDBUnderSudo>false</RunGDBUnderSudo>

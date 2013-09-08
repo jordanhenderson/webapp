@@ -13,10 +13,23 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
+    <Filter Include="Make files">
+      <UniqueIdentifier>{2fdd36dd-944b-4ea5-93a1-7bc4d189b5be}</UniqueIdentifier>
+      <Extensions>*.mak</Extensions>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\ljamalg.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile" />
+    <None Include="linuxdebug.mak">
+      <Filter>Make files</Filter>
+    </None>
+    <None Include="linuxrelease.mak">
+      <Filter>Make files</Filter>
+    </None>
   </ItemGroup>
 </Project>

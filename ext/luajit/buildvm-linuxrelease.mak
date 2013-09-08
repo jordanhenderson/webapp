@@ -23,7 +23,7 @@ CFLAGS := -ggdb -ffunction-sections
 CXXFLAGS := -ggdb -ffunction-sections
 ASFLAGS := 
 LDFLAGS := -Wl,-gc-sections
-COMMONFLAGS := 
+override COMMONFLAGS := 
 
 START_GROUP := -Wl,--start-group
 END_GROUP := -Wl,--end-group

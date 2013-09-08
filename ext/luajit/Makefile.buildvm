@@ -3,7 +3,6 @@
 #All other changes you make in this file will be preserved.
 #Visit http://visualgdb.com/makefiles for more details
 
-#VisualGDB: AutoSourceFiles		#<--- remove this line to disable auto-updating of SOURCEFILES and EXTERNAL_LIBS
 SOURCEFILES := src/host/buildvm.c src/host/buildvm_asm.c src/host/buildvm_fold.c src/host/buildvm_lib.c src/host/buildvm_peobj.c
 
 TARGETNAME := buildvm
@@ -14,7 +13,7 @@ to_lowercase = $(subst A,a,$(subst B,b,$(subst C,c,$(subst D,d,$(subst E,e,$(sub
 
 CONFIG ?= DEBUG
 
-CONFIGURATION_FLAGS_FILE := $(call to_lowercase,$(TARGETNAME)-$(CONFIG)).mak
+CONFIGURATION_FLAGS_FILE := $(call to_lowercase,$(CONFIG)).mak
 
 include $(CONFIGURATION_FLAGS_FILE)
 include $(ADDITIONAL_MAKE_FILES)
@@ -27,15 +26,15 @@ endif
 EXTERNAL_LIBS := 
 EXTERNAL_LIBS_COPIED := $(foreach lib, $(EXTERNAL_LIBS),$(BINARYDIR)/$(notdir $(lib)))
 
-CFLAGS += $(COMMONFLAGS)
+override CFLAGS += $(COMMONFLAGS)
 CXXFLAGS += $(COMMONFLAGS)
 ASFLAGS += $(COMMONFLAGS)
 LDFLAGS += $(COMMONFLAGS)
 
-CFLAGS += $(addprefix -I,$(INCLUDE_DIRS))
+override CFLAGS += $(addprefix -I,$(INCLUDE_DIRS))
 CXXFLAGS += $(addprefix -I,$(INCLUDE_DIRS))
 
-CFLAGS += $(addprefix -D,$(PREPROCESSOR_MACROS))
+override CFLAGS += $(addprefix -D,$(PREPROCESSOR_MACROS))
 CXXFLAGS += $(addprefix -D,$(PREPROCESSOR_MACROS))
 ASFLAGS += $(addprefix -D,$(PREPROCESSOR_MACROS))
 
@@ -61,7 +60,7 @@ else
 	LIBRARY_LDFLAGS += $(EXTERNAL_LIBS)
 endif
 
-all_make_files := Makefile $(CONFIGURATION_FLAGS_FILE) $(ADDITIONAL_MAKE_FILES)
+all_make_files := Makefile.buildvm $(CONFIGURATION_FLAGS_FILE) $(ADDITIONAL_MAKE_FILES)
 
 ifeq ($(STARTUPFILES),)
 	all_source_files := $(SOURCEFILES)
@@ -82,7 +81,7 @@ $(BINARYDIR)/$(basename $(TARGETNAME)).bin: $(BINARYDIR)/$(TARGETNAME)
 	$(OBJCOPY) -O binary $< $@
 
 else
-all: $(BINARYDIR)/$(TARGETNAME)
+all: src/host/buildvm_arch.h $(BINARYDIR)/$(TARGETNAME)
 endif
 
 ifeq ($(TARGETTYPE),APP)
@@ -107,10 +106,21 @@ ifeq ($(USE_DEL_TO_CLEAN),1)
 	del /S /Q $(BINARYDIR)
 else
 	rm -rf $(BINARYDIR)
+	rm -rf src/host/buildvm_arch.h
 endif
 
 $(BINARYDIR):
 	mkdir $(BINARYDIR)
+
+P64 = -D P64
+ifneq (,$(findstring -m32,$(CFLAGS)))
+	P64 := 
+endif
+
+src/host/buildvm_arch.h: .FORCE
+	echo "Building host/buildvm_arch.h..."; cd src; ../$(BINARYDIR)/minilua ../dynasm/dynasm.lua -LN -D JIT -D FFI $(P64) -o host/buildvm_arch.h vm_x86.dasc
+
+.PHONY: .FORCE
 
 #VisualGDB: FileSpecificTemplates		#<--- VisualGDB will use the following lines to define rules for source files in subdirectories
 $(BINARYDIR)/%.o : %.cpp $(all_make_files) |$(BINARYDIR)
@@ -143,4 +153,3 @@ $(BINARYDIR)/buildvm_lib.o : src/host/buildvm_lib.c $(all_make_files) |$(BINARYD
 
 $(BINARYDIR)/buildvm_peobj.o : src/host/buildvm_peobj.c $(all_make_files) |$(BINARYDIR)
 	$(CC) $(CFLAGS) -c $< -o $@ -MD -MF $(@:.o=.dep)
-

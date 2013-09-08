@@ -12,18 +12,18 @@ AR := ar
 OBJCOPY := objcopy
 
 #Additional flags
-PREPROCESSOR_MACROS := 
+PREPROCESSOR_MACROS :=
 INCLUDE_DIRS := include
-LIBRARY_DIRS := 
-LIBRARY_NAMES := 
-ADDITIONAL_LINKER_INPUTS := 
-MACOS_FRAMEWORKS := 
+LIBRARY_DIRS :=
+LIBRARY_NAMES :=
+ADDITIONAL_LINKER_INPUTS :=
+MACOS_FRAMEWORKS :=
 
-CFLAGS := -ggdb -ffunction-sections
+CFLAGS += -ggdb -ffunction-sections
 CXXFLAGS := -ggdb -ffunction-sections
-ASFLAGS := 
+ASFLAGS :=
 LDFLAGS := -Wl,-gc-sections
-COMMONFLAGS := 
+COMMONFLAGS :=
 
 START_GROUP := -Wl,--start-group
 END_GROUP := -Wl,--end-group

@@ -19,8 +19,8 @@ LIBRARY_NAMES := m
 ADDITIONAL_LINKER_INPUTS := 
 MACOS_FRAMEWORKS := 
 
-CFLAGS := -ggdb -ffunction-sections
-CXXFLAGS := -ggdb -ffunction-sections
+CFLAGS := -ggdb -ffunction-sections 
+CXXFLAGS := -ggdb -ffunction-sections 
 ASFLAGS := 
 LDFLAGS := -Wl,-gc-sections
 COMMONFLAGS := 

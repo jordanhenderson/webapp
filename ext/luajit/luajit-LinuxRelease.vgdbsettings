@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <VisualGDBProjectSettings2 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ConfigurationName>LinuxDebug</ConfigurationName>
+  <ConfigurationName>LinuxRelease</ConfigurationName>
   <Project xsi:type="com.visualgdb.project.linux">
     <CustomSourceDirectories>
       <Directories />
@@ -26,6 +26,10 @@
         <string>*.c</string>
         <string>*.mak</string>
         <string>Makefile</string>
+        <string>*.cc</string>
+        <string>Makefile.*</string>
+        <string>*.lua</string>
+        <string>*.dasc</string>
       </FileMasks>
       <TransferNewFilesOnly>true</TransferNewFilesOnly>
       <IncludeSubdirectories>true</IncludeSubdirectories>
@@ -36,8 +40,7 @@
   </Project>
   <Build xsi:type="com.visualgdb.build.make">
     <MakeFilePathRelativeToSourceDir>Makefile</MakeFilePathRelativeToSourceDir>
-    <MakeConfigurationName>LinuxDebug</MakeConfigurationName>
-    <AdditionalMakeArguments />
+    <MakeConfigurationName>LinuxRelease</MakeConfigurationName>
     <Toolchain>
       <Name>Default GCC toolchain on shinobi-linux</Name>
       <UnixSystem>true</UnixSystem>
@@ -114,12 +117,19 @@
       <StepIntoNewInstanceEntry>main</StepIntoNewInstanceEntry>
     </AdditionalGDBSettings>
     <LaunchGDBSettings xsi:type="GDBLaunchParametersNewInstance">
+      <GDBEnvironment>
+        <Records>
+          <Record>
+            <VariableName>LANG</VariableName>
+            <Value>en_US.UTF-8</Value>
+          </Record>
+        </Records>
+      </GDBEnvironment>
       <DebuggedProgram>$(TargetPath)</DebuggedProgram>
       <GDBServerPort>2000</GDBServerPort>
       <ProgramArguments />
     </LaunchGDBSettings>
     <GenerateCtrlBreakInsteadOfCtrlC>false</GenerateCtrlBreakInsteadOfCtrlC>
-    <DeploymentTargetPath />
     <X11WindowMode>Local</X11WindowMode>
     <KeepConsoleAfterExit>false</KeepConsoleAfterExit>
     <RunGDBUnderSudo>false</RunGDBUnderSudo>
