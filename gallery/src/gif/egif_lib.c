@@ -381,6 +381,7 @@ EGifPutImageDesc(GifFileType *GifFile,
     GifFile->Image.Height = Height;
     GifFile->Image.Interlace = Interlace;
     if (ColorMap) {
+		if(GifFile->Image.ColorMap) GifFreeMapObject(GifFile->Image.ColorMap);
         GifFile->Image.ColorMap = GifMakeMapObject(ColorMap->ColorCount,
                                                 ColorMap->Colors);
         if (GifFile->Image.ColorMap == NULL) {
@@ -1135,7 +1136,7 @@ EGifSpew(GifFileType *GifFileOut)
 		    return (GIF_ERROR);
 	    }
 	}
-    }
+	}
 
     if (EGifWriteExtensions(GifFileOut,
 			    GifFileOut->ExtensionBlocks,

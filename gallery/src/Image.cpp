@@ -371,18 +371,14 @@ void Image::save(const string& filename) {
 			output->SWidth = width;
 			output->SHeight = height;
 			
-			output->Image.Width = width;
-			output->Image.Height = height;
-
 			output->SColorResolution = bitdepth;
 			output->SBackGroundColor = gif->SBackGroundColor;
-			//TODO: remove this.
 			output->SColorMap = GifMakeMapObject(gif->SColorMap->ColorCount, gif->SColorMap->Colors);
 			output->ImageCount = imagecount;
 			SavedImage* saved_images;
 			saved_images = output->SavedImages = (SavedImage *)malloc(sizeof(SavedImage)*imagecount);
 
-			//TODO Disposal optimisation for animations.
+
 			for (int i = 0; i < imagecount; i++) {
 				memset(&saved_images[i], '\0', sizeof(SavedImage));
 				//Remove optimisation on savedimages.
@@ -395,9 +391,6 @@ void Image::save(const string& filename) {
 				gifMakeMap(frames[i], width, height, (unsigned char**)&saved_images[i].ImageDesc.ColorMap, (unsigned char**)&saved_images[i].RasterBits);
 				//Clean up rasterbits/maps.					
 			}
-
-			
-
 
 			if(EGifSpew(output) != GIF_OK) {
 				nError = ERROR_IMAGE_PROCESSING_FAILED;

@@ -238,13 +238,12 @@ private:
 		std::string date = date_format("%Y%m%d",8);
 		std::string storepath = database->select(SELECT_SYSTEM("store_path"));
 		std::string thumbspath = database->select(SELECT_SYSTEM("thumbs_path"));
-
+		
 		if(files.size() > 0) {
 			for (typename T::const_iterator it = files.begin(), end = files.end(); it != end; ++it) {
 				addFile(*it, nGenThumbs, thumbspath, path, date, albumID);
 			}
-		}
-				
+		}	
 	}
 	void addFile(const std::string&, int, const std::string&, const std::string&, const std::string&, const std::string&);
 	void process_thread(std::thread*);

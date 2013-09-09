@@ -7,6 +7,7 @@
 #include "stringbuffer.h"
 #include <sha.h>
 
+
 using namespace std;
 
 //Public API functions.
