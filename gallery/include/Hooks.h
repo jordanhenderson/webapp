@@ -16,5 +16,5 @@
 APIEXPORT int Template_ShowGlobalSection(ctemplate::TemplateDictionary*, const char*);
 APIEXPORT int Template_ShowSection(ctemplate::TemplateDictionary*, const char*);
 APIEXPORT const char* Session_Get(SessionStore*, const char*);
-
+APIEXPORT int Template_SetValue(ctemplate::TemplateDictionary* dict, const char* key, const char* value);
 #endif

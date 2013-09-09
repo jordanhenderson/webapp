@@ -18,9 +18,8 @@ void Image::cleanup() {
 
 	case IMAGE_TYPE_PNG:
 		if(row_pointers != NULL)
-			//row_pointers points to memory allocated as pixels, therefore does
-				//not need to be delete[]'d
-					delete row_pointers;
+			delete[] row_pointers;
+			row_pointers = NULL;
 		//No break; intentional.
 	case IMAGE_TYPE_JPEG:
 		if(pixels != NULL) {
@@ -209,7 +208,7 @@ void Image::load(const string& filename) {
 		   if (trns)
 			  png_set_expand(png_ptr);
 
-		   if(colorType == PNG_COLOR_TYPE_GRAY || colorType == PNG_COLOR_TYPE_RGB_ALPHA || colorType == PNG_COLOR_TYPE_GRAY_ALPHA) {
+		   if(colorType == PNG_COLOR_TYPE_GRAY || colorType == PNG_COLOR_TYPE_GRAY_ALPHA) {
 			   png_set_gray_to_rgb(png_ptr);
 			   png_set_filler(png_ptr, 0xff, PNG_FILLER_AFTER);
 		   }
@@ -476,10 +475,12 @@ unsigned char* Image::_resize(unsigned char* image, int width, int height, int o
 	if(width == oldWidth && height == oldHeight)
 		return image;
 
-	//Allocate new buffer
-	unsigned char* tmpBuf = new unsigned char[width * height * 4];
+	//Allocate new buffer - opencv needs an extra 4 bytes in some (odd) occasions!
+	unsigned char* tmpBuf = new unsigned char[(width * height * 4) + 4];
 	cv::Mat input(oldHeight, oldWidth, CV_8UC4, image);
 	cv::Mat output(height, width, CV_8UC4, tmpBuf);
+	int area = output.size().area();
+	
 	cv::resize(input, output, output.size(), 0, 0, cv::INTER_AREA);
 	
 	delete[] image;

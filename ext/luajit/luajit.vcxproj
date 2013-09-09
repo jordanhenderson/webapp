@@ -107,6 +107,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>true</LinkIncremental>
@@ -177,7 +178,7 @@
     <CustomBuildStep>
       <Message>BuildVM</Message>
       <Command>echo Building VM &amp;&amp; cd src &amp;&amp; $(OutputPath)buildvm -m peobj -o ../lj_vm.obj &amp;&amp; $(OutputPath)buildvm -m bcdef -o ../include/lj_bcdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m ffdef -o ../include/lj_ffdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m libdef -o ../include/lj_libdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m recdef -o ../include/lj_recdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m vmdef -o jit\vmdef.lua lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m folddef -o ../include/lj_folddef.h lj_opt_fold.c</Command>
-      <Outputs>src/lj_vm.obj</Outputs>
+      <Outputs>lj_vm.obj</Outputs>
       <Inputs>
       </Inputs>
     </CustomBuildStep>
@@ -204,9 +205,8 @@
     </Lib>
     <CustomBuildStep>
       <Message>BuildVM</Message>
-      <Command>call build_luajit.bat</Command>
-      <Outputs>
-      </Outputs>
+      <Command>echo Building VM &amp;&amp; cd src &amp;&amp; $(OutputPath)buildvm -m peobj -o ../lj_vm.obj &amp;&amp; $(OutputPath)buildvm -m bcdef -o ../include/lj_bcdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m ffdef -o ../include/lj_ffdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m libdef -o ../include/lj_libdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m recdef -o ../include/lj_recdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m vmdef -o jit\vmdef.lua lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m folddef -o ../include/lj_folddef.h lj_opt_fold.c</Command>
+      <Outputs>lj_vm.obj</Outputs>
       <Inputs>
       </Inputs>
     </CustomBuildStep>
@@ -231,13 +231,13 @@
       </Command>
     </PreBuildEvent>
     <Lib>
-      <AdditionalDependencies>./src/lj_vm.obj</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
     </Lib>
     <CustomBuildStep>
       <Message>BuildVM</Message>
-      <Command>call build_luajit.bat</Command>
-      <Outputs>
-      </Outputs>
+      <Command>echo Building VM &amp;&amp; cd src &amp;&amp; $(OutputPath)buildvm -m peobj -o ../lj_vm.obj &amp;&amp; $(OutputPath)buildvm -m bcdef -o ../include/lj_bcdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m ffdef -o ../include/lj_ffdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m libdef -o ../include/lj_libdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m recdef -o ../include/lj_recdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m vmdef -o jit\vmdef.lua lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m folddef -o ../include/lj_folddef.h lj_opt_fold.c</Command>
+      <Outputs>lj_vm.obj</Outputs>
       <Inputs>
       </Inputs>
     </CustomBuildStep>
@@ -265,9 +265,8 @@
     </Lib>
     <CustomBuildStep>
       <Message>BuildVM</Message>
-      <Command>call build_luajit.bat</Command>
-      <Outputs>
-      </Outputs>
+      <Command>echo Building VM &amp;&amp; cd src &amp;&amp; $(OutputPath)buildvm -m peobj -o ../lj_vm.obj &amp;&amp; $(OutputPath)buildvm -m bcdef -o ../include/lj_bcdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m ffdef -o ../include/lj_ffdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m libdef -o ../include/lj_libdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m recdef -o ../include/lj_recdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m vmdef -o jit\vmdef.lua lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m folddef -o ../include/lj_folddef.h lj_opt_fold.c</Command>
+      <Outputs>lj_vm.obj</Outputs>
       <Inputs>
       </Inputs>
     </CustomBuildStep>

@@ -112,9 +112,6 @@
     <ClCompile Include="src\gif\gifalloc.c">
       <Filter>Source Files\gif</Filter>
     </ClCompile>
-    <ClCompile Include="src\gif\quantize.c">
-      <Filter>Source Files\gif</Filter>
-    </ClCompile>
     <ClCompile Include="src\Gif.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

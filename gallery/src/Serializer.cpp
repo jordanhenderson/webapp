@@ -70,6 +70,23 @@ void Serializer::append(const string& key, const string& value,  int push_back, 
 
 }
 
+void Serializer::append(const string& key, int value,  int push_back, Value* m) {
+	Value* actualMap;
+	Value _m;
+	if(m == NULL) actualMap = &_m;
+	else actualMap = m;
+	if(!actualMap->IsObject())
+		actualMap->SetObject();
+
+	Value f, s;
+	f.SetString(key.c_str(), key.length(), data.GetAllocator());
+	s.SetInt(value);
+	actualMap->AddMember(f, s, data.GetAllocator());
+	if(push_back)
+		&data["data"].PushBack(*actualMap, data.GetAllocator());
+
+}
+
 void Serializer::append(unordered_map<string, string>& map, Value* v) {
 	Value* d;
 	if(v == NULL) d = &data["data"];

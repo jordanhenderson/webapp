@@ -30,7 +30,7 @@ gif_hash.h - magfic constants and declarations for GIF LZW
 #define HT_PUT_CODE(l)	(l & 0x0FFF)
 
 typedef struct GifHashTableType {
-    uint32_t HTable[HT_SIZE];
+	uint32_t HTable[HT_SIZE];
 } GifHashTableType;
 
 GifHashTableType *_InitHashTable(void);

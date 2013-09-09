@@ -13,11 +13,12 @@ extern "C" {
 
 #define GIFLIB_MAJOR 5
 #define GIFLIB_MINOR 0
-#define GIFLIB_RELEASE 4
+#define GIFLIB_RELEASE 5
 
 #define GIF_ERROR   0
 #define GIF_OK      1
 
+#include <stddef.h>
 #include <stdbool.h>
 
 #define GIF_STAMP "GIFVER"          /* First chars in file - GIF stamp.  */

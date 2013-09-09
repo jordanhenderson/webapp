@@ -53,7 +53,7 @@ DGifOpenFileName(const char *FileName, int *Error)
 {
     int FileHandle;
     GifFileType *GifFile;
-	
+
     if ((FileHandle = open(FileName, O_RDONLY)) == -1) {
 	if (Error != NULL)
 	    *Error = D_GIF_ERR_OPEN_FAILED;
@@ -61,7 +61,6 @@ DGifOpenFileName(const char *FileName, int *Error)
     }
 
     GifFile = DGifOpenFileHandle(FileHandle, Error);
-    // cppcheck-suppress resourceLeak
     return GifFile;
 }
 
@@ -212,6 +211,7 @@ DGifOpen(void *userData, InputFunc readFunc, int *Error)
     if (DGifGetScreenDesc(GifFile) == GIF_ERROR) {
         free((char *)Private);
         free((char *)GifFile);
+	*Error = D_GIF_ERR_NO_SCRN_DSCR;
         return NULL;
     }
 
@@ -1136,11 +1136,13 @@ DGifSlurp(GifFileType *GifFile)
               if (DGifGetExtension(GifFile,&ExtFunction,&ExtData) == GIF_ERROR)
                   return (GIF_ERROR);
 	      /* Create an extension block with our data */
-	      if (GifAddExtensionBlock(&GifFile->ExtensionBlockCount,
-				       &GifFile->ExtensionBlocks, 
-				       ExtFunction, ExtData[0], &ExtData[1])
-		  == GIF_ERROR)
-		  return (GIF_ERROR);
+              if (ExtData != NULL) {
+		  if (GifAddExtensionBlock(&GifFile->ExtensionBlockCount,
+					   &GifFile->ExtensionBlocks, 
+					   ExtFunction, ExtData[0], &ExtData[1])
+		      == GIF_ERROR)
+		      return (GIF_ERROR);
+	      }
               while (ExtData != NULL) {
                   if (DGifGetExtensionNext(GifFile, &ExtData) == GIF_ERROR)
                       return (GIF_ERROR);

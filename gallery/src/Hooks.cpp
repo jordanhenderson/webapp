@@ -21,3 +21,8 @@ const char* Session_Get(SessionStore* session, const char* key) {
 	if(s.empty()) return NULL;
 	return s.c_str();
 }
+
+int Template_SetValue(TemplateDictionary* dict, const char* key, const char* value) {
+	dict->SetValue(key, value);
+	return 0;
+}

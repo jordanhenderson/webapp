@@ -21,6 +21,7 @@ public:
 	void append(std::vector<std::unordered_map<std::string, std::string>>& map);
 	void append(std::vector<std::vector<std::string>>&);
 	void append(const std::string& key, const std::string& value,  int push_back=1, rapidjson::Value* m=NULL);
+	void append(const std::string& key, int value,  int push_back=1, rapidjson::Value* m=NULL);
 	Serializer();
 	std::string get(int type);
 

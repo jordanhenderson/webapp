@@ -10,6 +10,8 @@ two modules will be linked.  Preserve this property!
 
 #ifndef WIN32
 #include <unistd.h>
+#else
+#include <io.h>
 #endif
 #include <stdint.h>
 #include <stdlib.h>
@@ -294,8 +296,8 @@ EGifPutScreenDesc(GifFileType *GifFile,
     GifFile->SColorResolution = ColorRes;
     GifFile->SBackGroundColor = BackGround;
     if (ColorMap) {
-		if(GifFile->SColorMap == NULL)
-			GifFile->SColorMap = GifMakeMapObject(ColorMap->ColorCount, ColorMap->Colors);
+        GifFile->SColorMap = GifMakeMapObject(ColorMap->ColorCount,
+                                           ColorMap->Colors);
         if (GifFile->SColorMap == NULL) {
             GifFile->Error = E_GIF_ERR_NOT_ENOUGH_MEM;
             return GIF_ERROR;
@@ -379,9 +381,8 @@ EGifPutImageDesc(GifFileType *GifFile,
     GifFile->Image.Height = Height;
     GifFile->Image.Interlace = Interlace;
     if (ColorMap) {
-		if(GifFile->Image.ColorMap == NULL)
-			GifFile->Image.ColorMap = GifMakeMapObject(ColorMap->ColorCount,
-													ColorMap->Colors);
+        GifFile->Image.ColorMap = GifMakeMapObject(ColorMap->ColorCount,
+                                                ColorMap->Colors);
         if (GifFile->Image.ColorMap == NULL) {
             GifFile->Error = E_GIF_ERR_NOT_ENOUGH_MEM;
             return GIF_ERROR;

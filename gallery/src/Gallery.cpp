@@ -125,13 +125,21 @@ string Gallery::genCookie(const string& name, const string& value, time_t* date)
 	}
 }
 
-Response Gallery::getPage(const string& page, SessionStore& session, int publishSession) {
+Response Gallery::getPage(const string& uri, SessionStore& session, int publishSession) {
 	Response r;
-
+	string page;
 	if(publishSession) {
 		time_t t; time(&t); add_days(t, 1);
 		r = genCookie("sessionid", session.sessionid, &t);
 	}
+
+	if(uri[0] == '/' && (uri[1] == '\0' || uri[1] == '?')) {
+		page = "index";
+	} else {
+		std::size_t found = uri.find_first_of("?&#");
+		page = uri.substr(std::min(1, (int)uri.size()), found-1);
+	}
+
 
 	//Template parsing
 	if(contains(contentList, page + ".html")) {
@@ -240,10 +248,8 @@ void Gallery::process(FCGX_Request* request) {
 			RequestVars v;
 			parseRequestVars(uri + 4, v);
 			final = processVars(v, *store, createstore);
-		} else if(uri[0] == '/' && (uri[1] == '\0' || uri[1] == '?')) {
-			final = getPage("index", *store, createstore);
 		} else {
-			final = getPage(uri+1, *store, createstore);
+			final = getPage(uri, *store, createstore);
 		}
 	} else if(strcmp(method, "POST") == 0) {
 		//Read data from the input stream. (allocated using CONTENT_LENGTH)
@@ -437,4 +443,47 @@ int Gallery::LuaWriter(lua_State* L, const void* p, size_t sz, void* ud) {
 	LuaChunk* b = (LuaChunk*)ud;
 	b->bytecode.append((const char*)p, sz);
 	return 0;
+}
+
+void Gallery::addFile(const string& file, int nGenThumbs, const string& thumbspath, const string& path, const string& date, const string& albumID) {
+	string thumbID;
+	//Generate thumb.
+	if(nGenThumbs) {
+		FileSystem::MakePath(basepath + '/' + thumbspath + '/' + path + '/' + file);
+		if(genThumb((path + '/' + file).c_str(), 200, 200) == ERROR_SUCCESS) {
+			QueryRow params;
+			params.push_back(path + '/' + file);
+			int nThumbID = database->exec(INSERT_THUMB, &params);
+			if(nThumbID > 0) {
+				thumbID = to_string(nThumbID);
+			}
+		}
+	}
+
+	//Insert file 
+	QueryRow params;
+	params.push_back(file);
+	params.push_back(file);
+	params.push_back(date);
+	int fileID;
+	if(!thumbID.empty()) {
+		params.push_back(thumbID);
+		fileID = database->exec(INSERT_FILE, &params);
+	} else {
+		fileID = database->exec(INSERT_FILE_NO_THUMB, &params);
+	}
+	//Add entry into albumFiles
+	QueryRow fparams;
+	fparams.push_back(albumID);
+	fparams.push_back(to_string(fileID));
+	database->exec(INSERT_ALBUM_FILE, &fparams);
+}
+
+//Gallery specific functionality
+int Gallery::getDuplicates( string& name, string& path ) {
+	QueryRow params;
+	params.push_back(name);
+	params.push_back(path);
+	string dupAlbumStr = database->select(SELECT_DUPLICATE_ALBUM_COUNT, &params);
+	return stoi(dupAlbumStr);
 }

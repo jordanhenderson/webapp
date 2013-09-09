@@ -146,20 +146,30 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& session
 	process_thread(refresh_albums);
 
 	Serializer s;
-	s.append("msg", "REFRESH_SUCCESS", 1);
+	rapidjson::Value v;
+	s.append("msg", "REFRESH_SUCCESS", 0, &v);
+	s.append("success", 1, 1, &v);
 	r.append(s.get(RESPONSE_TYPE_MESSAGE));
 
 	return 0;
 }
 
 int Gallery::search(RequestVars& vars, Response& r, SessionStore& s) {
-	string query = SELECT_SEARCH;
-	QueryRow params;
-	
+	string query;
+	string domain = vars["w"];
 	string search_str = "%" + url_decode(vars["q"]) + "%";
-	params.push_back(search_str);
-	params.push_back(search_str);
-
+	QueryRow params;
+	if(domain == "both") {
+		query = SELECT_SEARCH;
+		params.push_back(search_str);
+		params.push_back(search_str);
+	}
+	else if(domain == "albums") {
+		query = SELECT_ALBUM_DETAILS CONDITION_ALBUM_NAME;
+		params.push_back(search_str);
+	}
+	else return 0;
+	
 	Query q(query, &params);
 	return getData(q, vars, r, s);
 
@@ -171,7 +181,9 @@ int Gallery::login(RequestVars& vars, Response& r, SessionStore& store) {
 	Serializer s;
 	if(user == params->get("user") && pass == params->get("pass")) {
 		store.store("auth", "TRUE");
-		s.append("msg", "LOGIN_SUCCESS", 1);
+		rapidjson::Value v;
+		s.append("msg", "LOGIN_SUCCESS", 0, &v);
+		s.append("reload", 1, 1, &v);
 	} else {
 		s.append("msg", "LOGIN_FAILED", 1);
 	}
@@ -185,28 +197,34 @@ int Gallery::logout(RequestVars& vars, Response& r, SessionStore& store) {
 	Serializer s;
 	
 	store.destroy();
-	s.append("msg", "LOGOUT_SUCCESS", 1);
+	rapidjson::Value v;
+	s.append("msg", "LOGOUT_SUCCESS", 0, &v);
+	s.append("reload", 1, 1, &v);
 
 	r.append(s.get(RESPONSE_TYPE_MESSAGE));
 	return 0;
 }
 
-int Gallery::addBulkAlbums(RequestVars& vars, Response& r, SessionStore& s) {
+int Gallery::addBulkAlbums(RequestVars& vars, Response& r, SessionStore& session) {
 	//This function ignores duplicates.
 	vector<string> paths;
 	tokenize(url_decode(vars["paths"]),paths,"\n");
 	Response tmp; 
+	Serializer s;
 	for(string path: paths) {
-		tmp = r;
 		vars["path"] = vars["name"] = ref(path);
 
-		if(addAlbum(vars, tmp, s) == 1) {
+		if(addAlbum(vars, tmp, session) == 1) {
 			//An error has occured!
-			r = tmp;
+			s.append("msg", "ADD_BULK_FAILED");
 			return 1;
 		}
 	}
-	r = tmp;
+	rapidjson::Value v;
+	s.append("msg", "ADDED_SUCCESS", 0, &v);
+	s.append("success", 1, 1, &v);
+	r.append(s.get(RESPONSE_TYPE_MESSAGE));
+
 	return 0;
 }
 
@@ -251,11 +269,12 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 
 			});
 			process_thread(add_album);
-			s.append("msg", "ADDED_SUCCESS", 1);
-
+			rapidjson::Value v;
+			s.append("msg", "ADDED_SUCCESS", 0, &v);
+			s.append("success", 1, 1, &v);
 		}
 	} else {
-		s.append("msg", "FAILED", 1);
+		s.append("msg", "INVALID_PARAM", 1);
 		addStatus = 1;
 	}
 	r.append(s.get(RESPONSE_TYPE_MESSAGE));
@@ -302,8 +321,9 @@ int Gallery::delAlbums(RequestVars& vars, Response& r, SessionStore&) {
 		}
 	});
 	process_thread(del_albums);
-
-	s.append("msg", "DELETE_SUCCESS", 1);
+	rapidjson::Value v;
+	s.append("msg", "DELETE_SUCCESS", 0, &v);
+	s.append("success", 1, 1, &v);
 	r.append(s.get(RESPONSE_TYPE_MESSAGE));
 	return 0;
 }
@@ -428,46 +448,4 @@ int Gallery::setThumb(RequestVars& vars, Response& r, SessionStore&) {
 	return 0;
 }
 
-//Gallery specific functionality
-int Gallery::getDuplicates( string& name, string& path ) {
-	QueryRow params;
-	params.push_back(name);
-	params.push_back(path);
-	string dupAlbumStr = database->select(SELECT_DUPLICATE_ALBUM_COUNT, &params);
-	return stoi(dupAlbumStr);
-}
 
-
-void Gallery::addFile(const string& file, int nGenThumbs, const string& thumbspath, const string& path, const string& date, const string& albumID) {
-	string thumbID;
-	//Generate thumb.
-	if(nGenThumbs) {
-		FileSystem::MakePath(basepath + '/' + thumbspath + '/' + path + '/' + file);
-		if(genThumb((path + '/' + file).c_str(), 200, 200) == ERROR_SUCCESS) {
-			QueryRow params;
-			params.push_back(path + '/' + file);
-			int nThumbID = database->exec(INSERT_THUMB, &params);
-			if(nThumbID > 0) {
-				thumbID = to_string(nThumbID);
-			}
-		}
-	}
-
-	//Insert file 
-	QueryRow params;
-	params.push_back(file);
-	params.push_back(file);
-	params.push_back(date);
-	int fileID;
-	if(!thumbID.empty()) {
-		params.push_back(thumbID);
-		fileID = database->exec(INSERT_FILE, &params);
-	} else {
-		fileID = database->exec(INSERT_FILE_NO_THUMB, &params);
-	}
-	//Add entry into albumFiles
-	QueryRow fparams;
-	fparams.push_back(albumID);
-	fparams.push_back(to_string(fileID));
-	database->exec(INSERT_ALBUM_FILE, &fparams);
-}

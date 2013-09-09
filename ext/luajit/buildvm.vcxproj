@@ -101,9 +101,9 @@
     <CustomBuildAfterTargets>
     </CustomBuildAfterTargets>
     <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
+    <IntDir>$(ProjectName)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(ProjectDir)src\</OutDir>
     <LinkIncremental>false</LinkIncremental>
     <CustomBuildAfterTargets>
     </CustomBuildAfterTargets>
@@ -111,7 +111,7 @@
     <IntDir>$(ProjectName)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(ProjectDir)src\</OutDir>
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <LinkIncremental>false</LinkIncremental>
     <CustomBuildAfterTargets>
     </CustomBuildAfterTargets>
@@ -119,12 +119,12 @@
     <IntDir>$(ProjectName)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(ProjectDir)src\</OutDir>
     <LinkIncremental>false</LinkIncremental>
     <CustomBuildAfterTargets>
     </CustomBuildAfterTargets>
     <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
     <IntDir>$(ProjectName)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='LinuxDebug|Win32'">
     <NMakeBuildCommandLine>"$(VISUALGDB_DIR)\VisualGDB.exe" /build "$(ProjectPath)" "/solution:$(SolutionPath)" "/config:$(Configuration)" "/platform:$(Platform)"</NMakeBuildCommandLine>
@@ -174,7 +174,7 @@
       <Command>echo "Building host/buildvm_arch.h..." &amp;&amp; $(OutputPath)minilua dynasm/dynasm.lua -LN -D WIN -D JIT -D FFI -o src/host/buildvm_arch.h src/vm_x86.dasc</Command>
     </CustomBuildStep>
     <CustomBuildStep>
-      <Outputs>src/host/buildvm_arch.h</Outputs>
+      <Outputs>$(ProjectDir)src\host\buildvm_arch.h</Outputs>
       <Message>Building host/buildvm_arch.h...</Message>
       <Inputs>
       </Inputs>
@@ -196,7 +196,7 @@
     </PreBuildEvent>
     <CustomBuildStep>
       <Command>echo "Building host/buildvm_arch.h..." &amp;&amp; $(OutputPath)minilua dynasm/dynasm.lua -LN -D WIN -D JIT -D FFI -D P64 -o src/host/buildvm_arch.h src/vm_x86.dasc</Command>
-      <Outputs>./src/host/buildvm_arch.h</Outputs>
+      <Outputs>$(ProjectDir)src\host\buildvm_arch.h</Outputs>
       <Message>Building host/buildvm_arch.h...</Message>
       <Inputs>
       </Inputs>
@@ -222,7 +222,7 @@
     </PreBuildEvent>
     <CustomBuildStep>
       <Command>echo "Building host/buildvm_arch.h..." &amp;&amp; $(OutputPath)minilua dynasm/dynasm.lua -LN -D WIN -D JIT -D FFI -o src/host/buildvm_arch.h src/vm_x86.dasc</Command>
-      <Outputs>src/host/buildvm_arch.h</Outputs>
+      <Outputs>$(ProjectDir)src\host\buildvm_arch.h</Outputs>
       <Message>Building host/buildvm_arch.h...</Message>
       <Inputs>
       </Inputs>
@@ -248,7 +248,7 @@
     </PreBuildEvent>
     <CustomBuildStep>
       <Command>echo "Building host/buildvm_arch.h..." &amp;&amp; $(OutputPath)minilua dynasm/dynasm.lua -LN -D WIN -D JIT -D FFI -D P64 -o src/host/buildvm_arch.h src/vm_x86.dasc</Command>
-      <Outputs>./src/host/buildvm_arch.h</Outputs>
+      <Outputs>$(ProjectDir)src\host\buildvm_arch.h</Outputs>
       <Message>Building host/buildvm_arch.h...</Message>
       <Inputs>
       </Inputs>

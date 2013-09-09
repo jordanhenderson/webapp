@@ -97,6 +97,8 @@ XSTR(ALBUM_SET) " AND f.id IN (SELECT fileid FROM albumfiles WHERE albumid=al.id
 			(SELECT id FROM albumfiles WHERE albumid=al.id ORDER BY id ASC LIMIT 1) JOIN albums ON albums.id = al.id),\
 		(SELECT (" SELECT_SYSTEM("thumbs_path") ") || '/' || (" SELECT_SYSTEM("default_thumb") "))) AS thumb FROM albums al WHERE 1 "
 
+#define CONDITION_ALBUM_NAME " AND al.name LIKE ? "
+
 #define SELECT_ALBUM_PATH "SELECT path, recursive FROM albums WHERE id = ?;"
 
 #define DELETE_MISSING_FILES "DELETE FROM files WHERE id IN (SELECT fileid FROM albumfiles alf WHERE alf.albumid = ?) AND path NOT IN ("
