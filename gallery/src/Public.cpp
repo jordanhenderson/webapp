@@ -18,7 +18,7 @@ int Gallery::disableFiles(RequestVars& vars, Response& r, SessionStore& s) {
 	string album = vars["album"];
 	string id = vars["id"];
 	if(!album.empty() && id.empty()) {
-		query.append(CONDITION_ALBUM ")");
+		query.append(CONDITION_ALBUMID ")");
 		params.push_back(album);
 	}
 	else if(!id.empty()) {
@@ -385,7 +385,7 @@ int Gallery::getFiles(RequestVars& vars, Response& r, SessionStore&s) {
 
 
 	if(!album.empty() && id.empty()) {
-		query.append(CONDITION_ALBUM);
+		query.append(CONDITION_ALBUMID);
 		params.push_back(album);
 		database->exec(INC_ALBUM_VIEWS, &params);
 	}
@@ -423,7 +423,7 @@ int Gallery::getAlbums(RequestVars& vars, Response& r, SessionStore&s) {
 	string id = vars["id"];
 	QueryRow params;
 	if(!id.empty()) {
-		query.append(CONDITION_ALBUM);
+		query.append(CONDITION_ALBUMID);
 		params.push_back(id);
 	}
 	Query q(query, &params);

@@ -81,7 +81,7 @@ Gallery::Gallery(Parameters* params) {
 	
 	currentID = std::this_thread::get_id();
 	//Create function map.
-	GALLERYMAP(functionMap);
+	APIMAP(functionMap);
 
 	refresh_scripts();
 }

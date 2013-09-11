@@ -425,6 +425,7 @@
     <ClInclude Include="include\rapidjson\reader.h" />
     <ClInclude Include="include\rapidjson\stringbuffer.h" />
     <ClInclude Include="include\rapidjson\writer.h" />
+    <ClInclude Include="include\Schema.h" />
     <ClInclude Include="include\Serializer.h" />
     <ClInclude Include="include\Server.h" />
     <ClInclude Include="include\Logging.h" />
