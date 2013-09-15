@@ -3,7 +3,7 @@
 #include "Server.h"
 
 using namespace std;
-void Server::run(int nThread, int sock) {
+void Server::run(ServerHandler* handler, int nThread, int sock) {
 	FCGX_Request request;
 	if(handler == NULL)
 		return;
@@ -14,8 +14,7 @@ void Server::run(int nThread, int sock) {
 		
 		int rc = FCGX_Accept_r(&request);
 		
-		if(rc < 0)
-			break;
+		if(rc < 0) break;
 		
 		handler->process(&request); 
 		FCGX_Finish_r(&request);
@@ -28,13 +27,16 @@ Server::Server(ServerHandler* handler) {
 		logger->log("Running as CGI Server.");
 	}
 	this->handler = handler;
+
+	handler->lockHandler.lock();
+
 	logger->log("Server Initialised. Creating FastCGI sockets...");
 	FCGX_Init();
+		
 	int sock = FCGX_OpenSocket(":5000", 0);
 	
 	for(int n = 0; n < SERVER_THREADS; n++) {
-
-		serverpool[n] = new thread(&Server::run, this, n, sock);
+		serverpool[n] = new thread(&Server::run, handler, n, sock);
 	}
 	
 }

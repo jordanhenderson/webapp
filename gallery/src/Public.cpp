@@ -85,6 +85,7 @@ int Gallery::getBoth(RequestVars& vars, Response& r, SessionStore& s) {
 }
 
 int Gallery::clearCache(RequestVars& vars, Response& r, SessionStore& session) {
+	lockHandler.lock();
 	refresh_templates();
 	refresh_scripts();
 	Serializer s;

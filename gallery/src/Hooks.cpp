@@ -26,3 +26,7 @@ int Template_SetValue(TemplateDictionary* dict, const char* key, const char* val
 	dict->SetValue(key, value);
 	return 0;
 }
+
+void Register_Hook(std::map<std::string, GallFunc>* functionMap, const char* hook, void* lua_func) {
+
+}

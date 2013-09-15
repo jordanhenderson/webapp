@@ -66,7 +66,7 @@ private:
 	std::string dbpath;
 
 	//Dynamic function map for public API.
-	std::map<std::string, GallFunc> functionMap;
+	std::unordered_map<std::string, GallFunc> functionMap;
 
 	//Process queue. Threads are executed one by one to ensure no write conflicts occur.
 	std::queue<std::thread*> processQueue;
@@ -82,12 +82,6 @@ private:
 	//Condition variable used by the main thread queue to signal a thread should begin.
 	std::condition_variable cv_thread_start;
 
-	std::string genCookie(const std::string& name, const std::string& value, time_t* date=NULL);
-	std::string getCookieValue(const char* cookies, const char* key);
-	
-
-	int getData(Query& query, RequestVars&, Response&, SessionStore&);
-
 	//template dictionary used by all 'content' templates.
 	ctemplate::TemplateDictionary* contentTemplates;
 
@@ -101,6 +95,8 @@ private:
 
 	//Store lua plugin bytecode in a vector.
 	std::vector<LuaChunk*> loadedScripts;
+
+	std::vector<LuaChunk*> systemScripts;
 
 	template <typename T>
 	void addFiles(T& files, int nGenThumbs, const std::string& path, const std::string& albumID) {
@@ -119,21 +115,28 @@ private:
 	void refresh_templates();
 	void refresh_scripts();
 
-//LUA specific calls (script engine)
 	static int LuaWriter(lua_State* L, const void* p, size_t sz, void* ud);
-	void runScript(const char* filename, LuaParam* params = NULL, int nArgs = 0);
+	void runScript(LuaChunk*, LuaParam* params, int nArgs);
+	
+	std::string genCookie(const std::string& name, const std::string& value, time_t* date=NULL);
+	std::string getCookieValue(const char* cookies, const char* key);	
 
 //Gallery specific calls
 	int genThumb(const char* file, double shortmax, double longmax);
 	int getDuplicates( std::string& name, std::string& path );
 	int hasAlbums();
 	void addFile(const std::string&, int, const std::string&, const std::string&, const std::string&, const std::string&);
+	int getData(Query& query, RequestVars&, Response&, SessionStore&);
+
 
 public:
 	Gallery(Parameters* params);
 	~Gallery();
 	void process(FCGX_Request* request);
 
+	//Public calls
+	void runScript(const char* filename, LuaParam* params = NULL, int nArgs = 0);
+	void runScript(int, LuaParam* params = NULL, int nArgs = 0);
 	//Main response functions.
 	int getAlbums(RESPONSE_VARS);
 	int addAlbum(RESPONSE_VARS);

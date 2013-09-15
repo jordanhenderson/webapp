@@ -30,6 +30,10 @@
 #include <unistd.h>
 #endif
 
+#if _MSC_VER
+	#pragma warning (disable : 4503)
+#endif
+
 #define DB_FUNC_RANDOM "RANDOM()"
 #define ERROR_SUCCESS 0L
 #define ERROR_FILE_NOT_FOUND 2L

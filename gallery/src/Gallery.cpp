@@ -13,20 +13,30 @@ using namespace ctemplate;
 void Gallery::runScript(const char* filename, LuaParam* params, int nArgs) {
 	for(LuaChunk* c: loadedScripts) {
 		if(c->filename == filename) {
-			lua_State* L = luaL_newstate();
-			luaL_openlibs(L);
-			luaL_loadbuffer(L, c->bytecode.c_str(), c->bytecode.length(), filename);
-			if(params != NULL) {
-				for(int i = 0; i < nArgs; i++) {
-					LuaParam* p = params + i;
-					lua_pushlightuserdata(L, p->d);
-					lua_setglobal(L, p->p);
-				}
-			}
-			lua_pcall(L, 0, 0, 0);
-			return;
+			runScript(c, params, nArgs);
 		}
 	}
+}
+
+//Run scripts based on their index (system scripts; see Schema.h)
+void Gallery::runScript(int index, LuaParam* params, int nArgs) {
+	LuaChunk* script = systemScripts[index];
+	if(script != NULL) runScript(script, params, nArgs);
+}
+
+//Run script given a LuaChunk. Called by public runScript methods.
+void Gallery::runScript(LuaChunk* c, LuaParam* params, int nArgs) {
+	lua_State* L = luaL_newstate();
+	luaL_openlibs(L);
+	luaL_loadbuffer(L, c->bytecode.c_str(), c->bytecode.length(), c->filename.c_str());
+	if(params != NULL) {
+		for(int i = 0; i < nArgs; i++) {
+			LuaParam* p = params + i;
+			lua_pushlightuserdata(L, p->d);
+			lua_setglobal(L, p->p);
+		}
+	}
+	lua_pcall(L, 0, 0, 0);
 }
 
 Gallery::Gallery(Parameters* params) {
@@ -48,7 +58,11 @@ Gallery::Gallery(Parameters* params) {
 		database->exec(s);
 	}
 	
-	//Create/start process queue thread.
+	//Set the 'current thread id' to this thread. Essentially ensures no thread will be started (yet).
+
+	currentID = std::this_thread::get_id();
+
+	//Create/start process queue thread. (CONSUMER)
 	thread_process_queue = new thread([this]() {
 		while(!shutdown_handler) {
 			{
@@ -62,10 +76,13 @@ Gallery::Gallery(Parameters* params) {
 			while(!processQueue.empty()) {
 				thread* t = processQueue.front();
 				{
-					std::lock_guard<std::mutex> lk(mutex_thread_start);
+					lock_guard<mutex> lk(mutex_thread_start);
 					currentID = t->get_id();
 				}
-				cv_thread_start.notify_all();
+				//Notify all threads that a new thread is ready to process.
+				//Only the thread with the correct ID will actually be started.
+				cv_thread_start.notify_all(); 
+				//Join the started thread.
 				t->join();
 				delete t;
 				processQueue.pop();
@@ -78,14 +95,18 @@ Gallery::Gallery(Parameters* params) {
 	contentTemplates = new TemplateDictionary("");
 
 	refresh_templates();
-	
-	currentID = std::this_thread::get_id();
+
 	//Create function map.
 	APIMAP(functionMap);
 
+	systemScripts.reserve(SYSTEM_SCRIPT_COUNT);
+
 	refresh_scripts();
+	LuaParam luaparams[] = {{"hooks", &functionMap}};
+	runScript(SYSTEM_SCRIPT_INIT, (LuaParam*)params, 1 );
 }
 
+//PRODUCER
 void Gallery::process_thread(std::thread* t) {
 	bool empty;
 	{
@@ -154,15 +175,15 @@ Response Gallery::getPage(const string& uri, SessionStore& session, int publishS
 		}
 		LuaParam luaparams[] = {{"template", d}, {"session", &session}};
 
-		runScript("core/template.lua", (LuaParam*)luaparams, 2);
+		runScript(SYSTEM_SCRIPT_TEMPLATE, (LuaParam*)luaparams, 2);
 		ExpandTemplate(basepath + "/content/" + page + ".html", STRIP_WHITESPACE, d, &output);
 		r.append(output);
 		delete d;
 		
 	} else {
-			//File doesn't exists. 404.
-			r.append(END_HEADER);
-			r.append(HTML_404);
+		//File doesn't exists. 404.
+		r.append(END_HEADER);
+		r.append(HTML_404);
 	}
 	return r;
 
@@ -282,7 +303,7 @@ Response Gallery::processVars(RequestVars& vars, SessionStore& session, int publ
 		r.append(genCookie("sessionid", session.sessionid, &t));
 	}
 
-	map<string, GallFunc>::const_iterator miter = functionMap.find(t);
+	unordered_map<string, GallFunc>::const_iterator miter = functionMap.find(t);
 	int hasfunc = miter != functionMap.end();
 	if((hasfunc && (params->get("user").empty() || params->get("pass").empty())) || 
 		(hasfunc && !session.get("auth").empty()) || (hasfunc && t == "login")) {
@@ -369,29 +390,35 @@ void Gallery::refresh_templates() {
 	contentList.clear();
 	string basepath = this->basepath + '/';
 	string templatepath = basepath + "content/";
-	contentList = FileSystem::GetFiles(templatepath, "", 0);
-	for(string s : contentList) {
-		//Preload templates.
-		LoadTemplate(templatepath + s, STRIP_WHITESPACE);
+	{
+		vector<string> files = FileSystem::GetFiles(templatepath, "", 0);
+		contentList.reserve(files.size());
+		for(string s : files) {
+			//Preload templates.
+			LoadTemplate(templatepath + s, STRIP_WHITESPACE);
+			contentList.push_back(s);
+		}
 	}
 
 	//Load server templates.
 	templatepath = basepath + "templates/server/";
-	
 	serverTemplateFiles.clear();
-	
-	for(string s: FileSystem::GetFiles(templatepath, "", 0)) {
-		File f;
-		FileData data;
-		FileSystem::Open(templatepath + s, "rb", &f);
-		string template_name = "T_" + s.substr(0, s.find_last_of("."));
-		FileSystem::Read(&f, &data);
-		std::transform(template_name.begin(), template_name.end(), template_name.begin(), ::toupper);
-		mutable_default_template_cache()->Delete(template_name);
-		StringToTemplateCache(template_name, data.data, data.size, STRIP_WHITESPACE);
-		serverTemplateFiles.push_back(template_name);
-	}
 
+	{
+		vector<string> files = FileSystem::GetFiles(templatepath, "", 0);
+		serverTemplateFiles.reserve(files.size());
+		for(string s: files) {
+			File f;
+			FileData data;
+			FileSystem::Open(templatepath + s, "rb", &f);
+			string template_name = "T_" + s.substr(0, s.find_last_of("."));
+			FileSystem::Read(&f, &data);
+			std::transform(template_name.begin(), template_name.end(), template_name.begin(), ::toupper);
+			mutable_default_template_cache()->Delete(template_name);
+			StringToTemplateCache(template_name, data.data, data.size, STRIP_WHITESPACE);
+			serverTemplateFiles.push_back(template_name);
+		}
+	}
 	
 	//Load client templates (inline insertion into content templates) - these are Handbrake (JS) templates.
 	//First delete existing filedata. This should be optimised later.
@@ -401,15 +428,19 @@ void Gallery::refresh_templates() {
 	clientTemplateFiles.clear();
 
 	templatepath = basepath + "templates/client/";
-	for(string s: FileSystem::GetFiles(templatepath, "", 0)) {
-		File f;
-		FileData* data = new FileData();
-		FileSystem::Open(templatepath + s, "rb", &f);
-		string template_name = "T_" + s.substr(0, s.find_last_of("."));
-		FileSystem::Read(&f, data);
-		std::transform(template_name.begin(), template_name.end(), template_name.begin(), ::toupper);
-		TemplateData d = {template_name, data};
-		clientTemplateFiles.push_back(d);
+	{
+		vector<string> files = FileSystem::GetFiles(templatepath, "", 0);
+		contentList.reserve(files.size());
+		for(string s: FileSystem::GetFiles(templatepath, "", 0)) {
+			File f;
+			FileData* data = new FileData();
+			FileSystem::Open(templatepath + s, "rb", &f);
+			string template_name = "T_" + s.substr(0, s.find_last_of("."));
+			FileSystem::Read(&f, data);
+			std::transform(template_name.begin(), template_name.end(), template_name.begin(), ::toupper);
+			TemplateData d = {template_name, data};
+			clientTemplateFiles.push_back(d);
+		}
 	}
 	
 }
@@ -424,7 +455,7 @@ void Gallery::refresh_scripts() {
 
 	string basepath = this->basepath + '/';
 	string pluginpath = basepath + "plugins/";
-
+	const char* system_script_names[] = SYSTEM_SCRIPT_FILENAMES;
 	for(string s: FileSystem::GetFiles(pluginpath, "", 1)) {
 		LuaChunk* b = new LuaChunk(s);
 		lua_State* L = luaL_newstate();
@@ -436,6 +467,7 @@ void Gallery::refresh_scripts() {
 			//Bytecode loaded. push back for later.
 			loadedScripts.push_back(b);
 		} else delete b;
+
 	}
 }
 
