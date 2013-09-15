@@ -3,23 +3,36 @@
 #include "Server.h"
 
 using namespace std;
-void Server::run(ServerHandler* handler, int nThread, int sock) {
-	FCGX_Request request;
+
+void Server::listener(ServerHandler* handler, int sock) {
 	if(handler == NULL)
 		return;
-
-	FCGX_InitRequest(&request, sock, 0);
-	
 	while(!handler->shutdown_handler) {
-		
-		int rc = FCGX_Accept_r(&request);
+		FCGX_Request* request = new FCGX_Request();
+		FCGX_InitRequest(request, sock, FCGI_FAIL_ACCEPT_ON_INTR);
+		const struct timeval timeout = {1, 0};
+		fd_set readfds;
+		FD_ZERO(&readfds);
+#pragma warning( disable : 4127 ) 
+        FD_SET((unsigned int) sock, &readfds);
+#pragma warning( default : 4127 ) 
+		for(;;) {
+			if(select(0, &readfds, NULL, NULL, &timeout) == 0) {
+				//Check serverhandler (connections accepted?)
+			} else {
+				//Check serverhandler (connections accepted?)
+				break;
+			}
+		}
+
+		int rc = FCGX_Accept_r(request);
 		
 		if(rc < 0) break;
-		
-		handler->process(&request); 
-		FCGX_Finish_r(&request);
+		ServerTask* task = new (tbb::task::allocate_root()) ServerTask(request, handler);
+		tbb::task::enqueue(*task);
+
+
 	}
-	
 }
 
 Server::Server(ServerHandler* handler) {
@@ -28,16 +41,12 @@ Server::Server(ServerHandler* handler) {
 	}
 	this->handler = handler;
 
-	handler->lockHandler.lock();
 
 	logger->log("Server Initialised. Creating FastCGI sockets...");
 	FCGX_Init();
 		
 	int sock = FCGX_OpenSocket(":5000", 0);
-	
-	for(int n = 0; n < SERVER_THREADS; n++) {
-		serverpool[n] = new thread(&Server::run, handler, n, sock);
-	}
+	listener_thread = new thread(&Server::listener, handler, sock);
 	
 }
 
@@ -50,10 +59,7 @@ void Server::setHandler(ServerHandler* handler) {
 }
 
 void Server::join() {
-	for(int n = 0; n < SERVER_THREADS; n++) {
-		if(serverpool[n]->joinable())
-			serverpool[n]->join();
-		delete serverpool[n];
-	}
+	listener_thread->join();
+	delete handler;
 	return;
 }

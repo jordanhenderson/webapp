@@ -689,12 +689,12 @@ int OS_CreateLocalIpcFd(const char *bindPath, int backlog)
     int pseudoFd = -1;
     short port = getPort(bindPath);
 
-    if (acceptMutex == INVALID_HANDLE_VALUE)
+    /*if (acceptMutex == INVALID_HANDLE_VALUE)
     {
         acceptMutex = CreateMutex(NULL, FALSE, NULL);
         if (acceptMutex == NULL) return -2;
         if (! SetHandleInformation(acceptMutex, HANDLE_FLAG_INHERIT, TRUE)) return -3;
-    }
+    }*/
 
     // There's nothing to be gained (at the moment) by a shutdown Event    
 
@@ -1752,14 +1752,14 @@ int OS_Accept(int listen_sock, int fail_on_intr, const char *webServerAddrs)
     // periodically break out to check the state of the shutdown flag
     // and there's no point to having more than one thread do that.
     
-    if (acceptMutex != INVALID_HANDLE_VALUE) 
+    /*if (acceptMutex != INVALID_HANDLE_VALUE) 
     {
         if (WaitForSingleObject(acceptMutex, INFINITE) == WAIT_FAILED) 
         {
             printLastError("WaitForSingleObject() failed");
             return -1;
         }
-    }
+    }*/
     
     if (shutdownPending) 
     {

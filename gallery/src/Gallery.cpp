@@ -20,8 +20,10 @@ void Gallery::runScript(const char* filename, LuaParam* params, int nArgs) {
 
 //Run scripts based on their index (system scripts; see Schema.h)
 void Gallery::runScript(int index, LuaParam* params, int nArgs) {
-	LuaChunk* script = systemScripts[index];
-	if(script != NULL) runScript(script, params, nArgs);
+	if(index < systemScripts.size()) {
+		LuaChunk* script = systemScripts.at(index);
+		if(script != NULL) runScript(script, params, nArgs);
+	}
 }
 
 //Run script given a LuaChunk. Called by public runScript methods.
