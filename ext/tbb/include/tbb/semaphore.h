@@ -41,7 +41,7 @@
 #include <mach/error.h>
 
 #else
-#include </usr/include/semaphore.h>
+#include <semaphore.h>
 #ifdef TBB_USE_DEBUG
 #include <errno.h>
 #endif

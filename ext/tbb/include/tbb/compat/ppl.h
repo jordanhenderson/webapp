@@ -26,43 +26,45 @@
     the GNU General Public License.
 */
 
-#ifndef __TBB_mic_common_H
-#define __TBB_mic_common_H
+#ifndef __TBB_compat_ppl_H
+#define __TBB_compat_ppl_H
 
-#ifndef __TBB_machine_H
-#error Do not #include this internal file directly; use public TBB headers instead.
-#endif
+#include "../task_group.h"
+#include "../parallel_invoke.h"
+#include "../parallel_for_each.h"
+#include "../parallel_for.h"
+#include "../tbb_exception.h"
+#include "../critical_section.h"
+#include "../reader_writer_lock.h"
+#include "../combinable.h"
 
-#if ! __TBB_DEFINE_MIC
-    #error mic_common.h should be included only when building for Intel(R) Many Integrated Core Architecture
-#endif
+namespace Concurrency {
 
-#ifndef __TBB_PREFETCHING
-#define __TBB_PREFETCHING 1
-#endif
-#if __TBB_PREFETCHING
-#include <immintrin.h>
-#define __TBB_cl_prefetch(p) _mm_prefetch((const char*)p, _MM_HINT_T1)
-#define __TBB_cl_evict(p) _mm_clevict(p, _MM_HINT_T1)
-#endif
+#if __TBB_TASK_GROUP_CONTEXT
+    using tbb::task_handle;
+    using tbb::task_group_status;
+    using tbb::task_group;
+    using tbb::structured_task_group;
+    using tbb::invalid_multiple_scheduling;
+    using tbb::missing_wait;
+    using tbb::make_task;
 
-/** Intel(R) Many Integrated Core Architecture does not support mfence and pause instructions **/
-#define __TBB_full_memory_fence() __asm__ __volatile__("lock; addl $0,(%%rsp)":::"memory")
-#define __TBB_Pause(x) _mm_delay_32(16*(x))
-#define __TBB_STEALING_PAUSE 1500/16
-#include <sched.h>
-#define __TBB_Yield() sched_yield()
+    using tbb::not_complete;
+    using tbb::complete;
+    using tbb::canceled;
 
-/** FPU control setting **/
-#define __TBB_CPU_CTL_ENV_PRESENT 0
+    using tbb::is_current_task_group_canceling;
+#endif /* __TBB_TASK_GROUP_CONTEXT */
 
-/** Specifics **/
-#define __TBB_STEALING_ABORT_ON_CONTENTION 1
-#define __TBB_YIELD2P 1
-#define __TBB_HOARD_NONLOCAL_TASKS 1
+    using tbb::parallel_invoke;
+    using tbb::strict_ppl::parallel_for;
+    using tbb::parallel_for_each;
+    using tbb::critical_section;
+    using tbb::reader_writer_lock;
+    using tbb::combinable;
 
-#if ! ( __FreeBSD__ || __linux__ )
-    #error Intel(R) Many Integrated Core Compiler does not define __FreeBSD__ or __linux__ anymore. Check for the __TBB_XXX_BROKEN defined under __FreeBSD__ or __linux__.
-#endif /* ! ( __FreeBSD__ || __linux__ ) */
+    using tbb::improper_lock;
 
-#endif /* __TBB_mic_common_H */
+} // namespace Concurrency
+
+#endif /* __TBB_compat_ppl_H */

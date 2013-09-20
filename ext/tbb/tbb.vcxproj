@@ -43,7 +43,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='LinuxDebug|Win32'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
@@ -55,7 +55,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='LinuxDebug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -68,7 +68,7 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='LinuxRelease|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -82,7 +82,7 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>Intel C++ Compiler XE 13.0</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='LinuxRelease|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -138,7 +138,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>include;include/tbb;include/rml/include;</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;__TBB_NO_IMPLICIT_LINKAGE;__TBB_BUILD;USE_WINTHREAD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__TBB_NO_IMPLICIT_LINKAGE;__TBB_BUILD;USE_WINTHREAD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4996;</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
@@ -166,7 +166,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>include;include/tbb;include/rml/include;</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;__TBB_NO_IMPLICIT_LINKAGE;__TBB_BUILD;USE_WINTHREAD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__TBB_NO_IMPLICIT_LINKAGE;__TBB_BUILD;USE_WINTHREAD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4996;</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
@@ -196,7 +196,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>include;include/tbb;include/rml/include;</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;__TBB_NO_IMPLICIT_LINKAGE;__TBB_BUILD;USE_WINTHREAD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__TBB_NO_IMPLICIT_LINKAGE;__TBB_BUILD;USE_WINTHREAD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4996;</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
@@ -232,7 +232,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>include;include/tbb;include/rml/include;</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;__TBB_NO_IMPLICIT_LINKAGE;__TBB_BUILD;USE_WINTHREAD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>__TBB_NO_IMPLICIT_LINKAGE;__TBB_BUILD;USE_WINTHREAD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>4996;</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
@@ -263,14 +263,16 @@
   <ItemGroup>
     <ClCompile Include="include\rml\client\rml_omp.cpp" />
     <ClCompile Include="include\rml\client\rml_tbb.cpp" />
-    <ClCompile Include="src\arena.cpp" />
+    <ClCompile Include="src\arena.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="src\cache_aligned_allocator.cpp" />
     <ClCompile Include="src\concurrent_monitor.cpp" />
     <ClCompile Include="src\concurrent_queue.cpp" />
     <ClCompile Include="src\concurrent_vector.cpp" />
     <ClCompile Include="src\dynamic_link.cpp" />
     <ClCompile Include="src\governor.cpp" />
-    <ClCompile Include="src\itt_notify.cpp" />
     <ClCompile Include="src\market.cpp" />
     <ClCompile Include="src\mutex.cpp" />
     <ClCompile Include="src\observer_proxy.cpp" />
@@ -284,7 +286,6 @@
     <ClCompile Include="src\tbb_main.cpp" />
     <ClCompile Include="src\tbb_misc.cpp" />
     <ClCompile Include="src\tbb_misc_ex.cpp" />
-    <ClCompile Include="src\tbb_statistics.cpp" />
   </ItemGroup>
   <ItemGroup>
     <MASM Include="src\ia32-masm\atomic_support.asm">
@@ -296,6 +297,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='LinuxRelease|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='LinuxDebug|Win32'">false</ExcludedFromBuild>
+    </MASM>
+    <MASM Include="src\ia32-masm\itsx.asm">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </MASM>
     <MASM Include="src\ia32-masm\lock_byte.asm">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -327,6 +332,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='LinuxRelease|Win32'">true</ExcludedFromBuild>
     </MASM>
+    <MASM Include="src\intel64-masm\itsx.asm" />
   </ItemGroup>
   <ItemGroup>
     <None Include="include\tbb\version_string.ver" />

@@ -26,43 +26,41 @@
     the GNU General Public License.
 */
 
-#ifndef __TBB_mic_common_H
-#define __TBB_mic_common_H
-
-#ifndef __TBB_machine_H
+#if !defined(__TBB_machine_H) || defined(__TBB_machine_gcc_itsx_H)
 #error Do not #include this internal file directly; use public TBB headers instead.
 #endif
 
-#if ! __TBB_DEFINE_MIC
-    #error mic_common.h should be included only when building for Intel(R) Many Integrated Core Architecture
+#define __TBB_machine_gcc_itsx_H
+
+#define __TBB_OP_XACQUIRE 0xF2
+#define __TBB_OP_XRELEASE 0xF3
+#define __TBB_OP_LOCK     0xF0
+
+#define __TBB_STRINGIZE_INTERNAL(arg) #arg
+#define __TBB_STRINGIZE(arg) __TBB_STRINGIZE_INTERNAL(arg)
+
+#ifdef __TBB_x86_64
+#define __TBB_r_out "=r"
+#else
+#define __TBB_r_out "=q"
 #endif
 
-#ifndef __TBB_PREFETCHING
-#define __TBB_PREFETCHING 1
-#endif
-#if __TBB_PREFETCHING
-#include <immintrin.h>
-#define __TBB_cl_prefetch(p) _mm_prefetch((const char*)p, _MM_HINT_T1)
-#define __TBB_cl_evict(p) _mm_clevict(p, _MM_HINT_T1)
-#endif
+inline static uint8_t __TBB_machine_try_lock_elided( volatile uint8_t* lk )
+{
+    uint8_t value = 1;
+    __asm__ volatile (".byte " __TBB_STRINGIZE(__TBB_OP_XACQUIRE)"; lock; xchgb %0, %1;"
+                      : __TBB_r_out(value), "=m"(*lk)  : "0"(value), "m"(*lk) : "memory" );
+    return uint8_t(value^1);
+}
 
-/** Intel(R) Many Integrated Core Architecture does not support mfence and pause instructions **/
-#define __TBB_full_memory_fence() __asm__ __volatile__("lock; addl $0,(%%rsp)":::"memory")
-#define __TBB_Pause(x) _mm_delay_32(16*(x))
-#define __TBB_STEALING_PAUSE 1500/16
-#include <sched.h>
-#define __TBB_Yield() sched_yield()
+inline static void __TBB_machine_try_lock_elided_cancel()
+{
+    // 'pause' instruction aborts HLE/RTM transactions
+    __asm__ volatile ("pause\n" : : : "memory" );
+}
 
-/** FPU control setting **/
-#define __TBB_CPU_CTL_ENV_PRESENT 0
-
-/** Specifics **/
-#define __TBB_STEALING_ABORT_ON_CONTENTION 1
-#define __TBB_YIELD2P 1
-#define __TBB_HOARD_NONLOCAL_TASKS 1
-
-#if ! ( __FreeBSD__ || __linux__ )
-    #error Intel(R) Many Integrated Core Compiler does not define __FreeBSD__ or __linux__ anymore. Check for the __TBB_XXX_BROKEN defined under __FreeBSD__ or __linux__.
-#endif /* ! ( __FreeBSD__ || __linux__ ) */
-
-#endif /* __TBB_mic_common_H */
+inline static void __TBB_machine_unlock_elided( volatile uint8_t* lk )
+{
+    __asm__ volatile (".byte " __TBB_STRINGIZE(__TBB_OP_XRELEASE)"; movb $0, %0" 
+                      : "=m"(*lk) : "m"(*lk) : "memory" );
+}

@@ -43,9 +43,6 @@
     <ClCompile Include="src\governor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\itt_notify.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\market.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -82,9 +79,6 @@
     <ClCompile Include="src\tbb_misc_ex.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\tbb_statistics.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="include\rml\client\rml_omp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -109,6 +103,12 @@
       <Filter>Source Files\intel64</Filter>
     </MASM>
     <MASM Include="src\intel64-masm\intel64_misc.asm">
+      <Filter>Source Files\intel64</Filter>
+    </MASM>
+    <MASM Include="src\ia32-masm\itsx.asm">
+      <Filter>Source Files\ia32</Filter>
+    </MASM>
+    <MASM Include="src\intel64-masm\itsx.asm">
       <Filter>Source Files\intel64</Filter>
     </MASM>
   </ItemGroup>
