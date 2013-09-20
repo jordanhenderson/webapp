@@ -13,6 +13,9 @@
 #define DATABASE_TYPE_SQLITE 0
 #define DATABASE_TYPE_MYSQL 1
 
+#define DATABASE_SUCCESS 0
+#define DATABASE_FAILED 1
+
 struct st_mysql;
 typedef struct st_mysql MYSQL;
 
@@ -36,15 +39,15 @@ class Database : public Internal {
 private:
 	sqlite3* sqlite_db;
 	MYSQL* mysql_db;
-	std::thread* dbthread;
-
-	void process(Query* q);
 	int shutdown_database;
 	int db_type;
+	void process(Query* q);
+
 
 public:
-	Database(int database_type, const std::string& host, const std::string& username="", const std::string& password="", const std::string& database="");
+	Database();
 	~Database();
+	int connect(int database_type, const std::string& host, const std::string& username="", const std::string& password="", const std::string& database="");
 	int exec(Query* query);
 	//Returns last row ID inserted
 	int exec(const std::string& query, QueryRow* params=NULL);

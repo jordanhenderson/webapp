@@ -12,9 +12,21 @@ class Gallery;
 class ServerHandler {
 protected:
 	int shutdown_handler;
+	std::mutex handlerLock; //Mutex to control the allowance of new connection handling.
+	tbb::empty_task* parent_task;
 public:
 	virtual void process(FCGX_Request* request) = 0;
 	friend class Server;
+	friend class ServerTask;
+	ServerHandler() {
+		shutdown_handler = 0;
+		parent_task = new (tbb::task::allocate_root()) tbb::empty_task;
+		parent_task->set_ref_count(1);
+	}
+	~ServerHandler() {
+		parent_task->wait_for_all();
+		parent_task->destroy(*parent_task);
+	}
 };
 
 class ServerTask : public tbb::task {
@@ -22,12 +34,7 @@ public:
 	ServerTask(FCGX_Request* request, ServerHandler* handler)
 		: _request(request), _handler(handler)
 	{};
-	tbb::task* execute() {
-		_handler->process(_request);
-		FCGX_Finish_r(_request);
-		delete _request;
-		return NULL;
-	}
+	tbb::task* execute();
 private:
 	FCGX_Request* _request;
 	ServerHandler* _handler;

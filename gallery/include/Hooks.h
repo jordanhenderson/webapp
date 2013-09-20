@@ -17,5 +17,5 @@ APIEXPORT int Template_ShowGlobalSection(ctemplate::TemplateDictionary*, const c
 APIEXPORT int Template_ShowSection(ctemplate::TemplateDictionary*, const char*);
 APIEXPORT const char* Session_Get(SessionStore*, const char*);
 APIEXPORT int Template_SetValue(ctemplate::TemplateDictionary* dict, const char* key, const char* value);
-APIEXPORT void Register_Hook(std::map<std::string, GallFunc>* functionMap, const char* hook, void* lua_func);
+APIEXPORT void Register_Hook(std::map<std::string, GallFunc>* functionMap, const char* hook, const char* lua_func);
 #endif

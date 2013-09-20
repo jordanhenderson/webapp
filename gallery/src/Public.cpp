@@ -27,7 +27,7 @@ int Gallery::disableFiles(RequestVars& vars, Response& r, SessionStore& s) {
 		//Increment views.
 	} 
 
-	database->exec(query, &params);
+	database.exec(query, &params);
 	r.append("{}");
 	return 0;
 }
@@ -49,7 +49,7 @@ int Gallery::updateFile(RequestVars& vars, Response& r, SessionStore &session) {
 	params.push_back(v);
 	params.push_back(file);
 	Query q(query, &params);
-	database->exec(&q);
+	database.exec(&q);
 
 	RequestVars data_vars;
 	return getAlbums(data_vars, r, session);
@@ -72,7 +72,7 @@ int Gallery::updateAlbum(RequestVars& vars, Response& r, SessionStore &session) 
 	params.push_back(v);
 	params.push_back(album);
 	Query q(query, &params);
-	database->exec(&q);
+	database.exec(&q);
 
 	RequestVars data_vars;
 	return getAlbums(data_vars, r, session);
@@ -85,11 +85,19 @@ int Gallery::getBoth(RequestVars& vars, Response& r, SessionStore& s) {
 }
 
 int Gallery::clearCache(RequestVars& vars, Response& r, SessionStore& session) {
+	handlerLock.lock();
+	int ref = parent_task->decrement_ref_count(); //decrement the ref count, and then wait for all other tasks to complete.
+	parent_task->wait_for_all();
 	refresh_templates();
 	refresh_scripts();
+	parent_task->increment_ref_count(); //increment the ref count (to allow proper removal of this task)
+	parent_task->increment_ref_count(); //increment the ref count (to allow proper removal of this task)
+	handlerLock.unlock();
+	
 	Serializer s;
 	s.append("msg", "CACHE_CLEARED", 1);
 	r.append(s.get(RESPONSE_TYPE_MESSAGE));
+	
 	return 1;
 }
 
@@ -102,13 +110,13 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& session
 		std::unique_lock<std::mutex> lk(mutex_thread_start);
 		while(currentID != this_thread::get_id() && !shutdown_handler)
 			cv_thread_start.wait(lk);
-		string storepath = database->select(SELECT_SYSTEM("store_path"));
+		string storepath = database.select(SELECT_SYSTEM("store_path"));
 		for(string album: albums) {
 			QueryRow params;
 			params.push_back(album);
 
 			Query q(SELECT_ALBUM_PATH);
-			database->select(&q, &params);
+			database.select(&q, &params);
 			if(!q.response->empty()) {
 				QueryRow params;
 				params.push_back(album);
@@ -124,10 +132,10 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& session
 					existingFiles = existingFiles.substr(0, existingFiles.size()-1);
 				}
 				existingFiles.append(")");
-				database->exec(existingFiles, &params);
+				database.exec(existingFiles, &params);
 				//Get a list of files in the album from db.
 				Query q_album(SELECT_PATHS_FROM_ALBUM);
-				database->select(&q_album, &params);
+				database.select(&q_album, &params);
 
 				for(int i = 0; i < q_album.response->size(); i++) {
 					vector<string> row = q_album.response->at(i);
@@ -251,7 +259,7 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 				while(currentID != this_thread::get_id() && !shutdown_handler)
 					cv_thread_start.wait(lk);
 				
-				string storepath = database->select(SELECT_SYSTEM("store_path"));
+				string storepath = database.select(SELECT_SYSTEM("store_path"));
 				//Add the album.
 				QueryRow params;
 				//get the date.
@@ -263,7 +271,7 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 				params.push_back(path);
 				params.push_back(type);
 				params.push_back(to_string(nRecurse));
-				int albumID = database->exec(INSERT_ALBUM, &params);
+				int albumID = database.exec(INSERT_ALBUM, &params);
 				vector<string> files = FileSystem::GetFiles(basepath + '/' + storepath + '/' + path, "", nRecurse);
 
 				addFiles(files, nGenThumbs, path, to_string(albumID));
@@ -295,20 +303,20 @@ int Gallery::delAlbums(RequestVars& vars, Response& r, SessionStore&) {
 		while(currentID != this_thread::get_id() && !shutdown_handler)
 			cv_thread_start.wait(lk);
 
-		string storepath = database->select(SELECT_SYSTEM("store_path"));
-		string thumbspath = database->select(SELECT_SYSTEM("thumbs_path"));
+		string storepath = database.select(SELECT_SYSTEM("store_path"));
+		string thumbspath = database.select(SELECT_SYSTEM("thumbs_path"));
 		for(string album: albums) {
 			QueryRow params;
 
 			params.push_back(album);
 			Query delquery(SELECT_ALBUM_PATH);
-			database->select(&delquery, &params);
+			database.select(&delquery, &params);
 			if(delquery.response->size() > 0) {
 
 				string path = delquery.response->at(0).at(0);
 
 				//Delete the album.
-				database->exec(DELETE_ALBUM, &params);
+				database.exec(DELETE_ALBUM, &params);
 
 				if(delFiles) {
 					//Delete the albums' files.
@@ -366,7 +374,7 @@ int Gallery::getData(Query& query, RequestVars& vars, Response& r, SessionStore&
 	query.dbq->append(" LIMIT ?,? ");
 	query.description = new QueryRow();
 	query.response = new QueryResponse();
-	database->select(&query);
+	database.select(&query);
 	serializer.append(query);
 
 	r.append(serializer.get(RESPONSE_TYPE_DATA));
@@ -387,7 +395,7 @@ int Gallery::getFiles(RequestVars& vars, Response& r, SessionStore&s) {
 	if(!album.empty() && id.empty()) {
 		query.append(CONDITION_ALBUMID);
 		params.push_back(album);
-		database->exec(INC_ALBUM_VIEWS, &params);
+		database.exec(INC_ALBUM_VIEWS, &params);
 	}
 	else if(!id.empty()) {
 		string f = vars["f"];
@@ -397,7 +405,7 @@ int Gallery::getFiles(RequestVars& vars, Response& r, SessionStore&s) {
 				if(f == "prev") query.append(CONDITION_N_FILE("<", "MAX"));
 			params.push_back(id);
 			Query q(SELECT_ALBUM_ID_WITH_FILE);
-			database->select(&q, &params);
+			database.select(&q, &params);
 			if(!q.response->empty()) 
 				params.push_back(q.response->at(0).at(0));
 		} else {
@@ -408,7 +416,7 @@ int Gallery::getFiles(RequestVars& vars, Response& r, SessionStore&s) {
 		//Increment views.
 		QueryRow incParams;
 		incParams.push_back(id);
-		database->exec(INC_FILE_VIEWS, &incParams);
+		database.exec(INC_FILE_VIEWS, &incParams);
 	} 
 
 
@@ -437,14 +445,14 @@ int Gallery::setThumb(RequestVars& vars, Response& r, SessionStore&) {
 
 	QueryRow params;
 	params.push_back(path);
-	string thumbID = to_string(database->exec(INSERT_THUMB, &params));
+	string thumbID = to_string(database.exec(INSERT_THUMB, &params));
 
 	params.clear();
 	params.push_back(thumbID);
 	params.push_back(id);
 	//Update the album/file thumb ID.
 	string thumbquery = replaceAll(UPDATE_THUMB, "%s", thumbID);
-	database->exec(thumbquery, &params);
+	database.exec(thumbquery, &params);
 
 	return 0;
 }

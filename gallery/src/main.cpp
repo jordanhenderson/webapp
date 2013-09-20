@@ -7,6 +7,7 @@ int wmain(int argc, wchar_t* argv[]) {
 #else
 int main(int argc, char* argv[]) {
 #endif
+	
 	setlocale(LC_ALL, "");
 	Parameters params;
 	//TODO convert params to file
@@ -36,8 +37,8 @@ int main(int argc, char* argv[]) {
 	server->setHandler(gallery);
 	server->join();
 
-	delete server;
 	delete gallery;
+	delete server;
 	delete logger;
 	return 0;
 }

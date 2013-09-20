@@ -201,7 +201,8 @@
       </Command>
     </PreBuildEvent>
     <Lib>
-      <AdditionalDependencies>./src/lj_vm.obj</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
     </Lib>
     <CustomBuildStep>
       <Message>BuildVM</Message>

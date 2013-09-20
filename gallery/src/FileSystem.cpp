@@ -95,6 +95,7 @@ void FileSystem::Process(File* file, void* userdata, void* callback, FileData* o
 			//Simply read the entire file. Hopefully improve performance.
 
 			size_t nRead = fread(outData->data, sizeof(char), size, tmpFile);
+			
 			outData->data[nRead] = '\0';
 		}
 	outData->size = size;

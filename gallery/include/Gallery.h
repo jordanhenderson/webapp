@@ -55,7 +55,7 @@ struct TemplateData {
 class Gallery : public ServerHandler, Internal {
 private:
 	Parameters* params;
-	Database* database;
+	Database database;
 	Session session;	
 	
 	Response getPage(const std::string& page, SessionStore&, int publishSession);
@@ -71,7 +71,7 @@ private:
 	//Process queue. Threads are executed one by one to ensure no write conflicts occur.
 	std::queue<std::thread*> processQueue;
 	std::thread::id currentID;
-	std::thread* thread_process_queue;
+	std::thread queue_process_thread;
 
 	//Process queue 'add' mutex and condition variable.
 	std::condition_variable cv_queue_add;
@@ -83,7 +83,7 @@ private:
 	std::condition_variable cv_thread_start;
 
 	//template dictionary used by all 'content' templates.
-	ctemplate::TemplateDictionary* contentTemplates;
+	ctemplate::TemplateDictionary contentTemplates;
 
 	//(content) template filename vector
 	std::vector<std::string> contentList;
@@ -94,15 +94,15 @@ private:
 	std::vector<std::string> serverTemplateFiles;
 
 	//Store lua plugin bytecode in a vector.
-	std::vector<LuaChunk*> loadedScripts;
+	std::vector<LuaChunk> loadedScripts;
 
-	std::vector<LuaChunk*> systemScripts;
+	std::vector<LuaChunk> systemScripts;
 
 	template <typename T>
 	void addFiles(T& files, int nGenThumbs, const std::string& path, const std::string& albumID) {
 		std::string date = date_format("%Y%m%d",8);
-		std::string storepath = database->select(SELECT_SYSTEM("store_path"));
-		std::string thumbspath = database->select(SELECT_SYSTEM("thumbs_path"));
+		std::string storepath = database.select(SELECT_SYSTEM("store_path"));
+		std::string thumbspath = database.select(SELECT_SYSTEM("thumbs_path"));
 		
 		if(files.size() > 0) {
 			for (typename T::const_iterator it = files.begin(), end = files.end(); it != end; ++it) {
@@ -123,7 +123,7 @@ private:
 
 //Gallery specific calls
 	int genThumb(const char* file, double shortmax, double longmax);
-	int getDuplicates( std::string& name, std::string& path );
+	int getDuplicates(std::string& name, std::string& path);
 	int hasAlbums();
 	void addFile(const std::string&, int, const std::string&, const std::string&, const std::string&, const std::string&);
 	int getData(Query& query, RequestVars&, Response&, SessionStore&);

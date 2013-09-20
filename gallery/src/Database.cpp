@@ -161,41 +161,37 @@ cleanup:
 
 	
 
-Database::Database(int database_type, const std::string& host, const std::string& username, const std::string& password, const std::string& database) {
-	shutdown_database = 0;
-	sqlite_db = NULL;
-	mysql_db = NULL;
+Database::Database() : shutdown_database(0), sqlite_db(NULL), mysql_db(NULL) {
+}
+
+int Database::connect(int database_type, const std::string& host, const std::string& username, const std::string& password, const std::string& database) {
 	db_type = database_type;
 	if(database_type == DATABASE_TYPE_SQLITE) {
 		int ret = sqlite3_open(host.c_str(), &sqlite_db);
 
 		if(sqlite_db == NULL || ret != SQLITE_OK) {
 			nError = ERROR_DB_FAILED;
-			return;
+			return DATABASE_SUCCESS;
 		}
 	} else if(database_type == DATABASE_TYPE_MYSQL) {
 		mysql_db = mysql_init(NULL);
 		if(mysql_db == NULL) {
 			nError = ERROR_DB_FAILED;
-			return;
+			return DATABASE_SUCCESS;
 		}
 		mysql_real_connect(mysql_db, host.c_str(), username.c_str(), password.c_str(), database.c_str(), 0, NULL, 0);
 		//Disable mysql trunctation reporting.
 		bool f = false;
 		mysql_options(mysql_db, MYSQL_REPORT_DATA_TRUNCATION, &f);
 	}
+	return DATABASE_FAILED;
 }
 
 Database::~Database() {
 	shutdown_database = 1;
-	if(nError != ERROR_DB_FAILED) {
-		if(dbthread->joinable())
-			dbthread->join();
-		delete dbthread;
-	}
-	if(db_type == DATABASE_TYPE_SQLITE)
+	if(db_type == DATABASE_TYPE_SQLITE && sqlite_db != NULL)
 		sqlite3_close(sqlite_db);
-	else if(db_type == DATABASE_TYPE_MYSQL)
+	else if(db_type == DATABASE_TYPE_MYSQL && mysql_db != NULL)
 		mysql_close(mysql_db);
 }
 

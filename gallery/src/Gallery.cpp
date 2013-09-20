@@ -6,14 +6,15 @@
 #include "prettywriter.h"
 #include "stringbuffer.h"
 #include <sha.h>
+#include <tbb/task_scheduler_init.h>
 
 using namespace std;
 using namespace ctemplate;
 
 void Gallery::runScript(const char* filename, LuaParam* params, int nArgs) {
-	for(LuaChunk* c: loadedScripts) {
-		if(c->filename == filename) {
-			runScript(c, params, nArgs);
+	for(LuaChunk c: loadedScripts) {
+		if(c.filename == filename) {
+			runScript(&c, params, nArgs);
 		}
 	}
 }
@@ -21,51 +22,50 @@ void Gallery::runScript(const char* filename, LuaParam* params, int nArgs) {
 //Run scripts based on their index (system scripts; see Schema.h)
 void Gallery::runScript(int index, LuaParam* params, int nArgs) {
 	if(index < systemScripts.size()) {
-		LuaChunk* script = systemScripts.at(index);
-		if(script != NULL) runScript(script, params, nArgs);
+		LuaChunk script = systemScripts.at(index);
+		runScript(&script, params, nArgs);
 	}
 }
 
 //Run script given a LuaChunk. Called by public runScript methods.
 void Gallery::runScript(LuaChunk* c, LuaParam* params, int nArgs) {
-	lua_State* L = luaL_newstate();
-	luaL_openlibs(L);
-	luaL_loadbuffer(L, c->bytecode.c_str(), c->bytecode.length(), c->filename.c_str());
-	if(params != NULL) {
-		for(int i = 0; i < nArgs; i++) {
-			LuaParam* p = params + i;
-			lua_pushlightuserdata(L, p->d);
-			lua_setglobal(L, p->p);
+	int bytecode_len = c->bytecode.length();
+	if(bytecode_len > 0) {
+		lua_State* L = luaL_newstate();
+		luaL_openlibs(L);
+		luaL_loadbuffer(L, c->bytecode.c_str(), bytecode_len, c->filename.c_str());
+		if(params != NULL) {
+			for(int i = 0; i < nArgs; i++) {
+				LuaParam* p = params + i;
+				lua_pushlightuserdata(L, p->d);
+				lua_setglobal(L, p->p);
+			}
 		}
+		lua_pcall(L, 0, 0, 0);
+		lua_close(L);
 	}
-	lua_pcall(L, 0, 0, 0);
 }
 
-Gallery::Gallery(Parameters* params) {
-	shutdown_handler = 0;
-	this->params = params;
-	dbpath = params->get("dbpath");
-	
-	basepath = params->get("basepath");
-	database = new Database(DATABASE_TYPE_SQLITE, (basepath + '/' + dbpath).c_str());
-
+Gallery::Gallery(Parameters* params) :  contentTemplates(""),
+										params(params),
+										basepath(params->get("basepath")),
+										dbpath(params->get("dbpath")) {
 	//Enable pragma foreign keys.
-	database->exec(PRAGMA_FOREIGN);
+	database.exec(PRAGMA_FOREIGN);
 
 	//Create the schema. Running this even when tables exist prevent issues later on.
 	string schema = CREATE_DATABASE;
 	vector<string> schema_queries;
 	tokenize(schema, schema_queries, ";");
 	for(string s : schema_queries) {
-		database->exec(s);
+		database.exec(s);
 	}
 	
 	//Set the 'current thread id' to this thread. Essentially ensures no thread will be started (yet).
-
 	currentID = std::this_thread::get_id();
 
-	//Create/start process queue thread. (CONSUMER)
-	thread_process_queue = new thread([this]() {
+	//Create/start queue processor thread (CONSUMER)
+	queue_process_thread = thread([this]() {
 		while(!shutdown_handler) {
 			{
 				unique_lock<mutex> lk(mutex_queue_add);
@@ -92,9 +92,7 @@ Gallery::Gallery(Parameters* params) {
 		}
 	});
 
-	thread_process_queue->detach();
-
-	contentTemplates = new TemplateDictionary("");
+	queue_process_thread.detach();
 
 	refresh_templates();
 
@@ -105,7 +103,7 @@ Gallery::Gallery(Parameters* params) {
 
 	refresh_scripts();
 	LuaParam luaparams[] = {{"hooks", &functionMap}};
-	runScript(SYSTEM_SCRIPT_INIT, (LuaParam*)params, 1 );
+	runScript(SYSTEM_SCRIPT_INIT, (LuaParam*)luaparams, 1 );
 }
 
 //PRODUCER
@@ -124,19 +122,14 @@ void Gallery::process_thread(std::thread* t) {
 
 Gallery::~Gallery() {
 	//Clean up client template files.
-	for(TemplateData data: clientTemplateFiles) {
-		delete(data.data);
+	for(TemplateData file: clientTemplateFiles) {
+		delete(file.data);
 	}
-
-	delete contentTemplates;
-
 
 	shutdown_handler = 1;
 	cv_queue_add.notify_all();
-	if(thread_process_queue->joinable())
-		thread_process_queue->join();
-	delete thread_process_queue;
-	delete database;
+	if(queue_process_thread.joinable())
+		queue_process_thread.join();
 }
 
 //Generate a Set-Cookie header provided name, value and date.
@@ -168,7 +161,7 @@ Response Gallery::getPage(const string& uri, SessionStore& session, int publishS
 	if(contains(contentList, page + ".html")) {
 		r = HTML_HEADER + r + END_HEADER;
 		string output;
-		TemplateDictionary* d = contentTemplates->MakeCopy("");
+		TemplateDictionary* d = contentTemplates.MakeCopy("");
 		for(string data: serverTemplateFiles) {
 			d->AddIncludeDictionary(data)->SetFilename(data);
 		}
@@ -329,8 +322,8 @@ Response Gallery::processVars(RequestVars& vars, SessionStore& session, int publ
 }
 
 int Gallery::genThumb(const char* file, double shortmax, double longmax) {
-	string storepath = database->select(SELECT_SYSTEM("store_path"));
-	string thumbspath = database->select(SELECT_SYSTEM("thumbs_path"));
+	string storepath = database.select(SELECT_SYSTEM("store_path"));
+	string thumbspath = database.select(SELECT_SYSTEM("thumbs_path"));
 	string imagepath = basepath + '/' + storepath + '/' + file;
 	string thumbpath = basepath + '/' + thumbspath + '/' + file;
 	
@@ -377,7 +370,7 @@ int Gallery::genThumb(const char* file, double shortmax, double longmax) {
 }
 
 int Gallery::hasAlbums() {
-	string albumsStr = database->select(SELECT_ALBUM_COUNT);
+	string albumsStr = database.select(SELECT_ALBUM_COUNT);
 	int nAlbums = stoi(albumsStr);
 	if(nAlbums == 0) {
 		return 0;
@@ -424,8 +417,8 @@ void Gallery::refresh_templates() {
 	
 	//Load client templates (inline insertion into content templates) - these are Handbrake (JS) templates.
 	//First delete existing filedata. This should be optimised later.
-	for(TemplateData data: clientTemplateFiles) {
-		delete data.data;
+	for(TemplateData file: clientTemplateFiles) {
+		delete file.data;
 	}
 	clientTemplateFiles.clear();
 
@@ -449,27 +442,34 @@ void Gallery::refresh_templates() {
 
 //Refresh the LUA plugins
 void Gallery::refresh_scripts() {
-	for(LuaChunk* b: loadedScripts) {
-		delete b;
-	}
-
 	loadedScripts.clear();
+	systemScripts.clear();
 
 	string basepath = this->basepath + '/';
 	string pluginpath = basepath + "plugins/";
 	const char* system_script_names[] = SYSTEM_SCRIPT_FILENAMES;
+	
+	int system_script_count = sizeof(system_script_names) / sizeof(char*);
+	for(int i = 0; i < system_script_count; i++) {
+		LuaChunk empty(system_script_names[i]);
+		systemScripts.push_back(empty);
+	}
+	
 	for(string s: FileSystem::GetFiles(pluginpath, "", 1)) {
-		LuaChunk* b = new LuaChunk(s);
+		LuaChunk b(s);
 		lua_State* L = luaL_newstate();
 		if(L != NULL) {
 			luaL_openlibs(L);
 			luaL_loadfile(L, (pluginpath + s).c_str());
-			lua_dump(L, LuaWriter, b);
+			lua_dump(L, LuaWriter, &b);
 			lua_close(L);
-			//Bytecode loaded. push back for later.
+			//Bytecode loaded. Update empty entries.
 			loadedScripts.push_back(b);
-		} else delete b;
-
+			for(int i = 0; i < system_script_count; i++) {
+				//Map system scripts
+				if(s == system_script_names[i]) systemScripts.at(i) = b;
+			}
+		}
 	}
 }
 
@@ -487,7 +487,7 @@ void Gallery::addFile(const string& file, int nGenThumbs, const string& thumbspa
 		if(genThumb((path + '/' + file).c_str(), 200, 200) == ERROR_SUCCESS) {
 			QueryRow params;
 			params.push_back(path + '/' + file);
-			int nThumbID = database->exec(INSERT_THUMB, &params);
+			int nThumbID = database.exec(INSERT_THUMB, &params);
 			if(nThumbID > 0) {
 				thumbID = to_string(nThumbID);
 			}
@@ -502,15 +502,15 @@ void Gallery::addFile(const string& file, int nGenThumbs, const string& thumbspa
 	int fileID;
 	if(!thumbID.empty()) {
 		params.push_back(thumbID);
-		fileID = database->exec(INSERT_FILE, &params);
+		fileID = database.exec(INSERT_FILE, &params);
 	} else {
-		fileID = database->exec(INSERT_FILE_NO_THUMB, &params);
+		fileID = database.exec(INSERT_FILE_NO_THUMB, &params);
 	}
 	//Add entry into albumFiles
 	QueryRow fparams;
 	fparams.push_back(albumID);
 	fparams.push_back(to_string(fileID));
-	database->exec(INSERT_ALBUM_FILE, &fparams);
+	database.exec(INSERT_ALBUM_FILE, &fparams);
 }
 
 //Gallery specific functionality
@@ -518,6 +518,6 @@ int Gallery::getDuplicates( string& name, string& path ) {
 	QueryRow params;
 	params.push_back(name);
 	params.push_back(path);
-	string dupAlbumStr = database->select(SELECT_DUPLICATE_ALBUM_COUNT, &params);
+	string dupAlbumStr = database.select(SELECT_DUPLICATE_ALBUM_COUNT, &params);
 	return stoi(dupAlbumStr);
 }
