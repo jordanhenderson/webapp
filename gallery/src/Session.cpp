@@ -7,7 +7,7 @@
 using namespace std;
 using namespace CryptoPP;
 
-Session::~Session() {
+Sessions::~Sessions() {
 	//Delete maps within session_map
 	LockableContainerLock<SessionMap> lock(session_map);
 	for(SessionMap::iterator it = lock->begin();
@@ -17,7 +17,7 @@ Session::~Session() {
 	}
 }
 
-SessionStore* Session::new_session(char* host, char* user_agent) {
+SessionStore* Sessions::new_session(const char* host, const char* user_agent) {
 	SHA1 hash;
 	string output;
 	byte digest[SHA1::DIGESTSIZE];
@@ -61,8 +61,7 @@ SessionStore* Session::new_session(char* host, char* user_agent) {
 	return session_store;
 }
 
-SessionStore* Session::get_session(std::string& sessionid) {
-
+SessionStore* Sessions::get_session(const char* sessionid) {
 	LockableContainerLock<SessionMap> lock(session_map);
 
 	SessionMap::iterator it = lock->find(sessionid);

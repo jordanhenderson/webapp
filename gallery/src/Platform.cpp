@@ -32,37 +32,14 @@ string replaceAll( string const& original, string const& before, string const& a
 	return retval;
 }
 
-//You cannot use references with va_start according to C++ Standard 18.7/3.
-string string_format(const std::string fmt, ...) {
-	int size = 100;
-	std::string str;
-	va_list ap;
-	while (1) {
-		str.resize(size);
-		va_start(ap, fmt);
-		int n = vsnprintf((char *)str.c_str(), size, fmt.c_str(), ap);
-		va_end(ap);
-		if (n > -1 && n < size) {
-			str.resize(n);
-			return str;
-		}
-		if (n > -1)
-			size = n + 1;
-		else
-			size *= 2;
-	}
-	return str;
-}
-
-string date_format(const std::string& fmt, const size_t datesize, time_t* t, int gmt) {
+const char* date_format(const char* fmt, const size_t datesize, time_t* t, int gmt) {
 	time_t actual_time;
 	if(t == NULL) {
 		time(&actual_time);
 	} else actual_time = *t;
-	std::string str;
-	str.resize(datesize);
-	if(!gmt) strftime((char*)str.c_str(), datesize+1, fmt.c_str(), localtime(&actual_time));
-	else strftime((char*)str.c_str(), datesize+1, fmt.c_str(), gmtime(&actual_time));
+	char* str = (char*)malloc(datesize);
+	if(!gmt) strftime(str, datesize+1, fmt, localtime(&actual_time));
+	else strftime(str, datesize+1, fmt, gmtime(&actual_time));
 	return str;
 }
 
@@ -91,5 +68,3 @@ string url_decode(const string& src) {
 
     return (ret);
 }
-
-const string EMPTY = "";

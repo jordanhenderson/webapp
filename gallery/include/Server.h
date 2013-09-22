@@ -7,15 +7,19 @@ class Gallery;
 #endif
 #include "fcgiapp.h"
 #include "fcgios.h"
+#include <atomic>
 #include <tbb/task.h>
+#include <tbb/concurrent_queue.h>
 
 class ServerHandler {
 protected:
 	int shutdown_handler;
+	std::atomic<int> numInstances;
 	std::mutex handlerLock; //Mutex to control the allowance of new connection handling.
 	tbb::empty_task* parent_task;
+	tbb::concurrent_bounded_queue<FCGX_Request*> requests;
 public:
-	virtual void process(FCGX_Request* request) = 0;
+	virtual void createWorker() = 0;
 	friend class Server;
 	friend class ServerTask;
 	ServerHandler() {

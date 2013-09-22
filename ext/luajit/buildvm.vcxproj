@@ -162,6 +162,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>./include/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>LUAJIT_ENABLE_LUA52COMPAT</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -186,6 +187,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>./include/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>LUAJIT_ENABLE_LUA52COMPAT</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>false</GenerateDebugInformation>
@@ -210,6 +212,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>./include/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>LUAJIT_ENABLE_LUA52COMPAT</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>false</GenerateDebugInformation>
@@ -236,6 +239,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>./include/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>LUAJIT_ENABLE_LUA52COMPAT</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>false</GenerateDebugInformation>

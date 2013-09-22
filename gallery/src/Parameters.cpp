@@ -1,13 +1,13 @@
 #include "Parameters.h"
 
 using namespace std;
-const string& Parameters::get(const string& param) {
+string Parameters::get(const string& param) {
 	LockableContainerLock<ParamMap> lock(params);
 	ParamMap::iterator it = lock->find(param);
 	if(it != lock->end())
 		return it->second;
 
-	return EMPTY;
+	return "";
 }
 
 const int Parameters::getDigit(const string& param) {
@@ -20,7 +20,7 @@ void Parameters::set(string param, string value) {
 }
 
 bool Parameters::hasParam(string param) {
-	if(get(param) != EMPTY) return true;
+	if(get(param) != "") return true;
 	return false;
 }
 

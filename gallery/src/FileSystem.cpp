@@ -110,8 +110,7 @@ void FileSystem::Write(File* file, const string& buffer) {
 }
 
 void FileSystem::WriteLine(File* file, const string& buffer) {
-	string tmp = string(buffer);
-	Write(file, tmp.append(ENV_NEWLINE));
+	Write(file, string(buffer).append(ENV_NEWLINE));
 }
 
 int FileSystem::MakePath(const string& path) {

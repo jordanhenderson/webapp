@@ -35,7 +35,67 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\ljamalg.c" />
+    <ClCompile Include="src\lib_aux.c" />
+    <ClCompile Include="src\lib_base.c" />
+    <ClCompile Include="src\lib_bit.c" />
+    <ClCompile Include="src\lib_debug.c" />
+    <ClCompile Include="src\lib_ffi.c" />
+    <ClCompile Include="src\lib_init.c" />
+    <ClCompile Include="src\lib_io.c" />
+    <ClCompile Include="src\lib_jit.c" />
+    <ClCompile Include="src\lib_math.c" />
+    <ClCompile Include="src\lib_os.c" />
+    <ClCompile Include="src\lib_package.c" />
+    <ClCompile Include="src\lib_string.c" />
+    <ClCompile Include="src\lib_table.c" />
+    <ClCompile Include="src\lj_alloc.c" />
+    <ClCompile Include="src\lj_api.c" />
+    <ClCompile Include="src\lj_asm.c" />
+    <ClCompile Include="src\lj_bc.c" />
+    <ClCompile Include="src\lj_bcread.c" />
+    <ClCompile Include="src\lj_bcwrite.c" />
+    <ClCompile Include="src\lj_carith.c" />
+    <ClCompile Include="src\lj_ccall.c" />
+    <ClCompile Include="src\lj_ccallback.c" />
+    <ClCompile Include="src\lj_cconv.c" />
+    <ClCompile Include="src\lj_cdata.c" />
+    <ClCompile Include="src\lj_char.c" />
+    <ClCompile Include="src\lj_clib.c" />
+    <ClCompile Include="src\lj_cparse.c" />
+    <ClCompile Include="src\lj_crecord.c" />
+    <ClCompile Include="src\lj_ctype.c" />
+    <ClCompile Include="src\lj_debug.c" />
+    <ClCompile Include="src\lj_dispatch.c" />
+    <ClCompile Include="src\lj_err.c" />
+    <ClCompile Include="src\lj_ffrecord.c" />
+    <ClCompile Include="src\lj_func.c" />
+    <ClCompile Include="src\lj_gc.c" />
+    <ClCompile Include="src\lj_gdbjit.c" />
+    <ClCompile Include="src\lj_ir.c" />
+    <ClCompile Include="src\lj_lex.c" />
+    <ClCompile Include="src\lj_lib.c" />
+    <ClCompile Include="src\lj_load.c" />
+    <ClCompile Include="src\lj_mcode.c" />
+    <ClCompile Include="src\lj_meta.c" />
+    <ClCompile Include="src\lj_obj.c" />
+    <ClCompile Include="src\lj_opt_dce.c" />
+    <ClCompile Include="src\lj_opt_fold.c" />
+    <ClCompile Include="src\lj_opt_loop.c" />
+    <ClCompile Include="src\lj_opt_mem.c" />
+    <ClCompile Include="src\lj_opt_narrow.c" />
+    <ClCompile Include="src\lj_opt_sink.c" />
+    <ClCompile Include="src\lj_opt_split.c" />
+    <ClCompile Include="src\lj_parse.c" />
+    <ClCompile Include="src\lj_record.c" />
+    <ClCompile Include="src\lj_snap.c" />
+    <ClCompile Include="src\lj_state.c" />
+    <ClCompile Include="src\lj_str.c" />
+    <ClCompile Include="src\lj_strscan.c" />
+    <ClCompile Include="src\lj_tab.c" />
+    <ClCompile Include="src\lj_trace.c" />
+    <ClCompile Include="src\lj_udata.c" />
+    <ClCompile Include="src\lj_vmevent.c" />
+    <ClCompile Include="src\lj_vmmath.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="linuxdebug.mak" />
@@ -155,7 +215,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;LUAJIT_ENABLE_LUA52COMPAT;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -179,13 +239,12 @@
       <Message>BuildVM</Message>
       <Command>echo Building VM &amp;&amp; cd src &amp;&amp; $(OutputPath)buildvm -m peobj -o ../lj_vm.obj &amp;&amp; $(OutputPath)buildvm -m bcdef -o ../include/lj_bcdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m ffdef -o ../include/lj_ffdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m libdef -o ../include/lj_libdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m recdef -o ../include/lj_recdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m vmdef -o jit\vmdef.lua lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m folddef -o ../include/lj_folddef.h lj_opt_fold.c</Command>
       <Outputs>lj_vm.obj</Outputs>
-      <Inputs>
-      </Inputs>
+      <Inputs>$(ProjectDir)src\host\buildvm_arch.h</Inputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;LUAJIT_ENABLE_LUA52COMPAT;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -208,13 +267,12 @@
       <Message>BuildVM</Message>
       <Command>echo Building VM &amp;&amp; cd src &amp;&amp; $(OutputPath)buildvm -m peobj -o ../lj_vm.obj &amp;&amp; $(OutputPath)buildvm -m bcdef -o ../include/lj_bcdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m ffdef -o ../include/lj_ffdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m libdef -o ../include/lj_libdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m recdef -o ../include/lj_recdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m vmdef -o jit\vmdef.lua lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m folddef -o ../include/lj_folddef.h lj_opt_fold.c</Command>
       <Outputs>lj_vm.obj</Outputs>
-      <Inputs>
-      </Inputs>
+      <Inputs>$(ProjectDir)src\host\buildvm_arch.h</Inputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;LUAJIT_ENABLE_LUA52COMPAT;DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -239,13 +297,12 @@
       <Message>BuildVM</Message>
       <Command>echo Building VM &amp;&amp; cd src &amp;&amp; $(OutputPath)buildvm -m peobj -o ../lj_vm.obj &amp;&amp; $(OutputPath)buildvm -m bcdef -o ../include/lj_bcdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m ffdef -o ../include/lj_ffdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m libdef -o ../include/lj_libdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m recdef -o ../include/lj_recdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m vmdef -o jit\vmdef.lua lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m folddef -o ../include/lj_folddef.h lj_opt_fold.c</Command>
       <Outputs>lj_vm.obj</Outputs>
-      <Inputs>
-      </Inputs>
+      <Inputs>$(ProjectDir)src\host\buildvm_arch.h</Inputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;LUAJIT_ENABLE_LUA52COMPAT;DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -268,8 +325,7 @@
       <Message>BuildVM</Message>
       <Command>echo Building VM &amp;&amp; cd src &amp;&amp; $(OutputPath)buildvm -m peobj -o ../lj_vm.obj &amp;&amp; $(OutputPath)buildvm -m bcdef -o ../include/lj_bcdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m ffdef -o ../include/lj_ffdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m libdef -o ../include/lj_libdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m recdef -o ../include/lj_recdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m vmdef -o jit\vmdef.lua lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c &amp;&amp; $(OutputPath)buildvm -m folddef -o ../include/lj_folddef.h lj_opt_fold.c</Command>
       <Outputs>lj_vm.obj</Outputs>
-      <Inputs>
-      </Inputs>
+      <Inputs>$(ProjectDir)src\host\buildvm_arch.h</Inputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

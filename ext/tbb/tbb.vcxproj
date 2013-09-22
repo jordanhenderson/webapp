@@ -263,10 +263,7 @@
   <ItemGroup>
     <ClCompile Include="include\rml\client\rml_omp.cpp" />
     <ClCompile Include="include\rml\client\rml_tbb.cpp" />
-    <ClCompile Include="src\arena.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="src\arena.cpp" />
     <ClCompile Include="src\cache_aligned_allocator.cpp" />
     <ClCompile Include="src\concurrent_monitor.cpp" />
     <ClCompile Include="src\concurrent_queue.cpp" />

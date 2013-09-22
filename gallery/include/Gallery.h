@@ -10,6 +10,7 @@
 #include "Serializer.h"
 #include "document.h"
 #include <ctemplate/template.h>
+#include <tbb/concurrent_queue.h>
 
 extern "C" {
 #include <lua.h>
@@ -56,26 +57,22 @@ class Gallery : public ServerHandler, Internal {
 private:
 	Parameters* params;
 	Database database;
-	Session session;	
+	Sessions sessions;	
 	
 	Response getPage(const std::string& page, SessionStore&, int publishSession);
 
-	RequestVars parseRequestVariables(char* vars, RequestVars& v);
-	Response processVars(RequestVars&, SessionStore&, int publishSession);
+	Response processVars(const char*, SessionStore&, int publishSession);
 	std::string basepath;
 	std::string dbpath;
 
 	//Dynamic function map for public API.
 	std::unordered_map<std::string, GallFunc> functionMap;
 
-	//Process queue. Threads are executed one by one to ensure no write conflicts occur.
-	std::queue<std::thread*> processQueue;
-	std::thread::id currentID;
-	std::thread queue_process_thread;
+	tbb::concurrent_bounded_queue<std::thread*> processQueue;
 
-	//Process queue 'add' mutex and condition variable.
-	std::condition_variable cv_queue_add;
-	std::mutex mutex_queue_add;
+	std::thread::id currentID;
+
+	std::thread queue_process_thread;
 
 	//Process mutex used by the main thread queue. Held by both the process queue and individual processes.
 	std::mutex mutex_thread_start;
@@ -100,15 +97,16 @@ private:
 
 	template <typename T>
 	void addFiles(T& files, int nGenThumbs, const std::string& path, const std::string& albumID) {
-		std::string date = date_format("%Y%m%d",8);
-		std::string storepath = database.select(SELECT_SYSTEM("store_path"));
-		std::string thumbspath = database.select(SELECT_SYSTEM("thumbs_path"));
+		const char* date = date_format("%Y%m%d",8);
+		std::string storepath = database.select_single(SELECT_SYSTEM("store_path"));
+		std::string thumbspath = database.select_single(SELECT_SYSTEM("thumbs_path"));
 		
 		if(files.size() > 0) {
 			for (typename T::const_iterator it = files.begin(), end = files.end(); it != end; ++it) {
 				addFile(*it, nGenThumbs, thumbspath, path, date, albumID);
 			}
-		}	
+		}
+		free((void*)date);
 	}
 	
 	void process_thread(std::thread*);
@@ -118,8 +116,6 @@ private:
 	static int LuaWriter(lua_State* L, const void* p, size_t sz, void* ud);
 	void runScript(LuaChunk*, LuaParam* params, int nArgs);
 	
-	std::string genCookie(const std::string& name, const std::string& value, time_t* date=NULL);
-	std::string getCookieValue(const char* cookies, const char* key);	
 
 //Gallery specific calls
 	int genThumb(const char* file, double shortmax, double longmax);
@@ -132,7 +128,7 @@ private:
 public:
 	Gallery(Parameters* params);
 	~Gallery();
-	void process(FCGX_Request* request);
+	void createWorker();
 
 	//Public calls
 	void runScript(const char* filename, LuaParam* params = NULL, int nArgs = 0);

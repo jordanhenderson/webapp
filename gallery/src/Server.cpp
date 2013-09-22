@@ -1,15 +1,16 @@
 #include "Logging.h"
 #include "Gallery.h"
 #include "Server.h"
+#include <tbb/task_scheduler_init.h>
 
 using namespace std;
 using namespace tbb;
 task* ServerTask::execute() {
-	if(_handler->shutdown_handler) return NULL;
-	_handler->process(_request);
+	_handler->numInstances++;
+	_handler->createWorker();
 	FCGX_Finish_r(_request);
 	free(_request);
-	
+	_handler->numInstances--;
 	return NULL;
 }
 
@@ -34,31 +35,33 @@ void Server::listener(ServerHandler* handler, int sock) {
 			
 			if(select(0, &readfds, NULL, NULL, &timeout) == 0) {
 				if(handler->shutdown_handler) {
-					FCGX_Finish_r(request);
-					free(request);
-					return;
+					goto finish;
 				}
 			}
 			else {
 				if(handler->shutdown_handler) {
-					FCGX_Finish_r(request);
-					free(request);
-					return;
+					goto finish;
 				}
 				else break;
 			}
 		}
 		int rc = FCGX_Accept_r(request);
 		handler->handlerLock.lock();
-		
 
 		if(rc < 0) break;
+		if(handler->shutdown_handler) goto finish;
+		if(handler->numInstances < tbb::task_scheduler_init::default_num_threads()) {	
+			ServerTask* task = new (task::allocate_additional_child_of(*handler->parent_task)) 
+				ServerTask(request, handler);
+			handler->parent_task->enqueue(*task);
+		} 
+		handler->requests.push(request);
 		
-		ServerTask* task = new (task::allocate_additional_child_of(*handler->parent_task)) 
-			ServerTask(request, handler);
-		handler->parent_task->enqueue(*task);
 		handler->handlerLock.unlock();
 	}
+finish:
+	FCGX_Finish_r(request);
+	free(request);
 
 }
 

@@ -110,7 +110,7 @@ int Gallery::refreshAlbums(RequestVars& vars, Response& r, SessionStore& session
 		std::unique_lock<std::mutex> lk(mutex_thread_start);
 		while(currentID != this_thread::get_id() && !shutdown_handler)
 			cv_thread_start.wait(lk);
-		string storepath = database.select(SELECT_SYSTEM("store_path"));
+		string storepath = database.select_single(SELECT_SYSTEM("store_path"));
 		for(string album: albums) {
 			QueryRow params;
 			params.push_back(album);
@@ -259,11 +259,11 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 				while(currentID != this_thread::get_id() && !shutdown_handler)
 					cv_thread_start.wait(lk);
 				
-				string storepath = database.select(SELECT_SYSTEM("store_path"));
+				string storepath = database.select_single(SELECT_SYSTEM("store_path"));
 				//Add the album.
 				QueryRow params;
 				//get the date.
-				string date = date_format("%Y%m%d",8);
+				const char* date = date_format("%Y%m%d",8);
 
 				params.push_back(name);
 				params.push_back(date);
@@ -271,6 +271,8 @@ int Gallery::addAlbum(RequestVars& vars, Response& r, SessionStore&) {
 				params.push_back(path);
 				params.push_back(type);
 				params.push_back(to_string(nRecurse));
+
+				free((void*)date);
 				int albumID = database.exec(INSERT_ALBUM, &params);
 				vector<string> files = FileSystem::GetFiles(basepath + '/' + storepath + '/' + path, "", nRecurse);
 
@@ -303,8 +305,8 @@ int Gallery::delAlbums(RequestVars& vars, Response& r, SessionStore&) {
 		while(currentID != this_thread::get_id() && !shutdown_handler)
 			cv_thread_start.wait(lk);
 
-		string storepath = database.select(SELECT_SYSTEM("store_path"));
-		string thumbspath = database.select(SELECT_SYSTEM("thumbs_path"));
+		string storepath = database.select_single(SELECT_SYSTEM("store_path"));
+		string thumbspath = database.select_single(SELECT_SYSTEM("thumbs_path"));
 		for(string album: albums) {
 			QueryRow params;
 

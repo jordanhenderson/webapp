@@ -33,6 +33,7 @@ void Gallery::runScript(LuaChunk* c, LuaParam* params, int nArgs) {
 	if(bytecode_len > 0) {
 		lua_State* L = luaL_newstate();
 		luaL_openlibs(L);
+		
 		luaL_loadbuffer(L, c->bytecode.c_str(), bytecode_len, c->filename.c_str());
 		if(params != NULL) {
 			for(int i = 0; i < nArgs; i++) {
@@ -41,7 +42,9 @@ void Gallery::runScript(LuaChunk* c, LuaParam* params, int nArgs) {
 				lua_setglobal(L, p->p);
 			}
 		}
-		lua_pcall(L, 0, 0, 0);
+		if(lua_pcall(L, 0, 0, 0) != 0) {
+			printf("Error: %s\n", lua_tostring(L, -1));
+		}
 		lua_close(L);
 	}
 }
@@ -50,6 +53,8 @@ Gallery::Gallery(Parameters* params) :  contentTemplates(""),
 										params(params),
 										basepath(params->get("basepath")),
 										dbpath(params->get("dbpath")) {
+
+	database.connect(DATABASE_TYPE_SQLITE, dbpath);
 	//Enable pragma foreign keys.
 	database.exec(PRAGMA_FOREIGN);
 
@@ -61,39 +66,6 @@ Gallery::Gallery(Parameters* params) :  contentTemplates(""),
 		database.exec(s);
 	}
 	
-	//Set the 'current thread id' to this thread. Essentially ensures no thread will be started (yet).
-	currentID = std::this_thread::get_id();
-
-	//Create/start queue processor thread (CONSUMER)
-	queue_process_thread = thread([this]() {
-		while(!shutdown_handler) {
-			{
-				unique_lock<mutex> lk(mutex_queue_add);
-				//Wait for a signal from log functions (pushers)
-				while(processQueue.empty() && !shutdown_handler) 
-					cv_queue_add.wait(lk);
-			}
-			if(shutdown_handler) return;
-				
-			while(!processQueue.empty()) {
-				thread* t = processQueue.front();
-				{
-					lock_guard<mutex> lk(mutex_thread_start);
-					currentID = t->get_id();
-				}
-				//Notify all threads that a new thread is ready to process.
-				//Only the thread with the correct ID will actually be started.
-				cv_thread_start.notify_all(); 
-				//Join the started thread.
-				t->join();
-				delete t;
-				processQueue.pop();
-			}
-		}
-	});
-
-	queue_process_thread.detach();
-
 	refresh_templates();
 
 	//Create function map.
@@ -102,22 +74,22 @@ Gallery::Gallery(Parameters* params) :  contentTemplates(""),
 	systemScripts.reserve(SYSTEM_SCRIPT_COUNT);
 
 	refresh_scripts();
-	LuaParam luaparams[] = {{"hooks", &functionMap}};
-	runScript(SYSTEM_SCRIPT_INIT, (LuaParam*)luaparams, 1 );
+
+	queue_process_thread = thread([this]() {
+		while(!shutdown_handler) {
+			thread* nextThread;
+			processQueue.pop(nextThread);
+			currentID = nextThread->get_id();
+			cv_thread_start.notify_all();
+		}
+	});
+
+	queue_process_thread.detach();
 }
 
 //PRODUCER
 void Gallery::process_thread(std::thread* t) {
-	bool empty;
-	{
-		lock_guard<mutex> lk(mutex_queue_add);
-		empty = processQueue.empty();
-		processQueue.push(t);
-	}
-
-	if(empty) {
-		cv_queue_add.notify_one();
-	}
+	processQueue.push(t);
 }
 
 Gallery::~Gallery() {
@@ -127,26 +99,18 @@ Gallery::~Gallery() {
 	}
 
 	shutdown_handler = 1;
-	cv_queue_add.notify_all();
-	if(queue_process_thread.joinable())
-		queue_process_thread.join();
+	processQueue.abort();
 }
 
-//Generate a Set-Cookie header provided name, value and date.
-string Gallery::genCookie(const string& name, const string& value, time_t* date) {
-	if(date == NULL) return string_format("Set-Cookie: %s=%s\r\n", name.c_str(), value.c_str());
-	else {
-		string date_str = date_format("%a, %d-%b-%Y %H:%M:%S GMT", 29, date, 1);
-		return string_format("Set-Cookie: %s=%s; Expires=%s\r\n",name.c_str(), value.c_str(), date_str.c_str());
-	}
-}
+
 
 Response Gallery::getPage(const string& uri, SessionStore& session, int publishSession) {
+	/*
 	Response r;
 	string page;
 	if(publishSession) {
 		time_t t; time(&t); add_days(t, 1);
-		r = genCookie("sessionid", session.sessionid, &t);
+		r = GenCookie("sessionid", session.sessionid, &t);
 	}
 
 	if(uri[0] == '/' && (uri[1] == '\0' || uri[1] == '?')) {
@@ -155,7 +119,6 @@ Response Gallery::getPage(const string& uri, SessionStore& session, int publishS
 		std::size_t found = uri.find_first_of("?&#");
 		page = uri.substr(std::min(1, (int)uri.size()), found-1);
 	}
-
 
 	//Template parsing
 	if(contains(contentList, page + ".html")) {
@@ -181,63 +144,17 @@ Response Gallery::getPage(const string& uri, SessionStore& session, int publishS
 		r.append(HTML_404);
 	}
 	return r;
-
+	*/
+	return "";
 }
 
-void parseRequestVars(char* vars, RequestVars& varmap) {
-	char* key = NULL;
-	char* val = NULL;
-	int i;
-	//Set key to be vars, in case ? is not present.
-	key = vars;
-	for(i = 0; vars[i] != '\0'; i++) {
-		if(vars[i] == '?') {
-			key = vars + i + 1;
-		}
-		if(key != NULL && vars[i] == '=') {
-			//Terminate the string at the = for key.
-			*(vars + i) = '\0';
-			val = vars + i + 1;
-		}
-		if(val != NULL && vars[i] == '&') {
-			//Terminate the string at the & for val.
-			*(vars + i) = '\0';
-			//Copy the key and val into our unordered map.
-			varmap[key] = val;
-			key = vars + i + 1;
-			val = NULL;
-		}
-	}
-	if(vars[i] == '\0' && key != NULL && val != NULL) {
-		//Copy the key and val into our unordered map.
-		varmap[key] = val;
-	}
-	return;
-}
+void Gallery::createWorker() {
+	//Create a LUA worker on the current thread/task.
+	LuaParam luaparams[] = {{"requests", &requests}, {"sessions", &sessions}};
+	//This call will not return until the lua worker is finished.
+	runScript(SYSTEM_SCRIPT_PROCESS, (LuaParam*)luaparams, 2);
 
-std::string Gallery::getCookieValue(const char* cookies, const char* key){
-	if(cookies == NULL || key == NULL)
-		return EMPTY;
-
-	int len = strlen(key);
-	int i;
-	for(i = 0; cookies[i] != '\0'; i++) {
-		if(cookies[i] == '=' && i >= len) {
-			const char* k = cookies + i - len;
-
-			if(strncmp(k, key, len) == 0) {
-				//Find the end character.
-				int c;
-				for (c = i + 1; cookies[c] != '\0' && cookies[c] != ';'; c++);
-				return string(k+len+1, c - i - 1);
-			}
-		}
-	}
-	return EMPTY;
-}
-
-
-void Gallery::process(FCGX_Request* request) {
+	/*
 	char* method = FCGX_GetParam("REQUEST_METHOD", request->envp);
 	char* uri = FCGX_GetParam("REQUEST_URI", request->envp);
 	char* cookie_str = FCGX_GetParam("HTTP_COOKIE", request->envp);
@@ -286,16 +203,20 @@ void Gallery::process(FCGX_Request* request) {
 	}
 
 	FCGX_PutStr(final.c_str(), final.length(), request->out);
+	*/
 }
 
 
-Response Gallery::processVars(RequestVars& vars, SessionStore& session, int publishSession) {
+Response Gallery::processVars(const char* uri, SessionStore& session, int publishSession) {
+	/*
+	RequestVars vars;
+	//parseRequestVars(uri, vars);
 	string t = vars["t"];
 
 	Response r = JSON_HEADER;
 	if(publishSession) {
 		time_t t; time(&t); add_days(t, 1);
-		r.append(genCookie("sessionid", session.sessionid, &t));
+		r.append(GenCookie("sessionid", session.sessionid, &t));
 	}
 
 	unordered_map<string, GallFunc>::const_iterator miter = functionMap.find(t);
@@ -319,11 +240,13 @@ Response Gallery::processVars(RequestVars& vars, SessionStore& session, int publ
 		}
 		return r;
 	}
+	*/
+	return "";
 }
 
 int Gallery::genThumb(const char* file, double shortmax, double longmax) {
-	string storepath = database.select(SELECT_SYSTEM("store_path"));
-	string thumbspath = database.select(SELECT_SYSTEM("thumbs_path"));
+	string storepath = database.select_single(SELECT_SYSTEM("store_path"));
+	string thumbspath = database.select_single(SELECT_SYSTEM("thumbs_path"));
 	string imagepath = basepath + '/' + storepath + '/' + file;
 	string thumbpath = basepath + '/' + thumbspath + '/' + file;
 	
@@ -370,7 +293,7 @@ int Gallery::genThumb(const char* file, double shortmax, double longmax) {
 }
 
 int Gallery::hasAlbums() {
-	string albumsStr = database.select(SELECT_ALBUM_COUNT);
+	string albumsStr = database.select_single(SELECT_ALBUM_COUNT, NULL, "0");
 	int nAlbums = stoi(albumsStr);
 	if(nAlbums == 0) {
 		return 0;
@@ -437,7 +360,6 @@ void Gallery::refresh_templates() {
 			clientTemplateFiles.push_back(d);
 		}
 	}
-	
 }
 
 //Refresh the LUA plugins
@@ -460,8 +382,24 @@ void Gallery::refresh_scripts() {
 		lua_State* L = luaL_newstate();
 		if(L != NULL) {
 			luaL_openlibs(L);
-			luaL_loadfile(L, (pluginpath + s).c_str());
-			lua_dump(L, LuaWriter, &b);
+			
+#ifdef _DEBUG
+			if(luaL_loadfile(L, (pluginpath + s).c_str())) {
+				printf ("%s\n", lua_tostring (L, -1));
+				lua_pop (L, 1);
+			}
+#else
+			luaL_loadfile(L, (pluginpath + s).c_str())
+#endif
+			
+#ifdef _DEBUG
+			if(lua_dump(L, LuaWriter, &b, 0)) {
+				printf ("%s\n", lua_tostring (L, -1));
+				lua_pop (L, 1);
+			}
+#else
+			lua_dump(L, LuaWriter, &b, 1);
+#endif
 			lua_close(L);
 			//Bytecode loaded. Update empty entries.
 			loadedScripts.push_back(b);
@@ -518,6 +456,6 @@ int Gallery::getDuplicates( string& name, string& path ) {
 	QueryRow params;
 	params.push_back(name);
 	params.push_back(path);
-	string dupAlbumStr = database.select(SELECT_DUPLICATE_ALBUM_COUNT, &params);
+	string dupAlbumStr = database.select_single(SELECT_DUPLICATE_ALBUM_COUNT, &params);
 	return stoi(dupAlbumStr);
 }

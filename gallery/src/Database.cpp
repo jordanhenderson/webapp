@@ -1,6 +1,12 @@
-#include "Database.h"
 #include "my_global.h"
 #include "mysql.h"
+
+#ifdef snprintf
+#undef snprintf
+#endif
+
+#include "Database.h"
+
 using namespace std;
 
 Query::Query(const string& dbq, QueryRow* p) {
@@ -223,8 +229,11 @@ Query* Database::select(Query* q, QueryRow* params, int desc) {
 	return q;
 }
 
-string Database::select(const std::string& query, QueryRow* params, int desc) {
+string Database::select_single(const std::string& query, QueryRow* params, const std::string& def) {
 	Query q(query);
-	select(&q, params, desc);
-	return q.response->at(0).at(0);
+	select(&q, params, 0);
+	if(q.response->size() > 0 && q.response->at(0).size() > 0)
+		return q.response->at(0).at(0);
+	else return def;
+
 }

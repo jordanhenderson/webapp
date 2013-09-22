@@ -28,13 +28,13 @@ public:
 };
 
 typedef std::unordered_map<std::string, SessionStore*> SessionMap;
-class Session {
+class Sessions {
 private:
 	LockableContainer<SessionMap> session_map;
 public:
-	~Session();
+	~Sessions();
 	//Create a new session based on the FCGX Request.
-	SessionStore* get_session(std::string& sessionid);
-	SessionStore* new_session(char* host, char* user_agent);
+	SessionStore* get_session(const char* sessionid);
+	SessionStore* new_session(const char* host, const char* user_agent);
 };
 #endif
