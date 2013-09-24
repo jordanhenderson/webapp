@@ -55,18 +55,8 @@ struct TemplateData {
 
 class Gallery : public ServerHandler, Internal {
 private:
-	Parameters* params;
 	Database database;
 	Sessions sessions;	
-	
-	Response getPage(const std::string& page, SessionStore&, int publishSession);
-
-	Response processVars(const char*, SessionStore&, int publishSession);
-	std::string basepath;
-	std::string dbpath;
-
-	//Dynamic function map for public API.
-	std::unordered_map<std::string, GallFunc> functionMap;
 
 	tbb::concurrent_bounded_queue<std::thread*> processQueue;
 
@@ -129,6 +119,14 @@ public:
 	Gallery(Parameters* params);
 	~Gallery();
 	void createWorker();
+	ctemplate::TemplateDictionary* getTemplate(const char* page);
+
+	std::string basepath;
+	std::string dbpath;
+
+	Parameters* params;
+	//Dynamic function map for public API.
+	std::unordered_map<std::string, GallFunc> functionMap;
 
 	//Public calls
 	void runScript(const char* filename, LuaParam* params = NULL, int nArgs = 0);

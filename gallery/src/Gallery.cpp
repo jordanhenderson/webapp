@@ -103,9 +103,9 @@ Gallery::~Gallery() {
 }
 
 
-
+/*
 Response Gallery::getPage(const string& uri, SessionStore& session, int publishSession) {
-	/*
+	
 	Response r;
 	string page;
 	if(publishSession) {
@@ -144,71 +144,35 @@ Response Gallery::getPage(const string& uri, SessionStore& session, int publishS
 		r.append(HTML_404);
 	}
 	return r;
-	*/
+	
 	return "";
-}
+}*/
 
 void Gallery::createWorker() {
 	//Create a LUA worker on the current thread/task.
-	LuaParam luaparams[] = {{"requests", &requests}, {"sessions", &sessions}};
+	LuaParam luaparams[] = {{"requests", &requests}, {"sessions", &sessions}, {"app", this}};
 	//This call will not return until the lua worker is finished.
-	runScript(SYSTEM_SCRIPT_PROCESS, (LuaParam*)luaparams, 2);
+	runScript(SYSTEM_SCRIPT_PROCESS, (LuaParam*)luaparams, 3);
 
-	/*
-	char* method = FCGX_GetParam("REQUEST_METHOD", request->envp);
-	char* uri = FCGX_GetParam("REQUEST_URI", request->envp);
-	char* cookie_str = FCGX_GetParam("HTTP_COOKIE", request->envp);
-	//Get/set the session id.
-	
-	string sessionid = getCookieValue(cookie_str, "sessionid");
-	SessionStore* store = NULL;
-	int createstore = 0;
-	if(!sessionid.empty()) {
-		store = session.get_session(sessionid);
-	}
-	//Create a new session.
-	if(store == NULL) {
-		char* host = FCGX_GetParam("HTTP_HOST", request->envp);
-		char* user_agent = FCGX_GetParam("HTTP_USER_AGENT", request->envp);
-		store = session.new_session(host, user_agent);
-		createstore = 1;
-	}
-
-	string final;
-	if(strcmp(method, "GET") == 0) {
-		if(strstr(uri, "/api") == uri) {
-			//Create an unordered map containing ?key=var pairs.
-			RequestVars v;
-			parseRequestVars(uri + 4, v);
-			final = processVars(v, *store, createstore);
-		} else {
-			final = getPage(uri, *store, createstore);
-		}
-	} else if(strcmp(method, "POST") == 0) {
-		//Read data from the input stream. (allocated using CONTENT_LENGTH)
-		char* strlength = FCGX_GetParam("HTTP_CONTENT_LENGTH", request->envp);
-		if(strlength == NULL)
-			return;
-		int len = atoi(strlength);
-		char* postdata = new char[len + 1];
-		FCGX_GetStr(postdata, len, request->in);
-		//End the string.
-		postdata[len] = '\0';
-
-		RequestVars v;
-		parseRequestVars(postdata, v);
-
-		final = processVars(v, *store, createstore);
-		delete[] postdata;
-	}
-
-	FCGX_PutStr(final.c_str(), final.length(), request->out);
-	*/
 }
 
+TemplateDictionary* Gallery::getTemplate(const char* page) {
+	if(contains(contentList, page)) {
+		TemplateDictionary *d = contentTemplates.MakeCopy("");
+		for(string data: serverTemplateFiles) {
+			d->AddIncludeDictionary(data)->SetFilename(data);
+		}
+		for(TemplateData file: clientTemplateFiles) {
+			d->SetValueWithoutCopy(file.name, TemplateString(file.data->data, file.data->size));
+		}
+		return d;
+	}
+	return NULL;
+}
 
+/*
 Response Gallery::processVars(const char* uri, SessionStore& session, int publishSession) {
-	/*
+	
 	RequestVars vars;
 	//parseRequestVars(uri, vars);
 	string t = vars["t"];
@@ -240,9 +204,9 @@ Response Gallery::processVars(const char* uri, SessionStore& session, int publis
 		}
 		return r;
 	}
-	*/
+	
 	return "";
-}
+}*/
 
 int Gallery::genThumb(const char* file, double shortmax, double longmax) {
 	string storepath = database.select_single(SELECT_SYSTEM("store_path"));

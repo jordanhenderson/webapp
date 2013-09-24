@@ -55,7 +55,7 @@ SessionStore* Sessions::new_session(const char* host, const char* user_agent) {
 	
 	SessionStore* session_store = new SESSION_STORE();
 
-	session_store->create(output);
+	session_store->create(output.c_str());
 	lock->insert(make_pair(output, session_store));
 	
 	return session_store;

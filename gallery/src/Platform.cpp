@@ -37,7 +37,7 @@ const char* date_format(const char* fmt, const size_t datesize, time_t* t, int g
 	if(t == NULL) {
 		time(&actual_time);
 	} else actual_time = *t;
-	char* str = (char*)malloc(datesize);
+	char* str = (char*)malloc(datesize+1);
 	if(!gmt) strftime(str, datesize+1, fmt, localtime(&actual_time));
 	else strftime(str, datesize+1, fmt, gmtime(&actual_time));
 	return str;

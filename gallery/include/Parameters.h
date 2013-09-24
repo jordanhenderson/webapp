@@ -5,8 +5,10 @@
 //Dynamic parameter class
 typedef std::unordered_map<std::string, std::string> ParamMap;
 class Parameters : public Internal {
+
 public:
-	std::string get(const std::string& param);
+	std::string empty;
+	const std::string& get(const std::string& param);
 	const int getDigit(const std::string& param);
 	void set(std::string param, std::string value);
 	inline static void parseBuffer(void* params, char* paramBuffer, int bytesRead) {
@@ -28,6 +30,7 @@ public:
 	bool hasParam(std::string param);
 	size_t getSize();
 	~Parameters();
+	Parameters() : empty("") {};
 private:
 	LockableContainer<ParamMap> params;
 };

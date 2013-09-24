@@ -6,10 +6,7 @@
 using namespace std;
 using namespace tbb;
 task* ServerTask::execute() {
-	_handler->numInstances++;
 	_handler->createWorker();
-	FCGX_Finish_r(_request);
-	free(_request);
 	_handler->numInstances--;
 	return NULL;
 }
@@ -51,6 +48,7 @@ void Server::listener(ServerHandler* handler, int sock) {
 		if(rc < 0) break;
 		if(handler->shutdown_handler) goto finish;
 		if(handler->numInstances < tbb::task_scheduler_init::default_num_threads()) {	
+			handler->numInstances++;
 			ServerTask* task = new (task::allocate_additional_child_of(*handler->parent_task)) 
 				ServerTask(request, handler);
 			handler->parent_task->enqueue(*task);

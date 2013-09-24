@@ -14,6 +14,7 @@
     #define APIEXPORT __attribute__ ((visibility ("default")))
   #endif
 #endif
+
 APIEXPORT int Template_ShowGlobalSection(ctemplate::TemplateDictionary*, const char*);
 APIEXPORT int Template_ShowSection(ctemplate::TemplateDictionary*, const char*);
 APIEXPORT const char* GetSessionValue(SessionStore*, const char*);
@@ -22,10 +23,15 @@ APIEXPORT SessionStore* NewSession(Sessions*, const char*, const char*);
 APIEXPORT int Template_SetValue(ctemplate::TemplateDictionary* dict, const char* key, const char* value);
 APIEXPORT const char* Request_GetParam(const char*, FCGX_Request*);
 APIEXPORT FCGX_Request* GetNextRequest(tbb::concurrent_bounded_queue<FCGX_Request*>* requests);
-//GetCookieValue returns the associated value for a key provided in the cookie HTTP parameters.
-//Must be cleaned up by caller. Returns NULL if no matching key found.
 APIEXPORT size_t StringLen(const char*);
-APIEXPORT const char* GetCookieValue(const char*, const char*);
-APIEXPORT void Free(void*);
-APIEXPORT const char* GenCookie(const char*, const char*, time_t*);
+APIEXPORT const char* GenCookie(const char*, const char*, int, std::vector<void*>*);
+APIEXPORT const char* GetSessionID(SessionStore*);
+APIEXPORT std::vector<void*>* StartRequestHandler(FCGX_Request*);
+APIEXPORT void FinishRequestHandler(std::vector<void*>*);
+APIEXPORT ctemplate::TemplateDictionary* GetTemplate(Gallery*, const char*);
+APIEXPORT const char* RenderTemplate(Gallery*, ctemplate::TemplateDictionary*, const char*, std::vector<void*>*);
+typedef const char*(__stdcall *GETTABLEVAL)(const char*);
+APIEXPORT GallFunc GetAPICall(Gallery*, const char*);
+APIEXPORT const char* GetParam(Gallery*, const char*);
+APIEXPORT const char* CallAPI(Gallery*, GallFunc, GETTABLEVAL, SessionStore*);
 #endif

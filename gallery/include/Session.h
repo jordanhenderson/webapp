@@ -7,11 +7,13 @@
 
 class SessionStore {
 public:
+	std::string empty;
 	std::string sessionid;
-	virtual void create(std::string& sessionid) = 0;
+	virtual void create(const std::string& sessionid) = 0;
 	virtual void store(const std::string& key, const std::string& value) = 0;
-	virtual std::string get(const std::string& key) = 0;
+	virtual const std::string& get(const std::string& key) = 0;
 	virtual void destroy() = 0;
+	SessionStore() : empty("") {};
 };
 
 
@@ -21,9 +23,9 @@ class RamSession : public SessionStore {
 private:
 	LockableContainer<RamStorage> _store;
 public:
-	void create(std::string& sessionid);
+	void create(const std::string& sessionid);
 	void store(const std::string& key, const std::string& value);
-	std::string get(const std::string& key);
+	const std::string& get(const std::string& key);
 	void destroy();
 };
 

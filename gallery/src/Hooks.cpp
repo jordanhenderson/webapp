@@ -7,25 +7,32 @@ extern "C" {
 using namespace ctemplate;
 using namespace std;
 int Template_ShowGlobalSection(TemplateDictionary* dict, const char* section) {
+	if(dict == NULL || section == NULL) return 1;
 	dict->ShowTemplateGlobalSection(section);
 	return 0;
 }
 
 int Template_ShowSection(TemplateDictionary* dict, const char* section) {
+	if(dict == NULL || section == NULL) return 1;
 	dict->ShowSection(section);
 	return 0;
 }
 
+//Cleaned up by backend.
 const char* GetSessionValue(SessionStore* session, const char* key) {
-	string s = session->get(key);
-	if(s.empty()) return NULL;
-	return s.c_str();
+	if(session == NULL || key == NULL) 
+		return NULL;
+	const string* s = &session->get(key);
+	if(s->empty()) return NULL;
+	return s->c_str();
 }
 
+//Cleaned up by backend.
 SessionStore* GetSession(Sessions* sessions, const char* sessionid) {
 	return sessions->get_session(sessionid);
 }
 
+//Cleaned up by backend.
 SessionStore* NewSession(Sessions* sessions, const char* host, const char* user_agent) {
 	return sessions->new_session(host, user_agent);
 }
@@ -35,35 +42,11 @@ int Template_SetValue(TemplateDictionary* dict, const char* key, const char* val
 	return 0;
 }
 
+//Cleaned up by backend.
 FCGX_Request* GetNextRequest(tbb::concurrent_bounded_queue<FCGX_Request*>* requests) {
 	FCGX_Request* request = NULL;
 	requests->pop(request);
 	return request;
-}
-
-const char* GetCookieValue(const char* cookies, const char* key) {
-	if(cookies == NULL || key == NULL)
-		return NULL;
-	const char* cookie = NULL;
-	int len = strlen(key);
-	for(int i = 0; cookies[i] != '\0'; i++) {
-		if(cookies[i] == '=' && i >= len) {
-			const char* k = cookies + i - len;
-
-			if(strncmp(k, key, len) == 0) {
-				//Find the end character.
-				int c;
-				for (c = i + 1; cookies[c] != '\0' && cookies[c] != ';'; c++);
-				cookie = (const char*) malloc(c - i - 1);
-				return cookie;
-			}
-		}
-	}
-	return NULL;
-}
-
-void Free(void* ptr) {
-	free(ptr);
 }
 
 size_t StringLen(const char* str) {
@@ -71,19 +54,74 @@ size_t StringLen(const char* str) {
 }
 
 //Generate a Set-Cookie header provided name, value and date.
-const char* GenCookie(const char* name, const char* value, time_t* date) {
+//Cleaned up by request handler.
+const char* GenCookie(const char* name, const char* value, int days, std::vector<void*>* handler) {
 	char* cookie = NULL;
-	if(date == NULL) {
-		int size = snprintf(NULL, 255, "Set-Cookie: %s=%s\r\n", name, value);
-		cookie = (char*)malloc(size + 1);
-		snprintf(cookie, 255, "Set-Cookie: %s=%s\r\n", name, value);
-	}
-	else {
-		const char* date_str = date_format("%a, %d-%b-%Y %H:%M:%S GMT", 29, date, 1);
-		int size = snprintf(NULL, 255, "Set-Cookie: %s=%s; Expires=%s\r\n", name, value, date_str);
-		cookie = (char*)malloc(size + 1);
-		snprintf(cookie, 255, "Set-Cookie: %s=%s; Expires=%s\r\n", name, value, date_str);
-		free((void*)date_str);
-	}
+	time_t t; time(&t); add_days(t, days);
+
+	const char* date_str = date_format("%a, %d-%b-%Y %H:%M:%S GMT", 29, &t, 1);
+	int size = snprintf(NULL, 255, "Set-Cookie: %s=%s; Expires=%s\r\n", name, value, date_str);
+	cookie = (char*)malloc(size + 1);
+	snprintf(cookie, 255, "Set-Cookie: %s=%s; Expires=%s\r\n", name, value, date_str);
+	free((void*)date_str);
+	handler->push_back(cookie);
 	return cookie;
+}
+
+//Cleaned up by backend.
+const char* GetSessionID(SessionStore* session) {
+	return session->sessionid.c_str();
+}
+
+std::vector<void*>* StartRequestHandler(FCGX_Request* request) {
+	std::vector<void*>* gc = new std::vector<void*>();
+	gc->push_back(request);
+	return gc;
+}
+
+void FinishRequestHandler(std::vector<void*>* handler) {
+	//Clean up the request (first and foremost)
+	FCGX_Request* request = (FCGX_Request*) handler->at(0);
+	FCGX_Finish_r(request);
+	free(request);
+
+	for(std::vector<void*>::iterator it = handler->begin() + 1; it != handler->end(); ++it) {
+		free(*it);
+	}
+	delete handler;
+}
+
+TemplateDictionary* GetTemplate(Gallery* gallery, const char* page) {
+	if(gallery != NULL) return gallery->getTemplate(page);
+	else return NULL;
+}
+
+
+const char* RenderTemplate(Gallery* gallery, ctemplate::TemplateDictionary* dict, const char* page, std::vector<void*>* handler) {
+	string output;
+	ExpandTemplate(gallery->basepath + "/content/" + page, STRIP_WHITESPACE, dict, &output);
+	char* content = (char*) malloc (output.size() + 1);
+	if(content != NULL) {
+		memcpy(content, output.c_str(), output.size() + 1);
+		handler->push_back(content);
+	}
+	return content;
+}
+
+GallFunc GetAPICall(Gallery* gallery, const char* func) {
+	unordered_map<string, GallFunc>::const_iterator miter = gallery->functionMap.find(func);
+	int hasfunc = miter != gallery->functionMap.end();
+	return miter->second;
+}
+
+const char* GetParam(Gallery* gallery, const char* param) {
+	const string* val = &(gallery->params->get(param));
+	if(val->empty()) return NULL;
+	else return val->c_str();
+}
+
+const char* CallAPI(Gallery* gallery, GallFunc func, GETTABLEVAL map, SessionStore* session) {
+	RequestVars vars;
+	Response output;
+	(gallery->*func)(vars, output, *session);
 }
