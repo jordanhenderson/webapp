@@ -50,6 +50,7 @@ FCGX_Request* GetNextRequest(tbb::concurrent_bounded_queue<FCGX_Request*>* reque
 }
 
 size_t StringLen(const char* str) {
+	if(str == NULL) return NULL;
 	return strlen(str);
 }
 
@@ -105,23 +106,12 @@ const char* RenderTemplate(Gallery* gallery, ctemplate::TemplateDictionary* dict
 		memcpy(content, output.c_str(), output.size() + 1);
 		handler->push_back(content);
 	}
+	delete dict;
 	return content;
-}
-
-GallFunc GetAPICall(Gallery* gallery, const char* func) {
-	unordered_map<string, GallFunc>::const_iterator miter = gallery->functionMap.find(func);
-	int hasfunc = miter != gallery->functionMap.end();
-	return miter->second;
 }
 
 const char* GetParam(Gallery* gallery, const char* param) {
 	const string* val = &(gallery->params->get(param));
 	if(val->empty()) return NULL;
 	else return val->c_str();
-}
-
-const char* CallAPI(Gallery* gallery, GallFunc func, GETTABLEVAL map, SessionStore* session) {
-	RequestVars vars;
-	Response output;
-	(gallery->*func)(vars, output, *session);
 }

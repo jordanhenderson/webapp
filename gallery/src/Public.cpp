@@ -1,7 +1,6 @@
 #include "Logging.h"
 #include "Gallery.h"
 #include "Image.h"
-#include "fcgiapp.h"
 #include "document.h"
 #include "prettywriter.h"
 #include "stringbuffer.h"

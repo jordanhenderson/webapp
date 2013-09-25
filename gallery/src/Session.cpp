@@ -42,21 +42,27 @@ SessionStore* Sessions::new_session(const char* host, const char* user_agent) {
 	encoder.Attach(new StringSink(output));
 	encoder.Put(digest, sizeof(digest));
 	encoder.MessageEnd();
-	//Create a new session store if one 
-	LockableContainerLock<SessionMap> lock(session_map);
-	SessionMap::iterator it = lock->find(output);
-	//Delete any existing map, if any (clean up possible existing orphan session data).
-	if(it != lock->end()) {
-		SessionStore* sto = it->second;
-		sto->destroy();
-		delete sto;
-		lock->erase(it);
+	//Create a new session store if one does not already exist.
+	{
+		LockableContainerLock<SessionMap> lock(session_map);
+		SessionMap::iterator it = lock->find(output);
+		//Delete any existing map, if any (clean up possible existing orphan session data).
+		if(it != lock->end()) {
+			SessionStore* sto = it->second;
+			sto->destroy();
+			delete sto;
+			lock->erase(it);
+		}
 	}
 	
 	SessionStore* session_store = new SESSION_STORE();
-
-	session_store->create(output.c_str());
-	lock->insert(make_pair(output, session_store));
+	//should use output
+	session_store->create(output);
+	{
+		LockableContainerLock<SessionMap> lock(session_map);
+		lock->insert(make_pair(output, session_store));
+	}
+	
 	
 	return session_store;
 }

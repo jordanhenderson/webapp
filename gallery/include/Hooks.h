@@ -30,8 +30,5 @@ APIEXPORT std::vector<void*>* StartRequestHandler(FCGX_Request*);
 APIEXPORT void FinishRequestHandler(std::vector<void*>*);
 APIEXPORT ctemplate::TemplateDictionary* GetTemplate(Gallery*, const char*);
 APIEXPORT const char* RenderTemplate(Gallery*, ctemplate::TemplateDictionary*, const char*, std::vector<void*>*);
-typedef const char*(__stdcall *GETTABLEVAL)(const char*);
-APIEXPORT GallFunc GetAPICall(Gallery*, const char*);
 APIEXPORT const char* GetParam(Gallery*, const char*);
-APIEXPORT const char* CallAPI(Gallery*, GallFunc, GETTABLEVAL, SessionStore*);
 #endif

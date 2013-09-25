@@ -71,6 +71,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "buildvm", "ext\luajit\build
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "minilua", "ext\luajit\minilua.vcxproj", "{BCEB2DE5-346C-4E4A-9816-E8BDCA3079E8}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nginx", "ext\nginx\nginx.vcxproj", "{20675957-CE52-44AE-99A9-F7056463B0C8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -433,6 +435,18 @@ Global
 		{BCEB2DE5-346C-4E4A-9816-E8BDCA3079E8}.Release|Win32.Build.0 = Release|Win32
 		{BCEB2DE5-346C-4E4A-9816-E8BDCA3079E8}.Release|x64.ActiveCfg = Release|x64
 		{BCEB2DE5-346C-4E4A-9816-E8BDCA3079E8}.Release|x64.Build.0 = Release|x64
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.Debug|Win32.ActiveCfg = Debug|Win32
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.Debug|Win32.Build.0 = Debug|Win32
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.Debug|x64.ActiveCfg = Debug|Win32
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.LinuxDebug|Win32.ActiveCfg = Debug|Win32
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.LinuxDebug|Win32.Build.0 = Debug|Win32
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.LinuxDebug|x64.ActiveCfg = Debug|Win32
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.LinuxRelease|Win32.ActiveCfg = Release|Win32
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.LinuxRelease|Win32.Build.0 = Release|Win32
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.LinuxRelease|x64.ActiveCfg = Release|Win32
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.Release|Win32.ActiveCfg = Release|Win32
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.Release|Win32.Build.0 = Release|Win32
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

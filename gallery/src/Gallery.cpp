@@ -1,7 +1,6 @@
 #include "Logging.h"
 #include "Gallery.h"
 #include "Image.h"
-#include "fcgiapp.h"
 #include "document.h"
 #include "prettywriter.h"
 #include "stringbuffer.h"
@@ -353,7 +352,7 @@ void Gallery::refresh_scripts() {
 				lua_pop (L, 1);
 			}
 #else
-			luaL_loadfile(L, (pluginpath + s).c_str())
+			luaL_loadfile(L, (pluginpath + s).c_str());
 #endif
 			
 #ifdef _DEBUG

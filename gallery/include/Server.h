@@ -5,8 +5,6 @@ class Gallery;
 #ifdef _WIN32
 #define NOMINMAX
 #endif
-#include "fcgiapp.h"
-#include "fcgios.h"
 #include <atomic>
 #include <tbb/task.h>
 #include <tbb/concurrent_queue.h>
@@ -15,6 +13,7 @@ class ServerHandler {
 protected:
 	int shutdown_handler;
 	std::atomic<int> numInstances;
+	std::atomic<int> count;
 	std::mutex handlerLock; //Mutex to control the allowance of new connection handling.
 	tbb::empty_task* parent_task;
 	tbb::concurrent_bounded_queue<FCGX_Request*> requests;
@@ -23,6 +22,7 @@ public:
 	friend class Server;
 	friend class ServerTask;
 	ServerHandler() {
+		count = 0;
 		shutdown_handler = 0;
 		parent_task = new (tbb::task::allocate_root()) tbb::empty_task;
 		parent_task->set_ref_count(1);
@@ -35,12 +35,11 @@ public:
 
 class ServerTask : public tbb::task {
 public: 
-	ServerTask(FCGX_Request* request, ServerHandler* handler)
-		: _request(request), _handler(handler)
+	ServerTask(ServerHandler* handler)
+		: _handler(handler)
 	{};
 	tbb::task* execute();
 private:
-	FCGX_Request* _request;
 	ServerHandler* _handler;
 };
 

@@ -29,7 +29,7 @@ extern "C" {
 
 typedef std::unordered_map<std::string, std::string> RequestVars;
 typedef std::string Response;
-typedef int(Gallery::*GallFunc)(RequestVars&, Response&, SessionStore&);
+typedef int(Gallery::*GallFunc)(RESPONSE_VARS);
 class Logging;
 
 class LuaChunk {

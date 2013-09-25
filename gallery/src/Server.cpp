@@ -16,44 +16,28 @@ void Server::listener(ServerHandler* handler, int sock) {
 		return;
 
 	FCGX_Request* request = NULL;
+	int count = 0;
 	while(!handler->shutdown_handler) {
 		
 		request = (FCGX_Request*)malloc(sizeof(FCGX_Request));
-		FCGX_InitRequest(request, sock, FCGI_FAIL_ACCEPT_ON_INTR);
-		
-		const struct timeval timeout = {1, 0};
-		fd_set readfds;
-		FD_ZERO(&readfds);
-		#pragma warning( disable : 4127 ) 
-		FD_SET((unsigned int) sock, &readfds);
-		#pragma warning( default : 4127 ) 
-		
-		for(;;) {
-			
-			if(select(0, &readfds, NULL, NULL, &timeout) == 0) {
-				if(handler->shutdown_handler) {
-					goto finish;
-				}
-			}
-			else {
-				if(handler->shutdown_handler) {
-					goto finish;
-				}
-				else break;
-			}
-		}
+		FCGX_InitRequest(request, sock, 0);
+
 		int rc = FCGX_Accept_r(request);
+		++count;
+		printf("Request number: %d\n", count);
 		handler->handlerLock.lock();
 
 		if(rc < 0) break;
 		if(handler->shutdown_handler) goto finish;
+		
 		if(handler->numInstances < tbb::task_scheduler_init::default_num_threads()) {	
 			handler->numInstances++;
 			ServerTask* task = new (task::allocate_additional_child_of(*handler->parent_task)) 
-				ServerTask(request, handler);
+				ServerTask(handler);
 			handler->parent_task->enqueue(*task);
 		} 
-		handler->requests.push(request);
+
+		//handler->requests.push(request);
 		
 		handler->handlerLock.unlock();
 	}

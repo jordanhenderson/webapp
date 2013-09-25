@@ -1,6 +1,5 @@
 #ifndef SESSION_H
 #define SESSION_H
-#include "fcgiapp.h"
 #include "Platform.h"
 #include "Container.h"
 #define SESSION_STORE RamSession
