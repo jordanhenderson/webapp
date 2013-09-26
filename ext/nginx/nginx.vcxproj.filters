@@ -102,9 +102,6 @@
     <ClCompile Include="src\core\ngx_times.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ngx_modules.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\ngx_pch.c">
       <Filter>Source Files</Filter>
     </ClCompile>

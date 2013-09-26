@@ -115,7 +115,10 @@
     <ClCompile Include="src\snprintf.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\nginx.c">
+    <ClCompile Include="src\ngx_http_webapp_module.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ngx_modules.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
