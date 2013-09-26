@@ -119,11 +119,11 @@ ssize_t ngx_write_console(ngx_fd_t fd, void *buf, size_t size);
 #define NGX_LINEFEED                CRLF
 
 
-#define ngx_delete_file(name)       DeleteFile((const char *) name)
+#define ngx_delete_file(name)       DeleteFileA((const char *) name)
 #define ngx_delete_file_n           "DeleteFile()"
 
 
-#define ngx_rename_file(o, n)       MoveFile((const char *) o, (const char *) n)
+#define ngx_rename_file(o, n)       MoveFileA((const char *) o, (const char *) n)
 #define ngx_rename_file_n           "MoveFile()"
 ngx_err_t ngx_win32_rename_file(ngx_str_t *from, ngx_str_t *to, ngx_log_t *log);
 
@@ -174,7 +174,7 @@ void ngx_close_file_mapping(ngx_file_mapping_t *fm);
 
 u_char *ngx_realpath(u_char *path, u_char *resolved);
 #define ngx_realpath_n              ""
-#define ngx_getcwd(buf, size)       GetCurrentDirectory(size, (char *) buf)
+#define ngx_getcwd(buf, size)       GetCurrentDirectoryA(size, (char *) buf)
 #define ngx_getcwd_n                "GetCurrentDirectory()"
 #define ngx_path_separator(c)       ((c) == '/' || (c) == '\\')
 

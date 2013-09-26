@@ -18,9 +18,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\core\nginx.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\core\ngx_array.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -180,9 +177,6 @@
     <ClCompile Include="src\event\modules\ngx_iocp_module.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\event\modules\ngx_win32_select_module.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\http\ngx_http.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -319,6 +313,21 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\http\modules\ngx_http_uwsgi_module.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\os\win32\ngx_alloc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\http\ngx_http_upstream.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\event\modules\ngx_win32_select_module.c">
+      <Filter>Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="src\os\win32\ngx_udp_wsarecv.c">
+      <Filter>Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="src\event\ngx_event_acceptex.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

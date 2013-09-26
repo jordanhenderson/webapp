@@ -32,13 +32,9 @@ int main(int argc, char* argv[]) {
 	logger = new Logging(logPath);
 	Gallery* gallery = new Gallery(&params);
 
-	//Create a fastcgi server.
-	Server* server = new Server(gallery);
-	server->setHandler(gallery);
-	server->join();
+
 
 	delete gallery;
-	delete server;
 	delete logger;
 	return 0;
 }

@@ -13,16 +13,14 @@ class ServerHandler {
 protected:
 	int shutdown_handler;
 	std::atomic<int> numInstances;
-	std::atomic<int> count;
 	std::mutex handlerLock; //Mutex to control the allowance of new connection handling.
 	tbb::empty_task* parent_task;
-	tbb::concurrent_bounded_queue<FCGX_Request*> requests;
+	//tbb::concurrent_bounded_queue<FCGX_Request*> requests;
 public:
 	virtual void createWorker() = 0;
 	friend class Server;
 	friend class ServerTask;
 	ServerHandler() {
-		count = 0;
 		shutdown_handler = 0;
 		parent_task = new (tbb::task::allocate_root()) tbb::empty_task;
 		parent_task->set_ref_count(1);
@@ -41,20 +39,6 @@ public:
 	tbb::task* execute();
 private:
 	ServerHandler* _handler;
-};
-
-class Server : public Internal {
-	std::thread* listener_thread;
-	ServerHandler* handler;
-	static void listener(ServerHandler*, int sock);
-public:
-	Server(ServerHandler*);
-	~Server();
-	void join();
-	void setHandler(ServerHandler*);
-	static void run(ServerHandler*, int nThread, int sock);
-
-	
 };
 
 #endif

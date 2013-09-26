@@ -149,9 +149,9 @@ Response Gallery::getPage(const string& uri, SessionStore& session, int publishS
 
 void Gallery::createWorker() {
 	//Create a LUA worker on the current thread/task.
-	LuaParam luaparams[] = {{"requests", &requests}, {"sessions", &sessions}, {"app", this}};
+	//LuaParam luaparams[] = {{"requests", &requests}, {"sessions", &sessions}, {"app", this}};
 	//This call will not return until the lua worker is finished.
-	runScript(SYSTEM_SCRIPT_PROCESS, (LuaParam*)luaparams, 3);
+	//runScript(SYSTEM_SCRIPT_PROCESS, (LuaParam*)luaparams, 3);
 
 }
 

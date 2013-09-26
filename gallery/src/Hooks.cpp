@@ -43,11 +43,12 @@ int Template_SetValue(TemplateDictionary* dict, const char* key, const char* val
 }
 
 //Cleaned up by backend.
+/*
 FCGX_Request* GetNextRequest(tbb::concurrent_bounded_queue<FCGX_Request*>* requests) {
 	FCGX_Request* request = NULL;
 	requests->pop(request);
 	return request;
-}
+}*/
 
 size_t StringLen(const char* str) {
 	if(str == NULL) return NULL;
@@ -73,7 +74,7 @@ const char* GenCookie(const char* name, const char* value, int days, std::vector
 const char* GetSessionID(SessionStore* session) {
 	return session->sessionid.c_str();
 }
-
+/*
 std::vector<void*>* StartRequestHandler(FCGX_Request* request) {
 	std::vector<void*>* gc = new std::vector<void*>();
 	gc->push_back(request);
@@ -81,9 +82,6 @@ std::vector<void*>* StartRequestHandler(FCGX_Request* request) {
 }
 
 void FinishRequestHandler(std::vector<void*>* handler) {
-	//Clean up the request (first and foremost)
-	FCGX_Request* request = (FCGX_Request*) handler->at(0);
-	FCGX_Finish_r(request);
 	free(request);
 
 	for(std::vector<void*>::iterator it = handler->begin() + 1; it != handler->end(); ++it) {
@@ -91,7 +89,7 @@ void FinishRequestHandler(std::vector<void*>* handler) {
 	}
 	delete handler;
 }
-
+*/
 TemplateDictionary* GetTemplate(Gallery* gallery, const char* page) {
 	if(gallery != NULL) return gallery->getTemplate(page);
 	else return NULL;
