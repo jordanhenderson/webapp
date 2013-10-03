@@ -327,5 +327,14 @@
     <ClCompile Include="src\event\ngx_event_acceptex.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\ngx_modules.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\nginx.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ngx_http_webapp_module.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

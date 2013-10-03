@@ -283,6 +283,7 @@
     <ClCompile Include="src\tbb_main.cpp" />
     <ClCompile Include="src\tbb_misc.cpp" />
     <ClCompile Include="src\tbb_misc_ex.cpp" />
+    <ClCompile Include="src\tbb_thread.cpp" />
   </ItemGroup>
   <ItemGroup>
     <MASM Include="src\ia32-masm\atomic_support.asm">
