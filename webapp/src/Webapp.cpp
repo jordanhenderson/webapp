@@ -62,10 +62,14 @@ void Webapp::accept_message() {
 	ip::tcp::socket* s = new ip::tcp::socket(svc);
 	acceptor->async_accept(*s, [this, s](const asio::error_code& error) {
 		asio::streambuf buf;
+		try {
+			asio::read_until(*s, buf, "\r\n\r\n");
+		} catch(std::system_error er) {
 
-		asio::write(*s, asio::buffer("HTTP/1.0 200 OK\r\nContent-type: text/html\r\nStatus: 404 Not Found\r\n\r\nThe page you requested cannot be found (404)."));
-		while(1);
+		}
+		asio::write(*s, asio::buffer("HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\nDERPADERP."));
 		accept_message();
+		s->close();
 	});
 }
 

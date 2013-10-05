@@ -159,7 +159,8 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>src/core;src/event;src/event/modules;src/http/modules;src/http;src/mail;src/mysql;src/os/win32;include;../zlib/include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PreprocessorDefinitions>ASIO_MSVC;ASIO_WINDOWS;ASIO_STANDALONE;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>
+      </PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
