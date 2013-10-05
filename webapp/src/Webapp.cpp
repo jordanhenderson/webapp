@@ -61,11 +61,10 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates
 void Webapp::accept_message() {
 	ip::tcp::socket* s = new ip::tcp::socket(svc);
 	acceptor->async_accept(*s, [this, s](const asio::error_code& error) {
-		std::vector<char> reply(s->available());
-		size_t reply_length = asio::read(*s, asio::buffer(reply));
-		process_message(reply);
-		asio::write(*s, asio::buffer("OHARRO NGINX!"));
-		delete s;
+		asio::streambuf buf;
+
+		asio::write(*s, asio::buffer("HTTP/1.0 200 OK\r\nContent-type: text/html\r\nStatus: 404 Not Found\r\n\r\nThe page you requested cannot be found (404)."));
+		while(1);
 		accept_message();
 	});
 }
