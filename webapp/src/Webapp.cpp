@@ -1,4 +1,4 @@
-#include <asio.hpp>
+
 #include "Logging.h"
 #include "Webapp.h"
 #include "Image.h"
@@ -7,12 +7,57 @@
 #include "stringbuffer.h"
 #include <sha.h>
 #include <tbb/task_scheduler_init.h>
-
+#include <tbb/task.h>
 
 using namespace std;
 using namespace ctemplate;
 using namespace asio;
 using namespace asio::ip;
+using namespace tbb;
+
+task* WebappTask::execute() {
+	_handler->numInstances++;
+	_handler->createWorker();
+	_handler->numInstances--;
+	return NULL;	
+	
+}
+
+void Webapp::createWorker() {
+	LuaParam _v[] = {{"sessions", &sessions}, {"requests", &requests}, {"app", this}};
+	refresh_scripts();
+	runScript(SYSTEM_SCRIPT_PROCESS, _v, 3);
+}
+
+//Run scripts based on their index (system scripts; see Schema.h)
+void Webapp::runScript(int index, LuaParam* params, int nArgs) {
+	if(index < systemScripts.size()) {
+		LuaChunk script = systemScripts.at(index);
+		runScript(&script, params, nArgs);
+	}
+}
+
+//Run script given a LuaChunk. Called by public runScript methods.
+void Webapp::runScript(LuaChunk* c, LuaParam* params, int nArgs) {
+	int bytecode_len = c->bytecode.length();
+	if(bytecode_len > 0) {
+		lua_State* L = luaL_newstate();
+		luaL_openlibs(L);
+
+		luaL_loadbuffer(L, c->bytecode.c_str(), bytecode_len, c->filename.c_str());
+		if(params != NULL) {
+			for(int i = 0; i < nArgs; i++) {
+				LuaParam* p = params + i;
+				lua_pushlightuserdata(L, p->ptr);
+				lua_setglobal(L, p->name);
+			}
+		}
+		if(lua_pcall(L, 0, 0, 0) != 0) {
+			printf("Error: %s\n", lua_tostring(L, -1));
+		}
+		lua_close(L);
+	}
+}
 
 Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates(""),
 										params(params),
@@ -34,10 +79,10 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates
 	
 	refresh_templates();
 
+	refresh_scripts();
+
 	//Create function map.
 	APIMAP(functionMap);
-
-	systemScripts.reserve(SYSTEM_SCRIPT_COUNT);
 
 	queue_process_thread = std::thread([this]() {
 		while(!shutdown_handler) {
@@ -58,23 +103,65 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates
 	svc.run();
 }
 
-void Webapp::accept_message() {
-	ip::tcp::socket* s = new ip::tcp::socket(svc);
-	acceptor->async_accept(*s, [this, s](const asio::error_code& error) {
-		asio::streambuf buf;
-		try {
-			asio::read_until(*s, buf, "\r\n\r\n");
-		} catch(std::system_error er) {
+//This function asynchronously reads chunks of data from the socket.
+//Uses a basic state machine.
+void Webapp::read_some(ip::tcp::socket* s, Request* r) {
+	s->async_read_some(asio::buffer(*r->v),
+		[this, s, r](const asio::error_code& error, std::size_t bytes_transferred) {
+			std::vector<char>* v = r->v;
+			r->headers = v->data();
+			//We use this as a state machine to repeatedly read in and process the request (non-blocking).
+			if(r->uri.data == NULL && r->length + bytes_transferred >= PROTOCOL_LENGTH_URI && r->state == 0) {
+				//STATE: Read URI LEN
+				r->method = ntohs(*(int*)r->headers);
+				r->uri.len = ntohs(*(int*)(r->headers + PROTOCOL_LENGTH_METHOD));
+				r->state = STATE_READ_URI; //move to next state, reading the URI.
+			} else if (r->state == STATE_READ_URI) {
+				//State: Read URI
+				r->uri.data = (const char*) malloc(r->uri.len + 1);
+				cmemcpy(r->uri.data, r->headers + PROTOCOL_LENGTH_URI, r->uri.len);
+				r->state = STATE_READ_COOKIES;
+			} else if(r->state == STATE_READ_COOKIES) {
 
-		}
-		asio::write(*s, asio::buffer("HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\nDERPADERP."));
-		accept_message();
-		s->close();
+			} else if (r->state == STATE_FINAL) {
+				//Finished reading data. Create lua handler.
+				if(shutdown_handler) return;
+				if(numInstances < tbb::task_scheduler_init::default_num_threads()) {	
+					WebappTask* task = new (task::allocate_additional_child_of(*parent_task)) 
+						WebappTask(this);
+					parent_task->enqueue(*task);
+				} 
+
+				requests.push(r);
+				//State machine finished.
+				return;
+			} else if(r->state != STATE_FINAL) {
+				//Something has gone wrong. State not entered.
+				exit(1);
+			}
+			r->length += bytes_transferred;
+			//Final statement, we haven't finished reading data. Try again.
+			if(r->state != STATE_FINAL) read_some(s, r);
+
 	});
 }
 
-void Webapp::process_message(std::vector<char>& msg) {
+void Webapp::accept_message() {
+	ip::tcp::socket* s = new ip::tcp::socket(svc);
+	acceptor->async_accept(*s, [this, s](const asio::error_code& error) {
+		
 
+		Request* r = new Request();
+		r->v = new std::vector<char>(512);
+		try {
+			read_some(s, r);
+			accept_message();
+		} catch(std::system_error er) {
+			accept_message();
+			s->close();
+			delete s;
+		}
+	});
 }
 
 //PRODUCER
@@ -92,14 +179,6 @@ Webapp::~Webapp() {
 	processQueue.abort();
 }
 
-void Webapp::createWorker() {
-	//Create a LUA worker on the current thread/task.
-	//LuaParam luaparams[] = {{"requests", &requests}, {"sessions", &sessions}, {"app", this}};
-	//This call will not return until the lua worker is finished.
-	//runScript(SYSTEM_SCRIPT_PROCESS, (LuaParam*)luaparams, 3);
-
-}
-
 TemplateDictionary* Webapp::getTemplate(const char* page) {
 	if(contains(contentList, page)) {
 		TemplateDictionary *d = contentTemplates.MakeCopy("");
@@ -112,63 +191,6 @@ TemplateDictionary* Webapp::getTemplate(const char* page) {
 		return d;
 	}
 	return NULL;
-}
-
-int Webapp::genThumb(const char* file, double shortmax, double longmax) {
-	string storepath = database.select_single(SELECT_SYSTEM("store_path"));
-	string thumbspath = database.select_single(SELECT_SYSTEM("thumbs_path"));
-	string imagepath = basepath + '/' + storepath + '/' + file;
-	string thumbpath = basepath + '/' + thumbspath + '/' + file;
-	
-	//Check if thumb already exists.
-	if(FileSystem::Open(thumbpath))
-		return ERROR_SUCCESS;
-
-	Image image(imagepath);
-	int err = image.GetLastError();
-	if(image.GetLastError() != ERROR_SUCCESS){
-		return err;
-	}
-	//Calculate correct size (keeping aspect ratio) to shrink image to.
-	double wRatio = 1;
-	double hRatio = 1;
-	double width = image.getWidth();
-	double height = image.getHeight();
-	if(width >= height) {
-		if(width > longmax || height > shortmax) {
-			wRatio = longmax / width;
-			hRatio = shortmax / height;
-		}
-	}
-	else {
-		if(height > longmax || width > shortmax) {
-			wRatio = shortmax / width;
-			hRatio = longmax / height;
-		}
-	}
-
-	double ratio = min(wRatio, hRatio);
-	double newWidth = width * ratio;
-	double newHeight = height * ratio;
-
-
-    image.resize(newWidth, newHeight);
-	image.save(thumbpath);
-
-	if(!FileSystem::Open(thumbpath)) {
-		logger->printf("An error occured generating %s.", thumbpath.c_str());
-	}
-
-	return ERROR_SUCCESS;
-}
-
-int Webapp::hasAlbums() {
-	string albumsStr = database.select_single(SELECT_ALBUM_COUNT, NULL, "0");
-	int nAlbums = stoi(albumsStr);
-	if(nAlbums == 0) {
-		return 0;
-	}
-	return 1;
 }
 
 void Webapp::refresh_templates() {
@@ -232,46 +254,57 @@ void Webapp::refresh_templates() {
 	}
 }
 
+//Refresh the LUA plugins
+void Webapp::refresh_scripts() {
+	loadedScripts.clear();
+	systemScripts.clear();
 
-void Webapp::addFile(const string& file, int nGenThumbs, const string& thumbspath, const string& path, const string& date, const string& albumID) {
-	string thumbID;
-	//Generate thumb.
-	if(nGenThumbs) {
-		FileSystem::MakePath(basepath + '/' + thumbspath + '/' + path + '/' + file);
-		if(genThumb((path + '/' + file).c_str(), 200, 200) == ERROR_SUCCESS) {
-			QueryRow params;
-			params.push_back(path + '/' + file);
-			int nThumbID = database.exec(INSERT_THUMB, &params);
-			if(nThumbID > 0) {
-				thumbID = to_string(nThumbID);
+	string basepath = this->basepath + '/';
+	string pluginpath = basepath + "plugins/";
+	const char* system_script_names[] = SYSTEM_SCRIPT_FILENAMES;
+
+	int system_script_count = sizeof(system_script_names) / sizeof(char*);
+	for(int i = 0; i < system_script_count; i++) {
+		LuaChunk empty(system_script_names[i]);
+		systemScripts.push_back(empty);
+	}
+
+	for(string s: FileSystem::GetFiles(pluginpath, "", 1)) {
+		LuaChunk b(s);
+		lua_State* L = luaL_newstate();
+		if(L != NULL) {
+			luaL_openlibs(L);
+
+#ifdef _DEBUG
+			if(luaL_loadfile(L, (pluginpath + s).c_str())) {
+				printf ("%s\n", lua_tostring (L, -1));
+				lua_pop (L, 1);
+			}
+#else
+			luaL_loadfile(L, (pluginpath + s).c_str());
+#endif
+
+#ifdef _DEBUG
+			if(lua_dump(L, LuaWriter, &b, 0)) {
+				printf ("%s\n", lua_tostring (L, -1));
+				lua_pop (L, 1);
+			}
+#else
+			lua_dump(L, LuaWriter, &b, 1);
+#endif
+			lua_close(L);
+			//Bytecode loaded. Update empty entries.
+			loadedScripts.push_back(b);
+			for(int i = 0; i < system_script_count; i++) {
+				//Map system scripts
+				if(s == system_script_names[i]) systemScripts.at(i) = b;
 			}
 		}
 	}
-
-	//Insert file 
-	QueryRow params;
-	params.push_back(file);
-	params.push_back(file);
-	params.push_back(date);
-	int fileID;
-	if(!thumbID.empty()) {
-		params.push_back(thumbID);
-		fileID = database.exec(INSERT_FILE, &params);
-	} else {
-		fileID = database.exec(INSERT_FILE_NO_THUMB, &params);
-	}
-	//Add entry into albumFiles
-	QueryRow fparams;
-	fparams.push_back(albumID);
-	fparams.push_back(to_string(fileID));
-	database.exec(INSERT_ALBUM_FILE, &fparams);
 }
 
-//Gallery specific functionality
-int Webapp::getDuplicates( string& name, string& path ) {
-	QueryRow params;
-	params.push_back(name);
-	params.push_back(path);
-	string dupAlbumStr = database.select_single(SELECT_DUPLICATE_ALBUM_COUNT, &params);
-	return stoi(dupAlbumStr);
+int Webapp::LuaWriter(lua_State* L, const void* p, size_t sz, void* ud) {
+	LuaChunk* b = (LuaChunk*)ud;
+	b->bytecode.append((const char*)p, sz);
+	return 0;
 }

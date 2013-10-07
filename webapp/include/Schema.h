@@ -114,4 +114,13 @@ COMMIT;"
 	m["updateAlbum"] = &Webapp::updateAlbum; \
 	m["updateFile"] = &Webapp::updateFile; \
 	m["logout"] = &Webapp::logout;
+
+
+//PROTOCOL SCHEMA DEFINITIONS
+#define PROTOCOL_LENGTH_METHOD 4
+#define PROTOCOL_LENGTH_URI 4 + PROTOCOL_LENGTH_METHOD
+
+#define STATE_READ_URI 1
+#define STATE_READ_COOKIES 2
+#define STATE_FINAL 3
 #endif

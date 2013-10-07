@@ -43,12 +43,13 @@ int Template_SetValue(TemplateDictionary* dict, const char* key, const char* val
 }
 
 //Cleaned up by backend.
-/*
-FCGX_Request* GetNextRequest(tbb::concurrent_bounded_queue<FCGX_Request*>* requests) {
-	FCGX_Request* request = NULL;
+Request* GetNextRequest(tbb::concurrent_bounded_queue<Request*>* requests) {
+	Request* request = NULL;
 	requests->pop(request);
 	return request;
-}*/
+
+}
+
 
 size_t StringLen(const char* str) {
 	if(str == NULL) return NULL;
@@ -74,14 +75,15 @@ const char* GenCookie(const char* name, const char* value, int days, std::vector
 const char* GetSessionID(SessionStore* session) {
 	return session->sessionid.c_str();
 }
-/*
-std::vector<void*>* StartRequestHandler(FCGX_Request* request) {
+
+std::vector<void*>* StartRequestHandler(Request* request) {
 	std::vector<void*>* gc = new std::vector<void*>();
 	gc->push_back(request);
 	return gc;
 }
 
 void FinishRequestHandler(std::vector<void*>* handler) {
+	Request* request = (Request*)handler->at(0);
 	free(request);
 
 	for(std::vector<void*>::iterator it = handler->begin() + 1; it != handler->end(); ++it) {
@@ -89,7 +91,7 @@ void FinishRequestHandler(std::vector<void*>* handler) {
 	}
 	delete handler;
 }
-*/
+
 TemplateDictionary* GetTemplate(Webapp* gallery, const char* page) {
 	if(gallery != NULL) return gallery->getTemplate(page);
 	else return NULL;
@@ -112,4 +114,15 @@ const char* GetParam(Webapp* gallery, const char* param) {
 	const string* val = &(gallery->params->get(param));
 	if(val->empty()) return NULL;
 	else return val->c_str();
+}
+
+int GetScript(Webapp* gallery, const char* filename, script_t* out) {
+	for(LuaChunk c: gallery->loadedScripts) {
+		if(c.filename == filename) {
+			out->data = c.bytecode.c_str();
+			out->len = c.bytecode.size();
+			return 1;
+		}
+	}
+	return 0;
 }

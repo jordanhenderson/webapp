@@ -458,3 +458,105 @@ int Webapp::setThumb(RequestVars& vars, Response& r, SessionStore&) {
 }
 
 
+void Webapp::addFile(const string& file, int nGenThumbs, const string& thumbspath, const string& path, const string& date, const string& albumID) {
+	string thumbID;
+	//Generate thumb.
+	if(nGenThumbs) {
+		FileSystem::MakePath(basepath + '/' + thumbspath + '/' + path + '/' + file);
+		if(genThumb((path + '/' + file).c_str(), 200, 200) == ERROR_SUCCESS) {
+			QueryRow params;
+			params.push_back(path + '/' + file);
+			int nThumbID = database.exec(INSERT_THUMB, &params);
+			if(nThumbID > 0) {
+				thumbID = to_string(nThumbID);
+			}
+		}
+	}
+
+	//Insert file 
+	QueryRow params;
+	params.push_back(file);
+	params.push_back(file);
+	params.push_back(date);
+	int fileID;
+	if(!thumbID.empty()) {
+		params.push_back(thumbID);
+		fileID = database.exec(INSERT_FILE, &params);
+	} else {
+		fileID = database.exec(INSERT_FILE_NO_THUMB, &params);
+	}
+	//Add entry into albumFiles
+	QueryRow fparams;
+	fparams.push_back(albumID);
+	fparams.push_back(to_string(fileID));
+	database.exec(INSERT_ALBUM_FILE, &fparams);
+}
+
+//Gallery specific functionality
+int Webapp::getDuplicates( string& name, string& path ) {
+	QueryRow params;
+	params.push_back(name);
+	params.push_back(path);
+	string dupAlbumStr = database.select_single(SELECT_DUPLICATE_ALBUM_COUNT, &params);
+	return stoi(dupAlbumStr);
+}
+
+
+int Webapp::hasAlbums() {
+	string albumsStr = database.select_single(SELECT_ALBUM_COUNT, NULL, "0");
+	int nAlbums = stoi(albumsStr);
+	if(nAlbums == 0) {
+		return 0;
+	}
+	return 1;
+}
+
+
+
+int Webapp::genThumb(const char* file, double shortmax, double longmax) {
+	string storepath = database.select_single(SELECT_SYSTEM("store_path"));
+	string thumbspath = database.select_single(SELECT_SYSTEM("thumbs_path"));
+	string imagepath = basepath + '/' + storepath + '/' + file;
+	string thumbpath = basepath + '/' + thumbspath + '/' + file;
+
+	//Check if thumb already exists.
+	if(FileSystem::Open(thumbpath))
+		return ERROR_SUCCESS;
+
+	Image image(imagepath);
+	int err = image.GetLastError();
+	if(image.GetLastError() != ERROR_SUCCESS){
+		return err;
+	}
+	//Calculate correct size (keeping aspect ratio) to shrink image to.
+	double wRatio = 1;
+	double hRatio = 1;
+	double width = image.getWidth();
+	double height = image.getHeight();
+	if(width >= height) {
+		if(width > longmax || height > shortmax) {
+			wRatio = longmax / width;
+			hRatio = shortmax / height;
+		}
+	}
+	else {
+		if(height > longmax || width > shortmax) {
+			wRatio = shortmax / width;
+			hRatio = longmax / height;
+		}
+	}
+
+	double ratio = min(wRatio, hRatio);
+	double newWidth = width * ratio;
+	double newHeight = height * ratio;
+
+
+	image.resize(newWidth, newHeight);
+	image.save(thumbpath);
+
+	if(!FileSystem::Open(thumbpath)) {
+		logger->printf("An error occured generating %s.", thumbpath.c_str());
+	}
+
+	return ERROR_SUCCESS;
+}

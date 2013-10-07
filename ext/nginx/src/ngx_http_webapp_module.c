@@ -58,24 +58,32 @@ ngx_module_t  ngx_http_webapp_module = {
     NGX_MODULE_V1_PADDING
 };
 
-static unsigned char out_buf[255];
-static ssize_t read_bytes = 0;
-static ssize_t written_bytes = 0;
+typedef struct {
+	ngx_http_request_t* r;
+	//State machine vars.
+	int uri_written;
+	int read_bytes;
+	int written_bytes;
+	unsigned char out_buf[255];
+	
+} webapp_request_t;
 
 static void conn_read(ngx_event_t *ev) {
-	if(!ev->timedout && written_bytes > 8) {
-		ssize_t n = ngx_recv(ev->data, out_buf+read_bytes, 1);
-		ngx_connection_t* c = ev->data;
-		ngx_http_request_t* r = c->data;
-		if(n > 0) read_bytes += n;
-		if(n == -1)  {
+	ngx_connection_t* c = ev->data;
+	webapp_request_t* wr = c->data;
+	ngx_http_request_t* r = wr->r;
+
+	if(!ev->timedout && wr->uri_written) {
+		//TODO: output buffer.
+		ssize_t n = ngx_recv(c, wr->out_buf+wr->read_bytes, 255);
+
+		if(n > 0) wr->read_bytes += n;
+		else if(n == -1)  {
 			ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
-			ngx_close_connection(ev->data);
-			read_bytes = written_bytes = 0;
+			ngx_close_connection(c);
+			wr->read_bytes = wr->written_bytes = wr->uri_written = 0;
 		}
-
-
-		if(read_bytes >= 40 && n == 0) {
+		else if(wr->read_bytes >= 40 && n == 0) {
 			ngx_buf_t    *b;
 			ngx_chain_t   out;
 
@@ -85,8 +93,8 @@ static void conn_read(ngx_event_t *ev) {
 					"Failed to allocate response buffer.");
 			}
 
-			b->pos = out_buf; /* first position in memory of the data */
-			b->last = out_buf + read_bytes; /* last position */
+			b->pos = wr->out_buf; /* first position in memory of the data */
+			b->last =  wr->out_buf + wr->read_bytes; /* last position */
 
 			b->memory = 1; /* content is in read-only memory */
 			/* (i.e., filters should copy it rather than rewrite in place) */
@@ -100,26 +108,75 @@ static void conn_read(ngx_event_t *ev) {
 
 			ngx_http_output_filter(r, &out);
 			ngx_http_finalize_request(r, NGX_OK);
-			ngx_close_connection(ev->data);
+
+			ngx_close_connection(c);
 			ev->complete = 1;
-			read_bytes = written_bytes = 0;
+			wr->read_bytes = wr->uri_written = wr->written_bytes = 0;
 			
 
 		}
-	} else {
-		ngx_connection_t* c = ev->data;
-		ngx_http_request_t* r = c->data;
-		ngx_http_finalize_request(r, NGX_OK);
-		ngx_close_connection(ev->data);
-		read_bytes = written_bytes = 0;
+	} else if(ev->timedout) {
+		ev->complete = 1;
+		wr->read_bytes = wr->uri_written = wr->written_bytes = 0;
 	}
 }
+#define STRING_VARS 2
+#define INT_INTERVAL(i) sizeof(int)*i
+//URI|COOKIES|HOST|USERAGENT|CONTENT_LENGTH
 
 static void conn_write(ngx_event_t *ev) {
-	if(!ev->timedout && !ev->complete && written_bytes == 0) {
-		u_char buf[] = "derp\r\n\r\n";
-		written_bytes += ngx_send(ev->data, (u_char*)&buf, sizeof(buf));
+	ssize_t bytes;
+	ngx_str_t data_out;
+	ngx_connection_t* c = ev->data;
+	webapp_request_t* wr = c->data;
+	ngx_http_request_t* r = wr->r;
+	if(!ev->timedout) {
+		if(wr->written_bytes == 0) {
+			data_out.data = ngx_palloc(r->pool, STRING_VARS * sizeof(int));
+			//Collect/write size information for client retrieval.
+			if(r->method == NGX_HTTP_GET || r->method == NGX_HTTP_POST) {
+				*(int*)(data_out.data) = htons(r->uri.len);
+				//*(int*)(data_out.data + INT_INTERVAL(1)) = htons(r->cookies.len);
+
+				data_out.len = STRING_VARS * sizeof(int);
+			} else {
+				//Bad method type. Don't process.
+				goto failed;
+			}
+		} else if(wr->written_bytes == STRING_VARS * sizeof(int)) {
+			//write uri_len, uri
+			ngx_copy(data_out.data+4, r->uri.data, r->uri.len);
+			data_out.data[r->uri.len + 4] = '\0';
+			data_out.len = r->uri.len + 1 + sizeof(int);
+			wr->uri_written = 1;
+		} 
+		else {
+			ev->complete = 1;
+			return;
+		}
+		
+		bytes = ngx_send(c, data_out.data, data_out.len);
+		if(bytes < 0) {
+			ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
+			ngx_close_connection(c);
+		} else {
+			wr->written_bytes+=bytes;
+		}
+		return;
+
+	} else {
+		ev->complete = 1;
+		wr->read_bytes  = wr->uri_written = wr->written_bytes = 0;
+		ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
+		ngx_close_connection(ev->data);
 	}
+	return;
+
+failed:
+	ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
+	ngx_close_connection(c);
+	ev->complete = 1;
+	return;
 }
 
 static ngx_int_t
@@ -127,9 +184,12 @@ ngx_http_webapp_content_handler(ngx_http_request_t *r) {
 	if(r->err_status == 0) {
 	ngx_connection_t* conn;
 	ngx_peer_connection_t* pconn;
+	
 	ngx_http_webapp_loc_conf_t* wlcf = ngx_http_get_module_loc_conf(r, ngx_http_webapp_module); 
+	webapp_request_t* webapp = ngx_palloc(r->pool, sizeof(webapp_request_t));
 
 	pconn = ngx_palloc(r->pool, sizeof(ngx_peer_connection_t));
+
 	pconn->log = r->connection->log;
 	pconn->name = &wlcf->url->url;
 	pconn->sockaddr = (struct sockaddr*)wlcf->url->sockaddr;
@@ -140,12 +200,17 @@ ngx_http_webapp_content_handler(ngx_http_request_t *r) {
 	//Create the peer connection.
 	ngx_event_connect_peer(pconn);
 	conn = pconn->connection;
+
+	//Set up the webapp structure.
+	memset(webapp, 0, sizeof(webapp_request_t));
+	webapp->r = r;
+
 	//assign the request to the peer.
-	conn->data = r;
+	conn->data = webapp;
 	conn->read->handler = conn_read;
 	conn->write->handler = conn_write;
-	ngx_add_timer(conn->read, 60000);
-	ngx_add_timer(conn->write, 60000);
+	ngx_add_timer(conn->read, 2000);
+	ngx_add_timer(conn->write, 2000);
 
 	//Make our request depend on a (sub) connection (backend peer).
 	r->main->count++;

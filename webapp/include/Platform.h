@@ -68,6 +68,7 @@ int rpl_asprintf(char **, const char *, ...);
 #define HTML_404 "Status: 404 Not Found\r\n\r\nThe page you requested cannot be found (404)."
 #define XSTR(a) STR(a)
 #define STR(a) #a
+#define cmemcpy(src,dest,size) memcpy((char*)src, (char*)dest, size)
 
 class Internal {
 public:
@@ -124,7 +125,5 @@ void tokenize(const std::string& str, ContainerT& tokens,
 const char* date_format(const char* fmt, const size_t datesize, time_t* t=NULL, int gmt=0);
 std::string url_decode(const std::string& src);
 void add_days(time_t& t, int days);
-
-typedef void* FCGX_Request;
 #endif
 

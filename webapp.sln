@@ -72,9 +72,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "minilua", "ext\luajit\minilua.vcxproj", "{BCEB2DE5-346C-4E4A-9816-E8BDCA3079E8}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nginx", "ext\nginx\nginx.vcxproj", "{20675957-CE52-44AE-99A9-F7056463B0C8}"
-	ProjectSection(ProjectDependencies) = postProject
-		{FEB2AD73-A264-450A-97A3-E1810A14E08B} = {FEB2AD73-A264-450A-97A3-E1810A14E08B}
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

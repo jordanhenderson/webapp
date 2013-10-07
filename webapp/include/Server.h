@@ -10,6 +10,23 @@ class Webapp;
 #include <atomic>
 #include <tbb/task.h>
 #include <tbb/concurrent_queue.h>
+#include <asio.hpp>
+
+struct webapp_str_t {
+	const char* data;
+	int len;
+};
+
+struct Request {
+	asio::ip::tcp::socket* socket;
+	std::vector<char>* v;
+	const char* headers;
+	int length;
+	int method;
+	webapp_str_t uri;
+	//Event vars.
+	int state;
+};
 
 class ServerHandler {
 protected:
@@ -17,11 +34,11 @@ protected:
 	std::atomic<int> numInstances;
 	std::mutex handlerLock; //Mutex to control the allowance of new connection handling.
 	tbb::empty_task* parent_task;
-	//tbb::concurrent_bounded_queue<FCGX_Request*> requests;
+	tbb::concurrent_bounded_queue<Request*> requests;
 public:
 	virtual void createWorker() = 0;
 	friend class Server;
-	friend class ServerTask;
+	friend class WebappTask;
 	ServerHandler() {
 		shutdown_handler = 0;
 		parent_task = new (tbb::task::allocate_root()) tbb::empty_task;
@@ -31,16 +48,6 @@ public:
 		parent_task->wait_for_all();
 		parent_task->destroy(*parent_task);
 	}
-};
-
-class ServerTask : public tbb::task {
-public: 
-	ServerTask(ServerHandler* handler)
-		: _handler(handler)
-	{};
-	tbb::task* execute();
-private:
-	ServerHandler* _handler;
 };
 
 #endif
