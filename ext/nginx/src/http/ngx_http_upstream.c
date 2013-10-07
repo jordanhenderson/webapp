@@ -1711,10 +1711,6 @@ ngx_http_upstream_process_header(ngx_http_request_t *r, ngx_http_upstream_t *u)
 
     if (u->headers_in.status_n >= NGX_HTTP_SPECIAL_RESPONSE) {
 
-        if (r->subrequest_in_memory) {
-            u->buffer.last = u->buffer.pos;
-        }
-
         if (ngx_http_upstream_test_next(r, u) == NGX_OK) {
             return;
         }
@@ -3464,6 +3460,12 @@ ngx_http_upstream_finalize_request(ngx_http_request_t *r,
 
 #endif
 
+    if (r->subrequest_in_memory
+        && u->headers_in.status_n >= NGX_HTTP_SPECIAL_RESPONSE)
+    {
+        u->buffer.last = u->buffer.pos;
+    }
+
     if (rc == NGX_DECLINED) {
         return;
     }
@@ -4699,7 +4701,7 @@ ngx_http_upstream_server(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             continue;
         }
 
-        if (ngx_strncmp(value[i].data, "backup", 6) == 0) {
+        if (ngx_strcmp(value[i].data, "backup") == 0) {
 
             if (!(uscf->flags & NGX_HTTP_UPSTREAM_BACKUP)) {
                 goto invalid;
@@ -4710,7 +4712,7 @@ ngx_http_upstream_server(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             continue;
         }
 
-        if (ngx_strncmp(value[i].data, "down", 4) == 0) {
+        if (ngx_strcmp(value[i].data, "down") == 0) {
 
             if (!(uscf->flags & NGX_HTTP_UPSTREAM_DOWN)) {
                 goto invalid;
