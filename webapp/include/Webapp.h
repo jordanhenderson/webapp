@@ -124,7 +124,7 @@ private:
 	void accept_message();
 
 	asio::io_service& svc;
-	void read_some(asio::ip::tcp::socket* s, Request* r);
+	void read_some(Request* r);
 
 //Gallery specific calls
 	int genThumb(const char* file, double shortmax, double longmax);

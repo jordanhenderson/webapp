@@ -24,10 +24,16 @@ struct Request {
 	int length;
 	int method;
 	webapp_str_t uri;
+	webapp_str_t host;
+	webapp_str_t user_agent;
+	webapp_str_t post_content;
+	webapp_str_t cookies;
 	//Event vars.
 	int state;
+	int read_len;
 };
 
+#define INT_INTERVAL(i) sizeof(int)*i
 class ServerHandler {
 protected:
 	int shutdown_handler;

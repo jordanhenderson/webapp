@@ -120,9 +120,12 @@ static void conn_read(ngx_event_t *ev) {
 		wr->read_bytes = wr->uri_written = wr->written_bytes = 0;
 	}
 }
-#define STRING_VARS 2
+#define STRING_VARS 6
 #define INT_INTERVAL(i) sizeof(int)*i
-//URI|COOKIES|HOST|USERAGENT|CONTENT_LENGTH
+#define HEADER_HASH_COOKIE 2940209764
+
+//URI|HOST|USERAGENT|CONTENT_LENGTH|COOKIES
+//SIZEINFO|METHOD|
 
 static void conn_write(ngx_event_t *ev) {
 	ssize_t bytes;
@@ -130,12 +133,31 @@ static void conn_write(ngx_event_t *ev) {
 	ngx_connection_t* c = ev->data;
 	webapp_request_t* wr = c->data;
 	ngx_http_request_t* r = wr->r;
+	ngx_http_core_main_conf_t* cmcf = ngx_http_get_module_main_conf(r, ngx_http_core_module);
 	if(!ev->timedout) {
 		if(wr->written_bytes == 0) {
 			data_out.data = ngx_palloc(r->pool, STRING_VARS * sizeof(int));
 			//Collect/write size information for client retrieval.
 			if(r->method == NGX_HTTP_GET || r->method == NGX_HTTP_POST) {
-				*(int*)(data_out.data) = htons(r->uri.len);
+				int content_len = 0;
+				int cookie_len = 0;
+				int agent_len = 0;
+				if(r->headers_in.content_length != NULL)
+					content_len = htons(atoi((const char*)r->headers_in.content_length->value.data));
+				if(r->headers_in.cookies.elts != NULL)
+					cookie_len = ((ngx_hash_elt_t*)ngx_hash_find(&cmcf->headers_in_hash, HEADER_HASH_COOKIE, (u_char*)"cookie", 6))->len - 8;
+				if(r->headers_in.user_agent != NULL)
+					agent_len = r->headers_in.user_agent->value.len;
+				//Start building the size information.
+				*(int*)(data_out.data) = htons(r->uri.len); //URI len
+				*(int*)(data_out.data + INT_INTERVAL(1)) = htons(c->addr_text.len); //HOST len
+				//TODO: Parse cookie array properly (send raw array chunks to upstream rather than unparsed headers).
+				//ngx_hash_t
+				*(int*)(data_out.data + INT_INTERVAL(2)) = htons(agent_len); //User agent length
+
+				*(int*)(data_out.data + INT_INTERVAL(3)) = content_len; //Content length
+				*(int*)(data_out.data + INT_INTERVAL(4)) = htons(cookie_len); //COOKIES length
+				*(int*)(data_out.data + INT_INTERVAL(5)) = htons(r->method); //HTTP Method
 				//*(int*)(data_out.data + INT_INTERVAL(1)) = htons(r->cookies.len);
 
 				data_out.len = STRING_VARS * sizeof(int);
@@ -144,13 +166,11 @@ static void conn_write(ngx_event_t *ev) {
 				goto failed;
 			}
 		} else if(wr->written_bytes == STRING_VARS * sizeof(int)) {
-			//write uri_len, uri
-			ngx_copy(data_out.data+4, r->uri.data, r->uri.len);
-			data_out.data[r->uri.len + 4] = '\0';
-			data_out.len = r->uri.len + 1 + sizeof(int);
+			//write uri
+			data_out.data = r->uri.data;
+			data_out.len = r->uri.len + 1;
 			wr->uri_written = 1;
-		} 
-		else {
+		} else {
 			ev->complete = 1;
 			return;
 		}
@@ -209,8 +229,8 @@ ngx_http_webapp_content_handler(ngx_http_request_t *r) {
 	conn->data = webapp;
 	conn->read->handler = conn_read;
 	conn->write->handler = conn_write;
-	ngx_add_timer(conn->read, 2000);
-	ngx_add_timer(conn->write, 2000);
+	ngx_add_timer(conn->read, 50000);
+	ngx_add_timer(conn->write, 50000);
 
 	//Make our request depend on a (sub) connection (backend peer).
 	r->main->count++;

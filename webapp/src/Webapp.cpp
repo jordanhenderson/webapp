@@ -105,24 +105,30 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates
 
 //This function asynchronously reads chunks of data from the socket.
 //Uses a basic state machine.
-void Webapp::read_some(ip::tcp::socket* s, Request* r) {
-	s->async_read_some(asio::buffer(*r->v),
-		[this, s, r](const asio::error_code& error, std::size_t bytes_transferred) {
+void Webapp::read_some(Request* r) {
+	r->socket->async_read_some(asio::buffer(*r->v),
+		[this, r](const asio::error_code& error, std::size_t bytes_transferred) {
+			size_t newlen = r->length + bytes_transferred;
 			std::vector<char>* v = r->v;
 			r->headers = v->data();
-			//We use this as a state machine to repeatedly read in and process the request (non-blocking).
-			if(r->uri.data == NULL && r->length + bytes_transferred >= PROTOCOL_LENGTH_URI && r->state == 0) {
-				//STATE: Read URI LEN
-				r->method = ntohs(*(int*)r->headers);
-				r->uri.len = ntohs(*(int*)(r->headers + PROTOCOL_LENGTH_METHOD));
-				r->state = STATE_READ_URI; //move to next state, reading the URI.
-			} else if (r->state == STATE_READ_URI) {
-				//State: Read URI
-				r->uri.data = (const char*) malloc(r->uri.len + 1);
-				cmemcpy(r->uri.data, r->headers + PROTOCOL_LENGTH_URI, r->uri.len);
-				r->state = STATE_READ_COOKIES;
-			} else if(r->state == STATE_READ_COOKIES) {
 
+			//We use this as a state machine to repeatedly read in and process the request (non-blocking).
+			if(r->uri.data == NULL && newlen >= PROTOCOL_LENGTH_SIZEINFO && r->state == 0) {
+				//STATE: Read SIZEINFO
+				//TODO: Improve below.
+				r->uri.len = ntohs(*(int*)(r->headers));
+				r->host.len = ntohs(*(int*)(r->headers + INT_INTERVAL(1)));
+				r->user_agent.len = ntohs(*(int*)(r->headers + INT_INTERVAL(2)));
+				r->post_content.len = ntohs(*(int*)(r->headers + INT_INTERVAL(3)));
+				r->cookies.len = ntohs(*(int*)(r->headers + INT_INTERVAL(4)));
+				r->method = ntohs(*(int*)(r->headers + INT_INTERVAL(5)));
+				r->state = STATE_READ_URI; //move to next state, reading the URI.
+			} else if (r->state == STATE_READ_URI && newlen >= PROTOCOL_LENGTH_SIZEINFO + r->uri.len) {
+				//State: Read uri.
+				r->uri.data = (const char*) malloc(r->uri.len + 1);
+				cmemcpy(r->uri.data, r->headers + PROTOCOL_LENGTH_SIZEINFO, r->uri.len);
+				r->state = STATE_FINAL;
+				r->read_len += r->uri.len; //keep track of how much has been read for next states.
 			} else if (r->state == STATE_FINAL) {
 				//Finished reading data. Create lua handler.
 				if(shutdown_handler) return;
@@ -139,9 +145,8 @@ void Webapp::read_some(ip::tcp::socket* s, Request* r) {
 				//Something has gone wrong. State not entered.
 				exit(1);
 			}
-			r->length += bytes_transferred;
-			//Final statement, we haven't finished reading data. Try again.
-			if(r->state != STATE_FINAL) read_some(s, r);
+			r->length = newlen;
+			read_some(r);
 
 	});
 }
@@ -153,8 +158,9 @@ void Webapp::accept_message() {
 
 		Request* r = new Request();
 		r->v = new std::vector<char>(512);
+		r->socket = s;
 		try {
-			read_some(s, r);
+			read_some(r);
 			accept_message();
 		} catch(std::system_error er) {
 			accept_message();

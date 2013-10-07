@@ -84,6 +84,7 @@ std::vector<void*>* StartRequestHandler(Request* request) {
 
 void FinishRequestHandler(std::vector<void*>* handler) {
 	Request* request = (Request*)handler->at(0);
+	request->socket->close();
 	free(request);
 
 	for(std::vector<void*>::iterator it = handler->begin() + 1; it != handler->end(); ++it) {
@@ -125,4 +126,12 @@ int GetScript(Webapp* gallery, const char* filename, script_t* out) {
 		}
 	}
 	return 0;
+}
+
+void writeHandler(const std::error_code& error,  std::size_t bytes_transferred) {
+
+}
+
+void WriteData(asio::ip::tcp::socket* socket, const char* data, int len) {
+	asio::async_write(*socket, asio::buffer(data, len), writeHandler);
 }

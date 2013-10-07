@@ -33,4 +33,5 @@ APIEXPORT std::vector<void*>* StartRequestHandler(Request*);
 APIEXPORT void FinishRequestHandler(std::vector<void*>*);
 APIEXPORT ctemplate::TemplateDictionary* GetTemplate(Webapp*, const char*);
 APIEXPORT const char* RenderTemplate(Webapp*, ctemplate::TemplateDictionary*, const char*, std::vector<void*>*);
+APIEXPORT void WriteData(asio::ip::tcp::socket*, const char*, int);
 #endif
