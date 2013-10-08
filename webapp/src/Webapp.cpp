@@ -109,11 +109,13 @@ void Webapp::read_some(Request* r) {
 	r->socket->async_read_some(asio::buffer(*r->v),
 		[this, r](const asio::error_code& error, std::size_t bytes_transferred) {
 			size_t newlen = r->length + bytes_transferred;
+			int found_state = 0;
 			std::vector<char>* v = r->v;
 			r->headers = v->data();
 
 			//We use this as a state machine to repeatedly read in and process the request (non-blocking).
 			if(r->uri.data == NULL && newlen >= PROTOCOL_LENGTH_SIZEINFO && r->state == 0) {
+				found_state = 1;
 				//STATE: Read SIZEINFO
 				//TODO: Improve below.
 				r->uri.len = ntohs(*(int*)(r->headers));
@@ -123,13 +125,19 @@ void Webapp::read_some(Request* r) {
 				r->cookies.len = ntohs(*(int*)(r->headers + INT_INTERVAL(4)));
 				r->method = ntohs(*(int*)(r->headers + INT_INTERVAL(5)));
 				r->state = STATE_READ_URI; //move to next state, reading the URI.
-			} else if (r->state == STATE_READ_URI && newlen >= PROTOCOL_LENGTH_SIZEINFO + r->uri.len) {
+			} 
+			
+			if (r->state == STATE_READ_URI && newlen >= PROTOCOL_LENGTH_SIZEINFO + r->uri.len) {
+				found_state = 1;
 				//State: Read uri.
 				r->uri.data = (const char*) malloc(r->uri.len + 1);
 				cmemcpy(r->uri.data, r->headers + PROTOCOL_LENGTH_SIZEINFO, r->uri.len);
 				r->state = STATE_FINAL;
 				r->read_len += r->uri.len; //keep track of how much has been read for next states.
-			} else if (r->state == STATE_FINAL) {
+			} 
+
+			if (r->state == STATE_FINAL && newlen >= PROTOCOL_LENGTH_SIZEINFO + r->read_len) {
+				found_state = 1;
 				//Finished reading data. Create lua handler.
 				if(shutdown_handler) return;
 				if(numInstances < tbb::task_scheduler_init::default_num_threads()) {	
@@ -141,12 +149,15 @@ void Webapp::read_some(Request* r) {
 				requests.push(r);
 				//State machine finished.
 				return;
-			} else if(r->state != STATE_FINAL) {
+			} 
+			
+			if(!found_state) {
 				//Something has gone wrong. State not entered.
 				exit(1);
+			} else {
+				r->length = newlen;
+				read_some(r);
 			}
-			r->length = newlen;
-			read_some(r);
 
 	});
 }

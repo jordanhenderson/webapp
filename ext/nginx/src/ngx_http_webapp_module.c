@@ -170,8 +170,12 @@ static void conn_write(ngx_event_t *ev) {
 			data_out.data = r->uri.data;
 			data_out.len = r->uri.len + 1;
 			wr->uri_written = 1;
+		} else if(wr->written_bytes == STRING_VARS * sizeof(int) + r->uri.len + 1) {
+			//Write the final terminator byte.
+			data_out.data = (u_char*)"\0";
+			data_out.len = 1;
+			
 		} else {
-			ev->complete = 1;
 			return;
 		}
 		
