@@ -132,6 +132,7 @@ void writeHandler(const std::error_code& error,  std::size_t bytes_transferred) 
 
 }
 
-void WriteData(asio::ip::tcp::socket* socket, const char* data, int len) {
+void WriteData(asio::ip::tcp::socket* socket, char* data, int len) {
+	*(int*)data = htons(len - 4);
 	asio::async_write(*socket, asio::buffer(data, len), writeHandler);
 }

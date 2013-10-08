@@ -61,11 +61,13 @@ ngx_module_t  ngx_http_webapp_module = {
 typedef struct {
 	ngx_http_request_t* r;
 	//State machine vars.
-	int uri_written;
+	int strings_written;
 	int read_bytes;
 	int written_bytes;
-	unsigned char out_buf[255];
-	
+	int response_size;
+	u_char tmp_buf[4];
+	int tmp_written;
+	u_char* response_buf;
 } webapp_request_t;
 
 static void conn_read(ngx_event_t *ev) {
@@ -73,17 +75,30 @@ static void conn_read(ngx_event_t *ev) {
 	webapp_request_t* wr = c->data;
 	ngx_http_request_t* r = wr->r;
 
-	if(!ev->timedout && wr->uri_written) {
+	if(!ev->timedout && wr->strings_written) {
 		//TODO: output buffer.
-		ssize_t n = ngx_recv(c, wr->out_buf+wr->read_bytes, 255);
+		ssize_t n = 0;
+		if(wr->response_size == 0 && wr->tmp_written != 4) {
+			wr->tmp_written += ngx_recv(c, wr->tmp_buf + wr->tmp_written, 4 - wr->tmp_written);
+		} else if(wr->response_size > 0) {
+			n = ngx_recv(c, wr->response_buf + wr->read_bytes, wr->response_size - wr->read_bytes);
+			if(n > 0) wr->read_bytes += n;
+		}
 
-		if(n > 0) wr->read_bytes += n;
-		else if(n == -1)  {
+		if(n == -1)  {
 			ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
 			ngx_close_connection(c);
-			wr->read_bytes = wr->written_bytes = wr->uri_written = 0;
+			wr->read_bytes = wr->written_bytes = wr->strings_written = 0;
+			return;
 		}
-		else if(wr->read_bytes >= 40 && n == 0) {
+		
+		if(wr->response_buf == NULL && wr->tmp_written >= 4) {
+			wr->response_size = ntohs(*(int*)wr->tmp_buf);
+			wr->response_buf = ngx_palloc(r->pool, wr->response_size);
+		}
+
+		//Response finished? (4 + response size received.) Backend is trusted (won't recieve any more than response_size!)
+		if(wr->response_buf != NULL && wr->read_bytes == wr->response_size) {
 			ngx_buf_t    *b;
 			ngx_chain_t   out;
 
@@ -93,14 +108,14 @@ static void conn_read(ngx_event_t *ev) {
 					"Failed to allocate response buffer.");
 			}
 
-			b->pos = wr->out_buf; /* first position in memory of the data */
-			b->last =  wr->out_buf + wr->read_bytes; /* last position */
+			b->pos = wr->response_buf; /* first position in memory of the data */
+			b->last =  wr->response_buf + wr->read_bytes; /* last position */
 
 			b->memory = 1; /* content is in read-only memory */
 			/* (i.e., filters should copy it rather than rewrite in place) */
 
 			b->last_buf = 1; /* there will be no more buffers in the request */
-
+		
 			r->keepalive = 0;
 			
 			out.buf = b;
@@ -111,13 +126,12 @@ static void conn_read(ngx_event_t *ev) {
 
 			ngx_close_connection(c);
 			ev->complete = 1;
-			wr->read_bytes = wr->uri_written = wr->written_bytes = 0;
-			
-
+			wr->read_bytes = wr->strings_written = wr->written_bytes = 0;
+			wr->response_buf = NULL;
 		}
 	} else if(ev->timedout) {
 		ev->complete = 1;
-		wr->read_bytes = wr->uri_written = wr->written_bytes = 0;
+		wr->read_bytes = wr->strings_written = wr->written_bytes = 0;
 	}
 }
 #define STRING_VARS 6
@@ -169,7 +183,7 @@ static void conn_write(ngx_event_t *ev) {
 			//write uri
 			data_out.data = r->uri.data;
 			data_out.len = r->uri.len + 1;
-			wr->uri_written = 1;
+			wr->strings_written = 1;
 		} else if(wr->written_bytes == STRING_VARS * sizeof(int) + r->uri.len + 1) {
 			//Write the final terminator byte.
 			data_out.data = (u_char*)"\0";
@@ -190,7 +204,7 @@ static void conn_write(ngx_event_t *ev) {
 
 	} else {
 		ev->complete = 1;
-		wr->read_bytes  = wr->uri_written = wr->written_bytes = 0;
+		wr->read_bytes  = wr->strings_written = wr->written_bytes = 0;
 		ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
 		ngx_close_connection(ev->data);
 	}
