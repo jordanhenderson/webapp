@@ -25,7 +25,6 @@ task* WebappTask::execute() {
 
 void Webapp::createWorker() {
 	LuaParam _v[] = {{"sessions", &sessions}, {"requests", &requests}, {"app", this}};
-	refresh_scripts();
 	runScript(SYSTEM_SCRIPT_PROCESS, _v, 3);
 }
 

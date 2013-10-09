@@ -77,61 +77,62 @@ static void conn_read(ngx_event_t *ev) {
 
 	if(!ev->timedout && wr->strings_written) {
 		//TODO: output buffer.
-		ssize_t n = 0;
-		if(wr->response_size == 0 && wr->tmp_written != 4) {
+		if(wr->response_size == 0) {
 			wr->tmp_written += ngx_recv(c, wr->tmp_buf + wr->tmp_written, 4 - wr->tmp_written);
-		} else if(wr->response_size > 0) {
-			n = ngx_recv(c, wr->response_buf + wr->read_bytes, wr->response_size - wr->read_bytes);
-			if(n > 0) wr->read_bytes += n;
-		}
-
-		if(n == -1)  {
-			ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
-			ngx_close_connection(c);
-			wr->read_bytes = wr->written_bytes = wr->strings_written = 0;
-			return;
-		}
-		
-		if(wr->response_buf == NULL && wr->tmp_written >= 4) {
-			wr->response_size = ntohs(*(int*)wr->tmp_buf);
-			wr->response_buf = ngx_palloc(r->pool, wr->response_size);
-		}
-
-		//Response finished? (4 + response size received.) Backend is trusted (won't recieve any more than response_size!)
-		if(wr->response_buf != NULL && wr->read_bytes == wr->response_size) {
-			ngx_buf_t    *b;
-			ngx_chain_t   out;
-
-			b = ngx_pcalloc(r->pool, sizeof(ngx_buf_t));
-			if (b == NULL) {
-				ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, 
-					"Failed to allocate response buffer.");
+			if(wr->response_buf == NULL && wr->tmp_written >= 4) {
+				wr->response_size = ntohs(*(int*)wr->tmp_buf);
+				wr->response_buf = ngx_palloc(r->pool, wr->response_size);
 			}
+		} else if(wr->response_size > 0) {
+			ssize_t n = ngx_recv(c, wr->response_buf + wr->read_bytes, wr->response_size - wr->read_bytes);
+			if(n > 0) wr->read_bytes += n;
+			if(n == -1)  {
+				ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
+				ngx_close_connection(c);
+				ev->complete = 1;
+				return;
+			}
+			//Response finished? (4 + response size received.) Backend is trusted (won't recieve any more than response_size!)
+			if(wr->read_bytes == wr->response_size) {
+				ngx_buf_t    *b;
+				ngx_chain_t   out;
 
-			b->pos = wr->response_buf; /* first position in memory of the data */
-			b->last =  wr->response_buf + wr->read_bytes; /* last position */
+				b = ngx_pcalloc(r->pool, sizeof(ngx_buf_t));
+				if (b == NULL) {
+					ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, 
+						"Failed to allocate response buffer.");
+				}
 
-			b->memory = 1; /* content is in read-only memory */
-			/* (i.e., filters should copy it rather than rewrite in place) */
+				b->pos = wr->response_buf; /* first position in memory of the data */
+				b->last =  wr->response_buf + wr->read_bytes; /* last position */
 
-			b->last_buf = 1; /* there will be no more buffers in the request */
-		
-			r->keepalive = 0;
-			
-			out.buf = b;
-			out.next = NULL;
+				b->memory = 1; /* content is in read-only memory */
+				/* (i.e., filters should copy it rather than rewrite in place) */
 
-			ngx_http_output_filter(r, &out);
-			ngx_http_finalize_request(r, NGX_OK);
+				b->last_buf = 1; /* there will be no more buffers in the request */
 
-			ngx_close_connection(c);
-			ev->complete = 1;
-			wr->read_bytes = wr->strings_written = wr->written_bytes = 0;
-			wr->response_buf = NULL;
+				r->keepalive = 0;
+
+				out.buf = b;
+				out.next = NULL;
+
+				ngx_http_output_filter(r, &out);
+				ngx_http_finalize_request(r, NGX_OK);
+
+				ngx_close_connection(c);
+				ev->complete = 1;
+			}
 		}
+
+
+		
+
+
+		
 	} else if(ev->timedout) {
+		ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
+		ngx_close_connection(c);
 		ev->complete = 1;
-		wr->read_bytes = wr->strings_written = wr->written_bytes = 0;
 	}
 }
 #define STRING_VARS 6
@@ -197,6 +198,7 @@ static void conn_write(ngx_event_t *ev) {
 		if(bytes < 0) {
 			ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
 			ngx_close_connection(c);
+			ev->complete = 1;
 		} else {
 			wr->written_bytes+=bytes;
 		}
@@ -220,38 +222,39 @@ failed:
 static ngx_int_t
 ngx_http_webapp_content_handler(ngx_http_request_t *r) {
 	if(r->err_status == 0) {
-	ngx_connection_t* conn;
-	ngx_peer_connection_t* pconn;
+		ngx_connection_t* conn;
+		ngx_peer_connection_t* pconn;
 	
-	ngx_http_webapp_loc_conf_t* wlcf = ngx_http_get_module_loc_conf(r, ngx_http_webapp_module); 
-	webapp_request_t* webapp = ngx_palloc(r->pool, sizeof(webapp_request_t));
+		ngx_http_webapp_loc_conf_t* wlcf = ngx_http_get_module_loc_conf(r, ngx_http_webapp_module); 
+		webapp_request_t* webapp = ngx_palloc(r->pool, sizeof(webapp_request_t));
 
-	pconn = ngx_palloc(r->pool, sizeof(ngx_peer_connection_t));
+		pconn = ngx_palloc(r->pool, sizeof(ngx_peer_connection_t));
 
-	pconn->log = r->connection->log;
-	pconn->name = &wlcf->url->url;
-	pconn->sockaddr = (struct sockaddr*)wlcf->url->sockaddr;
-	pconn->socklen = wlcf->url->socklen;
-	pconn->get = ngx_event_get_peer;
-	pconn->local = NULL;
+		pconn->log = r->connection->log;
+		pconn->name = &wlcf->url->url;
+		pconn->sockaddr = (struct sockaddr*)wlcf->url->sockaddr;
+		pconn->socklen = wlcf->url->socklen;
+		pconn->get = ngx_event_get_peer;
+		pconn->local = NULL;
+		pconn->connection = NULL;
+		//Create the peer connection.
+		ngx_event_connect_peer(pconn);
+		conn = pconn->connection;
+		if(conn != NULL) {
+		//Set up the webapp structure.
+		memset(webapp, 0, sizeof(webapp_request_t));
+		webapp->r = r;
 
-	//Create the peer connection.
-	ngx_event_connect_peer(pconn);
-	conn = pconn->connection;
+		//assign the request to the peer.
+		conn->data = webapp;
+		conn->read->handler = conn_read;
+		conn->write->handler = conn_write;
+		ngx_add_timer(conn->read, 5000);
+		ngx_add_timer(conn->write, 5000);
 
-	//Set up the webapp structure.
-	memset(webapp, 0, sizeof(webapp_request_t));
-	webapp->r = r;
-
-	//assign the request to the peer.
-	conn->data = webapp;
-	conn->read->handler = conn_read;
-	conn->write->handler = conn_write;
-	ngx_add_timer(conn->read, 50000);
-	ngx_add_timer(conn->write, 50000);
-
-	//Make our request depend on a (sub) connection (backend peer).
-	r->main->count++;
+		//Make our request depend on a (sub) connection (backend peer).
+		r->main->count++;
+	}
 	return NGX_DONE; //for now...
 	} else {
 		return NGX_OK;
