@@ -11,9 +11,10 @@ class Webapp;
 #include <tbb/task.h>
 #include <tbb/concurrent_queue.h>
 #include <asio.hpp>
+#include "Schema.h"
 
 struct webapp_str_t {
-	const char* data;
+	char* data;
 	int len;
 };
 
@@ -26,11 +27,12 @@ struct Request {
 	webapp_str_t uri;
 	webapp_str_t host;
 	webapp_str_t user_agent;
-	webapp_str_t post_content;
 	webapp_str_t cookies;
+	int content_len;
 	//Event vars.
-	int state;
 	int read_len;
+	int read_strings;
+	webapp_str_t* input_chain[STRING_VARS];
 };
 
 #define INT_INTERVAL(i) sizeof(int)*i

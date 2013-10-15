@@ -25,6 +25,8 @@ extern "C" {
 #define HTTP_NO_AUTH "Status: 401 Unauthorized\r\n\r\nUnauthorised access."
 #define RESPONSE_TYPE_DATA 0
 #define RESPONSE_TYPE_MESSAGE 1
+#define HTTP_METHOD_GET 2
+#define HTTP_METHOD_POST 8
 
 #include "Schema.h"
 

@@ -58,8 +58,15 @@ ngx_module_t  ngx_http_webapp_module = {
     NGX_MODULE_V1_PADDING
 };
 
+#define PROTOCOL_VARS 6
+#define STRING_VARS 4
+#define INT_INTERVAL(i) sizeof(int)*i
+#define HEADER_HASH_COOKIE 2940209764
+
 typedef struct {
 	ngx_http_request_t* r;
+	ngx_str_t* output_chain[STRING_VARS];
+	int chain_counter;
 	//State machine vars.
 	int strings_written;
 	int read_bytes;
@@ -87,9 +94,6 @@ static void conn_read(ngx_event_t *ev) {
 			ssize_t n = ngx_recv(c, wr->response_buf + wr->read_bytes, wr->response_size - wr->read_bytes);
 			if(n > 0) wr->read_bytes += n;
 			if(n == -1)  {
-				ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
-				ngx_close_connection(c);
-				ev->complete = 1;
 				return;
 			}
 			//Response finished? (4 + response size received.) Backend is trusted (won't recieve any more than response_size!)
@@ -124,23 +128,12 @@ static void conn_read(ngx_event_t *ev) {
 			}
 		}
 
-
-		
-
-
-		
 	} else if(ev->timedout) {
 		ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
 		ngx_close_connection(c);
 		ev->complete = 1;
 	}
 }
-#define STRING_VARS 6
-#define INT_INTERVAL(i) sizeof(int)*i
-#define HEADER_HASH_COOKIE 2940209764
-
-//URI|HOST|USERAGENT|CONTENT_LENGTH|COOKIES
-//SIZEINFO|METHOD|
 
 static void conn_write(ngx_event_t *ev) {
 	ssize_t bytes;
@@ -151,45 +144,60 @@ static void conn_write(ngx_event_t *ev) {
 	ngx_http_core_main_conf_t* cmcf = ngx_http_get_module_main_conf(r, ngx_http_core_module);
 	if(!ev->timedout) {
 		if(wr->written_bytes == 0) {
-			data_out.data = ngx_palloc(r->pool, STRING_VARS * sizeof(int));
+			data_out.data = ngx_palloc(r->pool, PROTOCOL_VARS * sizeof(int));
 			//Collect/write size information for client retrieval.
 			if(r->method == NGX_HTTP_GET || r->method == NGX_HTTP_POST) {
 				int content_len = 0;
 				int cookie_len = 0;
 				int agent_len = 0;
+				ngx_hash_elt_t* cookies = NULL;
 				if(r->headers_in.content_length != NULL)
-					content_len = htons(atoi((const char*)r->headers_in.content_length->value.data));
-				if(r->headers_in.cookies.elts != NULL)
-					cookie_len = ((ngx_hash_elt_t*)ngx_hash_find(&cmcf->headers_in_hash, HEADER_HASH_COOKIE, (u_char*)"cookie", 6))->len - 8;
+					content_len = atoi((const char*)r->headers_in.content_length->value.data) + 1;
+				if(r->headers_in.cookies.elts != NULL) {
+					cookies = (ngx_hash_elt_t*)ngx_hash_find(&cmcf->headers_in_hash, HEADER_HASH_COOKIE, (u_char*)"cookie", 6);
+					if(cookies != NULL)
+						cookie_len = cookies->len + 1;
+				}
 				if(r->headers_in.user_agent != NULL)
-					agent_len = r->headers_in.user_agent->value.len;
+					agent_len = r->headers_in.user_agent->value.len + 1;
+
 				//Start building the size information.
-				*(int*)(data_out.data) = htons(r->uri.len); //URI len
-				*(int*)(data_out.data + INT_INTERVAL(1)) = htons(c->addr_text.len); //HOST len
-				//TODO: Parse cookie array properly (send raw array chunks to upstream rather than unparsed headers).
-				//ngx_hash_t
+				*(int*)(data_out.data) = htons(r->uri.len + 1); //URI len
+				wr->output_chain[0] = &r->uri;
+
+				*(int*)(data_out.data + INT_INTERVAL(1)) = htons(c->addr_text.len + 1); //HOST len
+				wr->output_chain[1] = &c->addr_text;
+
 				*(int*)(data_out.data + INT_INTERVAL(2)) = htons(agent_len); //User agent length
+				wr->output_chain[2] = &r->headers_in.user_agent->value;
 
-				*(int*)(data_out.data + INT_INTERVAL(3)) = content_len; //Content length
-				*(int*)(data_out.data + INT_INTERVAL(4)) = htons(cookie_len); //COOKIES length
-				*(int*)(data_out.data + INT_INTERVAL(5)) = htons(r->method); //HTTP Method
-				//*(int*)(data_out.data + INT_INTERVAL(1)) = htons(r->cookies.len);
+				//TODO: Parse cookie array properly (send raw array chunks to upstream rather than unparsed headers).
+				*(int*)(data_out.data + INT_INTERVAL(3)) = htons(cookie_len); //COOKIES length
+				if(cookies != NULL)
+					wr->output_chain[3] = (ngx_str_t*) cookies->value;
 
-				data_out.len = STRING_VARS * sizeof(int);
+				*(int*)(data_out.data + INT_INTERVAL(4)) = htons(r->method); //HTTP Method
+				
+				*(int*)(data_out.data + INT_INTERVAL(5)) = htons(content_len); //Content length
+
+				data_out.len = PROTOCOL_VARS * sizeof(int);
 			} else {
 				//Bad method type. Don't process.
-				goto failed;
+				goto bad_method;
 			}
-		} else if(wr->written_bytes == STRING_VARS * sizeof(int)) {
+		} else if(wr->chain_counter < STRING_VARS) {
 			//write uri
-			data_out.data = r->uri.data;
-			data_out.len = r->uri.len + 1;
-			wr->strings_written = 1;
-		} else if(wr->written_bytes == STRING_VARS * sizeof(int) + r->uri.len + 1) {
-			//Write the final terminator byte.
+			if(wr->output_chain[wr->chain_counter] != NULL)
+				data_out = *wr->output_chain[wr->chain_counter];
+			else {
+				data_out.len = 0;
+				data_out.data = NULL;
+			}
+			wr->chain_counter++;
+		} else if(wr->chain_counter == STRING_VARS) {
+			//Write the final terminator byte. (wake up the async reader on client end)
 			data_out.data = (u_char*)"\0";
 			data_out.len = 1;
-			
 		} else {
 			return;
 		}
@@ -206,13 +214,12 @@ static void conn_write(ngx_event_t *ev) {
 
 	} else {
 		ev->complete = 1;
-		wr->read_bytes  = wr->strings_written = wr->written_bytes = 0;
 		ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
 		ngx_close_connection(ev->data);
 	}
 	return;
 
-failed:
+bad_method:
 	ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
 	ngx_close_connection(c);
 	ev->complete = 1;

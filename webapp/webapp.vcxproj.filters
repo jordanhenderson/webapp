@@ -192,10 +192,10 @@
     <ClInclude Include="include\Hooks.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Schema.h">
+    <ClInclude Include="include\Webapp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Webapp.h">
+    <ClInclude Include="include\Schema.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

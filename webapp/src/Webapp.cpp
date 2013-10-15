@@ -113,29 +113,43 @@ void Webapp::read_some(Request* r) {
 			r->headers = v->data();
 
 			//We use this as a state machine to repeatedly read in and process the request (non-blocking).
-			if(r->uri.data == NULL && newlen >= PROTOCOL_LENGTH_SIZEINFO && r->state == 0) {
+			if(r->uri.data == NULL && newlen >= PROTOCOL_LENGTH_SIZEINFO && !r->method) {
 				found_state = 1;
-				//STATE: Read SIZEINFO
-				//TODO: Improve below.
+				//STATE: Read protocol.
 				r->uri.len = ntohs(*(int*)(r->headers));
 				r->host.len = ntohs(*(int*)(r->headers + INT_INTERVAL(1)));
 				r->user_agent.len = ntohs(*(int*)(r->headers + INT_INTERVAL(2)));
-				r->post_content.len = ntohs(*(int*)(r->headers + INT_INTERVAL(3)));
-				r->cookies.len = ntohs(*(int*)(r->headers + INT_INTERVAL(4)));
-				r->method = ntohs(*(int*)(r->headers + INT_INTERVAL(5)));
-				r->state = STATE_READ_URI; //move to next state, reading the URI.
-			} 
-			
-			if (r->state == STATE_READ_URI && newlen >= PROTOCOL_LENGTH_SIZEINFO + r->uri.len) {
-				found_state = 1;
-				//State: Read uri.
-				r->uri.data = (const char*) malloc(r->uri.len + 1);
-				cmemcpy(r->uri.data, r->headers + PROTOCOL_LENGTH_SIZEINFO, r->uri.len);
-				r->state = STATE_FINAL;
-				r->read_len += r->uri.len; //keep track of how much has been read for next states.
-			} 
+				r->cookies.len = ntohs(*(int*)(r->headers + INT_INTERVAL(3)));
+				r->method = ntohs(*(int*)(r->headers + INT_INTERVAL(4)));
 
-			if (r->state == STATE_FINAL && newlen >= PROTOCOL_LENGTH_SIZEINFO + r->read_len) {
+				//Update the input chain.
+				r->input_chain[0] = &r->uri;
+				r->input_chain[1] = &r->host;
+				r->input_chain[2] = &r->user_agent;
+				r->input_chain[3] = &r->cookies;
+
+				if(r->method == HTTP_METHOD_GET)
+					r->content_len = ntohs(*(int*)(r->headers + INT_INTERVAL(5)));
+				
+			}
+			
+			while(r->read_strings < STRING_VARS) {
+				webapp_str_t* str = r->input_chain[r->read_strings];
+
+				if (r->method && newlen >= 
+					PROTOCOL_LENGTH_SIZEINFO + r->read_len + str->len) {
+						found_state = 1;
+						str->data = (char*) r->headers + r->read_len;
+						str->data[str->len] = '\0'; //Force null terminate.
+
+						r->read_strings++;
+						r->read_len += str->len;
+				} else {
+					break;
+				}
+			}
+
+			if (r->read_strings == STRING_VARS) {
 				found_state = 1;
 				//Finished reading data. Create lua handler.
 				if(shutdown_handler) return;
@@ -151,8 +165,11 @@ void Webapp::read_some(Request* r) {
 			} 
 			
 			if(!found_state) {
-				//Something has gone wrong. State not entered.
-				exit(1);
+				//Wait for more?
+				//TODO timeout check.
+				//or just die.
+				r->length = newlen;
+				read_some(r);
 			} else {
 				r->length = newlen;
 				read_some(r);
