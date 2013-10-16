@@ -38,16 +38,6 @@ typedef std::string Response;
 typedef int(Webapp::*GallFunc)(RESPONSE_VARS);
 class Logging;
 
-class LuaChunk {
-public:
-	std::string bytecode;
-	std::string filename;
-	~LuaChunk() {};
-	LuaChunk(const std::string& filename) {
-		this->filename = std::string(filename);
-	};
-};
-
 //LuaParams are temporary containers to hold stack variables for lua scripts.
 struct LuaParam {
 	const char* name;
@@ -98,7 +88,6 @@ private:
 
 	std::vector<std::string> serverTemplateFiles;
 
-
 	template <typename T>
 	void addFiles(T& files, int nGenThumbs, const std::string& path, const std::string& albumID) {
 		const char* date = date_format("%Y%m%d",8);
@@ -115,12 +104,9 @@ private:
 	
 	void process_thread(std::thread*);
 	void refresh_templates();
-	void refresh_scripts();
 	
 	static int LuaWriter(lua_State* L, const void* p, size_t sz, void* ud);
-	void runScript(LuaChunk*, LuaParam* params, int nArgs);
-	void runScript(const char* filename, LuaParam* params, int nArgs);
-	void runScript(int index, LuaParam* params, int nArgs);
+	void runHandler(LuaParam* params, int nArgs);
 	//IPC api
 	asio::ip::tcp::acceptor* acceptor;
 	void accept_message();
@@ -149,11 +135,6 @@ public:
 	Parameters* params;
 	//Dynamic function map for public API.
 	std::unordered_map<std::string, GallFunc> functionMap;
-
-	//Store lua plugin bytecode in a vector.
-	std::vector<LuaChunk> loadedScripts;
-
-	std::vector<LuaChunk> systemScripts;
 
 	//Main response functions.
 	int getAlbums(RESPONSE_VARS);

@@ -61,14 +61,12 @@ ngx_module_t  ngx_http_webapp_module = {
 #define PROTOCOL_VARS 6
 #define STRING_VARS 4
 #define INT_INTERVAL(i) sizeof(int)*i
-#define HEADER_HASH_COOKIE 2940209764
 
 typedef struct {
 	ngx_http_request_t* r;
 	ngx_str_t* output_chain[STRING_VARS];
 	int chain_counter;
 	//State machine vars.
-	int strings_written;
 	int read_bytes;
 	int written_bytes;
 	int response_size;
@@ -82,19 +80,23 @@ static void conn_read(ngx_event_t *ev) {
 	webapp_request_t* wr = c->data;
 	ngx_http_request_t* r = wr->r;
 
-	if(!ev->timedout && wr->strings_written) {
+	if(!ev->timedout && wr->chain_counter == STRING_VARS) {
 		//TODO: output buffer.
 		if(wr->response_size == 0) {
-			wr->tmp_written += ngx_recv(c, wr->tmp_buf + wr->tmp_written, 4 - wr->tmp_written);
+			int tmp_recv = ngx_recv(c, wr->tmp_buf + wr->tmp_written, 4 - wr->tmp_written);
+			if(tmp_recv > 0)
+				wr->tmp_written += tmp_recv;
 			if(wr->response_buf == NULL && wr->tmp_written >= 4) {
 				wr->response_size = ntohs(*(int*)wr->tmp_buf);
 				wr->response_buf = ngx_palloc(r->pool, wr->response_size);
 			}
-		} else if(wr->response_size > 0) {
+		}
+		if(wr->response_size > 0) {
 			ssize_t n = ngx_recv(c, wr->response_buf + wr->read_bytes, wr->response_size - wr->read_bytes);
 			if(n > 0) wr->read_bytes += n;
 			if(n == -1)  {
-				return;
+				wr->read_bytes = wr->response_size = 51;
+				wr->response_buf = (u_char*)"HTTP/1.1 200 OK\r\nContent-type: text/html\r\n\r\n";
 			}
 			//Response finished? (4 + response size received.) Backend is trusted (won't recieve any more than response_size!)
 			if(wr->read_bytes == wr->response_size) {
@@ -115,11 +117,10 @@ static void conn_read(ngx_event_t *ev) {
 
 				b->last_buf = 1; /* there will be no more buffers in the request */
 
-				r->keepalive = 0;
-
 				out.buf = b;
 				out.next = NULL;
 
+				r->keepalive = 0;
 				ngx_http_output_filter(r, &out);
 				ngx_http_finalize_request(r, NGX_OK);
 
@@ -150,31 +151,35 @@ static void conn_write(ngx_event_t *ev) {
 				int content_len = 0;
 				int cookie_len = 0;
 				int agent_len = 0;
-				ngx_hash_elt_t* cookies = NULL;
+				int host_len = 0;
+				ngx_str_t* cookies = NULL;
+				ngx_str_t* host = NULL;
 				if(r->headers_in.content_length != NULL)
-					content_len = atoi((const char*)r->headers_in.content_length->value.data) + 1;
+					content_len = atoi((const char*)r->headers_in.content_length->value.data);
 				if(r->headers_in.cookies.elts != NULL) {
-					cookies = (ngx_hash_elt_t*)ngx_hash_find(&cmcf->headers_in_hash, HEADER_HASH_COOKIE, (u_char*)"cookie", 6);
-					if(cookies != NULL)
-						cookie_len = cookies->len + 1;
+					cookies = &(*((ngx_table_elt_t**)r->headers_in.cookies.elts))->value;
+					cookie_len = cookies->len;
+				}
+				if(r->headers_in.host != NULL) {
+					host = &r->headers_in.host->value;
+					host_len = host->len;
 				}
 				if(r->headers_in.user_agent != NULL)
-					agent_len = r->headers_in.user_agent->value.len + 1;
+					agent_len = r->headers_in.user_agent->value.len;
 
 				//Start building the size information.
-				*(int*)(data_out.data) = htons(r->uri.len + 1); //URI len
-				wr->output_chain[0] = &r->uri;
+				*(int*)(data_out.data) = htons(r->unparsed_uri.len); //URI len
+				wr->output_chain[0] = &r->unparsed_uri;
 
-				*(int*)(data_out.data + INT_INTERVAL(1)) = htons(c->addr_text.len + 1); //HOST len
-				wr->output_chain[1] = &c->addr_text;
+				*(int*)(data_out.data + INT_INTERVAL(1)) = htons(host_len); //HOST len
+				wr->output_chain[1] = host;
 
 				*(int*)(data_out.data + INT_INTERVAL(2)) = htons(agent_len); //User agent length
 				wr->output_chain[2] = &r->headers_in.user_agent->value;
 
 				//TODO: Parse cookie array properly (send raw array chunks to upstream rather than unparsed headers).
 				*(int*)(data_out.data + INT_INTERVAL(3)) = htons(cookie_len); //COOKIES length
-				if(cookies != NULL)
-					wr->output_chain[3] = (ngx_str_t*) cookies->value;
+				wr->output_chain[3] = cookies;
 
 				*(int*)(data_out.data + INT_INTERVAL(4)) = htons(r->method); //HTTP Method
 				
@@ -187,17 +192,15 @@ static void conn_write(ngx_event_t *ev) {
 			}
 		} else if(wr->chain_counter < STRING_VARS) {
 			//write uri
-			if(wr->output_chain[wr->chain_counter] != NULL)
-				data_out = *wr->output_chain[wr->chain_counter];
+			if(wr->output_chain[wr->chain_counter] != NULL) {
+				data_out.data = wr->output_chain[wr->chain_counter]->data;
+				data_out.len = wr->output_chain[wr->chain_counter]->len + 1;
+			}
 			else {
-				data_out.len = 0;
-				data_out.data = NULL;
+				data_out.len = 1;
+				data_out.data = (u_char*)"\0";
 			}
 			wr->chain_counter++;
-		} else if(wr->chain_counter == STRING_VARS) {
-			//Write the final terminator byte. (wake up the async reader on client end)
-			data_out.data = (u_char*)"\0";
-			data_out.len = 1;
 		} else {
 			return;
 		}
@@ -231,9 +234,20 @@ ngx_http_webapp_content_handler(ngx_http_request_t *r) {
 	if(r->err_status == 0) {
 		ngx_connection_t* conn;
 		ngx_peer_connection_t* pconn;
-	
-		ngx_http_webapp_loc_conf_t* wlcf = ngx_http_get_module_loc_conf(r, ngx_http_webapp_module); 
-		webapp_request_t* webapp = ngx_palloc(r->pool, sizeof(webapp_request_t));
+		ngx_http_webapp_loc_conf_t* wlcf;
+		webapp_request_t* webapp;
+		int path_level = 0;
+		int i = 0;
+		for(i = 0; i < r->uri.len; i++) {
+			if(r->uri.data[i] == '/')
+				path_level++;
+		}
+
+		if(r->uri.data == NULL || path_level != 1)
+			return NGX_DECLINED;
+
+		wlcf = ngx_http_get_module_loc_conf(r, ngx_http_webapp_module); 
+		webapp = ngx_palloc(r->pool, sizeof(webapp_request_t));
 
 		pconn = ngx_palloc(r->pool, sizeof(ngx_peer_connection_t));
 

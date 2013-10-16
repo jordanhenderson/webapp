@@ -1,0 +1,52 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nginx", "nginx.vcxproj", "{20675957-CE52-44AE-99A9-F7056463B0C8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlib", "..\zlib\zlib.vcxproj", "{FEB2AD73-A264-450A-97A3-E1810A14E08B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		LinuxDebug|Win32 = LinuxDebug|Win32
+		LinuxDebug|x64 = LinuxDebug|x64
+		LinuxRelease|Win32 = LinuxRelease|Win32
+		LinuxRelease|x64 = LinuxRelease|x64
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.Debug|Win32.ActiveCfg = Debug|Win32
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.Debug|Win32.Build.0 = Debug|Win32
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.Debug|x64.ActiveCfg = Debug|Win32
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.LinuxDebug|Win32.ActiveCfg = Debug|Win32
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.LinuxDebug|Win32.Build.0 = Debug|Win32
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.LinuxDebug|x64.ActiveCfg = Debug|Win32
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.LinuxRelease|Win32.ActiveCfg = Release|Win32
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.LinuxRelease|Win32.Build.0 = Release|Win32
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.LinuxRelease|x64.ActiveCfg = Release|Win32
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.Release|Win32.ActiveCfg = Release|Win32
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.Release|Win32.Build.0 = Release|Win32
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.Release|x64.ActiveCfg = Release|Win32
+		{FEB2AD73-A264-450A-97A3-E1810A14E08B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FEB2AD73-A264-450A-97A3-E1810A14E08B}.Debug|Win32.Build.0 = Debug|Win32
+		{FEB2AD73-A264-450A-97A3-E1810A14E08B}.Debug|x64.ActiveCfg = Debug|x64
+		{FEB2AD73-A264-450A-97A3-E1810A14E08B}.Debug|x64.Build.0 = Debug|x64
+		{FEB2AD73-A264-450A-97A3-E1810A14E08B}.LinuxDebug|Win32.ActiveCfg = LinuxDebug|Win32
+		{FEB2AD73-A264-450A-97A3-E1810A14E08B}.LinuxDebug|Win32.Build.0 = LinuxDebug|Win32
+		{FEB2AD73-A264-450A-97A3-E1810A14E08B}.LinuxDebug|x64.ActiveCfg = LinuxDebug|x64
+		{FEB2AD73-A264-450A-97A3-E1810A14E08B}.LinuxDebug|x64.Build.0 = LinuxDebug|x64
+		{FEB2AD73-A264-450A-97A3-E1810A14E08B}.LinuxRelease|Win32.ActiveCfg = LinuxRelease|Win32
+		{FEB2AD73-A264-450A-97A3-E1810A14E08B}.LinuxRelease|Win32.Build.0 = LinuxRelease|Win32
+		{FEB2AD73-A264-450A-97A3-E1810A14E08B}.LinuxRelease|x64.ActiveCfg = LinuxRelease|x64
+		{FEB2AD73-A264-450A-97A3-E1810A14E08B}.LinuxRelease|x64.Build.0 = LinuxRelease|x64
+		{FEB2AD73-A264-450A-97A3-E1810A14E08B}.Release|Win32.ActiveCfg = Release|Win32
+		{FEB2AD73-A264-450A-97A3-E1810A14E08B}.Release|Win32.Build.0 = Release|Win32
+		{FEB2AD73-A264-450A-97A3-E1810A14E08B}.Release|x64.ActiveCfg = Release|x64
+		{FEB2AD73-A264-450A-97A3-E1810A14E08B}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

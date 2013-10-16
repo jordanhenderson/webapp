@@ -15,23 +15,18 @@
   #endif
 #endif
 
-typedef struct { const char* data; int len; } script_t;
-
-APIEXPORT int GetScript(Webapp*, const char*, script_t* out);
 APIEXPORT int Template_ShowGlobalSection(ctemplate::TemplateDictionary*, const char*);
 APIEXPORT int Template_ShowSection(ctemplate::TemplateDictionary*, const char*);
 APIEXPORT const char* GetSessionValue(SessionStore*, const char*);
 APIEXPORT SessionStore* GetSession(Sessions*, const char*);
 APIEXPORT SessionStore* NewSession(Sessions*, const char*, const char*);
 APIEXPORT int Template_SetValue(ctemplate::TemplateDictionary* dict, const char* key, const char* value);
-//APIEXPORT const char* Request_GetParam(const char*, FCGX_Request*);
 APIEXPORT Request* GetNextRequest(tbb::concurrent_bounded_queue<Request*>* requests);
 APIEXPORT size_t StringLen(const char*);
-APIEXPORT const char* GenCookie(const char*, const char*, int, std::vector<void*>*);
-APIEXPORT const char* GetSessionID(SessionStore*);
-APIEXPORT std::vector<void*>* StartRequestHandler(Request*);
-APIEXPORT void FinishRequestHandler(std::vector<void*>*);
+APIEXPORT int GetSessionID(SessionStore*, webapp_str_t* out);
+APIEXPORT std::vector<std::string*>* StartRequestHandler();
+APIEXPORT void FinishRequest(Request*, std::vector<std::string*>*);
 APIEXPORT ctemplate::TemplateDictionary* GetTemplate(Webapp*, const char*);
-APIEXPORT const char* RenderTemplate(Webapp*, ctemplate::TemplateDictionary*, const char*, std::vector<void*>*);
+APIEXPORT void RenderTemplate(Webapp*, ctemplate::TemplateDictionary*, const char*, std::vector<std::string*>*, webapp_str_t* out);
 APIEXPORT void WriteData(asio::ip::tcp::socket*, char*, int);
 #endif

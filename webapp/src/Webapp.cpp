@@ -25,37 +25,27 @@ task* WebappTask::execute() {
 
 void Webapp::createWorker() {
 	LuaParam _v[] = {{"sessions", &sessions}, {"requests", &requests}, {"app", this}};
-	runScript(SYSTEM_SCRIPT_PROCESS, _v, 3);
-}
-
-//Run scripts based on their index (system scripts; see Schema.h)
-void Webapp::runScript(int index, LuaParam* params, int nArgs) {
-	if(index < systemScripts.size()) {
-		LuaChunk script = systemScripts.at(index);
-		runScript(&script, params, nArgs);
-	}
+	runHandler(_v, 3);
 }
 
 //Run script given a LuaChunk. Called by public runScript methods.
-void Webapp::runScript(LuaChunk* c, LuaParam* params, int nArgs) {
-	int bytecode_len = c->bytecode.length();
-	if(bytecode_len > 0) {
-		lua_State* L = luaL_newstate();
-		luaL_openlibs(L);
+void Webapp::runHandler(LuaParam* params, int nArgs) {
+	lua_State* L = luaL_newstate();
+	luaL_openlibs(L);
 
-		luaL_loadbuffer(L, c->bytecode.c_str(), bytecode_len, c->filename.c_str());
-		if(params != NULL) {
-			for(int i = 0; i < nArgs; i++) {
-				LuaParam* p = params + i;
-				lua_pushlightuserdata(L, p->ptr);
-				lua_setglobal(L, p->name);
-			}
+	luaL_loadfile(L, "plugins/core/process.lua");
+	if(params != NULL) {
+		for(int i = 0; i < nArgs; i++) {
+			LuaParam* p = params + i;
+			lua_pushlightuserdata(L, p->ptr);
+			lua_setglobal(L, p->name);
 		}
-		if(lua_pcall(L, 0, 0, 0) != 0) {
-			printf("Error: %s\n", lua_tostring(L, -1));
-		}
-		lua_close(L);
 	}
+	if(lua_pcall(L, 0, 0, 0) != 0) {
+		printf("Error: %s\n", lua_tostring(L, -1));
+	}
+	lua_close(L);
+	
 }
 
 Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates(""),
@@ -72,16 +62,11 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates
 	string schema = CREATE_DATABASE;
 	vector<string> schema_queries;
 	tokenize(schema, schema_queries, ";");
-	for(string s : schema_queries) {
+	for(string& s : schema_queries) {
 		database.exec(s);
 	}
 	
 	refresh_templates();
-
-	refresh_scripts();
-
-	//Create function map.
-	APIMAP(functionMap);
 
 	queue_process_thread = std::thread([this]() {
 		while(!shutdown_handler) {
@@ -93,7 +78,6 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates
 	});
 
 	queue_process_thread.detach();
-
 
 	asio::io_service::work wrk = asio::io_service::work(svc);
 	tcp::endpoint endpoint(tcp::v4(), 5000);
@@ -139,11 +123,12 @@ void Webapp::read_some(Request* r) {
 				if (r->method && newlen >= 
 					PROTOCOL_LENGTH_SIZEINFO + r->read_len + str->len) {
 						found_state = 1;
-						str->data = (char*) r->headers + r->read_len;
-						str->data[str->len] = '\0'; //Force null terminate.
+						char* h = (char*) r->headers + PROTOCOL_LENGTH_SIZEINFO + r->read_len;
+						str->data = h;
+						h[str->len] = '\0'; //Force null terminate.
 
 						r->read_strings++;
-						r->read_len += str->len;
+						r->read_len += str->len + 1;
 				} else {
 					break;
 				}
@@ -204,7 +189,7 @@ void Webapp::process_thread(std::thread* t) {
 
 Webapp::~Webapp() {
 	//Clean up client template files.
-	for(TemplateData file: clientTemplateFiles) {
+	for(TemplateData& file: clientTemplateFiles) {
 		delete(file.data);
 	}
 
@@ -215,10 +200,10 @@ Webapp::~Webapp() {
 TemplateDictionary* Webapp::getTemplate(const char* page) {
 	if(contains(contentList, page)) {
 		TemplateDictionary *d = contentTemplates.MakeCopy("");
-		for(string data: serverTemplateFiles) {
+		for(string& data: serverTemplateFiles) {
 			d->AddIncludeDictionary(data)->SetFilename(data);
 		}
-		for(TemplateData file: clientTemplateFiles) {
+		for(TemplateData& file: clientTemplateFiles) {
 			d->SetValueWithoutCopy(file.name, TemplateString(file.data->data, file.data->size));
 		}
 		return d;
@@ -236,7 +221,7 @@ void Webapp::refresh_templates() {
 	{
 		vector<string> files = FileSystem::GetFiles(templatepath, "", 0);
 		contentList.reserve(files.size());
-		for(string s : files) {
+		for(string& s : files) {
 			//Preload templates.
 			LoadTemplate(templatepath + s, STRIP_WHITESPACE);
 			contentList.push_back(s);
@@ -250,7 +235,7 @@ void Webapp::refresh_templates() {
 	{
 		vector<string> files = FileSystem::GetFiles(templatepath, "", 0);
 		serverTemplateFiles.reserve(files.size());
-		for(string s: files) {
+		for(string& s: files) {
 			File f;
 			FileData data;
 			FileSystem::Open(templatepath + s, "rb", &f);
@@ -265,7 +250,7 @@ void Webapp::refresh_templates() {
 	
 	//Load client templates (inline insertion into content templates) - these are Handbrake (JS) templates.
 	//First delete existing filedata. This should be optimised later.
-	for(TemplateData file: clientTemplateFiles) {
+	for(TemplateData& file: clientTemplateFiles) {
 		delete file.data;
 	}
 	clientTemplateFiles.clear();
@@ -274,7 +259,7 @@ void Webapp::refresh_templates() {
 	{
 		vector<string> files = FileSystem::GetFiles(templatepath, "", 0);
 		contentList.reserve(files.size());
-		for(string s: FileSystem::GetFiles(templatepath, "", 0)) {
+		for(string& s: FileSystem::GetFiles(templatepath, "", 0)) {
 			File f;
 			FileData* data = new FileData();
 			FileSystem::Open(templatepath + s, "rb", &f);
@@ -285,59 +270,4 @@ void Webapp::refresh_templates() {
 			clientTemplateFiles.push_back(d);
 		}
 	}
-}
-
-//Refresh the LUA plugins
-void Webapp::refresh_scripts() {
-	loadedScripts.clear();
-	systemScripts.clear();
-
-	string basepath = this->basepath + '/';
-	string pluginpath = basepath + "plugins/";
-	const char* system_script_names[] = SYSTEM_SCRIPT_FILENAMES;
-
-	int system_script_count = sizeof(system_script_names) / sizeof(char*);
-	for(int i = 0; i < system_script_count; i++) {
-		LuaChunk empty(system_script_names[i]);
-		systemScripts.push_back(empty);
-	}
-
-	for(string s: FileSystem::GetFiles(pluginpath, "", 1)) {
-		LuaChunk b(s);
-		lua_State* L = luaL_newstate();
-		if(L != NULL) {
-			luaL_openlibs(L);
-
-#ifdef _DEBUG
-			if(luaL_loadfile(L, (pluginpath + s).c_str())) {
-				printf ("%s\n", lua_tostring (L, -1));
-				lua_pop (L, 1);
-			}
-#else
-			luaL_loadfile(L, (pluginpath + s).c_str());
-#endif
-
-#ifdef _DEBUG
-			if(lua_dump(L, LuaWriter, &b, 0)) {
-				printf ("%s\n", lua_tostring (L, -1));
-				lua_pop (L, 1);
-			}
-#else
-			lua_dump(L, LuaWriter, &b, 1);
-#endif
-			lua_close(L);
-			//Bytecode loaded. Update empty entries.
-			loadedScripts.push_back(b);
-			for(int i = 0; i < system_script_count; i++) {
-				//Map system scripts
-				if(s == system_script_names[i]) systemScripts.at(i) = b;
-			}
-		}
-	}
-}
-
-int Webapp::LuaWriter(lua_State* L, const void* p, size_t sz, void* ud) {
-	LuaChunk* b = (LuaChunk*)ud;
-	b->bytecode.append((const char*)p, sz);
-	return 0;
 }

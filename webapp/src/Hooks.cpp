@@ -58,38 +58,46 @@ size_t StringLen(const char* str) {
 
 //Generate a Set-Cookie header provided name, value and date.
 //Cleaned up by request handler.
-const char* GenCookie(const char* name, const char* value, int days, std::vector<void*>* handler) {
+/*
+webapp_str_t* GenCookie(const char* name, const char* value, int days, std::vector<void*>* handler) {
 	char* cookie = NULL;
+	webapp_str_t* str = (webapp_str_t*) malloc (sizeof(webapp_str_t));
 	time_t t; time(&t); add_days(t, days);
 
 	const char* date_str = date_format("%a, %d-%b-%Y %H:%M:%S GMT", 29, &t, 1);
 	int size = snprintf(NULL, 255, "Set-Cookie: %s=%s; Expires=%s\r\n", name, value, date_str);
 	cookie = (char*)malloc(size + 1);
 	snprintf(cookie, 255, "Set-Cookie: %s=%s; Expires=%s\r\n", name, value, date_str);
+	str->data = cookie;
+	str->len = size;
+
 	free((void*)date_str);
 	handler->push_back(cookie);
-	return cookie;
-}
+	handler->push_back(str);
+	return str;
+}*/
 
 //Cleaned up by backend.
-const char* GetSessionID(SessionStore* session) {
-	return session->sessionid.c_str();
+int GetSessionID(SessionStore* session, webapp_str_t* out) {
+	if(session == NULL || out == NULL) return 0;
+	out->data = session->sessionid.c_str();
+	out->len = session->sessionid.length();
+	return 1;
 }
 
-std::vector<void*>* StartRequestHandler(Request* request) {
-	std::vector<void*>* gc = new std::vector<void*>();
-	gc->push_back(request);
-	return gc;
+std::vector<std::string*>* StartRequestHandler() {
+	return new std::vector<std::string*>();
 }
 
-void FinishRequestHandler(std::vector<void*>* handler) {
-	Request* request = (Request*)handler->at(0);
-	request->socket->close();
+void FinishRequest(Request* request, std::vector<string*>* handler) {
+	if(request == NULL || handler == NULL) return;
+	delete request->socket;
 	free(request);
 
-	for(std::vector<void*>::iterator it = handler->begin() + 1; it != handler->end(); ++it) {
+	for(std::vector<string*>::iterator it = handler->begin(); it != handler->end(); ++it) {
 		free(*it);
 	}
+
 	delete handler;
 }
 
@@ -99,16 +107,18 @@ TemplateDictionary* GetTemplate(Webapp* gallery, const char* page) {
 }
 
 
-const char* RenderTemplate(Webapp* gallery, ctemplate::TemplateDictionary* dict, const char* page, std::vector<void*>* handler) {
-	string output;
-	ExpandTemplate(gallery->basepath + "/content/" + page, STRIP_WHITESPACE, dict, &output);
-	char* content = (char*) malloc (output.size() + 1);
-	if(content != NULL) {
-		memcpy(content, output.c_str(), output.size() + 1);
-		handler->push_back(content);
-	}
+void RenderTemplate(Webapp* gallery, ctemplate::TemplateDictionary* dict, const char* page, std::vector<string*>* handler, webapp_str_t* out) {
+	string* output = new string;
+	ExpandTemplate(gallery->basepath + "/content/" + page, STRIP_WHITESPACE, dict, output);
+
+	//Clean up the template dictionary.
 	delete dict;
-	return content;
+	
+	out->data = output->c_str();
+	out->len = output->length();
+
+	handler->push_back(output);
+
 }
 
 const char* GetParam(Webapp* gallery, const char* param) {
@@ -117,22 +127,11 @@ const char* GetParam(Webapp* gallery, const char* param) {
 	else return val->c_str();
 }
 
-int GetScript(Webapp* gallery, const char* filename, script_t* out) {
-	for(LuaChunk c: gallery->loadedScripts) {
-		if(c.filename == filename) {
-			out->data = c.bytecode.c_str();
-			out->len = c.bytecode.size();
-			return 1;
-		}
-	}
-	return 0;
-}
-
 void writeHandler(const std::error_code& error,  std::size_t bytes_transferred) {
 
 }
 
 void WriteData(asio::ip::tcp::socket* socket, char* data, int len) {
 	*(int*)data = htons(len - 4);
-	asio::async_write(*socket, asio::buffer(data, len), writeHandler);
+	asio::write(*socket, asio::buffer(data, len));
 }

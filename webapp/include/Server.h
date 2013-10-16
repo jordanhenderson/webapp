@@ -14,7 +14,7 @@ class Webapp;
 #include "Schema.h"
 
 struct webapp_str_t {
-	char* data;
+	const char* data;
 	int len;
 };
 

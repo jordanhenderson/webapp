@@ -93,9 +93,6 @@ COMMIT;"
 //END QUERY DEFINITIONS
 
 #define SYSTEM_SCRIPT_COUNT 3
-#define SYSTEM_SCRIPT_TEMPLATE 0
-#define SYSTEM_SCRIPT_THUMBS_DEFAULT 1
-#define SYSTEM_SCRIPT_PROCESS 2
 #define SYSTEM_SCRIPT_FILENAMES {"core/template.lua", "thumbs/default.lua", "core/process.lua"}
 
 //Public API map
