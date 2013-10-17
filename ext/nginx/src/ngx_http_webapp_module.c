@@ -59,7 +59,7 @@ ngx_module_t  ngx_http_webapp_module = {
 };
 
 #define PROTOCOL_VARS 6
-#define STRING_VARS 4
+#define STRING_VARS 5
 #define INT_INTERVAL(i) sizeof(int)*i
 
 typedef struct {
@@ -73,6 +73,7 @@ typedef struct {
 	u_char tmp_buf[4];
 	int tmp_written;
 	u_char* response_buf;
+	ngx_str_t request_body;
 } webapp_request_t;
 
 static void conn_read(ngx_event_t *ev) {
@@ -154,7 +155,7 @@ static void conn_write(ngx_event_t *ev) {
 				int host_len = 0;
 				ngx_str_t* cookies = NULL;
 				ngx_str_t* host = NULL;
-				if(r->headers_in.content_length != NULL)
+				if(r->method == NGX_HTTP_POST && r->headers_in.content_length != NULL)
 					content_len = atoi((const char*)r->headers_in.content_length->value.data);
 				if(r->headers_in.cookies.elts != NULL) {
 					cookies = &(*((ngx_table_elt_t**)r->headers_in.cookies.elts))->value;
@@ -184,8 +185,41 @@ static void conn_write(ngx_event_t *ev) {
 				*(int*)(data_out.data + INT_INTERVAL(4)) = htons(r->method); //HTTP Method
 				
 				*(int*)(data_out.data + INT_INTERVAL(5)) = htons(content_len); //Content length
-
 				data_out.len = PROTOCOL_VARS * sizeof(int);
+				if(r->method == NGX_HTTP_POST && r->request_body == NULL && r->request_body->bufs == NULL) {
+					if(r->request_body->bufs->next != NULL) {
+						ngx_chain_t* cl;
+						ngx_buf_t* buf;
+						int len = 0;
+						for(cl = r->request_body->bufs; cl; cl = cl->next) {
+							buf = cl->buf;
+							len += buf->last - buf->pos;
+						}
+						
+						if(len != 0) {
+							int bytes_out = 0;
+							u_char* req = ngx_palloc(r->pool, len);
+							ngx_buf_t* buf;
+							for(cl = r->request_body->bufs; cl; cl = cl->next) {
+								int current_buf_len;
+								buf = cl->buf;
+								current_buf_len = buf->last - buf->pos;
+								req = ngx_copy(req, cl->buf->pos, current_buf_len);
+								bytes_out += current_buf_len;
+							}
+							wr->request_body.data = req - len;
+							wr->request_body.len = content_len;
+						}
+
+					} else {
+						ngx_buf_t* buf = r->request_body->bufs->buf;
+						wr->request_body.data = buf->pos;
+						wr->request_body.len = content_len;
+					}
+
+					wr->output_chain[4] = &wr->request_body;
+				}
+
 			} else {
 				//Bad method type. Don't process.
 				goto bad_method;
@@ -229,39 +263,28 @@ bad_method:
 	return;
 }
 
-static ngx_int_t
-ngx_http_webapp_content_handler(ngx_http_request_t *r) {
-	if(r->err_status == 0) {
-		ngx_connection_t* conn;
-		ngx_peer_connection_t* pconn;
-		ngx_http_webapp_loc_conf_t* wlcf;
-		webapp_request_t* webapp;
-		int path_level = 0;
-		int i = 0;
-		for(i = 0; i < r->uri.len; i++) {
-			if(r->uri.data[i] == '/')
-				path_level++;
-		}
+static void webapp_body_ready(ngx_http_request_t* r) {
+	ngx_connection_t* conn;
+	ngx_peer_connection_t* pconn;
+	ngx_http_webapp_loc_conf_t* wlcf;
+	webapp_request_t* webapp;
 
-		if(r->uri.data == NULL || path_level != 1)
-			return NGX_DECLINED;
+	wlcf = ngx_http_get_module_loc_conf(r, ngx_http_webapp_module); 
+	webapp = ngx_palloc(r->pool, sizeof(webapp_request_t));
 
-		wlcf = ngx_http_get_module_loc_conf(r, ngx_http_webapp_module); 
-		webapp = ngx_palloc(r->pool, sizeof(webapp_request_t));
+	pconn = ngx_palloc(r->pool, sizeof(ngx_peer_connection_t));
 
-		pconn = ngx_palloc(r->pool, sizeof(ngx_peer_connection_t));
-
-		pconn->log = r->connection->log;
-		pconn->name = &wlcf->url->url;
-		pconn->sockaddr = (struct sockaddr*)wlcf->url->sockaddr;
-		pconn->socklen = wlcf->url->socklen;
-		pconn->get = ngx_event_get_peer;
-		pconn->local = NULL;
-		pconn->connection = NULL;
-		//Create the peer connection.
-		ngx_event_connect_peer(pconn);
-		conn = pconn->connection;
-		if(conn != NULL) {
+	pconn->log = r->connection->log;
+	pconn->name = &wlcf->url->url;
+	pconn->sockaddr = (struct sockaddr*)wlcf->url->sockaddr;
+	pconn->socklen = wlcf->url->socklen;
+	pconn->get = ngx_event_get_peer;
+	pconn->local = NULL;
+	pconn->connection = NULL;
+	//Create the peer connection.
+	ngx_event_connect_peer(pconn);
+	conn = pconn->connection;
+	if(conn != NULL) {
 		//Set up the webapp structure.
 		memset(webapp, 0, sizeof(webapp_request_t));
 		webapp->r = r;
@@ -276,11 +299,35 @@ ngx_http_webapp_content_handler(ngx_http_request_t *r) {
 		//Make our request depend on a (sub) connection (backend peer).
 		r->main->count++;
 	}
-	return NGX_DONE; //for now...
-	} else {
-		return NGX_OK;
+}
+
+static ngx_int_t
+ngx_http_webapp_content_handler(ngx_http_request_t *r) {
+	int path_level = 0;
+	int rc;
+	int i = 0;
+	for(i = 0; i < r->uri.len; i++) {
+		if(r->uri.data[i] == '/')
+			path_level++;
 	}
-	
+
+	if(r->uri.data == NULL || path_level != 1)
+		return NGX_DECLINED;
+
+	if(r->method == NGX_HTTP_POST) {
+		rc = ngx_http_read_client_request_body(r, webapp_body_ready);
+		if (rc >= NGX_HTTP_SPECIAL_RESPONSE) {
+			return rc;
+		}
+
+		return NGX_DONE;
+	} else {
+			if(r->err_status == 0) {
+				webapp_body_ready(r);
+			}
+			return NGX_DONE; //for now...
+	}
+	return NGX_OK;
 }
 
 static void *

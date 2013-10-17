@@ -336,5 +336,14 @@
     <ClCompile Include="src\ngx_http_webapp_module.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\http\ngx_http_spdy.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\http\ngx_http_spdy_filter_module.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\http\ngx_http_spdy_module.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -22,7 +22,6 @@ APIEXPORT SessionStore* GetSession(Sessions*, const char*);
 APIEXPORT SessionStore* NewSession(Sessions*, const char*, const char*);
 APIEXPORT int Template_SetValue(ctemplate::TemplateDictionary* dict, const char* key, const char* value);
 APIEXPORT Request* GetNextRequest(tbb::concurrent_bounded_queue<Request*>* requests);
-APIEXPORT size_t StringLen(const char*);
 APIEXPORT int GetSessionID(SessionStore*, webapp_str_t* out);
 APIEXPORT std::vector<std::string*>* StartRequestHandler();
 APIEXPORT void FinishRequest(Request*, std::vector<std::string*>*);

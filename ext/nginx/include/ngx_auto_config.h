@@ -144,3 +144,4 @@
 #define NGX_GROUP  ""
 #endif
 
+#define NGX_HTTP_SPDY 1

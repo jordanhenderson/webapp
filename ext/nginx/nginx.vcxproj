@@ -92,6 +92,9 @@
     <ClCompile Include="src\http\ngx_http_request.c" />
     <ClCompile Include="src\http\ngx_http_request_body.c" />
     <ClCompile Include="src\http\ngx_http_script.c" />
+    <ClCompile Include="src\http\ngx_http_spdy.c" />
+    <ClCompile Include="src\http\ngx_http_spdy_filter_module.c" />
+    <ClCompile Include="src\http\ngx_http_spdy_module.c" />
     <ClCompile Include="src\http\ngx_http_special_response.c" />
     <ClCompile Include="src\http\ngx_http_upstream.c" />
     <ClCompile Include="src\http\ngx_http_upstream_round_robin.c" />

@@ -21,18 +21,19 @@ struct webapp_str_t {
 struct Request {
 	asio::ip::tcp::socket* socket;
 	std::vector<char>* v;
-	const char* headers;
+	int amount_to_recieve;
 	int length;
 	int method;
 	webapp_str_t uri;
 	webapp_str_t host;
 	webapp_str_t user_agent;
 	webapp_str_t cookies;
+	webapp_str_t request_body;
 	int content_len;
 	//Event vars.
 	int read_len;
-	int read_strings;
 	webapp_str_t* input_chain[STRING_VARS];
+	std::vector<std::vector<char>*> buffers;
 };
 
 #define INT_INTERVAL(i) sizeof(int)*i

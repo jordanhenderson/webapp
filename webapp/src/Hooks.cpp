@@ -50,34 +50,6 @@ Request* GetNextRequest(tbb::concurrent_bounded_queue<Request*>* requests) {
 
 }
 
-
-size_t StringLen(const char* str) {
-	if(str == NULL) return NULL;
-	return strlen(str);
-}
-
-//Generate a Set-Cookie header provided name, value and date.
-//Cleaned up by request handler.
-/*
-webapp_str_t* GenCookie(const char* name, const char* value, int days, std::vector<void*>* handler) {
-	char* cookie = NULL;
-	webapp_str_t* str = (webapp_str_t*) malloc (sizeof(webapp_str_t));
-	time_t t; time(&t); add_days(t, days);
-
-	const char* date_str = date_format("%a, %d-%b-%Y %H:%M:%S GMT", 29, &t, 1);
-	int size = snprintf(NULL, 255, "Set-Cookie: %s=%s; Expires=%s\r\n", name, value, date_str);
-	cookie = (char*)malloc(size + 1);
-	snprintf(cookie, 255, "Set-Cookie: %s=%s; Expires=%s\r\n", name, value, date_str);
-	str->data = cookie;
-	str->len = size;
-
-	free((void*)date_str);
-	handler->push_back(cookie);
-	handler->push_back(str);
-	return str;
-}*/
-
-//Cleaned up by backend.
 int GetSessionID(SessionStore* session, webapp_str_t* out) {
 	if(session == NULL || out == NULL) return 0;
 	out->data = session->sessionid.c_str();

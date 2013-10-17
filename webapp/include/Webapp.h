@@ -113,7 +113,6 @@ private:
 
 	asio::io_service& svc;
 	void read_some(Request* r);
-
 //Gallery specific calls
 	int genThumb(const char* file, double shortmax, double longmax);
 	int getDuplicates(std::string& name, std::string& path);

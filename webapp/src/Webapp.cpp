@@ -89,76 +89,39 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates
 //This function asynchronously reads chunks of data from the socket.
 //Uses a basic state machine.
 void Webapp::read_some(Request* r) {
-	r->socket->async_read_some(asio::buffer(*r->v),
-		[this, r](const asio::error_code& error, std::size_t bytes_transferred) {
-			size_t newlen = r->length + bytes_transferred;
-			int found_state = 0;
-			std::vector<char>* v = r->v;
-			r->headers = v->data();
-
-			//We use this as a state machine to repeatedly read in and process the request (non-blocking).
-			if(r->uri.data == NULL && newlen >= PROTOCOL_LENGTH_SIZEINFO && !r->method) {
-				found_state = 1;
-				//STATE: Read protocol.
-				r->uri.len = ntohs(*(int*)(r->headers));
-				r->host.len = ntohs(*(int*)(r->headers + INT_INTERVAL(1)));
-				r->user_agent.len = ntohs(*(int*)(r->headers + INT_INTERVAL(2)));
-				r->cookies.len = ntohs(*(int*)(r->headers + INT_INTERVAL(3)));
-				r->method = ntohs(*(int*)(r->headers + INT_INTERVAL(4)));
-
-				//Update the input chain.
-				r->input_chain[0] = &r->uri;
-				r->input_chain[1] = &r->host;
-				r->input_chain[2] = &r->user_agent;
-				r->input_chain[3] = &r->cookies;
-
-				if(r->method == HTTP_METHOD_GET)
-					r->content_len = ntohs(*(int*)(r->headers + INT_INTERVAL(5)));
-				
+	std::vector<char>* buffer = new std::vector<char>(r->amount_to_recieve);
+	r->buffers.push_back(buffer);
+	asio::async_read(*r->socket, asio::buffer(*buffer), transfer_exactly(r->amount_to_recieve),
+		[this, r, buffer](const asio::error_code& error, std::size_t bytes_transferred) {
+			if(bytes_transferred == 0) {
+				read_some(r);
+				return;
 			}
 			
-			while(r->read_strings < STRING_VARS) {
-				webapp_str_t* str = r->input_chain[r->read_strings];
-
-				if (r->method && newlen >= 
-					PROTOCOL_LENGTH_SIZEINFO + r->read_len + str->len) {
-						found_state = 1;
-						char* h = (char*) r->headers + PROTOCOL_LENGTH_SIZEINFO + r->read_len;
-						str->data = h;
-						h[str->len] = '\0'; //Force null terminate.
-
-						r->read_strings++;
-						r->read_len += str->len + 1;
-				} else {
-					break;
+			Request* derp = r;
+			std::vector<char>* tmpbuf = buffer;
+			//We use this as a state machine to repeatedly read in and process the request (non-blocking).
+					
+			int read = 0;
+			for(int i = 0; i < STRING_VARS; i++) {
+				if(r->input_chain[i]->data == NULL) {
+					char* h = (char*) buffer->data() + read;
+					r->input_chain[i]->data = h;
+					h[r->input_chain[i]->len] = '\0';
+					read += r->input_chain[i]->len + 1;
 				}
 			}
 
-			if (r->read_strings == STRING_VARS) {
-				found_state = 1;
-				//Finished reading data. Create lua handler.
-				if(shutdown_handler) return;
-				if(numInstances < tbb::task_scheduler_init::default_num_threads()) {	
-					WebappTask* task = new (task::allocate_additional_child_of(*parent_task)) 
-						WebappTask(this);
-					parent_task->enqueue(*task);
-				} 
-
-				requests.push(r);
-				//State machine finished.
-				return;
-			} 
 			
-			if(!found_state) {
-				//Wait for more?
-				//TODO timeout check.
-				//or just die.
-				r->length = newlen;
-				read_some(r);
-			} else {
-				r->length = newlen;
-				read_some(r);
-			}
+			//Finished reading data. Create lua handler.
+			if(shutdown_handler) return;
+			if(numInstances < tbb::task_scheduler_init::default_num_threads()) {	
+				WebappTask* task = new (task::allocate_additional_child_of(*parent_task)) 
+					WebappTask(this);
+				parent_task->enqueue(*task);
+			} 
+
+			requests.push(r);
 
 	});
 }
@@ -166,13 +129,42 @@ void Webapp::read_some(Request* r) {
 void Webapp::accept_message() {
 	ip::tcp::socket* s = new ip::tcp::socket(svc);
 	acceptor->async_accept(*s, [this, s](const asio::error_code& error) {
-		
-
 		Request* r = new Request();
-		r->v = new std::vector<char>(512);
 		r->socket = s;
+		std::vector<char>* buffer = new std::vector<char>(PROTOCOL_LENGTH_SIZEINFO);
+
 		try {
-			read_some(r);
+			asio::async_read(*r->socket, asio::buffer(*buffer), transfer_exactly(PROTOCOL_LENGTH_SIZEINFO),
+				[this, r, buffer](const asio::error_code& error, std::size_t bytes_transferred) {
+					if(r->uri.data == NULL && !r->method) {
+						const char* headers = buffer->data();
+						//At this stage, at least PROTOCOL_SIZELENGTH_INFO has been read into the buffer.
+						//STATE: Read protocol.
+						r->uri.len = ntohs(*(int*)(headers));
+						r->host.len = ntohs(*(int*)(headers + INT_INTERVAL(1)));
+						r->user_agent.len = ntohs(*(int*)(headers + INT_INTERVAL(2)));
+						r->cookies.len = ntohs(*(int*)(headers + INT_INTERVAL(3)));
+						r->method = ntohs(*(int*)(headers + INT_INTERVAL(4)));
+						r->request_body.len = ntohs(*(int*)(headers + INT_INTERVAL(5)));
+
+						//Update the input chain.
+						r->input_chain[0] = &r->uri;
+						r->input_chain[1] = &r->host;
+						r->input_chain[2] = &r->user_agent;
+						r->input_chain[3] = &r->cookies;
+						r->input_chain[4] = &r->request_body;
+
+						
+						int len = 0;
+						for(int i = 0; i < STRING_VARS; i++) {
+							len += r->input_chain[i]->len + 1;
+						}
+						r->amount_to_recieve = len;
+						read_some(r);
+
+					} 
+					
+				});
 			accept_message();
 		} catch(std::system_error er) {
 			accept_message();
