@@ -120,6 +120,10 @@
 #ifndef __NQCVECTOR_H 
 #define __NQCVECTOR_H
 
+#ifdef _MSC_VER
+#define inline __inline
+#endif
+
 /*
  *  nq_colour_vector
  *

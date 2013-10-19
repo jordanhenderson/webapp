@@ -8,6 +8,10 @@
 const char* THUMB_EXTENSIONS_JPEG[] = THUMB_EXTENSIONS_JPEG_D;
 using namespace std;
 
+#ifdef _MSC_VER
+#define fileno _fileno
+#endif
+
 //JPEG jmp (hacky, but less code than official setjmp solution.)
 extern "C" {
 	jmp_buf buf;

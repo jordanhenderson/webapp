@@ -19,6 +19,7 @@ two modules will be linked.  Preserve this property!
 #include <string.h>
 
 #ifdef _WIN32
+#define open _open
 #include <io.h>
 #endif /* _WIN32 */
 

@@ -19,46 +19,46 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\windows\port.cpp">
+    <ClCompile Include="src\base\arena.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\base\arena.cpp">
+    <ClCompile Include="src\htmlparser\htmlparser.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\htmlparser\htmlparser.cpp">
+    <ClCompile Include="src\htmlparser\jsparser.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\htmlparser\jsparser.cpp">
+    <ClCompile Include="src\htmlparser\statemachine.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\per_expand_data.cpp">
+    <ClCompile Include="src\per_expand_data.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\htmlparser\statemachine.cpp">
+    <ClCompile Include="src\template.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\template.cpp">
+    <ClCompile Include="src\template_annotator.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\template_annotator.cpp">
+    <ClCompile Include="src\template_cache.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\template_cache.cpp">
+    <ClCompile Include="src\template_dictionary.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\template_dictionary.cpp">
+    <ClCompile Include="src\template_modifiers.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\template_modifiers.cpp">
+    <ClCompile Include="src\template_namelist.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\template_namelist.cpp">
+    <ClCompile Include="src\template_pathops.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\template_pathops.cpp">
+    <ClCompile Include="src\template_string.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\template_string.cpp">
+    <ClCompile Include="src\windows\port.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

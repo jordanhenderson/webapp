@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "webapp", "webapp\webapp.vcxproj", "{98A31BD0-3FC3-4853-8448-925FE61B4BD1}"
 	ProjectSection(ProjectDependencies) = postProject
 		{53D3361B-51D2-4F41-BF13-2A27CB061EEB} = {53D3361B-51D2-4F41-BF13-2A27CB061EEB}
@@ -437,7 +439,8 @@ Global
 		{BCEB2DE5-346C-4E4A-9816-E8BDCA3079E8}.Release|x64.Build.0 = Release|x64
 		{20675957-CE52-44AE-99A9-F7056463B0C8}.Debug|Win32.ActiveCfg = Debug|Win32
 		{20675957-CE52-44AE-99A9-F7056463B0C8}.Debug|Win32.Build.0 = Debug|Win32
-		{20675957-CE52-44AE-99A9-F7056463B0C8}.Debug|x64.ActiveCfg = Debug|Win32
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.Debug|x64.ActiveCfg = Debug|x64
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.Debug|x64.Build.0 = Debug|x64
 		{20675957-CE52-44AE-99A9-F7056463B0C8}.LinuxDebug|Win32.ActiveCfg = Debug|Win32
 		{20675957-CE52-44AE-99A9-F7056463B0C8}.LinuxDebug|Win32.Build.0 = Debug|Win32
 		{20675957-CE52-44AE-99A9-F7056463B0C8}.LinuxDebug|x64.ActiveCfg = Debug|Win32
@@ -446,7 +449,8 @@ Global
 		{20675957-CE52-44AE-99A9-F7056463B0C8}.LinuxRelease|x64.ActiveCfg = Release|Win32
 		{20675957-CE52-44AE-99A9-F7056463B0C8}.Release|Win32.ActiveCfg = Release|Win32
 		{20675957-CE52-44AE-99A9-F7056463B0C8}.Release|Win32.Build.0 = Release|Win32
-		{20675957-CE52-44AE-99A9-F7056463B0C8}.Release|x64.ActiveCfg = Release|Win32
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.Release|x64.ActiveCfg = Release|x64
+		{20675957-CE52-44AE-99A9-F7056463B0C8}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

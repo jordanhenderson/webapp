@@ -119,6 +119,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef _MSC_VER
+#define inline __inline
+#endif
+
 
 #define MAXNETSIZE	256    /* maximum number of colours that can be used. 
 				  actual number is now passed to initcolors */

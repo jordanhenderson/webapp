@@ -248,7 +248,7 @@ static unsigned char *neuronlock[MAXNETSIZE];   /* Locks for each of the neurons
 static double bias [MAXNETSIZE];        /* Bias array for learning */
 static double freq [MAXNETSIZE];        /* Freq array for learning */
 static double radpower[initrad];        /* Radpower for precomputation */
-static unsigned int netsize;            /* Number of colours to use. */
+#define netsize 256            /* Number of colours to use. */
 static unsigned int repel_points[MAXNETSIZE]; /* Number of points this neuron has for repelling */
 #define REPEL_THRESHOLD 16              /* See repel_coincident()... */
 #define REPEL_STEP_DOWN 1               /* ... for an explanation of... */
@@ -515,7 +515,6 @@ void palinitnet(
     /* Initialise all settings. */
     thepicture = thepic;
     lengthcount = len;
-    netsize = colours;
     colour_space = i_colour_space;
     alpha_extenuation = i_alpha_extenuation;
     force_alpha_class_correctness = i_force_alpha_class_correctness;
