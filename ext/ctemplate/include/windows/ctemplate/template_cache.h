@@ -56,8 +56,8 @@ class TemplateCacheUnittest;
 extern template class __declspec(dllimport) std::allocator<std::string>;
 extern template class __declspec(dllimport) std::vector<std::string>;
 #else
-template class __declspec(dllexport) std::allocator<std::string>;
-template class __declspec(dllexport) std::vector<std::string>;
+template class std::allocator<std::string>;
+template class std::vector<std::string>;
 #endif
 
 namespace ctemplate {

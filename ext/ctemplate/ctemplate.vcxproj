@@ -162,6 +162,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>include/windows;include;</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PreprocessorDefinitions>_USING_V110_SDK71_;CTEMPLATE_DLL_DECL=;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -186,6 +187,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>include/windows;include;</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PreprocessorDefinitions>_USING_V110_SDK71_;CTEMPLATE_DLL_DECL=;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -212,6 +214,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>include/windows;include;</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions>_USING_V110_SDK71_;CTEMPLATE_DLL_DECL=;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -244,6 +247,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>include/windows;include;</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions>_USING_V110_SDK71_;CTEMPLATE_DLL_DECL=;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

@@ -249,6 +249,9 @@
     <None Include="linuxrelease.mak" />
     <None Include="Makefile" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\my_config.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

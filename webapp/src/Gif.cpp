@@ -141,9 +141,9 @@ void Image::gifMakeMap(unsigned char* image, int width, int height, unsigned cha
 	
 	palinitnet(NULL, 0, 1.0, image,width*height*4,256,
 		1, 1.8, 0.0,
-		0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 0);
+		0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 0);
 
-	double sample_factor = 1 + (double)width*(double)height / (512*512);
+	unsigned int sample_factor = (int)(1 + (double)width*(double)height / (512*512));
 	if (sample_factor > 10) {
 		sample_factor = 10;
 	}

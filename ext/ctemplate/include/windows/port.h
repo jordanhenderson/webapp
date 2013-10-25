@@ -65,6 +65,7 @@
  * 4996: Yes, we're ok using "unsafe" functions like fopen() and strerror()
  */
 #ifdef _MSC_VER
+#undef va_copy
 #pragma warning(disable:4244 4251 4355 4715 4800 4996)
 #endif
 

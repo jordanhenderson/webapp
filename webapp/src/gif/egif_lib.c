@@ -40,7 +40,7 @@ static int EGifPutWord(int Word, GifFileType * GifFile);
 static int EGifSetupCompress(GifFileType * GifFile);
 static int EGifCompressLine(GifFileType * GifFile, GifPixelType * Line,
                             int LineLen);
-static int EGifCompressOutput(GifFileType * GifFile, int Code);
+static int EGifCompressOutput(GifFileType * GifFile, const int Code);
 static int EGifBufferedOutput(GifFileType * GifFile, GifByteType * Buf,
                               int c);
 

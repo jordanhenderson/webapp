@@ -189,8 +189,6 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>src/core;src/event;src/event/modules;src/http/modules;src/http;src/mail;src/mysql;src/os/win32;include;../zlib/include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PreprocessorDefinitions>
-      </PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -205,8 +203,6 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>src/core;src/event;src/event/modules;src/http/modules;src/http;src/mail;src/mysql;src/os/win32;include;../zlib/include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PreprocessorDefinitions>
-      </PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -222,7 +218,6 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <PreprocessorDefinitions>ASIO_MSVC;ASIO_WINDOWS;ASIO_STANDALONE;</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>src/core;src/event;src/event/modules;src/http/modules;src/http;src/mail;src/mysql;src/os/win32;include;../zlib/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -241,7 +236,6 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <PreprocessorDefinitions>ASIO_MSVC;ASIO_WINDOWS;ASIO_STANDALONE;</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>src/core;src/event;src/event/modules;src/http/modules;src/http;src/mail;src/mysql;src/os/win32;include;../zlib/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>

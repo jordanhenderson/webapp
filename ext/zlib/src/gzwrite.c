@@ -4,9 +4,6 @@
  */
 
 #include "gzguts.h"
-#ifdef _MSC_VER
-#define write _write
-#endif
 /* Local functions */
 local int gz_init OF((gz_statep));
 local int gz_comp OF((gz_statep, int));

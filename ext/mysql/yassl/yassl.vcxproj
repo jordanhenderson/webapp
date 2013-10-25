@@ -178,7 +178,7 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <TreatSpecificWarningsAsErrors>4099</TreatSpecificWarningsAsErrors>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;ENABLED_DEBUG_SYNC;HAVE_YASSL;YASSL_PREFIX;HAVE_OPENSSL;MULTI_THREADED;_CRT_SECURE_NO_DEPRECATE;_WIN32_WINNT=0x0502;WIN32_LEAN_AND_MEAN;HAVE_GETCURRENTPROCESSORNUMBER=1;HAVE_CONFIG_H;get_tty_password_ext=yassl_mysql_get_tty_password_ext;get_tty_password=yassl_mysql_get_tty_password;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;HAVE_GETCURRENTPROCESSORNUMBER=1;HAVE_CONFIG_H;get_tty_password_ext=yassl_mysql_get_tty_password_ext;get_tty_password=yassl_mysql_get_tty_password;HAVE_YASSL;YASSL_PREFIX;HAVE_OPENSSL;MULTI_THREADED;_DEBUG;ENABLED_DEBUG_SYNC;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>Debug</AssemblerListingLocation>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
@@ -247,7 +247,7 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <TreatSpecificWarningsAsErrors>4099</TreatSpecificWarningsAsErrors>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;ENABLED_DEBUG_SYNC;HAVE_YASSL;YASSL_PREFIX;HAVE_OPENSSL;MULTI_THREADED;_CRT_SECURE_NO_DEPRECATE;_WIN32_WINNT=0x0502;WIN32_LEAN_AND_MEAN;HAVE_GETCURRENTPROCESSORNUMBER=1;HAVE_CONFIG_H;get_tty_password_ext=yassl_mysql_get_tty_password_ext;get_tty_password=yassl_mysql_get_tty_password;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;HAVE_GETCURRENTPROCESSORNUMBER=1;HAVE_CONFIG_H;get_tty_password_ext=yassl_mysql_get_tty_password_ext;get_tty_password=yassl_mysql_get_tty_password;HAVE_YASSL;YASSL_PREFIX;HAVE_OPENSSL;MULTI_THREADED;_DEBUG;ENABLED_DEBUG_SYNC;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>Debug</AssemblerListingLocation>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
@@ -315,7 +315,7 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <TreatSpecificWarningsAsErrors>4099</TreatSpecificWarningsAsErrors>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;DBUG_OFF;HAVE_YASSL;YASSL_PREFIX;HAVE_OPENSSL;MULTI_THREADED;_CRT_SECURE_NO_DEPRECATE;_WIN32_WINNT=0x0502;WIN32_LEAN_AND_MEAN;HAVE_GETCURRENTPROCESSORNUMBER=1;HAVE_CONFIG_H;get_tty_password_ext=yassl_mysql_get_tty_password_ext;get_tty_password=yassl_mysql_get_tty_password;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;HAVE_GETCURRENTPROCESSORNUMBER=1;HAVE_CONFIG_H;get_tty_password_ext=yassl_mysql_get_tty_password_ext;get_tty_password=yassl_mysql_get_tty_password;HAVE_YASSL;YASSL_PREFIX;HAVE_OPENSSL;MULTI_THREADED;NDEBUG;DBUG_OFF;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>Release</AssemblerListingLocation>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
@@ -382,7 +382,7 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <TreatSpecificWarningsAsErrors>4099</TreatSpecificWarningsAsErrors>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;DBUG_OFF;HAVE_YASSL;YASSL_PREFIX;HAVE_OPENSSL;MULTI_THREADED;_CRT_SECURE_NO_DEPRECATE;_WIN32_WINNT=0x0502;WIN32_LEAN_AND_MEAN;HAVE_GETCURRENTPROCESSORNUMBER=1;HAVE_CONFIG_H;get_tty_password_ext=yassl_mysql_get_tty_password_ext;get_tty_password=yassl_mysql_get_tty_password;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;HAVE_GETCURRENTPROCESSORNUMBER=1;HAVE_CONFIG_H;get_tty_password_ext=yassl_mysql_get_tty_password_ext;get_tty_password=yassl_mysql_get_tty_password;HAVE_YASSL;YASSL_PREFIX;HAVE_OPENSSL;MULTI_THREADED;NDEBUG;DBUG_OFF;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>Release</AssemblerListingLocation>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ProgramDataBaseFileName>$(IntDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>

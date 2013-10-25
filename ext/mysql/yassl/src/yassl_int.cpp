@@ -20,7 +20,8 @@
 // First include (the generated) my_config.h, to get correct platform defines.
 #include "my_config.h"
 #ifdef _WIN32
-#include<Windows.h>
+#define _WINSOCKAPI_
+#include <Windows.h>
 #else
 #include <pthread.h>
 #endif

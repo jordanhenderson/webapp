@@ -27,4 +27,9 @@
       <Filter>Make files</Filter>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\my_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>

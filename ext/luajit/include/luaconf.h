@@ -136,4 +136,8 @@
 #define luai_apicheck(L, o)	{ (void)L; }
 #endif
 
+#ifdef _MSC_VER
+#pragma warning(disable:4996)
+#endif
+
 #endif
