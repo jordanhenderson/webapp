@@ -346,10 +346,6 @@
       </AdditionalOptions>
     </ClCompile>
     <ClCompile Include="src\Image.cpp" />
-    <ClCompile Include="src\Internal.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Platform.cpp" />
     <ClCompile Include="src\Hooks.cpp" />
@@ -393,6 +389,7 @@
     <ClInclude Include="include\gif\gif_lib.h" />
     <ClInclude Include="include\gif\gif_lib_private.h" />
     <ClInclude Include="include\gif\stdbool.h" />
+    <ClInclude Include="include\Helpers.h" />
     <ClInclude Include="include\Hooks.h" />
     <ClInclude Include="include\Image.h" />
     <ClInclude Include="include\pngnq\neuquant32.h" />

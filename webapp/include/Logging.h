@@ -2,6 +2,7 @@
 #ifndef LOGGING_H
 #define LOGGING_H
 #include "Platform.h"
+#include "Helpers.h"
 #include "tbb/concurrent_queue.h"
 #include "FileSystem.h"
 

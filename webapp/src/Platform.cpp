@@ -1,4 +1,5 @@
 #include "Platform.h"
+#include "Helpers.h"
 #include <algorithm>
 #include <cctype>
 #include <ctime>

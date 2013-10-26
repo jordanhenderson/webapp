@@ -1,3 +1,8 @@
+#include "Platform.h"
+#include "Helpers.h"
+#include "Schema.h"
+#include "Server.h"
+#include "Session.h"
 #include "Logging.h"
 #include "Webapp.h"
 #include "Image.h"
@@ -6,10 +11,73 @@
 #include "stringbuffer.h"
 #include <sha.h>
 
-
 using namespace std;
 
+int getData(Webapp* webapp, void* vars, webapp_str_t* out, SessionStore* store) {
+	/*
+	Serializer serializer;
+
+	if (!hasAlbums()) {
+		serializer.append("msg", "NO_ALBUMS", 1);
+		r.append(serializer.get(RESPONSE_TYPE_MESSAGE));
+		return 0;
+	}
+
+	string limit = vars["limit"].empty() ? XSTR(DEFAULT_PAGE_LIMIT) : vars["limit"];
+	int nLimit = stoi(limit);
+	if (nLimit > MAX_PAGE_LIMIT) {
+		limit = XSTR(DEFAULT_PAGE_LIMIT);
+		nLimit = DEFAULT_PAGE_LIMIT;
+	}
+
+	string col = vars["by"].empty() ? "id" : vars["by"];
+
+	int nPage = vars["page"].empty() ? 0 : stoi(vars["page"]);
+	int page = nPage * nLimit;
+
+	if (col == "rand") page = 0;
+
+	query.params->push_back(to_string(page));
+	query.params->push_back(limit);
+
+	string order = (vars["order"] == "asc") ? "ASC" : "DESC";
+	//TODO validate col
+
+	if (col == "rand") {
+		query.dbq->append(ORDER_DEFAULT DB_FUNC_RANDOM);
+	}
+	else {
+		query.dbq->append(ORDER_DEFAULT + col + " " + order);
+	}
+	query.dbq->append(" LIMIT ?,? ");
+	query.description = new QueryRow();
+	query.response = new QueryResponse();
+	database.select(&query);
+	serializer.append(query);
+
+	r.append(serializer.get(RESPONSE_TYPE_DATA));
+	*/
+	return 0;
+}
+
+extern "C" {
+	APIEXPORT int getAlbums(Webapp* webapp, void* vars, webapp_str_t* out, SessionStore* store) {
+		string query = SELECT_ALBUM_DETAILS;
+
+		string id = "0";
+		QueryRow params;
+		if (!id.empty()) {
+			query.append(CONDITION_ALBUMID);
+			params.push_back(id);
+		}
+		Query q(query, &params);
+		return getData(webapp, vars, out, store);
+	}
+};
+
+
 //Public API functions.
+/*
 int Webapp::disableFiles(RequestVars& vars, Response& r, SessionStore& s) {
 	string query = TOGGLE_FILES;
 	QueryRow params;
@@ -560,3 +628,4 @@ int Webapp::genThumb(const char* file, double shortmax, double longmax) {
 
 	return ERROR_SUCCESS;
 }
+*/

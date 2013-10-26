@@ -1,7 +1,9 @@
 #ifndef DATABASE_H
 #define DATABASE_H
 
+#include "Helpers.h"
 #include "Platform.h"
+
 #include "sqlite3.h"
 #include <thread>
 
@@ -28,7 +30,7 @@ public:
 	QueryResponse* response;
 	QueryRow* description;
 	int status;
-	int lastrowid;
+	long long lastrowid;
 	int params_copy;
 	Query(const std::string& dbq, QueryRow* params=NULL);
 	~Query();
@@ -48,8 +50,8 @@ public:
 	Database();
 	~Database();
 	int connect(int database_type, const std::string& host, const std::string& username="", const std::string& password="", const std::string& database="");
-	int exec(Query* query);
-	int exec(const std::string& query, QueryRow* params=NULL);
+	long long exec(Query* query);
+	long long exec(const std::string& query, QueryRow* params=NULL);
 	Query* select(Query* query, QueryRow* params=NULL, int desc = 0);
 	//Return the first cell in the first row of the response as a string.
 	std::string select_single(const std::string& query, QueryRow* params = NULL, const std::string& def = "");

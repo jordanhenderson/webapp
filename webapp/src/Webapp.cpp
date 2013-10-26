@@ -25,7 +25,7 @@ task* WebappTask::execute() {
 
 void Webapp::createWorker() {
 	LuaParam _v[] = {{"sessions", &sessions}, {"requests", &requests}, {"app", this}};
-	runHandler(_v, 3);
+	runHandler(_v, sizeof(_v) / sizeof(LuaParam));
 }
 
 //Run script given a LuaChunk. Called by public runScript methods.
@@ -33,7 +33,7 @@ void Webapp::runHandler(LuaParam* params, int nArgs) {
 	lua_State* L = luaL_newstate();
 	luaL_openlibs(L);
 
-	luaL_loadfile(L, "plugins/core/process.lua");
+	luaL_loadfile(L, "plugins/core/process.lua"); //only loaded once per handler. 
 	if(params != NULL) {
 		for(int i = 0; i < nArgs; i++) {
 			LuaParam* p = params + i;
@@ -52,7 +52,8 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates
 										params(params),
 										basepath(params->get("basepath")),
 										dbpath(params->get("dbpath")), 
-										svc(io_svc) {
+										svc(io_svc),
+										tasks(tbb::task_scheduler_init::default_num_threads()) {
 
 	database.connect(DATABASE_TYPE_SQLITE, dbpath);
 	//Enable pragma foreign keys.
@@ -68,61 +69,37 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates
 	
 	refresh_templates();
 
-	queue_process_thread = std::thread([this]() {
-		while(!shutdown_handler) {
-			std::thread* nextThread;
-			processQueue.pop(nextThread);
-			currentID = nextThread->get_id();
-			cv_thread_start.notify_all();
-		}
-	});
-
-	queue_process_thread.detach();
+	//Create/allocate initial worker tasks.
+	for (unsigned int i = 0; i < tasks.size(); i++) {
+		tasks.at(i) = new (task::allocate_additional_child_of(*parent_task)) WebappTask(this);
+	}	
 
 	asio::io_service::work wrk = asio::io_service::work(svc);
 	tcp::endpoint endpoint(tcp::v4(), 5000);
 	acceptor = new tcp::acceptor(svc, endpoint, true);
 	accept_message();
-	svc.run();
+	svc.run(); //block the main thread.
 }
 
-//This function asynchronously reads chunks of data from the socket.
-//Uses a basic state machine.
-void Webapp::read_some(Request* r) {
-	std::vector<char>* buffer = new std::vector<char>(r->amount_to_recieve);
-	r->buffers.push_back(buffer);
-	asio::async_read(*r->socket, asio::buffer(*buffer), transfer_exactly(r->amount_to_recieve),
-		[this, r, buffer](const asio::error_code& error, std::size_t bytes_transferred) {
-			if(bytes_transferred == 0) {
-				read_some(r);
-				return;
-			}
-			
-			Request* derp = r;
-			std::vector<char>* tmpbuf = buffer;
-			//We use this as a state machine to repeatedly read in and process the request (non-blocking).
-					
+void Webapp::processRequest(Request* r, int amount) {
+	r->v = new std::vector<char>(amount);
+	asio::async_read(*r->socket, asio::buffer(*r->v), transfer_exactly(amount),
+		[this, r](const asio::error_code& error, std::size_t bytes_transferred) {
 			int read = 0;
 			for(int i = 0; i < STRING_VARS; i++) {
 				if(r->input_chain[i]->data == NULL) {
-					char* h = (char*) buffer->data() + read;
+					char* h = (char*) r->v->data() + read;
 					r->input_chain[i]->data = h;
 					h[r->input_chain[i]->len] = '\0';
 					read += r->input_chain[i]->len + 1;
 				}
 			}
-
-			
-			//Finished reading data. Create lua handler.
-			if(shutdown_handler) return;
-			if(numInstances < tbb::task_scheduler_init::default_num_threads()) {	
-				WebappTask* task = new (task::allocate_additional_child_of(*parent_task)) 
-					WebappTask(this);
-				parent_task->enqueue(*task);
+			 
+			if (numInstances + 1 < tasks.size()) {
+				parent_task->enqueue(*tasks.at(numInstances));
 			} 
 
 			requests.push(r);
-
 	});
 }
 
@@ -131,13 +108,13 @@ void Webapp::accept_message() {
 	acceptor->async_accept(*s, [this, s](const asio::error_code& error) {
 		Request* r = new Request();
 		r->socket = s;
-		std::vector<char>* buffer = new std::vector<char>(PROTOCOL_LENGTH_SIZEINFO);
+		r->headers = new std::vector<char>(PROTOCOL_LENGTH_SIZEINFO);
 
 		try {
-			asio::async_read(*r->socket, asio::buffer(*buffer), transfer_exactly(PROTOCOL_LENGTH_SIZEINFO),
-				[this, r, buffer](const asio::error_code& error, std::size_t bytes_transferred) {
+			asio::async_read(*r->socket, asio::buffer(*r->headers), transfer_exactly(PROTOCOL_LENGTH_SIZEINFO),
+				[this, r](const asio::error_code& error, std::size_t bytes_transferred) {
 					if(r->uri.data == NULL && !r->method) {
-						const char* headers = buffer->data();
+						const char* headers = r->headers->data();
 						//At this stage, at least PROTOCOL_SIZELENGTH_INFO has been read into the buffer.
 						//STATE: Read protocol.
 						r->uri.len = ntohs(*(int*)(headers));
@@ -154,19 +131,16 @@ void Webapp::accept_message() {
 						r->input_chain[3] = &r->cookies;
 						r->input_chain[4] = &r->request_body;
 
-						
 						int len = 0;
 						for(int i = 0; i < STRING_VARS; i++) {
 							len += r->input_chain[i]->len + 1;
 						}
-						r->amount_to_recieve = len;
-						read_some(r);
-
+						processRequest(r, len);
 					} 
-					
 				});
 			accept_message();
 		} catch(std::system_error er) {
+			delete r;
 			accept_message();
 			s->close();
 			delete s;
@@ -174,10 +148,6 @@ void Webapp::accept_message() {
 	});
 }
 
-//PRODUCER
-void Webapp::process_thread(std::thread* t) {
-	processQueue.push(t);
-}
 
 Webapp::~Webapp() {
 	//Clean up client template files.
@@ -185,8 +155,6 @@ Webapp::~Webapp() {
 		delete(file.data);
 	}
 
-	shutdown_handler = 1;
-	processQueue.abort();
 }
 
 TemplateDictionary* Webapp::getTemplate(const char* page) {

@@ -1,5 +1,7 @@
 #ifndef SCHEMA_H
 #define SCHEMA_H
+
+#include "Platform.h"
 //APP specific definitions
 #define TEMPLATE_VIDEO "video.html"
 #define TEMPLATE_IMAGE "image.html"
@@ -92,31 +94,9 @@ COMMIT;"
 
 //END QUERY DEFINITIONS
 
-#define SYSTEM_SCRIPT_COUNT 3
-#define SYSTEM_SCRIPT_FILENAMES {"core/template.lua", "thumbs/default.lua", "core/process.lua"}
-
-//Public API map
-#define APIMAP(m) 	m["addAlbum"] = &Webapp::addAlbum; \
-	m["getAlbums"] = &Webapp::getAlbums; \
-	m["delAlbums"] = &Webapp::delAlbums; \
-	m["addBulkAlbums"] = &Webapp::addBulkAlbums; \
-	m["login"] = &Webapp::login; \
-	m["setThumb"] = &Webapp::setThumb; \
-	m["getFiles"] = &Webapp::getFiles; \
-	m["search"] = &Webapp::search; \
-	m["refreshAlbums"] = &Webapp::refreshAlbums; \
-	m["disableFiles"] = &Webapp::disableFiles; \
-	m["clearCache"] = &Webapp::clearCache; \
-	m["getBoth"] = &Webapp::getBoth; \
-	m["updateAlbum"] = &Webapp::updateAlbum; \
-	m["updateFile"] = &Webapp::updateFile; \
-	m["logout"] = &Webapp::logout;
-
-
 //PROTOCOL SCHEMA DEFINITIONS
 #define PROTOCOL_VARS 6
 #define STRING_VARS 5
 #define PROTOCOL_LENGTH_SIZEINFO sizeof(int) * PROTOCOL_VARS
-
 
 #endif

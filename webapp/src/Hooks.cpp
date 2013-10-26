@@ -4,8 +4,10 @@
 extern "C" {
 #include "Hooks.h"
 }
+
 using namespace ctemplate;
 using namespace std;
+
 int Template_ShowGlobalSection(TemplateDictionary* dict, const char* section) {
 	if(dict == NULL || section == NULL) return 1;
 	dict->ShowTemplateGlobalSection(section);
@@ -57,20 +59,15 @@ int GetSessionID(SessionStore* session, webapp_str_t* out) {
 	return 1;
 }
 
-std::vector<std::string*>* StartRequestHandler() {
-	return new std::vector<std::string*>();
-}
+void FinishRequest(Request* request) {
+	if(request == NULL) return;
 
-void FinishRequest(Request* request, std::vector<string*>* handler) {
-	if(request == NULL || handler == NULL) return;
-	delete request->socket;
-	free(request);
 
-	for(std::vector<string*>::iterator it = handler->begin(); it != handler->end(); ++it) {
+	for(std::vector<string*>::iterator it = request->handler->begin(); it != request->handler->end(); ++it) {
 		free(*it);
 	}
 
-	delete handler;
+	delete request;
 }
 
 TemplateDictionary* GetTemplate(Webapp* gallery, const char* page) {
@@ -97,10 +94,6 @@ const char* GetParam(Webapp* gallery, const char* param) {
 	const string* val = &(gallery->params->get(param));
 	if(val->empty()) return NULL;
 	else return val->c_str();
-}
-
-void writeHandler(const std::error_code& error,  std::size_t bytes_transferred) {
-
 }
 
 void WriteData(asio::ip::tcp::socket* socket, char* data, int len) {

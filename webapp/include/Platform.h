@@ -2,26 +2,8 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
-#include <memory>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <vector>
-#include <unordered_map>
-#include <string>
-#include <string.h>
-#include <map>
-#include <cstdio>
-#include <cstdarg>
-#include <vector>
-#include <list>
-#include <queue>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
-
 #ifdef WIN32
 #define ENV_NEWLINE "\r\n"
-#define fopen _wfopen
 #else
 #define ENV_NEWLINE "\n"
 #include <unistd.h>
@@ -31,21 +13,6 @@
 #define snprintf rpl_snprintf
 #define vasprintf rpl_vasprintf
 #define asprintf rpl_asprintf
-
-extern "C" {
-#if !HAVE_VSNPRINTF
-int rpl_vsnprintf(char *, size_t, const char *, va_list);
-#endif
-#if !HAVE_SNPRINTF
-int rpl_snprintf(char *, size_t, const char *, ...);
-#endif
-#if !HAVE_VASPRINTF
-int rpl_vasprintf(char **, const char *, va_list);
-#endif
-#if !HAVE_ASPRINTF
-int rpl_asprintf(char **, const char *, ...);
-#endif
-};
 
 #if _MSC_VER
 	#pragma warning (disable : 4503)
@@ -70,60 +37,17 @@ int rpl_asprintf(char **, const char *, ...);
 #define STR(a) #a
 #define cmemcpy(src,dest,size) memcpy((char*)src, (char*)dest, size)
 
-class Internal {
-public:
-	Internal() { nError = 0; };
-	int GetLastError();
-protected: int nError;
-};
-
-#ifdef contains
-#undef contains
+#if defined _WIN32 || defined __CYGWIN__
+#ifdef __GNUC__
+#define APIEXPORT __attribute__ ((dllexport))
+#else
+#define APIEXPORT __declspec(dllexport)
+#endif
+#else
+#if __GNUC__ >= 4
+#define APIEXPORT __attribute__ ((visibility ("default")))
+#endif
 #endif
 
-template< class T, class X>
-bool contains(T& needle, X& haystack) {
-	return std::find(needle.begin(), needle.end(), haystack) != needle.end();
-}
-
-
-bool endsWith(const std::string &a, const std::string &b);
-bool is_number(const std::string &a);
-std::string replaceAll( std::string const& original, std::string const& before, std::string const& after );
-
-template < class ContainerT >
-void tokenize(const std::string& str, ContainerT& tokens,
-			  const std::string& delimiters = " ", bool trimEmpty = false) 
-{
-	typedef ContainerT Base; typedef typename Base::value_type ValueType; typedef typename ValueType::size_type SizeType;
-	std::string::size_type pos, lastPos = 0;
-	while(true)
-	{
-		pos = str.find_first_of(delimiters, lastPos);
-		if(pos == std::string::npos)
-		{
-			pos = str.length();
-
-			if(pos != lastPos || !trimEmpty)
-				tokens.push_back(ValueType(str.data()+lastPos,
-				(SizeType)pos-lastPos ));
-
-			break;
-		}
-		else
-		{
-			if(pos != lastPos || !trimEmpty)
-				tokens.push_back(ValueType(str.data()+lastPos,
-				(SizeType)pos-lastPos ));
-		}
-
-		lastPos = pos + 1;
-	}
-};
-
-
-const char* date_format(const char* fmt, const size_t datesize, time_t* t=NULL, int gmt=0);
-std::string url_decode(const std::string& src);
-void add_days(time_t& t, int days);
 #endif
 

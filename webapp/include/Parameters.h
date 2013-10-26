@@ -1,6 +1,7 @@
 #ifndef PARAMETERS_H
 #define PARAMETERS_H
 #include "Platform.h"
+#include "Helpers.h"
 #include "Container.h"
 //Dynamic parameter class
 typedef std::unordered_map<std::string, std::string> ParamMap;

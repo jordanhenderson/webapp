@@ -206,14 +206,14 @@ Database::~Database() {
 }
 
 
-int Database::exec(Query* query) {
+long long Database::exec(Query* query) {
 	select(query, NULL);
 	if(nError != ERROR_DB_FAILED)
 		return query->lastrowid;
 	return -1;
 }
 
-int Database::exec(const string& query, QueryRow* params) {
+long long Database::exec(const string& query, QueryRow* params) {
 	Query q(query, params);
 	return exec(&q);
 }
