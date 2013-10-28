@@ -1,7 +1,7 @@
 #ifndef IMAGE_H
 #define IMAGE_H
 #include "Platform.h"
-#include "Helpers.h"
+#include "CPlatform.h"
 #include "FileSystem.h"
 #define IMAGE_TYPE_JPEG 0
 #define IMAGE_TYPE_PNG 1

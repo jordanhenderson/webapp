@@ -26,8 +26,8 @@ task* WebappTask::execute() {
 task* BackgroundQueue::execute() {
 	LuaParam _v[] = { { "sessions", &_handler->sessions }, { "requests", &_handler->requests }, { "app", _handler } };
 	_handler->runHandler(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/process_queue.lua");
-	//Since this task must run at all times (not per request - blocks in lua vm), sleep 1s
-	Sleep(1000000);
+	//Since this task must run at all times (not per request - *should* block in lua vm)
+	Sleep(1000); //Lua VM returned, something went wrong.
 	TaskBase* t = _handler->tasks.at(0) = new (task::allocate_additional_child_of(*_handler->parent_task)) BackgroundQueue(_handler);
 	return t;
 }
@@ -52,7 +52,7 @@ void Webapp::runHandler(LuaParam* params, int nArgs, const char* filename) {
 	}
 
 	if(lua_pcall(L, 0, 0, 0) != 0) {
-		logger->printf("Error: %s\n", lua_tostring(L, -1));
+		logger->printf("Error: %s", lua_tostring(L, -1));
 	}
 
 	lua_close(L);
@@ -68,16 +68,16 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates
 
 	database.connect(DATABASE_TYPE_SQLITE, dbpath);
 	//Enable pragma foreign keys.
-	database.exec(PRAGMA_FOREIGN);
+	//database.exec(PRAGMA_FOREIGN);
 
 	//Create the schema. Running this even when tables exist prevent issues later on.
-	string schema = CREATE_DATABASE;
+	/*string schema = CREATE_DATABASE;
 	vector<string> schema_queries;
 	tokenize(schema, schema_queries, ";");
 	for(string& s : schema_queries) {
 		database.exec(s);
 	}
-	
+	*/
 	refresh_templates();
 
 	//Create/allocate initial worker tasks.

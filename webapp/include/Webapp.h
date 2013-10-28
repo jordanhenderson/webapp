@@ -3,7 +3,7 @@
 
 #include <asio.hpp>
 #include "Platform.h"
-#include "Helpers.h"
+#include "CPlatform.h"
 #include "FileSystem.h"
 #include "Parameters.h"
 #include "Server.h"
@@ -28,10 +28,16 @@ extern "C" {
 #define GETCHK(s) s.empty() ? 0 : 1
 
 class Logging;
+class Webapp;
 //LuaParams are temporary containers to hold stack variables for lua scripts.
 struct LuaParam {
 	const char* name;
 	void* ptr;
+};
+
+struct Process {
+	webapp_str_t* func = NULL;
+	webapp_str_t* vars = NULL;
 };
 
 struct TemplateData {
@@ -61,9 +67,6 @@ class BackgroundQueue : public TaskBase {
 
 class Webapp : public ServerHandler, Internal {
 private:
-	Database database;
-	Sessions sessions;	
-
 	//template dictionary used by all 'content' templates.
 	ctemplate::TemplateDictionary contentTemplates;
 
@@ -98,6 +101,10 @@ public:
 	std::string dbpath;
 
 	Parameters* params;
+	Database database;
+	Sessions sessions;
+
+	tbb::concurrent_bounded_queue<Process*> background_queue;
 };
 
 #endif

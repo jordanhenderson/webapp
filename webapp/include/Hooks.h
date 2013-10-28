@@ -2,6 +2,8 @@
 #define HOOKS_H
 #include "Platform.h"
 #include "Session.h"
+#include "Server.h"
+#include "Webapp.h"
 #include <ctemplate/template.h>
 #include <tbb/concurrent_queue.h>
 
@@ -14,6 +16,8 @@ APIEXPORT int Template_SetValue(ctemplate::TemplateDictionary* dict, const char*
 APIEXPORT Request* GetNextRequest(tbb::concurrent_bounded_queue<Request*>* requests);
 APIEXPORT int GetSessionID(SessionStore*, webapp_str_t* out);
 APIEXPORT void FinishRequest(Request*);
+APIEXPORT void QueueProcess(Webapp*, webapp_str_t* func, webapp_str_t* vars);
+APIEXPORT Process* GetNextProcess(Webapp*);
 APIEXPORT ctemplate::TemplateDictionary* GetTemplate(Webapp*, const char*);
 APIEXPORT void RenderTemplate(Webapp*, ctemplate::TemplateDictionary*, const char*, std::vector<std::string*>*, webapp_str_t* out);
 APIEXPORT void WriteData(asio::ip::tcp::socket*, char*, int);

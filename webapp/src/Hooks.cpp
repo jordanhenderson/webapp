@@ -31,27 +31,46 @@ const char* GetSessionValue(SessionStore* session, const char* key) {
 
 //Cleaned up by backend.
 SessionStore* GetSession(Sessions* sessions, const char* sessionid) {
+	if (sessions == NULL || sessionid == NULL) return NULL;
 	return sessions->get_session(sessionid);
 }
 
 //Cleaned up by backend.
 SessionStore* NewSession(Sessions* sessions, const char* host, const char* user_agent) {
+	if (sessions == NULL || host == NULL || user_agent == NULL) return NULL;
 	return sessions->new_session(host, user_agent);
 }
 
 int Template_SetValue(TemplateDictionary* dict, const char* key, const char* value) {
+	if (dict == NULL || key == NULL || value == NULL) return 1;
 	dict->SetValue(key, value);
 	return 0;
 }
 
 //Cleaned up by backend.
 Request* GetNextRequest(tbb::concurrent_bounded_queue<Request*>* requests) {
+	if (requests == NULL) return NULL;
 	Request* request = NULL;
 	requests->pop(request);
 	return request;
 
 }
 
+void QueueProcess(Webapp* app, webapp_str_t* func, webapp_str_t* vars) {
+	if (func == NULL || vars == NULL || app == NULL) return;
+	Process* p = new Process();
+	p->func = webapp_strdup(func);
+	p->vars = webapp_strdup(vars);
+	app->background_queue.push(p);
+
+}
+
+Process* GetNextProcess(Webapp* app) {
+	if (app == NULL) return NULL;
+	Process* p = NULL;
+	app->background_queue.pop(p);
+	return p;
+}
 
 int GetSessionID(SessionStore* session, webapp_str_t* out) {
 	if(session == NULL || out == NULL) return 0;
@@ -78,6 +97,7 @@ TemplateDictionary* GetTemplate(Webapp* gallery, const char* page) {
 
 
 void RenderTemplate(Webapp* gallery, ctemplate::TemplateDictionary* dict, const char* page, std::vector<string*>* handler, webapp_str_t* out) {
+	if (gallery == NULL || dict == NULL || page == NULL || handler == NULL || out == NULL) return;
 	string* output = new string;
 	ExpandTemplate(gallery->basepath + "/content/" + page, STRIP_WHITESPACE, dict, output);
 
@@ -92,12 +112,14 @@ void RenderTemplate(Webapp* gallery, ctemplate::TemplateDictionary* dict, const 
 }
 
 const char* GetParam(Webapp* gallery, const char* param) {
+	if (gallery == NULL || param == NULL) return NULL;
 	const string* val = &(gallery->params->get(param));
 	if(val->empty()) return NULL;
 	else return val->c_str();
 }
 
 void WriteData(asio::ip::tcp::socket* socket, char* data, int len) {
+	if (socket == NULL || data == NULL) return;
 	*(int*)data = htons(len - 4);
 	try {
 		asio::write(*socket, asio::buffer(data, len));
@@ -106,3 +128,4 @@ void WriteData(asio::ip::tcp::socket* socket, char* data, int len) {
 		printf("Error writing to socket!");
 	}
 }
+

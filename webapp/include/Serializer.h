@@ -6,7 +6,7 @@
 #include "document.h"
 #include "stringbuffer.h"
 #include "Platform.h"
-#include "Helpers.h"
+#include "CPlatform.h"
 #include "Database.h"
 
 class Serializer {

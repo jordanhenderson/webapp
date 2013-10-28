@@ -1,7 +1,7 @@
 #ifndef DATABASE_H
 #define DATABASE_H
 
-#include "Helpers.h"
+#include "CPlatform.h"
 #include "Platform.h"
 
 #include "sqlite3.h"

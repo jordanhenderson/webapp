@@ -41,6 +41,14 @@ public:
 protected: int nError;
 };
 
+//webapp string, helper functions.
+struct webapp_str_t {
+	const char* data = NULL;
+	int len = 0;
+};
+
+webapp_str_t* webapp_strdup(webapp_str_t*);
+
 #ifdef contains
 #undef contains
 #endif

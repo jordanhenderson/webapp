@@ -1,7 +1,6 @@
 #ifndef HTTPSERVER_H
 #define HTTPSERVER_H
 
-class Webapp; 
 #ifdef _WIN32
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -11,12 +10,10 @@ class Webapp;
 #include <tbb/task.h>
 #include <tbb/concurrent_queue.h>
 #include <asio.hpp>
+#include "CPlatform.h"
 #include "Schema.h"
 
-struct webapp_str_t {
-	const char* data = NULL;
-	int len = 0;
-};
+class Webapp;
 
 struct Request {
 	asio::ip::tcp::socket* socket = NULL;

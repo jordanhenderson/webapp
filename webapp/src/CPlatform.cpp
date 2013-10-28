@@ -1,5 +1,5 @@
 #include "Platform.h"
-#include "Helpers.h"
+#include "CPlatform.h"
 #include <algorithm>
 #include <cctype>
 #include <ctime>
@@ -68,4 +68,16 @@ string url_decode(const string& src) {
     }
 
     return (ret);
+}
+
+//Webapp string, helper functions
+
+//webapp_strdup
+//returns a new allocated copy of src. Must be cleaned up by caller.
+webapp_str_t* webapp_strdup(webapp_str_t* src) {
+	webapp_str_t* dest = new webapp_str_t();
+	dest->data = new const char[src->len + 1];
+	memcpy((void*)dest->data, src->data, src->len);
+	dest->len = src->len;
+	return dest;
 }

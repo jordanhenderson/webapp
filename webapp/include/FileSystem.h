@@ -3,7 +3,7 @@
 
 
 #include "Platform.h"
-#include "Helpers.h"
+#include "CPlatform.h"
 class File {
 public:
 	FILE* pszFile;

@@ -1,7 +1,7 @@
 #ifndef SESSION_H
 #define SESSION_H
 #include "Platform.h"
-#include "Helpers.h"
+#include "CPlatform.h"
 #include "Container.h"
 #define SESSION_STORE RamSession
 

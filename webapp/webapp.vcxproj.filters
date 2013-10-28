@@ -61,9 +61,6 @@
     <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Platform.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\sqlite\sqlite3.c">
       <Filter>Source Files\sqlite</Filter>
     </ClCompile>
@@ -132,6 +129,9 @@
     </ClCompile>
     <ClCompile Include="src\lpeg\lpvm.c">
       <Filter>Source Files\lpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CPlatform.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -216,9 +216,6 @@
     <ClInclude Include="include\Schema.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Helpers.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\lpeg\lpcap.h">
       <Filter>Header Files\lpeg</Filter>
     </ClInclude>
@@ -239,6 +236,9 @@
     </ClInclude>
     <ClInclude Include="include\lpeg\lpeg.h">
       <Filter>Header Files\lpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="include\CPlatform.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
