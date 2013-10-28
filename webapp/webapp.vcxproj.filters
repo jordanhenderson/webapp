@@ -41,6 +41,12 @@
       <UniqueIdentifier>{329e381a-9fa0-4b8a-8754-4bb7595d49ee}</UniqueIdentifier>
       <Extensions>*.mak</Extensions>
     </Filter>
+    <Filter Include="Source Files\lpeg">
+      <UniqueIdentifier>{b4f491d8-bb54-4351-894a-02519d9f1143}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\lpeg">
+      <UniqueIdentifier>{64232fb5-16bc-4ae9-a4ff-6c2b03279a70}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Logging.cpp">
@@ -111,6 +117,21 @@
     </ClCompile>
     <ClCompile Include="src\Webapp.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lpeg\lpcap.c">
+      <Filter>Source Files\lpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lpeg\lpcode.c">
+      <Filter>Source Files\lpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lpeg\lpprint.c">
+      <Filter>Source Files\lpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lpeg\lptree.c">
+      <Filter>Source Files\lpeg</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lpeg\lpvm.c">
+      <Filter>Source Files\lpeg</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -197,6 +218,27 @@
     </ClInclude>
     <ClInclude Include="include\Helpers.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\lpeg\lpcap.h">
+      <Filter>Header Files\lpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="include\lpeg\lpcode.h">
+      <Filter>Header Files\lpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="include\lpeg\lpprint.h">
+      <Filter>Header Files\lpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="include\lpeg\lptree.h">
+      <Filter>Header Files\lpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="include\lpeg\lptypes.h">
+      <Filter>Header Files\lpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="include\lpeg\lpvm.h">
+      <Filter>Header Files\lpeg</Filter>
+    </ClInclude>
+    <ClInclude Include="include\lpeg\lpeg.h">
+      <Filter>Header Files\lpeg</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

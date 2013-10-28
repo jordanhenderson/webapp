@@ -52,6 +52,7 @@ Request* GetNextRequest(tbb::concurrent_bounded_queue<Request*>* requests) {
 
 }
 
+
 int GetSessionID(SessionStore* session, webapp_str_t* out) {
 	if(session == NULL || out == NULL) return 0;
 	out->data = session->sessionid.c_str();
@@ -98,5 +99,10 @@ const char* GetParam(Webapp* gallery, const char* param) {
 
 void WriteData(asio::ip::tcp::socket* socket, char* data, int len) {
 	*(int*)data = htons(len - 4);
-	asio::write(*socket, asio::buffer(data, len));
+	try {
+		asio::write(*socket, asio::buffer(data, len));
+	}
+	catch (system_error ec) {
+		printf("Error writing to socket!");
+	}
 }

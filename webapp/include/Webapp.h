@@ -19,13 +19,9 @@ extern "C" {
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
+#include "lpeg.h"
 }
 
-#define HTTP_NO_AUTH "Status: 401 Unauthorized\r\n\r\nUnauthorised access."
-#define RESPONSE_TYPE_DATA 0
-#define RESPONSE_TYPE_MESSAGE 1
-#define HTTP_METHOD_GET 2
-#define HTTP_METHOD_POST 8
 
 #include "Schema.h"
 
@@ -43,14 +39,24 @@ struct TemplateData {
 	FileData* data;
 };
 
-class WebappTask : public tbb::task {
-public: 
-	WebappTask(ServerHandler* handler)
-		: _handler(handler)
-	{};
+class TaskBase : public tbb::task {
+public:
+	TaskBase(Webapp* handler) : _handler(handler) {};
+	virtual tbb::task* execute() = 0;
+protected:
+	Webapp* _handler = NULL;
+};
+
+class WebappTask : public TaskBase {
+	WebappTask(Webapp* handler) : TaskBase(handler){};
 	tbb::task* execute();
-private:
-	ServerHandler* _handler;
+	friend class Webapp;
+};
+
+class BackgroundQueue : public TaskBase {
+	BackgroundQueue(Webapp* handler) : TaskBase(handler) {};
+	tbb::task* execute();
+	friend class Webapp;
 };
 
 class Webapp : public ServerHandler, Internal {
@@ -72,7 +78,7 @@ private:
 	void refresh_templates();
 	
 	static int LuaWriter(lua_State* L, const void* p, size_t sz, void* ud);
-	void runHandler(LuaParam* params, int nArgs);
+	void runHandler(LuaParam* params, int nArgs, const char* filename);
 	//IPC api
 	asio::ip::tcp::acceptor* acceptor;
 	void accept_message();
@@ -80,15 +86,14 @@ private:
 	asio::io_service& svc;
 	void processRequest(Request* r, int len);
 
-	std::vector<WebappTask*> tasks;
-
+	std::vector<TaskBase*> tasks;
+	friend class WebappTask;
+	friend class BackgroundQueue;
 public:
 	Webapp(Parameters* params, asio::io_service& io_svc);
 	~Webapp();
 	ctemplate::TemplateDictionary* getTemplate(const char* page);
-
-	void createWorker();
-
+	
 	std::string basepath;
 	std::string dbpath;
 

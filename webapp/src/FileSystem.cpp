@@ -65,8 +65,6 @@ void FileSystem::Process(File* file, void* userdata, void* callback, FileData* o
 	if(file == NULL || file->pszFile == NULL || outData == NULL)
 		return;
 	
-	
-	
 	//Seek to the beginning.
 	
 	FILE* tmpFile = file->pszFile;

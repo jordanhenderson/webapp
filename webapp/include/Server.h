@@ -52,7 +52,6 @@ protected:
 	tbb::empty_task* parent_task;
 	tbb::concurrent_bounded_queue<Request*> requests;
 public:
-	virtual void createWorker() = 0;
 	friend class Server;
 	friend class WebappTask;
 	ServerHandler() {

@@ -18,7 +18,6 @@
 	#pragma warning (disable : 4503)
 #endif
 
-#define DB_FUNC_RANDOM "RANDOM()"
 #define ERROR_SUCCESS 0L
 #define ERROR_FILE_NOT_FOUND 2L
 #define ERROR_SOCKET_FAILED 3L
@@ -27,12 +26,6 @@
 #define ERROR_IMAGE_PROCESSING_FAILED 6L
 #define ERROR_IMAGE_NOT_SUPPORTED 7L
 
-#define HTML_HEADER "Content-type: text/html\r\n"
-#define CSS_HEADER "Content-type: text/css; charset=UTF-8\r\n"
-#define JSON_HEADER "Content-type: application/json\r\n"
-#define JS_HEADER "Content-type: application/javascript\r\n"
-#define END_HEADER "\r\n"
-#define HTML_404 "Status: 404 Not Found\r\n\r\nThe page you requested cannot be found (404)."
 #define XSTR(a) STR(a)
 #define STR(a) #a
 #define cmemcpy(src,dest,size) memcpy((char*)src, (char*)dest, size)

@@ -59,7 +59,7 @@ int getData(Webapp* webapp, void* vars, webapp_str_t* out, SessionStore* store) 
 	*/
 	return 0;
 }
-
+/*
 extern "C" {
 	APIEXPORT int getAlbums(Webapp* webapp, void* vars, webapp_str_t* out, SessionStore* store) {
 		string query = SELECT_ALBUM_DETAILS;
@@ -74,7 +74,7 @@ extern "C" {
 		return getData(webapp, vars, out, store);
 	}
 };
-
+*/
 
 //Public API functions.
 /*

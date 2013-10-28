@@ -17,23 +17,32 @@ using namespace tbb;
 
 task* WebappTask::execute() {
 	_handler->numInstances++;
-	_handler->createWorker();
+	LuaParam _v[] = { { "sessions", &_handler->sessions }, { "requests", &_handler->requests }, { "app", _handler } };
+	_handler->runHandler(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/process.lua");
 	_handler->numInstances--;
-	return NULL;	
-	
+	return NULL;
 }
 
-void Webapp::createWorker() {
-	LuaParam _v[] = {{"sessions", &sessions}, {"requests", &requests}, {"app", this}};
-	runHandler(_v, sizeof(_v) / sizeof(LuaParam));
+task* BackgroundQueue::execute() {
+	LuaParam _v[] = { { "sessions", &_handler->sessions }, { "requests", &_handler->requests }, { "app", _handler } };
+	_handler->runHandler(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/process_queue.lua");
+	//Since this task must run at all times (not per request - blocks in lua vm), sleep 1s
+	Sleep(1000000);
+	TaskBase* t = _handler->tasks.at(0) = new (task::allocate_additional_child_of(*_handler->parent_task)) BackgroundQueue(_handler);
+	return t;
 }
 
 //Run script given a LuaChunk. Called by public runScript methods.
-void Webapp::runHandler(LuaParam* params, int nArgs) {
+void Webapp::runHandler(LuaParam* params, int nArgs, const char* filename) {
 	lua_State* L = luaL_newstate();
 	luaL_openlibs(L);
+	luaopen_lpeg(L);
+	//Preprocess the lua file first.
 
-	luaL_loadfile(L, "plugins/core/process.lua"); //only loaded once per handler. 
+	luaL_loadfile(L, "plugins/process.lua");
+	lua_pushlstring(L, filename, strlen(filename));
+	lua_setglobal(L, "file");
+
 	if(params != NULL) {
 		for(int i = 0; i < nArgs; i++) {
 			LuaParam* p = params + i;
@@ -41,19 +50,21 @@ void Webapp::runHandler(LuaParam* params, int nArgs) {
 			lua_setglobal(L, p->name);
 		}
 	}
+
 	if(lua_pcall(L, 0, 0, 0) != 0) {
-		printf("Error: %s\n", lua_tostring(L, -1));
+		logger->printf("Error: %s\n", lua_tostring(L, -1));
 	}
+
 	lua_close(L);
-	
 }
 
 Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates(""),
 										params(params),
 										basepath(params->get("basepath")),
 										dbpath(params->get("dbpath")), 
-										svc(io_svc),
-										tasks(tbb::task_scheduler_init::default_num_threads()) {
+										svc(io_svc), 
+										tasks(tbb::task_scheduler_init::default_num_threads() ==
+												1 ? 2 : tbb::task_scheduler_init::default_num_threads()) {
 
 	database.connect(DATABASE_TYPE_SQLITE, dbpath);
 	//Enable pragma foreign keys.
@@ -70,9 +81,12 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates
 	refresh_templates();
 
 	//Create/allocate initial worker tasks.
-	for (unsigned int i = 0; i < tasks.size(); i++) {
+	TaskBase* task = tasks.at(0) = new (task::allocate_additional_child_of(*parent_task)) BackgroundQueue(this);
+	parent_task->enqueue(*task);
+	numInstances = 1;
+	for (unsigned int i = 1; i < tasks.size(); i++) {
 		tasks.at(i) = new (task::allocate_additional_child_of(*parent_task)) WebappTask(this);
-	}	
+	}
 
 	asio::io_service::work wrk = asio::io_service::work(svc);
 	tcp::endpoint endpoint(tcp::v4(), 5000);
@@ -95,7 +109,12 @@ void Webapp::processRequest(Request* r, int amount) {
 				}
 			}
 			 
-			if (numInstances + 1 < tasks.size()) {
+			if (numInstances < tasks.size()) {
+				//new task required?
+				TaskBase* task = tasks.at(numInstances);
+				if (task->state() != task::allocated) {
+					tasks.at(numInstances) = new (task::allocate_additional_child_of(*parent_task)) WebappTask(this);
+				}
 				parent_task->enqueue(*tasks.at(numInstances));
 			} 
 
@@ -150,6 +169,8 @@ void Webapp::accept_message() {
 
 
 Webapp::~Webapp() {
+	parent_task->wait_for_all();
+	parent_task->destroy(*parent_task);
 	//Clean up client template files.
 	for(TemplateData& file: clientTemplateFiles) {
 		delete(file.data);
