@@ -21,11 +21,11 @@ int Template_ShowSection(TemplateDictionary* dict, const char* section) {
 }
 
 //Cleaned up by backend.
-int GetSessionValue(SessionStore* session, const char* key, webapp_str_t* out) {
+int GetSessionValue(SessionStore* session, webapp_str_t* key, webapp_str_t* out) {
 	if(session == NULL || key == NULL) 
 		return NULL;
 
-	const string* s = &session->get(key);
+	const string* s = &session->get(string(key->data, key->len));
 	if (out != NULL) {
 		//Write to out
 		out->data = s->c_str();
@@ -33,6 +33,13 @@ int GetSessionValue(SessionStore* session, const char* key, webapp_str_t* out) {
 	}
 
 	return !s->empty();
+}
+
+int SetSessionValue(SessionStore* session, webapp_str_t* key, webapp_str_t* val) {
+	if (session == NULL || key == NULL)
+		return 0;
+	session->store(string(key->data, key->len), string(val->data, val->len));
+	return 1;
 }
 
 //Cleaned up by backend.

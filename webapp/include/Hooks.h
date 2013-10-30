@@ -11,7 +11,10 @@ APIEXPORT int Template_ShowGlobalSection(ctemplate::TemplateDictionary*, const c
 APIEXPORT int Template_ShowSection(ctemplate::TemplateDictionary*, const char*);
 
 //Get a string stored in the session.
-APIEXPORT int GetSessionValue(SessionStore*, const char*, webapp_str_t* out);
+APIEXPORT int GetSessionValue(SessionStore*, webapp_str_t*, webapp_str_t* out);
+APIEXPORT int SetSessionValue(SessionStore*, webapp_str_t* key, webapp_str_t* val);
+
+
 APIEXPORT SessionStore* GetSession(Sessions*, const char*);
 APIEXPORT SessionStore* NewSession(Sessions*, const char*, const char*);
 APIEXPORT int Template_SetValue(ctemplate::TemplateDictionary* dict, const char* key, const char* value);
