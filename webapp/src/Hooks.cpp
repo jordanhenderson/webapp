@@ -21,12 +21,18 @@ int Template_ShowSection(TemplateDictionary* dict, const char* section) {
 }
 
 //Cleaned up by backend.
-const char* GetSessionValue(SessionStore* session, const char* key) {
+int GetSessionValue(SessionStore* session, const char* key, webapp_str_t* out) {
 	if(session == NULL || key == NULL) 
 		return NULL;
+
 	const string* s = &session->get(key);
-	if(s->empty()) return NULL;
-	return s->c_str();
+	if (out != NULL) {
+		//Write to out
+		out->data = s->c_str();
+		out->len = s->length();
+	}
+
+	return !s->empty();
 }
 
 //Cleaned up by backend.
@@ -47,12 +53,29 @@ int Template_SetValue(TemplateDictionary* dict, const char* key, const char* val
 	return 0;
 }
 
-//Cleaned up by backend.
-Request* GetNextRequest(tbb::concurrent_bounded_queue<Request*>* requests) {
+Request* GetNextRequest(RequestQueue* requests) {
 	if (requests == NULL) return NULL;
 	Request* request = NULL;
-	requests->pop(request);
+	try {
+		if (!requests->aborted)
+			requests->requests.pop(request);
+	}
+	catch (tbb::user_abort ex) {
+		//Do nothing...
+	}
 	return request;
+
+}
+
+//Clear the cache (aborts any waiting request handlers, locks connect mutex, clears cache, unlocks).
+void ClearCache(Webapp* app, RequestQueue* requests) {
+	if (app == NULL || requests == NULL) return;
+	requests->lock.lock();
+	requests->aborted = 1;
+	requests->requests.abort();
+
+	//Cleanup when this task completes.
+	app->posttask = new (tbb::task::allocate_root()) CleanupTask(app, requests);
 
 }
 
@@ -129,3 +152,31 @@ void WriteData(asio::ip::tcp::socket* socket, char* data, int len) {
 	}
 }
 
+int ConnectDatabase(Database* db, int database_type, const char* host, const char* username, const char* password, const char* database) {
+	if (db == NULL) return -1;
+
+	return db->connect(database_type, host, username, password, database);
+}
+
+long long ExecQuery(Database* db, const char* query, int len) {
+	if (db == NULL) return -1;
+	return db->exec(string(query, len));
+}
+
+void GetParameter(Webapp* app, int param, webapp_str_t* out) {
+	if (app == NULL) return;
+	switch (param) {
+	case WEBAPP_PARAM_BASEPATH:
+		out->data = app->basepath.c_str();
+		out->len = app->basepath.length();
+		break;
+	case WEBAPP_PARAM_DBPATH:
+		out->data = app->dbpath.c_str();
+		out->len = app->basepath.length();
+		break;
+	default:
+		out->data = NULL;
+		out->len = 0;
+		break;
+	}
+}

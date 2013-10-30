@@ -10,15 +10,15 @@ int main(int argc, char* argv[]) {
 	Parameters params;
 	//TODO convert params to file
 	File conf;
-	if(FileSystem::Open("gallery.conf", "rb", &conf)) {
+	if(FileSystem::Open("webapp.conf", "rb", &conf)) {
 		FileData data;
 		FileSystem::Process(&conf, &params, (void*)Parameters::parseBuffer, &data);
 		FileSystem::Close(&conf);
 	} else {
 		//DEFAULT PARAMETERS
-		params.set("logfile", "gallery.log");
+		params.set("logfile", "webapp.log");
 		params.set("basepath", ".");
-		params.set("dbpath", "gallery.sqlite");
+		params.set("dbpath", "webapp.sqlite");
 
 	}
 	string bp = params.get("basepath");

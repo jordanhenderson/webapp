@@ -1,18 +1,5 @@
-#include "Platform.h"
-#include "CPlatform.h"
-#include "Schema.h"
-#include "Server.h"
-#include "Session.h"
-#include "Logging.h"
-#include "Webapp.h"
-#include "Image.h"
-#include "document.h"
-#include "prettywriter.h"
-#include "stringbuffer.h"
-#include <sha.h>
 
-using namespace std;
-
+/*
 int getData(Webapp* webapp, void* vars, webapp_str_t* out, SessionStore* store) {
 	/*
 	Serializer serializer;
@@ -57,8 +44,9 @@ int getData(Webapp* webapp, void* vars, webapp_str_t* out, SessionStore* store) 
 
 	r.append(serializer.get(RESPONSE_TYPE_DATA));
 	*/
-	return 0;
-}
+	//return 0;
+//}
+
 /*
 extern "C" {
 	APIEXPORT int getAlbums(Webapp* webapp, void* vars, webapp_str_t* out, SessionStore* store) {

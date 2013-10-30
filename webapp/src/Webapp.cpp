@@ -2,9 +2,6 @@
 #include "Logging.h"
 #include "Webapp.h"
 #include "Image.h"
-#include "document.h"
-#include "prettywriter.h"
-#include "stringbuffer.h"
 #include <sha.h>
 #include <tbb/task_scheduler_init.h>
 #include <tbb/task.h>
@@ -17,19 +14,37 @@ using namespace tbb;
 
 task* WebappTask::execute() {
 	_handler->numInstances++;
-	LuaParam _v[] = { { "sessions", &_handler->sessions }, { "requests", &_handler->requests }, { "app", _handler } };
+	LuaParam _v[] = { { "sessions", &_handler->sessions }, { "requests", &_handler->requests }, { "app", _handler }, { "db", &_handler->database } };
 	_handler->runHandler(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/process.lua");
 	_handler->numInstances--;
+	if (_handler->posttask != NULL) {
+		task* t = _handler->posttask;
+		_handler->posttask = NULL;
+		return t;
+	}
 	return NULL;
 }
 
 task* BackgroundQueue::execute() {
-	LuaParam _v[] = { { "sessions", &_handler->sessions }, { "requests", &_handler->requests }, { "app", _handler } };
+	LuaParam _v[] = { { "sessions", &_handler->sessions }, { "requests", &_handler->requests }, { "app", _handler }, { "db", &_handler->database } };
 	_handler->runHandler(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/process_queue.lua");
 	//Since this task must run at all times (not per request - *should* block in lua vm)
 	Sleep(1000); //Lua VM returned, something went wrong.
-	TaskBase* t = _handler->tasks.at(0) = new (task::allocate_additional_child_of(*_handler->parent_task)) BackgroundQueue(_handler);
+	TaskBase* t = _handler->tasks.at(0) = new (task::allocate_root()) BackgroundQueue(_handler);
 	return t;
+}
+
+task* CleanupTask::execute() {
+	if (_handler->numInstances > 1) {
+		recycle_as_continuation();
+		return this;
+	}
+	else {
+		_handler->refresh_templates();
+		_requests->lock.unlock();
+		_requests->aborted = 0;
+		return NULL;
+	}
 }
 
 //Run script given a LuaChunk. Called by public runScript methods.
@@ -66,22 +81,14 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates
 										tasks(tbb::task_scheduler_init::default_num_threads() ==
 												1 ? 2 : tbb::task_scheduler_init::default_num_threads()) {
 
-	database.connect(DATABASE_TYPE_SQLITE, dbpath);
-	//Enable pragma foreign keys.
-	//database.exec(PRAGMA_FOREIGN);
+	//Run init plugin
+	LuaParam _v[] = { { "app", this } };
+	runHandler(_v, sizeof(_v) / sizeof(LuaParam), "plugins/init.lua");
 
-	//Create the schema. Running this even when tables exist prevent issues later on.
-	/*string schema = CREATE_DATABASE;
-	vector<string> schema_queries;
-	tokenize(schema, schema_queries, ";");
-	for(string& s : schema_queries) {
-		database.exec(s);
-	}
-	*/
 	refresh_templates();
 
 	//Create/allocate initial worker tasks.
-	TaskBase* task = tasks.at(0) = new (task::allocate_additional_child_of(*parent_task)) BackgroundQueue(this);
+	TaskBase* task = tasks.at(0) = new (task::allocate_root()) BackgroundQueue(this);
 	parent_task->enqueue(*task);
 	numInstances = 1;
 	for (unsigned int i = 1; i < tasks.size(); i++) {
@@ -111,14 +118,16 @@ void Webapp::processRequest(Request* r, int amount) {
 			 
 			if (numInstances < tasks.size()) {
 				//new task required?
+				requests.lock.lock();
 				TaskBase* task = tasks.at(numInstances);
 				if (task->state() != task::allocated) {
 					tasks.at(numInstances) = new (task::allocate_additional_child_of(*parent_task)) WebappTask(this);
 				}
 				parent_task->enqueue(*tasks.at(numInstances));
+				requests.lock.unlock();
 			} 
 
-			requests.push(r);
+			requests.requests.push(r);
 	});
 }
 

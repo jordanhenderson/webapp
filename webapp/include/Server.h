@@ -6,9 +6,10 @@
 #define NOMINMAX
 #endif
 #endif
-#include <atomic>
+#include <tbb/atomic.h>
 #include <tbb/task.h>
 #include <tbb/concurrent_queue.h>
+#include <tbb/mutex.h>
 #include <asio.hpp>
 #include "CPlatform.h"
 #include "Schema.h"
@@ -41,17 +42,25 @@ struct Request {
 	}
 };
 
+struct RequestQueue {
+	tbb::atomic<unsigned int> aborted;
+	tbb::concurrent_bounded_queue<Request*> requests;
+	tbb::mutex lock; //Mutex to control the allowance of new connection handling.
+};
+
 #define INT_INTERVAL(i) sizeof(int)*i
 class ServerHandler {
 protected:
-	std::atomic<unsigned int> numInstances;
-	std::mutex handlerLock; //Mutex to control the allowance of new connection handling.
-	tbb::empty_task* parent_task;
-	tbb::concurrent_bounded_queue<Request*> requests;
+	
+	RequestQueue requests;
 public:
+	tbb::atomic<unsigned int> numInstances;
+	tbb::empty_task* parent_task;
+	
 	friend class Server;
 	friend class WebappTask;
 	ServerHandler() {
+		requests.aborted = 0;
 		parent_task = new (tbb::task::allocate_root()) tbb::empty_task;
 		parent_task->set_ref_count(1);
 	}

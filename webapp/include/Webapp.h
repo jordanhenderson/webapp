@@ -8,10 +8,7 @@
 #include "Parameters.h"
 #include "Server.h"
 #include "Database.h"
-#include "rapidjson.h"
 #include "Session.h"
-#include "Serializer.h"
-#include "document.h"
 #include <ctemplate/template.h>
 #include <tbb/concurrent_queue.h>
 
@@ -54,16 +51,28 @@ protected:
 };
 
 class WebappTask : public TaskBase {
+public:
 	WebappTask(Webapp* handler) : TaskBase(handler){};
 	tbb::task* execute();
 	friend class Webapp;
 };
 
 class BackgroundQueue : public TaskBase {
+public:
 	BackgroundQueue(Webapp* handler) : TaskBase(handler) {};
 	tbb::task* execute();
 	friend class Webapp;
 };
+
+class CleanupTask : public TaskBase {
+	RequestQueue* _requests = NULL;
+public:
+	CleanupTask(Webapp* handler, RequestQueue* requests) : TaskBase(handler), _requests(requests) {};
+	tbb::task* execute();
+};
+
+#define WEBAPP_PARAM_BASEPATH 0
+#define WEBAPP_PARAM_DBPATH 1
 
 class Webapp : public ServerHandler, Internal {
 private:
@@ -78,7 +87,6 @@ private:
 	std::vector<std::string> serverTemplateFiles;
 
 	void process_thread(std::thread*);
-	void refresh_templates();
 	
 	static int LuaWriter(lua_State* L, const void* p, size_t sz, void* ud);
 	void runHandler(LuaParam* params, int nArgs, const char* filename);
@@ -89,13 +97,16 @@ private:
 	asio::io_service& svc;
 	void processRequest(Request* r, int len);
 
-	std::vector<TaskBase*> tasks;
+	
 	friend class WebappTask;
 	friend class BackgroundQueue;
 public:
+	tbb::task* posttask = NULL;
+	std::vector<TaskBase*> tasks;
 	Webapp(Parameters* params, asio::io_service& io_svc);
 	~Webapp();
 	ctemplate::TemplateDictionary* getTemplate(const char* page);
+	void refresh_templates();
 	
 	std::string basepath;
 	std::string dbpath;

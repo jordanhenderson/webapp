@@ -20,18 +20,30 @@
 
 struct st_mysql;
 typedef struct st_mysql MYSQL;
+typedef struct st_mysql_res MYSQL_RES;
+typedef struct st_mysql_bind MYSQL_BIND;
 
-typedef std::vector<std::vector<std::string>> QueryResponse;
 typedef std::vector<std::string> QueryRow;
 class Query {
 public:
 	std::string* dbq;
 	QueryRow* params; 
-	QueryResponse* response;
 	QueryRow* description;
 	int status;
+	int db_type;
 	long long lastrowid;
 	int params_copy;
+
+//Database instance parameters
+	void* stmt = NULL;
+	unsigned long* size_arr = NULL;
+	unsigned long* out_size_arr = NULL;
+	MYSQL_RES* prepare_meta_result = NULL;
+	MYSQL_BIND* bind_params = NULL;
+	MYSQL_BIND* bind_output = NULL;
+	int column_count = 0;
+
+	std::vector<std::string> row;
 	Query(const std::string& dbq, QueryRow* params=NULL);
 	~Query();
 
@@ -39,9 +51,9 @@ public:
 
 class Database : public Internal {
 private:
-	sqlite3* sqlite_db;
-	MYSQL* mysql_db;
-	int shutdown_database;
+	sqlite3* sqlite_db = NULL;
+	MYSQL* mysql_db = NULL;
+	int shutdown_database = 0;
 	int db_type;
 	void process(Query* q);
 
@@ -49,7 +61,7 @@ private:
 public:
 	Database();
 	~Database();
-	int connect(int database_type, const std::string& host, const std::string& username="", const std::string& password="", const std::string& database="");
+	int connect(int database_type, const char* host, const char* username, const char* password, const char* database);
 	long long exec(Query* query);
 	long long exec(const std::string& query, QueryRow* params=NULL);
 	Query* select(Query* query, QueryRow* params=NULL, int desc = 0);

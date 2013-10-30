@@ -208,7 +208,6 @@
       <AdditionalIncludeDirectories>../ext/nginx/include;../ext/nginx/src/core/;../ext/nginx/src/http/modules;../ext/nginx/src/event/modules;../ext/nginx/src/event;../ext/nginx/src/http;../ext/nginx/src/os/win32;include;../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/mysql/include;../ext/tbb/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;../ext/ctemplate/include/windows;../ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;include/lpeg;../ext/cryptopp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
       <OptimizeForWindowsApplication>true</OptimizeForWindowsApplication>
       <Parallelization>true</Parallelization>
       <UseIntelOptimizedHeaders>false</UseIntelOptimizedHeaders>
@@ -247,7 +246,6 @@
       <AdditionalIncludeDirectories>../ext/nginx/include;../ext/nginx/src/core/;../ext/nginx/src/http/modules;../ext/nginx/src/event/modules;../ext/nginx/src/event;../ext/nginx/src/http;../ext/nginx/src/os/win32;include;../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/mysql/include;../ext/tbb/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;../ext/ctemplate/include/windows;../ext/ctemplate/include;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;include/lpeg;../ext/cryptopp</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
       <OptimizeForWindowsApplication>false</OptimizeForWindowsApplication>
       <Parallelization>false</Parallelization>
       <UseIntelOptimizedHeaders>true</UseIntelOptimizedHeaders>
@@ -364,9 +362,7 @@
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </AdditionalOptions>
     </ClCompile>
-    <ClCompile Include="src\Public.cpp" />
     <ClCompile Include="src\RamSession.cpp" />
-    <ClCompile Include="src\Serializer.cpp" />
     <ClCompile Include="src\Logging.cpp" />
     <ClCompile Include="src\Parameters.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
@@ -405,15 +401,7 @@
     <ClInclude Include="include\lpeg\lptypes.h" />
     <ClInclude Include="include\lpeg\lpvm.h" />
     <ClInclude Include="include\pngnq\neuquant32.h" />
-    <ClInclude Include="include\rapidjson\document.h" />
-    <ClInclude Include="include\rapidjson\filestream.h" />
-    <ClInclude Include="include\rapidjson\prettywriter.h" />
-    <ClInclude Include="include\rapidjson\rapidjson.h" />
-    <ClInclude Include="include\rapidjson\reader.h" />
-    <ClInclude Include="include\rapidjson\stringbuffer.h" />
-    <ClInclude Include="include\rapidjson\writer.h" />
     <ClInclude Include="include\Schema.h" />
-    <ClInclude Include="include\Serializer.h" />
     <ClInclude Include="include\Server.h" />
     <ClInclude Include="include\Logging.h" />
     <ClInclude Include="include\Parameters.h" />

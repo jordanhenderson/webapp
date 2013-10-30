@@ -16,9 +16,6 @@
     <Filter Include="Header Files\sqlite">
       <UniqueIdentifier>{7818dd87-d3a0-472e-bbc9-ccc1eaf9dddb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\rapidjson">
-      <UniqueIdentifier>{b6575db0-38f7-4f0c-9f25-29525809e809}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\sqlite">
       <UniqueIdentifier>{7608f7b6-5834-4e75-b4f0-c0564cf38952}</UniqueIdentifier>
     </Filter>
@@ -67,9 +64,6 @@
     <ClCompile Include="src\Database.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Serializer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -101,9 +95,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\RamSession.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Public.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Hooks.cpp">
@@ -150,34 +141,10 @@
     <ClInclude Include="include\Server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\rapidjson\document.h">
-      <Filter>Header Files\rapidjson</Filter>
-    </ClInclude>
-    <ClInclude Include="include\rapidjson\filestream.h">
-      <Filter>Header Files\rapidjson</Filter>
-    </ClInclude>
-    <ClInclude Include="include\rapidjson\prettywriter.h">
-      <Filter>Header Files\rapidjson</Filter>
-    </ClInclude>
-    <ClInclude Include="include\rapidjson\rapidjson.h">
-      <Filter>Header Files\rapidjson</Filter>
-    </ClInclude>
-    <ClInclude Include="include\rapidjson\stringbuffer.h">
-      <Filter>Header Files\rapidjson</Filter>
-    </ClInclude>
-    <ClInclude Include="include\rapidjson\writer.h">
-      <Filter>Header Files\rapidjson</Filter>
-    </ClInclude>
-    <ClInclude Include="include\rapidjson\reader.h">
-      <Filter>Header Files\rapidjson</Filter>
-    </ClInclude>
     <ClInclude Include="include\sqlite\sqlite3.h">
       <Filter>Header Files\sqlite</Filter>
     </ClInclude>
     <ClInclude Include="include\Database.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Serializer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\Image.h">
