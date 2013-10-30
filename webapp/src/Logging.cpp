@@ -12,7 +12,6 @@ Logging::Logging(const string& logPath) {
 
 Logging::~Logging() {
 	abort = 1;
-	cv.notify_all();
 
 	//Join the logging queue thread
 	if(logger->joinable())
@@ -45,33 +44,15 @@ void Logging::setFile(string logPath) {
 
 }
 
-void Logging::process() {
-
-	while(!abort) {
-		{
-			unique_lock<mutex> lk(m);
-			//Wait for a signal from log functions (pushers)
-			while(queue.empty() && !abort) 
-				cv.wait(lk);
-		}
-		if(abort) return;
-		
-		string* msg;
-		//Process all messages on the queue.
-		while(queue.try_pop(msg))  {
-			FileSystem::WriteLine(&logFile, *msg);
-			delete msg;
-		} 
-	}
+void Logging::process(Logging* logger) {
+	string* msg = NULL;
+	logger->queue.pop(msg);
+	FileSystem::WriteLine(&logger->logFile, *msg);
+	delete msg;
 }
 
 void Logging::log(const string& msg) {
-	//Insert msg into our message queue for the Logging thread to handle.
-	lock_guard<mutex> lk(m);
-	bool const empty = queue.empty();
-	if(logFile.pszFile != NULL)
-		queue.push(new string(msg));
-	if(empty) cv.notify_one();
+	queue.push(new string(msg));
 }
 
 void Logging::printf(string format, ...) {
@@ -88,8 +69,6 @@ void Logging::printf(string format, ...) {
 	this->log(string(buffer, sz));
 	delete[] buffer;
 	va_end(args);
-	
-	
 }
 
 //Define a global pointer for global logger access.

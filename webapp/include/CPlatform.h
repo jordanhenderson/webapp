@@ -1,5 +1,12 @@
 #ifndef HELPERS_H
 #define HELPERS_H
+
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#endif
+
 #include <memory>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -13,9 +20,9 @@
 #include <vector>
 #include <list>
 #include <queue>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
+
+#include <tbb/compat/thread>
+#include <tbb/mutex.h>
 
 extern "C" {
 #if !HAVE_VSNPRINTF

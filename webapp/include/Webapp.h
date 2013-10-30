@@ -11,6 +11,7 @@
 #include "Session.h"
 #include <ctemplate/template.h>
 #include <tbb/concurrent_queue.h>
+#include <tbb/compat/thread>
 
 extern "C" {
 #include <lua.h>
@@ -42,10 +43,12 @@ struct TemplateData {
 	FileData* data;
 };
 
-class TaskBase : public tbb::task {
+class TaskBase : public tbb::tbb_thread {
 public:
-	TaskBase(Webapp* handler) : _handler(handler) {};
-	virtual tbb::task* execute() = 0;
+	TaskBase(Webapp* handler) : tbb::tbb_thread(start_thread, this), _handler(handler) {};
+	
+	virtual void execute() = 0;
+	static void start_thread(TaskBase* base) { base->execute(); };
 protected:
 	Webapp* _handler = NULL;
 };
@@ -53,21 +56,22 @@ protected:
 class WebappTask : public TaskBase {
 public:
 	WebappTask(Webapp* handler) : TaskBase(handler){};
-	tbb::task* execute();
+	void execute();
 	friend class Webapp;
 };
 
 class BackgroundQueue : public TaskBase {
 public:
 	BackgroundQueue(Webapp* handler) : TaskBase(handler) {};
-	tbb::task* execute();
+	void execute();
 	friend class Webapp;
 };
 
-class CleanupTask : public TaskBase {
+class CleanupTask : public tbb::task {
 	RequestQueue* _requests = NULL;
+	Webapp* _handler = NULL;
 public:
-	CleanupTask(Webapp* handler, RequestQueue* requests) : TaskBase(handler), _requests(requests) {};
+	CleanupTask(Webapp* handler, RequestQueue* requests) : _handler(handler), _requests(requests) {};
 	tbb::task* execute();
 };
 
@@ -101,8 +105,8 @@ private:
 	friend class WebappTask;
 	friend class BackgroundQueue;
 public:
-	tbb::task* posttask = NULL;
-	std::vector<TaskBase*> tasks;
+	CleanupTask* posttask = NULL;
+	std::vector<TaskBase*> workers;
 	Webapp(Parameters* params, asio::io_service& io_svc);
 	~Webapp();
 	ctemplate::TemplateDictionary* getTemplate(const char* page);

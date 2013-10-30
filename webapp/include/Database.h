@@ -5,7 +5,6 @@
 #include "Platform.h"
 
 #include "sqlite3.h"
-#include <thread>
 
 #define DATABASE_STATUS_PROCESS 0
 #define DATABASE_STATUS_FINISHED 1

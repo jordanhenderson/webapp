@@ -12,29 +12,28 @@ using namespace asio;
 using namespace asio::ip;
 using namespace tbb;
 
-task* WebappTask::execute() {
+void WebappTask::execute() {
 	_handler->numInstances++;
 	LuaParam _v[] = { { "sessions", &_handler->sessions }, { "requests", &_handler->requests }, { "app", _handler }, { "db", &_handler->database } };
 	_handler->runHandler(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/process.lua");
 	_handler->numInstances--;
 	if (_handler->posttask != NULL) {
-		task* t = _handler->posttask;
+		CleanupTask* t = _handler->posttask;
+		tbb::task::enqueue(*t);
 		_handler->posttask = NULL;
-		return t;
+		
 	}
-	return NULL;
 }
 
-task* BackgroundQueue::execute() {
+void BackgroundQueue::execute() {
 	LuaParam _v[] = { { "sessions", &_handler->sessions }, { "requests", &_handler->requests }, { "app", _handler }, { "db", &_handler->database } };
 	_handler->runHandler(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/process_queue.lua");
 	//Since this task must run at all times (not per request - *should* block in lua vm)
 	Sleep(1000); //Lua VM returned, something went wrong.
-	TaskBase* t = _handler->tasks.at(0) = new (task::allocate_root()) BackgroundQueue(_handler);
-	return t;
+	execute();
 }
 
-task* CleanupTask::execute() {
+tbb::task* CleanupTask::execute() {
 	if (_handler->numInstances > 1) {
 		recycle_as_continuation();
 		return this;
@@ -78,8 +77,8 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates
 										basepath(params->get("basepath")),
 										dbpath(params->get("dbpath")), 
 										svc(io_svc), 
-										tasks(tbb::task_scheduler_init::default_num_threads() ==
-												1 ? 2 : tbb::task_scheduler_init::default_num_threads()) {
+										workers(tbb::task_scheduler_init::default_num_threads() > 2 ?
+												tbb::task_scheduler_init::default_num_threads() - 2: 2) {
 
 	//Run init plugin
 	LuaParam _v[] = { { "app", this } };
@@ -88,12 +87,8 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates
 	refresh_templates();
 
 	//Create/allocate initial worker tasks.
-	TaskBase* task = tasks.at(0) = new (task::allocate_root()) BackgroundQueue(this);
-	parent_task->enqueue(*task);
+	workers.at(0) = new BackgroundQueue(this);
 	numInstances = 1;
-	for (unsigned int i = 1; i < tasks.size(); i++) {
-		tasks.at(i) = new (task::allocate_additional_child_of(*parent_task)) WebappTask(this);
-	}
 
 	asio::io_service::work wrk = asio::io_service::work(svc);
 	tcp::endpoint endpoint(tcp::v4(), 5000);
@@ -116,14 +111,17 @@ void Webapp::processRequest(Request* r, int amount) {
 				}
 			}
 			 
-			if (numInstances < tasks.size()) {
+			if (numInstances < workers.size()) {
 				//new task required?
 				requests.lock.lock();
-				TaskBase* task = tasks.at(numInstances);
-				if (task->state() != task::allocated) {
-					tasks.at(numInstances) = new (task::allocate_additional_child_of(*parent_task)) WebappTask(this);
+				TaskBase* worker = workers.at(numInstances);
+				if (worker == NULL || worker->joinable()) {
+					workers.at(numInstances) = new WebappTask(this);
 				}
-				parent_task->enqueue(*tasks.at(numInstances));
+				if (worker != NULL) {
+					worker->join();
+					delete worker;
+				}
 				requests.lock.unlock();
 			} 
 
@@ -178,8 +176,13 @@ void Webapp::accept_message() {
 
 
 Webapp::~Webapp() {
-	parent_task->wait_for_all();
-	parent_task->destroy(*parent_task);
+	for (unsigned int i = 0; i < workers.size(); i++) {
+		TaskBase* t = workers.at(i);
+		if (t != NULL) {
+			t->join();
+			delete t;
+		}
+	}
 	//Clean up client template files.
 	for(TemplateData& file: clientTemplateFiles) {
 		delete(file.data);

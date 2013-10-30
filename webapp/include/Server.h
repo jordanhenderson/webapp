@@ -55,18 +55,12 @@ protected:
 	RequestQueue requests;
 public:
 	tbb::atomic<unsigned int> numInstances;
-	tbb::empty_task* parent_task;
-	
 	friend class Server;
 	friend class WebappTask;
 	ServerHandler() {
 		requests.aborted = 0;
-		parent_task = new (tbb::task::allocate_root()) tbb::empty_task;
-		parent_task->set_ref_count(1);
 	}
 	~ServerHandler() {
-		parent_task->wait_for_all();
-		parent_task->destroy(*parent_task);
 	}
 };
 

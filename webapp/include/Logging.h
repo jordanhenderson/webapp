@@ -10,12 +10,10 @@
 #define LOGGER_STATUS_FINISHED 1
 class Logging : public Internal {
 	std::thread* logger;
-	tbb::concurrent_queue<std::string*> queue;
-	void process();
+	tbb::concurrent_bounded_queue<std::string*> queue;
+	static void process(Logging*);
 	File logFile;
-	std::condition_variable cv;
-	std::mutex m;
-	int abort;
+	tbb::atomic<int> abort;
 
 public:
 	Logging(const std::string& logPath);

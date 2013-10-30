@@ -5,7 +5,7 @@ template<typename C>
 class LockableContainer {
 private:
     C m_Container;
-    std::mutex Mutex;
+    tbb::mutex Mutex;
     template<typename U> friend class LockableContainerLock;
 };
 

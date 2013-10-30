@@ -1,11 +1,9 @@
+
+
+#include "Database.h"
 #include "my_global.h"
 #include "mysql.h"
 
-#ifdef snprintf
-#undef snprintf
-#endif
-
-#include "Database.h"
 
 using namespace std;
 
