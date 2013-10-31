@@ -18,6 +18,7 @@ extern "C" {
 #include <lualib.h>
 #include <lauxlib.h>
 #include "lpeg.h"
+#include "cjson.h"
 }
 
 

@@ -44,6 +44,12 @@
     <Filter Include="Header Files\lpeg">
       <UniqueIdentifier>{64232fb5-16bc-4ae9-a4ff-6c2b03279a70}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\cjson">
+      <UniqueIdentifier>{2c007675-bbc5-498f-8be7-d99f378c674b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\cjson">
+      <UniqueIdentifier>{10ab8458-f5f0-448a-8dfa-668faf56ecbb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Logging.cpp">
@@ -123,6 +129,18 @@
     </ClCompile>
     <ClCompile Include="src\CPlatform.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\cjson\dtoa.c">
+      <Filter>Source Files\cjson</Filter>
+    </ClCompile>
+    <ClCompile Include="src\cjson\g_fmt.c">
+      <Filter>Source Files\cjson</Filter>
+    </ClCompile>
+    <ClCompile Include="src\cjson\lua_cjson.c">
+      <Filter>Source Files\cjson</Filter>
+    </ClCompile>
+    <ClCompile Include="src\cjson\strbuf.c">
+      <Filter>Source Files\cjson</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -206,6 +224,18 @@
     </ClInclude>
     <ClInclude Include="include\CPlatform.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\cjson\dtoa_config.h">
+      <Filter>Header Files\cjson</Filter>
+    </ClInclude>
+    <ClInclude Include="include\cjson\fpconv.h">
+      <Filter>Header Files\cjson</Filter>
+    </ClInclude>
+    <ClInclude Include="include\cjson\strbuf.h">
+      <Filter>Header Files\cjson</Filter>
+    </ClInclude>
+    <ClInclude Include="include\cjson\cjson.h">
+      <Filter>Header Files\cjson</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

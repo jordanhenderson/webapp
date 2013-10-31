@@ -46,9 +46,12 @@ void Logging::setFile(string logPath) {
 
 void Logging::process(Logging* logger) {
 	string* msg = NULL;
-	logger->queue.pop(msg);
-	FileSystem::WriteLine(&logger->logFile, *msg);
-	delete msg;
+	while (!logger->abort) {
+		logger->queue.pop(msg);
+		FileSystem::WriteLine(&logger->logFile, *msg);
+		delete msg;
+	}
+	
 }
 
 void Logging::log(const string& msg) {

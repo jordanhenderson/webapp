@@ -51,6 +51,7 @@ void Webapp::runHandler(LuaParam* params, int nArgs, const char* filename) {
 	lua_State* L = luaL_newstate();
 	luaL_openlibs(L);
 	luaopen_lpeg(L);
+	luaopen_cjson(L);
 	//Preprocess the lua file first.
 
 	luaL_loadfile(L, "plugins/process.lua");
