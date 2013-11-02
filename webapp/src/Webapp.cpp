@@ -18,8 +18,7 @@ void WebappTask::execute() {
 	_handler->runHandler(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/process.lua");
 	_handler->numInstances--;
 	if (_handler->posttask != NULL) {
-		CleanupTask* t = _handler->posttask;
-		tbb::task::enqueue(*t);
+		tbb::task::enqueue(*_handler->posttask);
 		_handler->posttask = NULL;
 		
 	}
@@ -39,6 +38,7 @@ tbb::task* CleanupTask::execute() {
 		return this;
 	}
 	else {
+		_requests->requests.clear();
 		_handler->refresh_templates();
 		_requests->lock.unlock();
 		_requests->aborted = 0;
@@ -57,11 +57,11 @@ void Webapp::runHandler(LuaParam* params, int nArgs, const char* filename) {
 	luaL_loadfile(L, "plugins/process.lua");
 	lua_pushlstring(L, filename, strlen(filename));
 	lua_setglobal(L, "file");
-
+	webapp_str_t static_strings[WEBAPP_STATIC_STRINGS] = {};
 	//Create temporary webapp_str_t for string creation between vm/c
-	webapp_str_t appstr = {};
-	lua_pushlightuserdata(L, &appstr);
-	lua_setglobal(L, "appstr");
+
+	lua_pushlightuserdata(L, static_strings);
+	lua_setglobal(L, "static_strings");
 
 	if(params != NULL) {
 		for(int i = 0; i < nArgs; i++) {
@@ -116,19 +116,22 @@ void Webapp::processRequest(Request* r, int amount) {
 					read += r->input_chain[i]->len + 1;
 				}
 			}
-			 
-			if (numInstances < workers.size()) {
+			unsigned int nInstance = numInstances;
+			if (nInstance < workers.size()) {
 				//new task required?
+				TaskBase* worker = workers.at(nInstance);
 				requests.lock.lock();
-				TaskBase* worker = workers.at(numInstances);
-				if (worker == NULL || worker->joinable()) {
-					workers.at(numInstances) = new WebappTask(this);
-				}
-				if (worker != NULL) {
-					worker->join();
+				if (worker != NULL && worker->joinable()) {
 					delete worker;
+					worker = NULL;
+					workers.at(nInstance) = NULL;
+				}
+				
+				if (worker == NULL) {
+					workers.at(nInstance) = new WebappTask(this);
 				}
 				requests.lock.unlock();
+				
 			} 
 
 			requests.requests.push(r);

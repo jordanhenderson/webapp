@@ -46,7 +46,7 @@ struct TemplateData {
 
 class TaskBase : public tbb::tbb_thread {
 public:
-	TaskBase(Webapp* handler) : tbb::tbb_thread(start_thread, this), _handler(handler) {};
+	TaskBase(Webapp* handler) : _handler(handler), tbb::tbb_thread(start_thread, this) {};
 	
 	virtual void execute() = 0;
 	static void start_thread(TaskBase* base) { base->execute(); };
@@ -78,6 +78,7 @@ public:
 
 #define WEBAPP_PARAM_BASEPATH 0
 #define WEBAPP_PARAM_DBPATH 1
+#define WEBAPP_STATIC_STRINGS 2
 
 class Webapp : public ServerHandler, Internal {
 private:

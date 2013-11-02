@@ -33,7 +33,6 @@ public:
 	int status = DATABASE_QUERY_INIT;
 	int db_type;
 	long long lastrowid;
-	int params_copy;
 
 //Database instance parameters
 	void* stmt = NULL;

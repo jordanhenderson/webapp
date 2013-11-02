@@ -36,7 +36,7 @@ int GetSessionValue(SessionStore* session, webapp_str_t* key, webapp_str_t* out)
 }
 
 int SetSessionValue(SessionStore* session, webapp_str_t* key, webapp_str_t* val) {
-	if (session == NULL || key == NULL)
+	if (session == NULL || key == NULL || val == NULL)
 		return 0;
 	session->store(string(key->data, key->len), string(val->data, val->len));
 	return 1;
@@ -190,14 +190,24 @@ void ExecQuery(Database* db, Query* q, int select) {
 }
 
 void GetCell(Query* q, unsigned int column, webapp_str_t* out) {
-	if (q == NULL || out == NULL || column >= q->row.size()) return;
+	if (q == NULL || out == NULL) return;
+	if (column >= q->row.size()) {
+		out->data = "";
+		out->len = 0;
+		return;
+	}
 	string& cell = q->row.at(column);
 	out->data = cell.c_str();
 	out->len = cell.length();
 }
 
 void GetColumnName(Query* q, unsigned int column, webapp_str_t* out) {
-	if (q == NULL || out == NULL || column >= q->description->size()) return;
+	if (q == NULL || out == NULL) return;
+	if (column >= q->description->size()) {
+		out->data = "";
+		out->len = 0;
+		return;
+	}
 	string& cell = q->description->at(column);
 	out->data = cell.c_str();
 	out->len = cell.length();

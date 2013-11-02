@@ -11,7 +11,10 @@ Query::Query(const string& dbq, QueryRow* p) {
 	this->dbq = new string(dbq);
 	if(p != NULL) {
 		params = new QueryRow(*p);
-	} 
+	}
+	else {
+		params = new QueryRow();
+	}
 
 }
 
@@ -108,7 +111,7 @@ void Database::process(Query* qry) {
 				qry->row.push_back(string(text, size));
 			}
 			//We have the column description after the first pass.
-			havedesc = 1;
+			if(qry->description == NULL) havedesc = 1;
 		}
 		else {
 			goto cleanup;
@@ -145,6 +148,7 @@ void Database::process(Query* qry) {
 				for (unsigned int i = 0; (field = mysql_fetch_field(prepare_meta_result)); i++) {
 					qry->description->push_back(string(field->name, field->name_length));
 				}
+				havedesc = 1;
 			}
 		}
 
@@ -242,7 +246,9 @@ long long Database::exec(const string& query, QueryRow* params) {
 Query* Database::select(Query* q, QueryRow* params, int desc) {
 	if(params != NULL && q->params == NULL) {
 		q->params = new QueryRow(*params);
-		q->params_copy = 1;
+	}
+	else if (q->params == NULL) {
+		q->params = new QueryRow();
 	}
 	if(desc)
 		q->description = new QueryRow();
