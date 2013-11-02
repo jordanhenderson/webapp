@@ -11,11 +11,8 @@ Query::Query(const string& dbq, QueryRow* p) {
 	this->dbq = new string(dbq);
 	if(p != NULL) {
 		params = new QueryRow(*p);
-	} else {
-		params = NULL;
-	}
-	description = NULL;
-	status = DATABASE_QUERY_STARTED;
+	} 
+
 }
 
 Query::~Query() {
@@ -170,6 +167,7 @@ void Database::process(Query* qry) {
 
 //Update the query object
 	qry->stmt = stmt;
+	qry->status = DATABASE_QUERY_STARTED;
 	if (db_type == DATABASE_TYPE_MYSQL) {
 		qry->prepare_meta_result = prepare_meta_result;
 		qry->size_arr = size_arr;
@@ -192,11 +190,6 @@ cleanup:
 	}
 
 } 
-
-	
-
-Database::Database() {
-}
 
 int Database::connect(int database_type, const char* host, const char* username, const char* password, const char* database) {
 	db_type = database_type;

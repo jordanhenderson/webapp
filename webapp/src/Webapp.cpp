@@ -58,6 +58,11 @@ void Webapp::runHandler(LuaParam* params, int nArgs, const char* filename) {
 	lua_pushlstring(L, filename, strlen(filename));
 	lua_setglobal(L, "file");
 
+	//Create temporary webapp_str_t for string creation between vm/c
+	webapp_str_t appstr = {};
+	lua_pushlightuserdata(L, &appstr);
+	lua_setglobal(L, "appstr");
+
 	if(params != NULL) {
 		for(int i = 0; i < nArgs; i++) {
 			LuaParam* p = params + i;
@@ -75,14 +80,14 @@ void Webapp::runHandler(LuaParam* params, int nArgs, const char* filename) {
 
 Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates(""),
 										params(params),
-										basepath(params->get("basepath")),
-										dbpath(params->get("dbpath")), 
+										basepath(&params->get("basepath")),
+										dbpath(&params->get("dbpath")), 
 										svc(io_svc), 
 										workers(tbb::task_scheduler_init::default_num_threads() > 2 ?
 												tbb::task_scheduler_init::default_num_threads() - 2: 2) {
 
 	//Run init plugin
-	LuaParam _v[] = { { "app", this } };
+	LuaParam _v[] = { { "app", this }, { "db", &database } };
 	runHandler(_v, sizeof(_v) / sizeof(LuaParam), "plugins/init.lua");
 
 	refresh_templates();
@@ -210,7 +215,7 @@ void Webapp::refresh_templates() {
 	mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::IMMEDIATE_RELOAD);
 	//Load content files (applicable templates)
 	contentList.clear();
-	string basepath = this->basepath + '/';
+	string basepath = *this->basepath + '/';
 	string templatepath = basepath + "content/";
 	{
 		vector<string> files = FileSystem::GetFiles(templatepath, "", 0);

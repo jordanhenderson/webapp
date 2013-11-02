@@ -129,7 +129,7 @@ TemplateDictionary* GetTemplate(Webapp* gallery, const char* page) {
 void RenderTemplate(Webapp* gallery, ctemplate::TemplateDictionary* dict, const char* page, std::vector<string*>* handler, webapp_str_t* out) {
 	if (gallery == NULL || dict == NULL || page == NULL || handler == NULL || out == NULL) return;
 	string* output = new string;
-	ExpandTemplate(gallery->basepath + "/content/" + page, STRIP_WHITESPACE, dict, output);
+	ExpandTemplate(*gallery->basepath + "/content/" + page, STRIP_WHITESPACE, dict, output);
 
 	//Clean up the template dictionary.
 	delete dict;
@@ -141,18 +141,11 @@ void RenderTemplate(Webapp* gallery, ctemplate::TemplateDictionary* dict, const 
 
 }
 
-const char* GetParam(Webapp* gallery, const char* param) {
-	if (gallery == NULL || param == NULL) return NULL;
-	const string* val = &(gallery->params->get(param));
-	if(val->empty()) return NULL;
-	else return val->c_str();
-}
-
-void WriteData(asio::ip::tcp::socket* socket, char* data, int len) {
-	if (socket == NULL || data == NULL) return;
-	*(int*)data = htons(len - 4);
+void WriteData(asio::ip::tcp::socket* socket, webapp_str_t* data) {
+	if (socket == NULL || data == NULL || data->data == NULL) return;
+	*(int*)data->data = htons(data->len - 4);
 	try {
-		asio::write(*socket, asio::buffer(data, len));
+		asio::write(*socket, asio::buffer(data->data, data->len));
 	}
 	catch (system_error ec) {
 		printf("Error writing to socket!");
@@ -165,21 +158,66 @@ int ConnectDatabase(Database* db, int database_type, const char* host, const cha
 	return db->connect(database_type, host, username, password, database);
 }
 
-long long ExecQuery(Database* db, const char* query, int len) {
-	if (db == NULL) return -1;
-	return db->exec(string(query, len));
+long long ExecString(Database* db, webapp_str_t* query) {
+	if (db == NULL || query == NULL || query->data == NULL) return -1;
+	return db->exec(string(query->data, query->len));
+}
+
+void SelectQuery(Database* db, Query* q, int desc) {
+	if (db == NULL || q == NULL) return;
+	db->select(q, NULL, desc);
+}
+
+Query* CreateQuery(webapp_str_t* in) {
+	if (in == NULL) return new Query();
+	return new Query(string(in->data, in->len));
+}
+
+void SetQuery(Query* q, webapp_str_t* in) {
+	if (in == NULL || in->data == NULL || q == NULL || q->status != DATABASE_QUERY_INIT) return;
+	if (q->dbq != NULL) delete q->dbq;
+	q->dbq = new string(in->data, in->len);
+}
+
+void DestroyQuery(Query* q) {
+	if (q == NULL) return;
+	delete q;
+}
+
+void ExecQuery(Database* db, Query* q, int select) {
+	if (q == NULL) return;
+	db->select(q, NULL, select);
+}
+
+void GetCell(Query* q, unsigned int column, webapp_str_t* out) {
+	if (q == NULL || out == NULL || column >= q->row.size()) return;
+	string& cell = q->row.at(column);
+	out->data = cell.c_str();
+	out->len = cell.length();
+}
+
+void GetColumnName(Query* q, unsigned int column, webapp_str_t* out) {
+	if (q == NULL || out == NULL || column >= q->description->size()) return;
+	string& cell = q->description->at(column);
+	out->data = cell.c_str();
+	out->len = cell.length();
+}
+
+void BindParameter(Query* q, webapp_str_t* param) {
+	if (q == NULL || param == NULL || param->data == NULL) return;
+	q->params->push_back(string(param->data, param->len));
 }
 
 void GetParameter(Webapp* app, int param, webapp_str_t* out) {
 	if (app == NULL) return;
 	switch (param) {
 	case WEBAPP_PARAM_BASEPATH:
-		out->data = app->basepath.c_str();
-		out->len = app->basepath.length();
+		out->data = app->basepath->c_str();
+		out->len = app->basepath->length();
 		break;
 	case WEBAPP_PARAM_DBPATH:
-		out->data = app->dbpath.c_str();
-		out->len = app->basepath.length();
+		out->data = app->dbpath->c_str();
+		out->len = app->dbpath->length();
 		break;
 	default:
 		out->data = NULL;

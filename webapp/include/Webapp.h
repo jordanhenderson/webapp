@@ -102,7 +102,6 @@ private:
 	asio::io_service& svc;
 	void processRequest(Request* r, int len);
 
-	
 	friend class WebappTask;
 	friend class BackgroundQueue;
 public:
@@ -113,8 +112,8 @@ public:
 	ctemplate::TemplateDictionary* getTemplate(const char* page);
 	void refresh_templates();
 	
-	std::string basepath;
-	std::string dbpath;
+	const std::string* basepath;
+	const std::string* dbpath;
 
 	Parameters* params;
 	Database database;

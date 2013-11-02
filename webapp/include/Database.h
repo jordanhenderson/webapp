@@ -8,8 +8,10 @@
 
 #define DATABASE_STATUS_PROCESS 0
 #define DATABASE_STATUS_FINISHED 1
-#define DATABASE_QUERY_STARTED 0
-#define DATABASE_QUERY_FINISHED 1
+#define DATABASE_QUERY_INIT 0
+#define DATABASE_QUERY_STARTED 1
+#define DATABASE_QUERY_FINISHED 2
+
 
 #define DATABASE_TYPE_SQLITE 0
 #define DATABASE_TYPE_MYSQL 1
@@ -25,10 +27,10 @@ typedef struct st_mysql_bind MYSQL_BIND;
 typedef std::vector<std::string> QueryRow;
 class Query {
 public:
-	std::string* dbq;
-	QueryRow* params; 
-	QueryRow* description;
-	int status;
+	std::string* dbq = NULL;
+	QueryRow* params = NULL; 
+	QueryRow* description = NULL;
+	int status = DATABASE_QUERY_INIT;
 	int db_type;
 	long long lastrowid;
 	int params_copy;
@@ -44,6 +46,7 @@ public:
 
 	std::vector<std::string> row;
 	Query(const std::string& dbq, QueryRow* params=NULL);
+	Query() {};
 	~Query();
 
 };
@@ -53,12 +56,12 @@ private:
 	sqlite3* sqlite_db = NULL;
 	MYSQL* mysql_db = NULL;
 	int shutdown_database = 0;
-	int db_type;
+	int db_type = 0;
 	void process(Query* q);
 
 
 public:
-	Database();
+	Database() {};
 	~Database();
 	int connect(int database_type, const char* host, const char* username, const char* password, const char* database);
 	long long exec(Query* query);
