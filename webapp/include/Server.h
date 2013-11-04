@@ -28,7 +28,6 @@ struct Request {
 	webapp_str_t user_agent;
 	webapp_str_t cookies;
 	webapp_str_t request_body;
-	int content_len = 0;
 	std::vector<std::string*>* handler = NULL;
 	webapp_str_t* input_chain[STRING_VARS];
 	~Request() {

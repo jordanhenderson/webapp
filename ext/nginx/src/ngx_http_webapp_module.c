@@ -121,7 +121,7 @@ static void conn_read(ngx_event_t *ev) {
 				out.buf = b;
 				out.next = NULL;
 
-				r->keepalive = 0;
+				
 				ngx_http_output_filter(r, &out);
 				ngx_http_finalize_request(r, NGX_OK);
 
@@ -143,7 +143,6 @@ static void conn_write(ngx_event_t *ev) {
 	ngx_connection_t* c = ev->data;
 	webapp_request_t* wr = c->data;
 	ngx_http_request_t* r = wr->r;
-	ngx_http_core_main_conf_t* cmcf = ngx_http_get_module_main_conf(r, ngx_http_core_module);
 	if(!ev->timedout) {
 		if(wr->written_bytes == 0) {
 			data_out.data = ngx_palloc(r->pool, PROTOCOL_VARS * sizeof(int));
@@ -167,11 +166,10 @@ static void conn_write(ngx_event_t *ev) {
 				}
 				if(r->headers_in.user_agent != NULL)
 					agent_len = r->headers_in.user_agent->value.len;
-
 				//Start building the size information.
 				*(int*)(data_out.data) = htons(r->unparsed_uri.len); //URI len
 				wr->output_chain[0] = &r->unparsed_uri;
-
+				
 				*(int*)(data_out.data + INT_INTERVAL(1)) = htons(host_len); //HOST len
 				wr->output_chain[1] = host;
 
@@ -186,7 +184,8 @@ static void conn_write(ngx_event_t *ev) {
 				
 				*(int*)(data_out.data + INT_INTERVAL(5)) = htons(content_len); //Content length
 				data_out.len = PROTOCOL_VARS * sizeof(int);
-				if(r->method == NGX_HTTP_POST && r->request_body == NULL && r->request_body->bufs == NULL) {
+
+				if(r->method == NGX_HTTP_POST && r->request_body != NULL && r->request_body->bufs != NULL) {
 					if(r->request_body->bufs->next != NULL) {
 						ngx_chain_t* cl;
 						ngx_buf_t* buf;
@@ -236,6 +235,7 @@ static void conn_write(ngx_event_t *ev) {
 			}
 			wr->chain_counter++;
 		} else {
+			ev->complete = 1;
 			return;
 		}
 		
@@ -272,7 +272,7 @@ static void webapp_body_ready(ngx_http_request_t* r) {
 	wlcf = ngx_http_get_module_loc_conf(r, ngx_http_webapp_module); 
 	webapp = ngx_palloc(r->pool, sizeof(webapp_request_t));
 
-	pconn = ngx_palloc(r->pool, sizeof(ngx_peer_connection_t));
+	pconn = ngx_pcalloc(r->pool, sizeof(ngx_peer_connection_t));
 
 	pconn->log = r->connection->log;
 	pconn->name = &wlcf->url->url;
@@ -293,11 +293,12 @@ static void webapp_body_ready(ngx_http_request_t* r) {
 		conn->data = webapp;
 		conn->read->handler = conn_read;
 		conn->write->handler = conn_write;
-		ngx_add_timer(conn->read, 5000);
-		ngx_add_timer(conn->write, 5000);
+		ngx_add_timer(conn->read, 8000);
+		ngx_add_timer(conn->write, 8000);
 
 		//Make our request depend on a (sub) connection (backend peer).
-		r->main->count++;
+		if (r->method != NGX_HTTP_POST)
+			r->main->count++;
 	}
 }
 
@@ -305,7 +306,7 @@ static ngx_int_t
 ngx_http_webapp_content_handler(ngx_http_request_t *r) {
 	int path_level = 0;
 	int rc;
-	int i = 0;
+	unsigned int i = 0;
 	for(i = 0; i < r->uri.len; i++) {
 		if(r->uri.data[i] == '/')
 			path_level++;
@@ -314,11 +315,14 @@ ngx_http_webapp_content_handler(ngx_http_request_t *r) {
 	if(r->uri.data == NULL || path_level != 1)
 		return NGX_DECLINED;
 
+	if (r->uri.len == 12 && strncmp(r->uri.data, "/favicon.ico", 12) == 0)
+		return NGX_DECLINED;
+
 	if(r->method == NGX_HTTP_POST) {
 		rc = ngx_http_read_client_request_body(r, webapp_body_ready);
-		if (rc >= NGX_HTTP_SPECIAL_RESPONSE) {
+		 if (rc >= NGX_HTTP_SPECIAL_RESPONSE) {
 			return rc;
-		}
+		 }
 
 		return NGX_DONE;
 	} else {
@@ -357,7 +361,6 @@ static char *
 ngx_http_webapp_pass(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
 	ngx_url_t*             url;
-	ngx_http_core_loc_conf_t  *clcf;
 	ngx_http_webapp_loc_conf_t * wlcf = conf;
 	
 	ngx_str_t* args = cf->args->elts;

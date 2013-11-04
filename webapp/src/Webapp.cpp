@@ -96,6 +96,10 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates
 	workers.at(0) = new BackgroundQueue(this);
 	numInstances = 1;
 
+	for (unsigned int i = 1; i < workers.size(); i++) {
+		workers.at(i) = new WebappTask(this);
+	}
+
 	asio::io_service::work wrk = asio::io_service::work(svc);
 	tcp::endpoint endpoint(tcp::v4(), 5000);
 	acceptor = new tcp::acceptor(svc, endpoint, true);
