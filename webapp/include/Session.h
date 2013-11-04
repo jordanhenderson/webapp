@@ -5,6 +5,8 @@
 #include "Container.h"
 #define SESSION_STORE RamSession
 
+struct Request;
+
 class SessionStore {
 public:
 	std::string empty;
@@ -35,8 +37,8 @@ private:
 	LockableContainer<SessionMap> session_map;
 public:
 	~Sessions();
-	//Create a new session based on the FCGX Request.
+	//Create a new session based on the request.
 	SessionStore* get_session(const char* sessionid);
-	SessionStore* new_session(const char* host, const char* user_agent);
+	SessionStore* new_session(Request* request);
 };
 #endif

@@ -4,6 +4,8 @@
 #include <hex.h>
 #include <osrng.h>
 #include "Session.h"
+#include "Server.h"
+
 using namespace std;
 using namespace CryptoPP;
 
@@ -17,7 +19,9 @@ Sessions::~Sessions() {
 	}
 }
 
-SessionStore* Sessions::new_session(const char* host, const char* user_agent) {
+SessionStore* Sessions::new_session(Request* request) {
+	if (request->host.len == 0 || request->user_agent.len == 0) return NULL; //Cannot build unique session.
+
 	SHA1 hash;
 	string output;
 	byte digest[SHA1::DIGESTSIZE];
@@ -33,8 +37,8 @@ SessionStore* Sessions::new_session(const char* host, const char* user_agent) {
 	rng.GenerateBlock( pcbScratch, BLOCKSIZE );
 
 	//Generate a basic random session ID.
-	hash.Update((const byte*)host, strlen(host));
-	hash.Update((const byte*)user_agent, strlen(user_agent));
+	hash.Update((const byte*)request->host.data, request->host.len);
+	hash.Update((const byte*)request->user_agent.data, request->user_agent.len);
 	hash.Update(pcbScratch, BLOCKSIZE);
 	hash.Final(digest);
 	

@@ -49,9 +49,9 @@ SessionStore* GetSession(Sessions* sessions, const char* sessionid) {
 }
 
 //Cleaned up by backend.
-SessionStore* NewSession(Sessions* sessions, const char* host, const char* user_agent) {
-	if (sessions == NULL || host == NULL || user_agent == NULL) return NULL;
-	return sessions->new_session(host, user_agent);
+SessionStore* NewSession(Sessions* sessions, Request* request) {
+	if (sessions == NULL || request == NULL) return NULL;
+	return sessions->new_session(request);
 }
 
 int Template_SetValue(TemplateDictionary* dict, const char* key, const char* value) {
