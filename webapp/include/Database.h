@@ -27,13 +27,14 @@ typedef struct st_mysql_bind MYSQL_BIND;
 typedef std::vector<std::string> QueryRow;
 class Query {
 public:
+	int status = DATABASE_QUERY_INIT;
+	long long lastrowid = 0;
+	int column_count = 0;
+	int db_type = 0;
+
 	std::string* dbq = NULL;
 	QueryRow* params = NULL; 
 	QueryRow* description = NULL;
-	int status = DATABASE_QUERY_INIT;
-	int db_type;
-	long long lastrowid;
-
 //Database instance parameters
 	void* stmt = NULL;
 	unsigned long* size_arr = NULL;
@@ -41,7 +42,7 @@ public:
 	MYSQL_RES* prepare_meta_result = NULL;
 	MYSQL_BIND* bind_params = NULL;
 	MYSQL_BIND* bind_output = NULL;
-	int column_count = 0;
+	
 
 	std::vector<std::string> row;
 	Query(const std::string& dbq, QueryRow* params=NULL);
