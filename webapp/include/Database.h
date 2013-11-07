@@ -46,7 +46,7 @@ public:
 
 	std::vector<std::string> row;
 	Query(const std::string& dbq, QueryRow* params=NULL);
-	Query() {};
+	Query();
 	~Query();
 
 };

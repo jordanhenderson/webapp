@@ -36,9 +36,10 @@ APIEXPORT void ClearCache(Webapp* app, RequestQueue* requests);
 //Database
 APIEXPORT int ConnectDatabase(Database*, int database_type, const char* host, const char* username, const char* password, const char* database);
 APIEXPORT long long ExecString(Database*, webapp_str_t* in);
-APIEXPORT void SelectQuery(Database*, Query*, int desc);
+APIEXPORT int SelectQuery(Database*, Query*, int desc);
 APIEXPORT Query* CreateQuery(webapp_str_t* in);
 APIEXPORT void SetQuery(Query*, webapp_str_t* in);
+APIEXPORT void AppendQuery(Query*, webapp_str_t* in);
 APIEXPORT void DestroyQuery(Query*);
 APIEXPORT void BindParameter(Query* q, webapp_str_t* in);
 APIEXPORT void GetCell(Query* q, unsigned int column, webapp_str_t* out);

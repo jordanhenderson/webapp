@@ -158,14 +158,20 @@ int ConnectDatabase(Database* db, int database_type, const char* host, const cha
 	return db->connect(database_type, host, username, password, database);
 }
 
+void AppendQuery(Query* q, webapp_str_t* in) {
+	if (q == NULL || in == NULL || q->dbq == NULL || q->status != DATABASE_QUERY_INIT) return;
+	q->dbq->append(string(in->data, in->len));
+}
+
 long long ExecString(Database* db, webapp_str_t* query) {
 	if (db == NULL || query == NULL || query->data == NULL) return -1;
 	return db->exec(string(query->data, query->len));
 }
 
-void SelectQuery(Database* db, Query* q, int desc) {
-	if (db == NULL || q == NULL) return;
+int SelectQuery(Database* db, Query* q, int desc) {
+	if (db == NULL || q == NULL) return NULL;
 	db->select(q, NULL, desc);
+	return q->status;
 }
 
 Query* CreateQuery(webapp_str_t* in) {

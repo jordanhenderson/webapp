@@ -6,6 +6,10 @@
 
 
 using namespace std;
+Query::Query() {
+	params = new QueryRow();
+	this->dbq = new string();
+}
 
 Query::Query(const string& dbq, QueryRow* p) {
 	this->dbq = new string(dbq);
@@ -42,6 +46,7 @@ Query::~Query() {
 
 void Database::process(Query* qry) {
 	if(shutdown_database) return;
+	if (qry->status == DATABASE_QUERY_FINISHED) return;
 	void* stmt = qry->stmt;
 	unsigned long* size_arr = qry->size_arr;
 	unsigned long* out_size_arr = qry->out_size_arr;
