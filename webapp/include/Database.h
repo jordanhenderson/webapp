@@ -45,8 +45,8 @@ public:
 	
 
 	std::vector<std::string> row;
-	Query(const std::string& dbq, QueryRow* params=NULL);
-	Query();
+	Query(int desc=0);
+	Query(const std::string& dbq, int desc=0);
 	~Query();
 
 };
@@ -65,9 +65,7 @@ public:
 	~Database();
 	int connect(int database_type, const char* host, const char* username, const char* password, const char* database);
 	long long exec(Query* query);
-	long long exec(const std::string& query, QueryRow* params=NULL);
-	Query* select(Query* query, QueryRow* params=NULL, int desc = 0);
-	//Return the first cell in the first row of the response as a string.
-	std::string select_single(const std::string& query, QueryRow* params = NULL, const std::string& def = "");
+	long long exec(const std::string& query);
+	Query* select(Query* query);
 };
 #endif

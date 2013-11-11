@@ -168,15 +168,15 @@ long long ExecString(Database* db, webapp_str_t* query) {
 	return db->exec(string(query->data, query->len));
 }
 
-int SelectQuery(Database* db, Query* q, int desc) {
+int SelectQuery(Database* db, Query* q) {
 	if (db == NULL || q == NULL) return NULL;
-	db->select(q, NULL, desc);
+	db->select(q);
 	return q->status;
 }
 
-Query* CreateQuery(webapp_str_t* in) {
-	if (in == NULL) return new Query();
-	return new Query(string(in->data, in->len));
+Query* CreateQuery(webapp_str_t* in, int desc) {
+	if (in == NULL) return new Query(desc);
+	return new Query(string(in->data, in->len), desc);
 }
 
 void SetQuery(Query* q, webapp_str_t* in) {
@@ -190,9 +190,9 @@ void DestroyQuery(Query* q) {
 	delete q;
 }
 
-void ExecQuery(Database* db, Query* q, int select) {
+void ExecQuery(Database* db, Query* q) {
 	if (q == NULL) return;
-	db->select(q, NULL, select);
+	db->select(q);
 }
 
 void GetCell(Query* q, unsigned int column, webapp_str_t* out) {

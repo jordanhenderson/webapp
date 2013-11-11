@@ -6,20 +6,16 @@
 
 
 using namespace std;
-Query::Query() {
+Query::Query(int desc) {
 	params = new QueryRow();
 	this->dbq = new string();
+	if (desc) description = new QueryRow();
 }
 
-Query::Query(const string& dbq, QueryRow* p) {
+Query::Query(const string& dbq, int desc) {
+	params = new QueryRow();
 	this->dbq = new string(dbq);
-	if(p != NULL) {
-		params = new QueryRow(*p);
-	}
-	else {
-		params = new QueryRow();
-	}
-
+	if (desc) description = new QueryRow();
 }
 
 Query::~Query() {
@@ -116,7 +112,7 @@ void Database::process(Query* qry) {
 				qry->row.push_back(string(text, size));
 			}
 			//We have the column description after the first pass.
-			if(qry->description == NULL) havedesc = 1;
+			if(qry->description != NULL) havedesc = 1;
 		}
 		else {
 			goto cleanup;
@@ -236,39 +232,21 @@ Database::~Database() {
 
 
 long long Database::exec(Query* query) {
-	select(query, NULL);
+	select(query);
 	if(nError != ERROR_DB_FAILED)
 		return query->lastrowid;
 	return -1;
 }
 
-long long Database::exec(const string& query, QueryRow* params) {
-	Query q(query, params);
+long long Database::exec(const string& query) {
+	Query q(query);
 	return exec(&q);
 }
 
 
-Query* Database::select(Query* q, QueryRow* params, int desc) {
-	if(params != NULL && q->params == NULL) {
-		q->params = new QueryRow(*params);
-	}
-	else if (q->params == NULL) {
-		q->params = new QueryRow();
-	}
-	if(desc)
-		q->description = new QueryRow();
-
+Query* Database::select(Query* q) {
 	if(nError != ERROR_DB_FAILED) {
 		process(q);
 	}
 	return q;
-}
-
-string Database::select_single(const std::string& query, QueryRow* params, const std::string& def) {
-	Query q(query);
-	select(&q, params, 0);
-	if(q.row.size() > 0)
-		return q.row.at(0);
-	else return def;
-
 }
