@@ -9,20 +9,32 @@ using namespace std;
 Query::Query(int desc) {
 	params = new QueryRow();
 	this->dbq = new string();
-	if (desc) description = new QueryRow();
+	this->desc = desc;
 }
 
 Query::Query(const string& dbq, int desc) {
 	params = new QueryRow();
 	this->dbq = new string(dbq);
-	if (desc) description = new QueryRow();
+	this->desc = desc;
 }
 
 Query::~Query() {
 	if(params != NULL)
 		delete params;
-	if(description != NULL)
-		delete description;
+	if (description != NULL) {
+		for (int i = 0; i < column_count; i++) {
+			if (description[i] != NULL)
+				delete[] description[i];
+		}
+		delete[] description;
+	}
+	if (row != NULL) {
+		for (int i = 0; i < column_count; i++) {
+			if (row[i] != NULL)
+				delete[] row[i];
+		}
+		delete[] row;
+	}
 
 	status = DATABASE_QUERY_FINISHED;
 
@@ -50,7 +62,6 @@ void Database::process(Query* qry) {
 	MYSQL_BIND* bind_params = qry->bind_params;
 	MYSQL_BIND* bind_output = qry->bind_output;
 	int err = 0;
-	int havedesc = 0;
 	int lasterror = 0;
 
 	qry->db_type = db_type;
@@ -92,47 +103,83 @@ void Database::process(Query* qry) {
 			}
 		}
 	}
-			
-	//Clear previous row.
-	qry->row.clear();
+	
+	if (qry->status == DATABASE_QUERY_INIT) {
+		if (db_type == DATABASE_TYPE_SQLITE) {
+			lasterror = sqlite3_step((sqlite3_stmt*)stmt);
+			qry->column_count = sqlite3_column_count((sqlite3_stmt*)stmt);
+		}
+		else if (db_type == DATABASE_TYPE_MYSQL) {
+			if (prepare_meta_result == NULL) {
+				if (!(prepare_meta_result = mysql_stmt_result_metadata((MYSQL_STMT*)stmt)))
+					goto cleanup;
 
-	//Retrieve the next row.
+
+			}
+
+			qry->column_count = mysql_num_fields(prepare_meta_result);
+		}
+
+		if (qry->column_count == 0)
+			goto cleanup;
+
+		//Initialize row memory.
+		
+		if (qry->row == NULL) {
+			qry->row = new webapp_str_t*[qry->column_count]();
+			for (int i = 0; i < qry->column_count; i++) {
+				qry->row[i] = new webapp_str_t;
+			}
+		}
+		if (qry->desc && qry->description == NULL) {
+			qry->description = new webapp_str_t*[qry->column_count]();
+			for (int i = 0; i < qry->column_count; i++) {
+				qry->description[i] = new webapp_str_t;
+			}
+		}
+		
+	}
+	else if(qry->status == DATABASE_QUERY_STARTED) {
+		//Clean up existing row results.
+		for (int i = 0; i < qry->column_count; i++) {
+			delete qry->row[i]->data;
+		}
+		if (db_type == DATABASE_TYPE_SQLITE) {
+			lasterror = sqlite3_step((sqlite3_stmt*)stmt);
+		}
+		else if (db_type == DATABASE_TYPE_MYSQL) {
+			if (mysql_stmt_execute((MYSQL_STMT*)stmt))
+				goto cleanup;
+		}
+	}
 
 	if (db_type == DATABASE_TYPE_SQLITE) {
-		if (qry->column_count == 0)
-			qry->column_count = sqlite3_column_count((sqlite3_stmt*)stmt);
-		if (lasterror = sqlite3_step((sqlite3_stmt*)stmt) == SQLITE_ROW) {
+		if (lasterror == SQLITE_ROW) {
 			for (int col = 0; col < qry->column_count; col++) {
 				//Push back the column name
-				if (qry->description != NULL && !havedesc)
-					qry->description->push_back(sqlite3_column_name((sqlite3_stmt*)stmt, col));
+				if (qry->description != NULL && !qry->havedesc) {
+					const char* column = sqlite3_column_name((sqlite3_stmt*)stmt, col);
+					int size = strlen(column);
+					qry->description[col]->data = new char[size + 1](); //TODO: investigate strlen alternative.
+					qry->description[col]->len = size;
+					memcpy((char*)qry->description[col]->data, column, size);
+				}
 				//Push back the column text
 				const char* text = (const char*)sqlite3_column_text((sqlite3_stmt*)stmt, col);
 				int size = sqlite3_column_bytes((sqlite3_stmt*)stmt, col);
-				qry->row.push_back(string(text, size));
+				qry->row[col]->data = new char[size + 1]();
+				qry->row[col]->len = size;
+				memcpy((char*)qry->row[col]->data, text, size);
 			}
 			//We have the column description after the first pass.
-			if(qry->description != NULL) havedesc = 1;
+			if (qry->description != NULL) qry->havedesc = 1;
 		}
 		else {
 			goto cleanup;
 		}
 		
 		qry->lastrowid = sqlite3_last_insert_rowid(sqlite_db);
-		//Finally, destroy the statement.
-		
-	}
-	else if (db_type == DATABASE_TYPE_MYSQL) {
-		if (prepare_meta_result == NULL) {
-			if (!(prepare_meta_result = mysql_stmt_result_metadata((MYSQL_STMT*)stmt)))
-				goto cleanup;
-
-			if (mysql_stmt_execute((MYSQL_STMT*)stmt))
-				goto cleanup;
-		}
-		if (qry->column_count == 0)
-			qry->column_count = mysql_num_fields(prepare_meta_result);
-
+	} else if (db_type == DATABASE_TYPE_MYSQL) {
 		if (bind_output == NULL) {
 			bind_output = new MYSQL_BIND[qry->column_count];
 			memset(bind_output, 0, sizeof(MYSQL_BIND)*qry->column_count);
@@ -144,30 +191,30 @@ void Database::process(Query* qry) {
 			}
 			mysql_stmt_bind_result((MYSQL_STMT*)stmt, bind_output);
 
-			if (qry->description != NULL && !havedesc) {
+			if (qry->description != NULL && !qry->havedesc) {
 				MYSQL_FIELD *field;
 				for (unsigned int i = 0; (field = mysql_fetch_field(prepare_meta_result)); i++) {
-					qry->description->push_back(string(field->name, field->name_length));
+					qry->description[i]->data = new char[field->name_length + 1]();
+					qry->description[i]->len = field->name_length;
+					memcpy((char*)qry->description[i]->data, field->name, field->name_length);
 				}
-				havedesc = 1;
+				qry->havedesc = 1;
 			}
 		}
 
 		//Get the next row.
 		if (mysql_stmt_fetch((MYSQL_STMT*)stmt)) {
 			for (int i = 0; i < qry->column_count; i++) {
-				char* cell = new char[out_size_arr[i] + 1];
-				bind_output[i].buffer = (void*)cell;
+				qry->row[i] = new webapp_str_t[out_size_arr[i] + 1];
+				bind_output[i].buffer = (void*)qry->row[i]->data;
 				bind_output[i].buffer_length = out_size_arr[i] + 1;
 				mysql_stmt_fetch_column((MYSQL_STMT*)stmt, &bind_output[i], i, 0);
-				delete[] cell;
-				qry->row.push_back(string(cell, bind_output[i].buffer_length));
-
 			}
 		}
 		else {
 			goto cleanup;
 		}
+
 	}
 
 //Update the query object
@@ -189,10 +236,17 @@ cleanup:
 		if (size_arr != NULL) delete[] size_arr;
 		if (bind_params != NULL) delete[] bind_params;
 		if (out_size_arr != NULL) delete[] out_size_arr;
+		qry->size_arr = NULL;
+		qry->bind_params = NULL;
+		qry->out_size_arr = NULL;
+		qry->prepare_meta_result = NULL;
+
 	}
 	else if (db_type == DATABASE_TYPE_SQLITE) {
 		if (stmt != NULL) sqlite3_finalize((sqlite3_stmt*)stmt);
 	}
+	qry->stmt = NULL;
+
 
 } 
 

@@ -13,15 +13,20 @@ using namespace asio::ip;
 using namespace tbb;
 
 void WebappTask::execute() {
-	_handler->numInstances++;
 	LuaParam _v[] = { { "sessions", &_handler->sessions }, { "requests", &_handler->requests }, { "app", _handler }, { "db", &_handler->database } };
 	_handler->runHandler(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/process.lua");
-	_handler->numInstances--;
+
+	//VM has quit, problem!
 	if (_handler->posttask != NULL) {
 		tbb::task::enqueue(*_handler->posttask);
 		_handler->posttask = NULL;
 		
 	}
+	_handler->waiting++;
+	_handler->requests.lock.lock();
+	_handler->requests.lock.unlock();
+	_handler->waiting--;
+	execute();
 }
 
 void BackgroundQueue::execute() {
@@ -33,7 +38,7 @@ void BackgroundQueue::execute() {
 }
 
 tbb::task* CleanupTask::execute() {
-	if (_handler->numInstances > 1) {
+	if (_handler->waiting != _handler->workers.size() - 1) {
 		recycle_as_continuation();
 		return this;
 	}
@@ -74,7 +79,6 @@ void Webapp::runHandler(LuaParam* params, int nArgs, const char* filename) {
 	if(lua_pcall(L, 0, 0, 0) != 0) {
 		logger->printf("Error: %s", lua_tostring(L, -1));
 	}
-
 	lua_close(L);
 }
 
@@ -94,7 +98,6 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates
 
 	//Create/allocate initial worker tasks.
 	workers.at(0) = new BackgroundQueue(this);
-	numInstances = 1;
 
 	for (unsigned int i = 1; i < workers.size(); i++) {
 		workers.at(i) = new WebappTask(this);
@@ -120,25 +123,10 @@ void Webapp::processRequest(Request* r, int amount) {
 					read += r->input_chain[i]->len + 1;
 				}
 			}
-			unsigned int nInstance = numInstances;
-			if (nInstance < workers.size()) {
-				//new task required?
-				TaskBase* worker = workers.at(nInstance);
-				requests.lock.lock();
-				if (worker != NULL && worker->joinable()) {
-					delete worker;
-					worker = NULL;
-					workers.at(nInstance) = NULL;
-				}
-				
-				if (worker == NULL) {
-					workers.at(nInstance) = new WebappTask(this);
-				}
-				requests.lock.unlock();
-				
-			} 
 
+			requests.lock.lock();
 			requests.requests.push(r);
+			requests.lock.unlock();
 	});
 }
 
@@ -181,8 +169,6 @@ void Webapp::accept_message() {
 		} catch(std::system_error er) {
 			delete r;
 			accept_message();
-			s->close();
-			delete s;
 		}
 	});
 }

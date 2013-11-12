@@ -112,9 +112,12 @@ int GetSessionID(SessionStore* session, webapp_str_t* out) {
 void FinishRequest(Request* request) {
 	if(request == NULL) return;
 
-
-	for(std::vector<string*>::iterator it = request->handler->begin(); it != request->handler->end(); ++it) {
+	for(std::vector<string*>::iterator it = request->handler.begin(); it != request->handler.end(); ++it) {
 		free(*it);
+	}
+
+	for (std::vector<Query*>::iterator it = request->queries.begin(); it != request->queries.end(); ++it) {
+		delete *it;
 	}
 
 	delete request;
@@ -126,8 +129,8 @@ TemplateDictionary* GetTemplate(Webapp* gallery, const char* page) {
 }
 
 
-void RenderTemplate(Webapp* gallery, ctemplate::TemplateDictionary* dict, const char* page, std::vector<string*>* handler, webapp_str_t* out) {
-	if (gallery == NULL || dict == NULL || page == NULL || handler == NULL || out == NULL) return;
+void RenderTemplate(Webapp* gallery, ctemplate::TemplateDictionary* dict, const char* page, Request* request, webapp_str_t* out) {
+	if (gallery == NULL || dict == NULL || page == NULL || request == NULL || out == NULL) return;
 	string* output = new string;
 	ExpandTemplate(*gallery->basepath + "/content/" + page, STRIP_WHITESPACE, dict, output);
 
@@ -137,7 +140,7 @@ void RenderTemplate(Webapp* gallery, ctemplate::TemplateDictionary* dict, const 
 	out->data = output->c_str();
 	out->len = output->length();
 
-	handler->push_back(output);
+	request->handler.push_back(output);
 
 }
 
@@ -174,9 +177,14 @@ int SelectQuery(Database* db, Query* q) {
 	return q->status;
 }
 
-Query* CreateQuery(webapp_str_t* in, int desc) {
-	if (in == NULL) return new Query(desc);
-	return new Query(string(in->data, in->len), desc);
+Query* CreateQuery(webapp_str_t* in, Request* r, int desc) {
+	if (r == NULL) return NULL;
+	Query* q = NULL;
+	if (in == NULL) q = new Query(desc);
+	else q = new Query(string(in->data, in->len), desc);
+
+	r->queries.push_back(q);
+	return q;
 }
 
 void SetQuery(Query* q, webapp_str_t* in) {
@@ -185,38 +193,10 @@ void SetQuery(Query* q, webapp_str_t* in) {
 	q->dbq = new string(in->data, in->len);
 }
 
-void DestroyQuery(Query* q) {
-	if (q == NULL) return;
-	delete q;
-}
 
 void ExecQuery(Database* db, Query* q) {
 	if (q == NULL) return;
 	db->select(q);
-}
-
-void GetCell(Query* q, unsigned int column, webapp_str_t* out) {
-	if (q == NULL || out == NULL) return;
-	if (column >= q->row.size()) {
-		out->data = "";
-		out->len = 0;
-		return;
-	}
-	string& cell = q->row.at(column);
-	out->data = cell.c_str();
-	out->len = cell.length();
-}
-
-void GetColumnName(Query* q, unsigned int column, webapp_str_t* out) {
-	if (q == NULL || out == NULL) return;
-	if (column >= q->description->size()) {
-		out->data = "";
-		out->len = 0;
-		return;
-	}
-	string& cell = q->description->at(column);
-	out->data = cell.c_str();
-	out->len = cell.length();
 }
 
 void BindParameter(Query* q, webapp_str_t* param) {

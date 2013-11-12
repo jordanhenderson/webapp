@@ -24,7 +24,7 @@ APIEXPORT void FinishRequest(Request*);
 APIEXPORT void QueueProcess(Webapp*, webapp_str_t* func, webapp_str_t* vars);
 APIEXPORT Process* GetNextProcess(Webapp*);
 APIEXPORT ctemplate::TemplateDictionary* GetTemplate(Webapp*, const char*);
-APIEXPORT void RenderTemplate(Webapp*, ctemplate::TemplateDictionary*, const char*, std::vector<std::string*>*, webapp_str_t* out);
+APIEXPORT void RenderTemplate(Webapp*, ctemplate::TemplateDictionary*, const char*, Request*, webapp_str_t* out);
 APIEXPORT void WriteData(asio::ip::tcp::socket*, webapp_str_t* data);
 
 //Webapp stuff
@@ -37,10 +37,9 @@ APIEXPORT void ClearCache(Webapp* app, RequestQueue* requests);
 APIEXPORT int ConnectDatabase(Database*, int database_type, const char* host, const char* username, const char* password, const char* database);
 APIEXPORT long long ExecString(Database*, webapp_str_t* in);
 APIEXPORT int SelectQuery(Database*, Query*);
-APIEXPORT Query* CreateQuery(webapp_str_t* in, int desc);
+APIEXPORT Query* CreateQuery(webapp_str_t* in, Request* request, int desc);
 APIEXPORT void SetQuery(Query*, webapp_str_t* in);
 APIEXPORT void AppendQuery(Query*, webapp_str_t* in);
-APIEXPORT void DestroyQuery(Query*);
 APIEXPORT void BindParameter(Query* q, webapp_str_t* in);
 APIEXPORT void GetCell(Query* q, unsigned int column, webapp_str_t* out);
 APIEXPORT void GetColumnName(Query* q, unsigned int column, webapp_str_t* out);

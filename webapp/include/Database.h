@@ -31,10 +31,13 @@ public:
 	long long lastrowid = 0;
 	int column_count = 0;
 	int db_type = 0;
+	webapp_str_t** row = NULL;
+	webapp_str_t** description = NULL;
+	int desc = 0;
+	int havedesc = 0;
 
 	std::string* dbq = NULL;
 	QueryRow* params = NULL; 
-	QueryRow* description = NULL;
 //Database instance parameters
 	void* stmt = NULL;
 	unsigned long* size_arr = NULL;
@@ -42,9 +45,6 @@ public:
 	MYSQL_RES* prepare_meta_result = NULL;
 	MYSQL_BIND* bind_params = NULL;
 	MYSQL_BIND* bind_output = NULL;
-	
-
-	std::vector<std::string> row;
 	Query(int desc=0);
 	Query(const std::string& dbq, int desc=0);
 	~Query();

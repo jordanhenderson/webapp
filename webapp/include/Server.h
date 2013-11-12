@@ -15,6 +15,7 @@
 #include "Schema.h"
 
 class Webapp;
+class Query;
 
 struct Request {
 	asio::ip::tcp::socket* socket = NULL;
@@ -28,34 +29,34 @@ struct Request {
 	webapp_str_t user_agent;
 	webapp_str_t cookies;
 	webapp_str_t request_body;
-	std::vector<std::string*>* handler = NULL;
+	std::vector<std::string*> handler;
 	webapp_str_t* input_chain[STRING_VARS];
+	std::vector<Query*> queries;
 	~Request() {
 		if (socket != NULL) delete socket;
 		if (v != NULL) delete v;
 		if (headers != NULL) delete headers;
-		if (handler != NULL) delete handler;
+
 	};
-	Request() {
-		handler = new std::vector<std::string*>();
-	}
+
 };
 
 struct RequestQueue {
 	tbb::atomic<unsigned int> aborted;
 	tbb::concurrent_bounded_queue<Request*> requests;
 	tbb::mutex lock; //Mutex to control the allowance of new connection handling.
+
 };
 
 #define INT_INTERVAL(i) sizeof(int)*i
 class ServerHandler {
 protected:
-	
+
 	RequestQueue requests;
 public:
-	tbb::atomic<unsigned int> numInstances;
 	friend class Server;
 	friend class WebappTask;
+	tbb::atomic<unsigned int> waiting;
 	ServerHandler() {
 		requests.aborted = 0;
 	}
