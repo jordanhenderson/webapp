@@ -17,6 +17,7 @@ APIEXPORT int SetSessionValue(SessionStore*, webapp_str_t* key, webapp_str_t* va
 
 APIEXPORT SessionStore* GetSession(Sessions*, const char*);
 APIEXPORT SessionStore* NewSession(Sessions*, Request*);
+APIEXPORT void DestroySession(SessionStore*);
 APIEXPORT int Template_SetValue(ctemplate::TemplateDictionary* dict, const char* key, const char* value);
 
 APIEXPORT int GetSessionID(SessionStore*, webapp_str_t* out);

@@ -42,16 +42,18 @@ int SetSessionValue(SessionStore* session, webapp_str_t* key, webapp_str_t* val)
 	return 1;
 }
 
-//Cleaned up by backend.
 SessionStore* GetSession(Sessions* sessions, const char* sessionid) {
 	if (sessions == NULL || sessionid == NULL) return NULL;
 	return sessions->get_session(sessionid);
 }
 
-//Cleaned up by backend.
 SessionStore* NewSession(Sessions* sessions, Request* request) {
 	if (sessions == NULL || request == NULL) return NULL;
 	return sessions->new_session(request);
+}
+
+void DestroySession(SessionStore* session) {
+	session->destroy();
 }
 
 int Template_SetValue(TemplateDictionary* dict, const char* key, const char* value) {
@@ -77,7 +79,7 @@ Request* GetNextRequest(RequestQueue* requests) {
 //Clear the cache (aborts any waiting request handlers, locks connect mutex, clears cache, unlocks).
 void ClearCache(Webapp* app, RequestQueue* requests) {
 	if (app == NULL || requests == NULL) return;
-	requests->lock.lock();
+
 	requests->aborted = 1;
 	requests->requests.abort();
 
@@ -113,7 +115,7 @@ void FinishRequest(Request* request) {
 	if(request == NULL) return;
 
 	for(std::vector<string*>::iterator it = request->handler.begin(); it != request->handler.end(); ++it) {
-		free(*it);
+		delete *it;
 	}
 
 	for (std::vector<Query*>::iterator it = request->queries.begin(); it != request->queries.end(); ++it) {

@@ -1,4 +1,3 @@
-
 #include "Logging.h"
 #include "Webapp.h"
 #include "Image.h"
@@ -13,42 +12,45 @@ using namespace asio::ip;
 using namespace tbb;
 
 void WebappTask::execute() {
-	LuaParam _v[] = { { "sessions", &_handler->sessions }, { "requests", &_handler->requests }, { "app", _handler }, { "db", &_handler->database } };
-	_handler->runHandler(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/process.lua");
+	while (!_handler->aborted) {
+		LuaParam _v[] = { { "sessions", &_handler->sessions }, { "requests", &_handler->requests }, { "app", _handler }, { "db", &_handler->database } };
+		_handler->runHandler(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/process.lua");
 
-	//VM has quit, problem!
-	if (_handler->posttask != NULL) {
-		tbb::task::enqueue(*_handler->posttask);
-		_handler->posttask = NULL;
-		
+		//VM has quit.
+		_handler->waiting++;
+		_handler->requests.lock.lock();
+		if (_handler->posttask != NULL) {
+			tbb::task::spawn_root_and_wait(*_handler->posttask);
+			_handler->posttask = NULL;
+		}
+		_handler->requests.lock.unlock();
+		_handler->waiting--;
 	}
-	_handler->waiting++;
-	_handler->requests.lock.lock();
-	_handler->requests.lock.unlock();
-	_handler->waiting--;
-	execute();
 }
 
 void BackgroundQueue::execute() {
-	LuaParam _v[] = { { "sessions", &_handler->sessions }, { "requests", &_handler->requests }, { "app", _handler }, { "db", &_handler->database } };
-	_handler->runHandler(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/process_queue.lua");
-	//Since this task must run at all times (not per request - *should* block in lua vm)
-	Sleep(1000); //Lua VM returned, something went wrong.
-	execute();
+	while (!_handler->aborted) {
+		LuaParam _v[] = { { "sessions", &_handler->sessions }, { "requests", &_handler->requests }, { "app", _handler }, { "db", &_handler->database } };
+		_handler->runHandler(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/process_queue.lua");
+		//Since this task must run at all times (not per request - *should* block in lua vm)
+		Sleep(1000); //Lua VM returned, something went wrong.
+	}
 }
 
 tbb::task* CleanupTask::execute() {
-	if (_handler->waiting != _handler->workers.size() - 1) {
-		recycle_as_continuation();
-		return this;
+	while (!_handler->aborted) {
+		if (_handler->waiting != _handler->workers.size() - 1) {
+			recycle_as_continuation();
+			return this;
+		}
+		else {
+			_requests->requests.clear();
+			_handler->refresh_templates();
+			_requests->aborted = 0;
+			return NULL;
+		}
 	}
-	else {
-		_requests->requests.clear();
-		_handler->refresh_templates();
-		_requests->lock.unlock();
-		_requests->aborted = 0;
-		return NULL;
-	}
+	return NULL;
 }
 
 //Run script given a LuaChunk. Called by public runScript methods.

@@ -57,8 +57,10 @@ public:
 	friend class Server;
 	friend class WebappTask;
 	tbb::atomic<unsigned int> waiting;
+	unsigned int aborted = 0;
 	ServerHandler() {
 		requests.aborted = 0;
+		waiting = 0;
 	}
 	~ServerHandler() {
 	}
