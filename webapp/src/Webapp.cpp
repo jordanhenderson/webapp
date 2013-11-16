@@ -191,7 +191,7 @@ Webapp::~Webapp() {
 
 }
 
-TemplateDictionary* Webapp::getTemplate(const char* page) {
+TemplateDictionary* Webapp::getTemplate(std::string& page) {
 	if(contains(contentList, page)) {
 		TemplateDictionary *d = contentTemplates.MakeCopy("");
 		for(string& data: serverTemplateFiles) {

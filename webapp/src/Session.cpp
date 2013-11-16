@@ -71,10 +71,10 @@ SessionStore* Sessions::new_session(Request* request) {
 	return session_store;
 }
 
-SessionStore* Sessions::get_session(const char* sessionid) {
+SessionStore* Sessions::get_session(webapp_str_t* sessionid) {
 	LockableContainerLock<SessionMap> lock(session_map);
 
-	SessionMap::iterator it = lock->find(sessionid);
+	SessionMap::iterator it = lock->find(string(sessionid->data, sessionid->len));
 	if(it != lock->end())
 		return it->second;
 

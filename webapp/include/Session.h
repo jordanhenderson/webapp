@@ -38,7 +38,7 @@ private:
 public:
 	~Sessions();
 	//Create a new session based on the request.
-	SessionStore* get_session(const char* sessionid);
+	SessionStore* get_session(webapp_str_t* sessionid);
 	SessionStore* new_session(Request* request);
 };
 #endif

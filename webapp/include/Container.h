@@ -13,9 +13,9 @@ template<typename C>
 class LockableContainerLock {
 private:
     LockableContainer<C>& c_;
-	int destroyed;
+	int destroyed = 0;
 public:
-    LockableContainerLock(LockableContainer<C>& c) : c_(c) { c.Mutex.lock(); destroyed = 0;};
+    LockableContainerLock(LockableContainer<C>& c) : c_(c) { c.Mutex.lock(); };
     ~LockableContainerLock(){ if(!destroyed) c_.Mutex.unlock(); };
 	//WARNING: This function breaks the lock (essentially the same as destroying this class instance!)
 	void unlock() { c_.Mutex.unlock(); destroyed = 1;} 

@@ -8,15 +8,21 @@ extern "C" {
 using namespace ctemplate;
 using namespace std;
 
-int Template_ShowGlobalSection(TemplateDictionary* dict, const char* section) {
+int Template_ShowGlobalSection(TemplateDictionary* dict, webapp_str_t* section) {
 	if(dict == NULL || section == NULL) return 1;
-	dict->ShowTemplateGlobalSection(section);
+	dict->ShowTemplateGlobalSection(TemplateString(section->data, section->len));
 	return 0;
 }
 
-int Template_ShowSection(TemplateDictionary* dict, const char* section) {
+int Template_ShowSection(TemplateDictionary* dict, webapp_str_t* section) {
 	if(dict == NULL || section == NULL) return 1;
-	dict->ShowSection(section);
+	dict->ShowSection(TemplateString(section->data, section->len));
+	return 0;
+}
+
+int Template_SetValue(TemplateDictionary* dict, webapp_str_t* key, webapp_str_t* value) {
+	if (dict == NULL || key == NULL || value == NULL) return 1;
+	dict->SetValueWithoutCopy(TemplateString(key->data, key->len), TemplateString(key->data, key->len));
 	return 0;
 }
 
@@ -42,7 +48,7 @@ int SetSessionValue(SessionStore* session, webapp_str_t* key, webapp_str_t* val)
 	return 1;
 }
 
-SessionStore* GetSession(Sessions* sessions, const char* sessionid) {
+SessionStore* GetSession(Sessions* sessions, webapp_str_t* sessionid) {
 	if (sessions == NULL || sessionid == NULL) return NULL;
 	return sessions->get_session(sessionid);
 }
@@ -54,12 +60,6 @@ SessionStore* NewSession(Sessions* sessions, Request* request) {
 
 void DestroySession(SessionStore* session) {
 	session->destroy();
-}
-
-int Template_SetValue(TemplateDictionary* dict, const char* key, const char* value) {
-	if (dict == NULL || key == NULL || value == NULL) return 1;
-	dict->SetValue(key, value);
-	return 0;
 }
 
 Request* GetNextRequest(RequestQueue* requests) {
@@ -125,16 +125,17 @@ void FinishRequest(Request* request) {
 	delete request;
 }
 
-TemplateDictionary* GetTemplate(Webapp* gallery, const char* page) {
-	if(gallery != NULL) return gallery->getTemplate(page);
+TemplateDictionary* GetTemplate(Webapp* gallery, webapp_str_t* page) {
+	if(gallery != NULL) return gallery->getTemplate(string(page->data, page->len));
 	else return NULL;
 }
 
 
-void RenderTemplate(Webapp* gallery, ctemplate::TemplateDictionary* dict, const char* page, Request* request, webapp_str_t* out) {
+void RenderTemplate(Webapp* gallery, ctemplate::TemplateDictionary* dict, webapp_str_t* page, Request* request, webapp_str_t* out) {
 	if (gallery == NULL || dict == NULL || page == NULL || request == NULL || out == NULL) return;
 	string* output = new string;
-	ExpandTemplate(*gallery->basepath + "/content/" + page, STRIP_WHITESPACE, dict, output);
+	string pagestr(page->data, page->len);
+	ExpandTemplate(*gallery->basepath + "/content/" + pagestr, STRIP_WHITESPACE, dict, output);
 
 	//Clean up the template dictionary.
 	delete dict;

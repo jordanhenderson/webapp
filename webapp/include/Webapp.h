@@ -110,7 +110,7 @@ public:
 	std::vector<TaskBase*> workers;
 	Webapp(Parameters* params, asio::io_service& io_svc);
 	~Webapp();
-	ctemplate::TemplateDictionary* getTemplate(const char* page);
+	ctemplate::TemplateDictionary* getTemplate(std::string& page);
 	void refresh_templates();
 	
 	const std::string* basepath;

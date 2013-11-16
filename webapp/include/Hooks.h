@@ -7,25 +7,25 @@
 #include <ctemplate/template.h>
 #include <tbb/concurrent_queue.h>
 
-APIEXPORT int Template_ShowGlobalSection(ctemplate::TemplateDictionary*, const char*);
-APIEXPORT int Template_ShowSection(ctemplate::TemplateDictionary*, const char*);
+APIEXPORT int Template_ShowGlobalSection(ctemplate::TemplateDictionary*, webapp_str_t* section);
+APIEXPORT int Template_ShowSection(ctemplate::TemplateDictionary*, webapp_str_t* section);
+APIEXPORT int Template_SetValue(ctemplate::TemplateDictionary* dict, webapp_str_t* key, webapp_str_t* value);
 
 //Get a string stored in the session.
 APIEXPORT int GetSessionValue(SessionStore*, webapp_str_t*, webapp_str_t* out);
 APIEXPORT int SetSessionValue(SessionStore*, webapp_str_t* key, webapp_str_t* val);
 
 
-APIEXPORT SessionStore* GetSession(Sessions*, const char*);
+APIEXPORT SessionStore* GetSession(Sessions*, webapp_str_t* sessionid);
 APIEXPORT SessionStore* NewSession(Sessions*, Request*);
 APIEXPORT void DestroySession(SessionStore*);
-APIEXPORT int Template_SetValue(ctemplate::TemplateDictionary* dict, const char* key, const char* value);
 
 APIEXPORT int GetSessionID(SessionStore*, webapp_str_t* out);
 APIEXPORT void FinishRequest(Request*);
 APIEXPORT void QueueProcess(Webapp*, webapp_str_t* func, webapp_str_t* vars);
 APIEXPORT Process* GetNextProcess(Webapp*);
-APIEXPORT ctemplate::TemplateDictionary* GetTemplate(Webapp*, const char*);
-APIEXPORT void RenderTemplate(Webapp*, ctemplate::TemplateDictionary*, const char*, Request*, webapp_str_t* out);
+APIEXPORT ctemplate::TemplateDictionary* GetTemplate(Webapp*, webapp_str_t*);
+APIEXPORT void RenderTemplate(Webapp*, ctemplate::TemplateDictionary*, webapp_str_t*, Request*, webapp_str_t* out);
 APIEXPORT void WriteData(asio::ip::tcp::socket*, webapp_str_t* data);
 
 //Webapp stuff
