@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<project>
+	<output type="static">zlib</output>
+	<flags>W3</flags>
+	<include>include</include>
+	<source>src/adler32.c</source>
+	<source>src/compress.c</source>
+	<source>src/crc32.c</source>
+	<source>src/deflate.c</source>
+	<source>src/gzclose.c</source>
+	<source>src/gzlib.c</source>
+	<source>src/gzread.c</source>
+	<source>src/gzwrite.c</source>
+	<source>src/infback.c</source>
+	<source>src/inffast.c</source>
+	<source>src/inflate.c</source>
+	<source>src/inftrees.c</source>
+	<source>src/trees.c</source>
+	<source>src/uncompr.c</source>
+	<source>src/zutil.c</source>
+</project>

@@ -76,6 +76,27 @@ typedef struct {
 	ngx_str_t request_body;
 } webapp_request_t;
 
+static void webapp_request_fail(ngx_http_request_t* r, ngx_connection_t* c) {
+	ngx_buf_t    *b;
+	ngx_chain_t   out;
+	b = ngx_pcalloc(r->pool, sizeof(ngx_buf_t));
+	if (b == NULL) {
+		ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+			"Failed to allocate response buffer.");
+	}
+
+	b->pos = (u_char*)"HTTP/1.1 503 Service Unavailable\r\nContent-type: text/html\r\n\r\n";
+	b->last = b->pos + 63;
+	b->memory = 1;
+	b->last_buf = 1;
+	out.buf = b;
+	out.next = NULL;
+
+	ngx_http_output_filter(r, &out);
+	ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
+	ngx_close_connection(c);
+}
+
 static void conn_read(ngx_event_t *ev) {
 	ngx_connection_t* c = ev->data;
 	webapp_request_t* wr = c->data;
@@ -96,8 +117,9 @@ static void conn_read(ngx_event_t *ev) {
 			ssize_t n = ngx_recv(c, wr->response_buf + wr->read_bytes, wr->response_size - wr->read_bytes);
 			if(n > 0) wr->read_bytes += n;
 			if(n == -1)  {
-				wr->read_bytes = wr->response_size = 51;
-				wr->response_buf = (u_char*)"HTTP/1.1 200 OK\r\nContent-type: text/html\r\n\r\n";
+				webapp_request_fail(r, c);
+				ev->complete = 1;
+				return;
 			}
 			//Response finished? (4 + response size received.) Backend is trusted (won't recieve any more than response_size!)
 			if(wr->read_bytes == wr->response_size) {
@@ -131,8 +153,7 @@ static void conn_read(ngx_event_t *ev) {
 		}
 
 	} else if(ev->timedout) {
-		ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
-		ngx_close_connection(c);
+		webapp_request_fail(r, c);
 		ev->complete = 1;
 	}
 }
@@ -250,15 +271,13 @@ static void conn_write(ngx_event_t *ev) {
 		return;
 
 	} else {
+		webapp_request_fail(r, c);
 		ev->complete = 1;
-		ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
-		ngx_close_connection(ev->data);
 	}
 	return;
 
 bad_method:
-	ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
-	ngx_close_connection(c);
+	webapp_request_fail(r, c);
 	ev->complete = 1;
 	return;
 }
@@ -293,8 +312,8 @@ static void webapp_body_ready(ngx_http_request_t* r) {
 		conn->data = webapp;
 		conn->read->handler = conn_read;
 		conn->write->handler = conn_write;
-		ngx_add_timer(conn->read, 8000);
-		ngx_add_timer(conn->write, 8000);
+		ngx_add_timer(conn->read, 3000);
+		ngx_add_timer(conn->write, 3000);
 
 		//Make our request depend on a (sub) connection (backend peer).
 		if (r->method != NGX_HTTP_POST)
