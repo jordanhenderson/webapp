@@ -88,6 +88,12 @@ void ClearCache(Webapp* app, RequestQueue* requests) {
 
 }
 
+//Only call this upon init.
+void DisableBackgroundQueue(Webapp* app) {
+	if (app == NULL) return;
+	app->background_queue_enabled = false;
+}
+
 void QueueProcess(Webapp* app, webapp_str_t* func, webapp_str_t* vars) {
 	if (func == NULL || vars == NULL || app == NULL) return;
 	Process* p = new Process();

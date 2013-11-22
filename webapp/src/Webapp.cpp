@@ -1,4 +1,3 @@
-#include "Logging.h"
 #include "Webapp.h"
 #include "Image.h"
 #include <sha.h>
@@ -39,7 +38,7 @@ void BackgroundQueue::execute() {
 
 tbb::task* CleanupTask::execute() {
 	while (!_handler->aborted) {
-		if (_handler->waiting != _handler->workers.size() - 1) {
+		if (_handler->waiting != _handler->workers.size() - _handler->background_queue_enabled) {
 			recycle_as_continuation();
 			return this;
 		}
@@ -79,7 +78,7 @@ void Webapp::runHandler(LuaParam* params, int nArgs, const char* filename) {
 	}
 
 	if(lua_pcall(L, 0, 0, 0) != 0) {
-		logger->printf("Error: %s", lua_tostring(L, -1));
+		printf("Error: %s", lua_tostring(L, -1));
 	}
 	lua_close(L);
 }
@@ -90,7 +89,7 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates
 										dbpath(&params->get("dbpath")), 
 										svc(io_svc), 
 										workers(tbb::task_scheduler_init::default_num_threads() > 2 ?
-												tbb::task_scheduler_init::default_num_threads() - 2: 2) {
+												tbb::task_scheduler_init::default_num_threads() - 1 : 2) {
 
 	//Run init plugin
 	LuaParam _v[] = { { "app", this }, { "db", &database } };
@@ -99,9 +98,10 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates
 	refresh_templates();
 
 	//Create/allocate initial worker tasks.
-	workers.at(0) = new BackgroundQueue(this);
-
-	for (unsigned int i = 1; i < workers.size(); i++) {
+	if (background_queue_enabled) 
+		workers.at(0) = new BackgroundQueue(this);
+	
+	for (unsigned int i = background_queue_enabled; i < workers.size(); i++) {
 		workers.at(i) = new WebappTask(this);
 	}
 
@@ -208,6 +208,7 @@ TemplateDictionary* Webapp::getTemplate(std::string& page) {
 void Webapp::refresh_templates() {
 	//Force reload templates
 	mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::IMMEDIATE_RELOAD);
+
 	//Load content files (applicable templates)
 	contentList.clear();
 	string basepath = *this->basepath + '/';

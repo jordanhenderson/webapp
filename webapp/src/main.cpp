@@ -1,5 +1,4 @@
 
-#include "Logging.h"
 #include "Webapp.h"
 
 
@@ -16,7 +15,6 @@ int main(int argc, char* argv[]) {
 		FileSystem::Close(&conf);
 	} else {
 		//DEFAULT PARAMETERS
-		params.set("logfile", "webapp.log");
 		params.set("basepath", ".");
 		params.set("dbpath", "webapp.sqlite");
 
@@ -27,12 +25,10 @@ int main(int argc, char* argv[]) {
 	if(!FileSystem::MakePath(bp)) return 1;
 	string logPath = params.get("basepath") + '/' + params.get("logfile");
 	//Create logging instance
-	logger = new Logging(logPath);
 	asio::io_service svc;
 	Webapp* gallery = new Webapp(&params, svc);
 		
 	delete gallery;
-	delete logger;
 	return 0;
 }
 

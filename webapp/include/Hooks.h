@@ -33,6 +33,7 @@ APIEXPORT void GetParameter(Webapp*, int, webapp_str_t* out);
 
 APIEXPORT Request* GetNextRequest(RequestQueue* requests);
 APIEXPORT void ClearCache(Webapp* app, RequestQueue* requests);
+APIEXPORT void DisableBackgroundQueue(Webapp* app);
 
 //Database
 APIEXPORT int ConnectDatabase(Database*, int database_type, const char* host, const char* username, const char* password, const char* database);

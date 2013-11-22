@@ -367,7 +367,6 @@
       </AdditionalOptions>
     </ClCompile>
     <ClCompile Include="src\RamSession.cpp" />
-    <ClCompile Include="src\Logging.cpp" />
     <ClCompile Include="src\Parameters.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
@@ -411,7 +410,6 @@
     <ClInclude Include="include\pngnq\neuquant32.h" />
     <ClInclude Include="include\Schema.h" />
     <ClInclude Include="include\Server.h" />
-    <ClInclude Include="include\Logging.h" />
     <ClInclude Include="include\Parameters.h" />
     <ClInclude Include="include\Platform.h" />
     <ClInclude Include="include\Session.h" />

@@ -121,6 +121,7 @@ public:
 	Sessions sessions;
 
 	tbb::concurrent_bounded_queue<Process*> background_queue;
+	unsigned int background_queue_enabled = 1;
 };
 
 #endif
