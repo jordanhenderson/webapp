@@ -202,12 +202,6 @@ void SetQuery(Query* q, webapp_str_t* in) {
 	q->dbq = new string(in->data, in->len);
 }
 
-
-void ExecQuery(Database* db, Query* q) {
-	if (q == NULL) return;
-	db->select(q);
-}
-
 void BindParameter(Query* q, webapp_str_t* param) {
 	if (q == NULL || param == NULL || param->data == NULL) return;
 	q->params->push_back(string(param->data, param->len));

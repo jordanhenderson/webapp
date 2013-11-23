@@ -79,14 +79,15 @@ typedef struct {
 static void webapp_request_fail(ngx_http_request_t* r, ngx_connection_t* c) {
 	ngx_buf_t    *b;
 	ngx_chain_t   out;
+
 	b = ngx_pcalloc(r->pool, sizeof(ngx_buf_t));
 	if (b == NULL) {
 		ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
 			"Failed to allocate response buffer.");
 	}
 
-	b->pos = (u_char*)"HTTP/1.1 503 Service Unavailable\r\nContent-type: text/html\r\n\r\n";
-	b->last = b->pos + 63;
+	b->pos = (u_char*)"HTTP/1.1 503 Service Unavailable\r\nContent-type: text/html\r\nContent-Length: 0\r\n\r\n";
+	b->last = b->pos + 80;
 	b->memory = 1;
 	b->last_buf = 1;
 	out.buf = b;
@@ -95,6 +96,7 @@ static void webapp_request_fail(ngx_http_request_t* r, ngx_connection_t* c) {
 	ngx_http_output_filter(r, &out);
 	ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
 	ngx_close_connection(c);
+
 }
 
 static void conn_read(ngx_event_t *ev) {

@@ -28,7 +28,6 @@
 
 #define XSTR(a) STR(a)
 #define STR(a) #a
-#define cmemcpy(src,dest,size) memcpy((char*)src, (char*)dest, size)
 
 #if defined _WIN32 || defined __CYGWIN__
 #ifdef __GNUC__

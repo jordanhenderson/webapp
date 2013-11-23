@@ -50,6 +50,12 @@
     <Filter Include="Header Files\cjson">
       <UniqueIdentifier>{10ab8458-f5f0-448a-8dfa-668faf56ecbb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\sha2">
+      <UniqueIdentifier>{fad2204c-1334-4427-8de9-1224ec3cd283}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\sha2">
+      <UniqueIdentifier>{9962d217-8bca-4166-b350-8e28a0402b47}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Parameters.cpp">
@@ -138,6 +144,9 @@
     </ClCompile>
     <ClCompile Include="src\cjson\strbuf.c">
       <Filter>Source Files\cjson</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sha2\sha2.c">
+      <Filter>Source Files\sha2</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -230,6 +239,9 @@
     </ClInclude>
     <ClInclude Include="include\cjson\cjson.h">
       <Filter>Header Files\cjson</Filter>
+    </ClInclude>
+    <ClInclude Include="include\sha2\sha2.h">
+      <Filter>Header Files\sha2</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
