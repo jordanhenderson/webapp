@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <project>
 	<output type="static">zlib</output>
-	<flags>W3</flags>
+	<flags compiler="msvc">W3</flags>
 	<include>include</include>
 	<source>src/adler32.c</source>
 	<source>src/compress.c</source>

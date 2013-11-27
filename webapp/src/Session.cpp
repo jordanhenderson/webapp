@@ -1,19 +1,14 @@
-
-#include <sha.h>
-#include <filters.h>
-#include <hex.h>
-#include <osrng.h>
 #include "Session.h"
-#include "Server.h"
+#include "Webapp.h"
+#include "sha2.h"
+
 
 using namespace std;
-using namespace CryptoPP;
 
 Sessions::~Sessions() {
 	//Delete maps within session_map
-	LockableContainerLock<SessionMap> lock(session_map);
-	for(SessionMap::iterator it = lock->begin();
-		it != lock->end(); ++it) {
+	for(SessionMap::iterator it = session_map.begin();
+		it != session_map.end(); ++it) {
 			it->second->destroy();
 			delete it->second;
 	}
@@ -21,61 +16,50 @@ Sessions::~Sessions() {
 
 SessionStore* Sessions::new_session(Request* request) {
 	if (request->host.len == 0 || request->user_agent.len == 0) return NULL; //Cannot build unique session.
+	u_int8_t output[32];
+	char output_hex[32];
+	SHA256_CTX ctx;
+	SHA256_Init(&ctx);
+	SHA256_Update(&ctx, (u_int8_t*)request->host.data, request->host.len);
+	SHA256_Update(&ctx, (u_int8_t*)request->user_agent.data, request->user_agent.len);
 
-	SHA1 hash;
-	string output;
-	byte digest[SHA1::DIGESTSIZE];
-
-	//Generate a random salt
-	const unsigned int BLOCKSIZE = 12;
-	byte pcbScratch[ BLOCKSIZE ];
-
-	// Construction
-	CryptoPP::AutoSeededRandomPool rng;
-
-	// Random Block
-	rng.GenerateBlock( pcbScratch, BLOCKSIZE );
-
-	//Generate a basic random session ID.
-	hash.Update((const byte*)request->host.data, request->host.len);
-	hash.Update((const byte*)request->user_agent.data, request->user_agent.len);
-	hash.Update(pcbScratch, BLOCKSIZE);
-	hash.Final(digest);
+	//Calculate random number, add to hash.
+	uniform_int_distribution<int> dis;
+	int r = dis(rng);
 	
-	CryptoPP::HexEncoder encoder;
-	encoder.Attach(new StringSink(output));
-	encoder.Put(digest, sizeof(digest));
-	encoder.MessageEnd();
-	//Create a new session store if one does not already exist.
-	{
-		LockableContainerLock<SessionMap> lock(session_map);
-		SessionMap::iterator it = lock->find(output);
-		//Delete any existing map, if any (clean up possible existing orphan session data).
-		if(it != lock->end()) {
-			SessionStore* sto = it->second;
-			sto->destroy();
-			delete sto;
-			lock->erase(it);
-		}
+	SHA256_Update(&ctx, (u_int8_t*)&r, sizeof(int));
+	SHA256_Final(output, &ctx);
+	const char* hex_lookup = "0123456789ABCDEF";
+	char* p = output_hex;
+	for (int i = 0; i != 16; i++) {
+		*p++ = hex_lookup[output[i] >> 4];
+		*p++ = hex_lookup[output[i] & 0x0F];
+	}
+
+	string str_hex = _node + string((char*)output_hex, 32);
+	
+	
+	SessionMap::iterator it = session_map.find(str_hex);
+	//Delete any existing map, if any (clean up possible existing orphan session data).
+	if (it != session_map.end()) {
+		SessionStore* sto = it->second;
+		sto->destroy();
+		delete sto;
+		session_map.erase(it);
 	}
 	
+
 	SessionStore* session_store = new SESSION_STORE();
+	session_store->create(str_hex);
 	//should use output
-	session_store->create(output);
-	{
-		LockableContainerLock<SessionMap> lock(session_map);
-		lock->insert(make_pair(output, session_store));
-	}
-	
+	session_map.insert(make_pair(str_hex, session_store));
 	
 	return session_store;
 }
 
 SessionStore* Sessions::get_session(webapp_str_t* sessionid) {
-	LockableContainerLock<SessionMap> lock(session_map);
-
-	SessionMap::iterator it = lock->find(string(sessionid->data, sessionid->len));
-	if(it != lock->end())
+	SessionMap::iterator it = session_map.find(string(sessionid->data, sessionid->len));
+	if(it != session_map.end())
 		return it->second;
 
 	return NULL;

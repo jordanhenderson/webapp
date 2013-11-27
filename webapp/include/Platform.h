@@ -41,5 +41,15 @@
 #endif
 #endif
 
+
+#define GETCHK(s) s.empty() ? 0 : 1
+#define WEBAPP_PARAM_BASEPATH 0
+#define WEBAPP_PARAM_DBPATH 1
+#define WEBAPP_STATIC_STRINGS 2
+#define WEBAPP_LEN_SESSIONID 1
+#define INT_INTERVAL(i) sizeof(int)*i
+#define WEBAPP_DEFAULT_QUEUESIZE 1023
+#define WEBAPP_PORT 5000
+
 #endif
 

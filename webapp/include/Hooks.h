@@ -2,7 +2,6 @@
 #define HOOKS_H
 #include "Platform.h"
 #include "Session.h"
-#include "Server.h"
 #include "Webapp.h"
 #include <ctemplate/template.h>
 #include <tbb/concurrent_queue.h>

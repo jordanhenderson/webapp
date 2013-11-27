@@ -9,19 +9,16 @@ void RamSession::create(const string& sessionid) {
 }
 
 void RamSession::destroy() {
-	LockableContainerLock<RamStorage> lock(_store);
-	lock->clear();
+	_store.clear();
 }
 
 void RamSession::store(const string& key, const string& value) {
-	LockableContainerLock<RamStorage> lock(_store);
-	lock->insert(make_pair(key, value));
+	_store.insert(make_pair(key, value));
 }
 
 const string& RamSession::get(const string& key) {
-	LockableContainerLock<RamStorage> lock(_store);
-	for(std::unordered_map<std::string, std::string>::iterator it = lock->begin();
-		it != lock->end(); ++it) {
+	for(std::unordered_map<std::string, std::string>::iterator it = _store.begin();
+		it != _store.end(); ++it) {
 			if(it->first == key)
 				return it->second;
 	}

@@ -2,7 +2,6 @@
 #define PARAMETERS_H
 #include "Platform.h"
 #include "CPlatform.h"
-#include "Container.h"
 //Dynamic parameter class
 typedef std::unordered_map<std::string, std::string> ParamMap;
 class Parameters : public Internal {
@@ -33,7 +32,7 @@ public:
 	~Parameters();
 	Parameters() : empty("") {};
 private:
-	LockableContainer<ParamMap> params;
+	ParamMap params;
 };
 
 

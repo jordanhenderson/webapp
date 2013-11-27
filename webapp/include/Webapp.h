@@ -6,12 +6,14 @@
 #include "CPlatform.h"
 #include "FileSystem.h"
 #include "Parameters.h"
-#include "Server.h"
 #include "Database.h"
 #include "Session.h"
 #include <ctemplate/template.h>
-#include <tbb/concurrent_queue.h>
 #include <tbb/compat/thread>
+#include <tbb/task.h>
+#include <tbb/concurrent_queue.h>
+#include <tbb/compat/condition_variable>
+#include "readerwriterqueue.h"
 
 extern "C" {
 #include <lua.h>
@@ -24,7 +26,10 @@ extern "C" {
 
 #include "Schema.h"
 
-#define GETCHK(s) s.empty() ? 0 : 1
+//Default atomic value
+static unsigned int atomic_zero = 0;
+#define ATOMIC_ZERO (tbb::atomic<unsigned int>&)atomic_zero
+
 
 class Logging;
 class Webapp;
@@ -34,15 +39,49 @@ struct LuaParam {
 	void* ptr;
 };
 
+struct TemplateData {
+	std::string name;
+	FileData* data;
+};
+
+struct Request {
+	asio::ip::tcp::socket* socket = NULL;
+	std::vector<char>* v = NULL;
+	std::vector<char>* headers = NULL;
+	int amount_to_recieve = 0;
+	int length = 0;
+	int method = 0;
+	webapp_str_t uri;
+	webapp_str_t host;
+	webapp_str_t user_agent;
+	webapp_str_t cookies;
+	webapp_str_t request_body;
+	std::vector<std::string*> handler;
+	webapp_str_t* input_chain[STRING_VARS];
+	std::vector<Query*> queries;
+	~Request() {
+		if (socket != NULL) delete socket;
+		if (v != NULL) delete v;
+		if (headers != NULL) delete headers;
+
+	};
+
+};
+
+struct RequestQueue {
+	tbb::atomic<unsigned int> aborted = ATOMIC_ZERO;
+	moodycamel::ReaderWriterQueue<Request*> requests;
+	tbb::mutex lock; //Mutex to control the allowance of new connection handling.
+	tbb::mutex cv_mutex; //Mutex to allow ready cv
+	std::condition_variable cv;
+	RequestQueue() : requests(WEBAPP_DEFAULT_QUEUESIZE) {};
+};
+
 struct Process {
 	webapp_str_t* func = NULL;
 	webapp_str_t* vars = NULL;
 };
 
-struct TemplateData {
-	std::string name;
-	FileData* data;
-};
 
 class TaskBase : public tbb::tbb_thread {
 public:
@@ -55,8 +94,13 @@ protected:
 };
 
 class WebappTask : public TaskBase {
+private:
+	unsigned int _id;
+	Sessions* _sessions;
+	RequestQueue* _requests;
 public:
-	WebappTask(Webapp* handler) : TaskBase(handler){};
+	WebappTask(Webapp* handler, Sessions* sessions, RequestQueue* requests) 
+		: TaskBase(handler), _sessions(sessions), _requests(requests) {};
 	void execute();
 	friend class Webapp;
 };
@@ -76,11 +120,7 @@ public:
 	tbb::task* execute();
 };
 
-#define WEBAPP_PARAM_BASEPATH 0
-#define WEBAPP_PARAM_DBPATH 1
-#define WEBAPP_STATIC_STRINGS 2
-
-class Webapp : public ServerHandler, Internal {
+class Webapp : public Internal {
 private:
 	//template dictionary used by all 'content' templates.
 	ctemplate::TemplateDictionary contentTemplates;
@@ -105,6 +145,7 @@ private:
 
 	friend class WebappTask;
 	friend class BackgroundQueue;
+	unsigned int nWorkers;
 public:
 	CleanupTask* posttask = NULL;
 	std::vector<TaskBase*> workers;
@@ -118,10 +159,15 @@ public:
 
 	Parameters* params;
 	Database database;
-	Sessions sessions;
+	std::vector<Sessions*> sessions;
+
+	tbb::atomic<unsigned int> waiting = ATOMIC_ZERO;
+	unsigned int aborted = 0;
 
 	tbb::concurrent_bounded_queue<Process*> background_queue;
 	unsigned int background_queue_enabled = 1;
+	std::vector<RequestQueue*> requests;
+	int node_counter = 0;
 };
 
 #endif

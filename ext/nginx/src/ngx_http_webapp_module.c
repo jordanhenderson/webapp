@@ -187,8 +187,7 @@ static void conn_write(ngx_event_t *ev) {
 					host = &r->headers_in.host->value;
 					host_len = host->len;
 				}
-				if(r->headers_in.user_agent != NULL)
-					agent_len = r->headers_in.user_agent->value.len;
+
 				//Start building the size information.
 				*(int*)(data_out.data) = htons(r->unparsed_uri.len); //URI len
 				wr->output_chain[0] = &r->unparsed_uri;
@@ -196,8 +195,11 @@ static void conn_write(ngx_event_t *ev) {
 				*(int*)(data_out.data + INT_INTERVAL(1)) = htons(host_len); //HOST len
 				wr->output_chain[1] = host;
 
-				*(int*)(data_out.data + INT_INTERVAL(2)) = htons(agent_len); //User agent length
-				wr->output_chain[2] = &r->headers_in.user_agent->value;
+				if (r->headers_in.user_agent != NULL) {
+					agent_len = r->headers_in.user_agent->value.len;
+					*(int*)(data_out.data + INT_INTERVAL(2)) = htons(agent_len); //User agent length
+					wr->output_chain[2] = &r->headers_in.user_agent->value;
+				}
 
 				//TODO: Parse cookie array properly (send raw array chunks to upstream rather than unparsed headers).
 				*(int*)(data_out.data + INT_INTERVAL(3)) = htons(cookie_len); //COOKIES length

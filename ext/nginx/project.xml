@@ -1,7 +1,9 @@
 <?xml version="1.0"?>
 <project>
 	<depends link="true">../zlib</depends>
-	<include>src/core;src/event;src/event/modules;src/http/modules;src/http;src/mail;src/mysql;src/os/win32;include;../zlib/include</include>
+	<include>src/core;src/event;src/event/modules;src/http/modules;src/http;src/mail;src/mysql;include;../zlib/include</include>
+	<include os="win32">src/os/win32</include>
+	<include os="linux">src/os/unix</include>
 	<source>src/core/nginx.c</source>
 	<source>src/core/ngx_array.c</source>
 	<source>src/core/ngx_buf.c</source>
@@ -31,11 +33,12 @@
 	<source>src/core/ngx_spinlock.c</source>
 	<source>src/core/ngx_string.c</source>
 	<source>src/core/ngx_times.c</source>
-	<source>src/event/modules/ngx_iocp_module.c</source>
-	<source>src/event/modules/ngx_win32_select_module.c</source>
+	<source os="win32">src/event/modules/ngx_iocp_module.c</source>
+	<source os="win32">src/event/modules/ngx_win32_select_module.c</source>
+	<source os="linux">src/event/modules/ngx_epoll_module.c</source>
 	<source>src/event/ngx_event.c</source>
 	<source>src/event/ngx_event_accept.c</source>
-	<source>src/event/ngx_event_acceptex.c</source>
+	<source os="win32">src/event/ngx_event_acceptex.c</source>
 	<source>src/event/ngx_event_busy_lock.c</source>
 	<source>src/event/ngx_event_connect.c</source>
 	<source>src/event/ngx_event_pipe.c</source>
@@ -94,26 +97,47 @@
 	<source>src/ngx_http_webapp_module.c</source>
 	<source>src/ngx_modules.c</source>
 	<source>src/ngx_pch.c</source>
-	<source>src/os/win32/ngx_alloc.c</source>
-	<source>src/os/win32/ngx_errno.c</source>
-	<source>src/os/win32/ngx_event_log.c</source>
-	<source>src/os/win32/ngx_files.c</source>
-	<source>src/os/win32/ngx_process.c</source>
-	<source>src/os/win32/ngx_process_cycle.c</source>
-	<source>src/os/win32/ngx_shmem.c</source>
-	<source>src/os/win32/ngx_socket.c</source>
-	<source>src/os/win32/ngx_thread.c</source>
-	<source>src/os/win32/ngx_time.c</source>
-	<source>src/os/win32/ngx_udp_wsarecv.c</source>
-	<source>src/os/win32/ngx_user.c</source>
-	<source>src/os/win32/ngx_win32_init.c</source>
-	<source>src/os/win32/ngx_wsarecv.c</source>
-	<source>src/os/win32/ngx_wsarecv_chain.c</source>
-	<source>src/os/win32/ngx_wsasend.c</source>
-	<source>src/os/win32/ngx_wsasend_chain.c</source>
+	<source os="win32">src/os/win32/ngx_alloc.c</source>
+	<source os="win32">src/os/win32/ngx_errno.c</source>
+	<source os="win32">src/os/win32/ngx_event_log.c</source>
+	<source os="win32">src/os/win32/ngx_files.c</source>
+	<source os="win32">src/os/win32/ngx_process.c</source>
+	<source os="win32">src/os/win32/ngx_process_cycle.c</source>
+	<source os="win32">src/os/win32/ngx_shmem.c</source>
+	<source os="win32">src/os/win32/ngx_socket.c</source>
+	<source os="win32">src/os/win32/ngx_thread.c</source>
+	<source os="win32">src/os/win32/ngx_time.c</source>
+	<source os="win32">src/os/win32/ngx_udp_wsarecv.c</source>
+	<source os="win32">src/os/win32/ngx_user.c</source>
+	<source os="win32">src/os/win32/ngx_win32_init.c</source>
+	<source os="win32">src/os/win32/ngx_wsarecv.c</source>
+	<source os="win32">src/os/win32/ngx_wsarecv_chain.c</source>
+	<source os="win32">src/os/win32/ngx_wsasend.c</source>
+	<source os="win32">src/os/win32/ngx_wsasend_chain.c</source>
+	<source os="linux">src/os/unix/ngx_time.c</source>
+	<source os="linux">src/os/unix/ngx_errno.c</source>
+	<source os="linux">src/os/unix/ngx_alloc.c</source>
+	<source os="linux">src/os/unix/ngx_files.c</source>
+	<source os="linux">src/os/unix/ngx_socket.c</source>
+	<source os="linux">src/os/unix/ngx_recv.c</source>
+	<source os="linux">src/os/unix/ngx_readv_chain.c</source>
+	<source os="linux">src/os/unix/ngx_udp_recv.c</source>
+	<source os="linux">src/os/unix/ngx_send.c</source>
+	<source os="linux">src/os/unix/ngx_writev_chain.c</source>
+	<source os="linux">src/os/unix/ngx_channel.c</source>
+	<source os="linux">src/os/unix/ngx_shmem.c</source>
+	<source os="linux">src/os/unix/ngx_process.c</source>
+	<source os="linux">src/os/unix/ngx_daemon.c</source>
+	<source os="linux">src/os/unix/ngx_setaffinity.c</source>
+	<source os="linux">src/os/unix/ngx_setproctitle.c</source>
+	<source os="linux">src/os/unix/ngx_posix_init.c</source>
+	<source os="linux">src/os/unix/ngx_user.c</source>
+	<source os="linux">src/os/unix/ngx_process_cycle.c</source>
+	<source os="linux">src/os/unix/ngx_linux_init.c</source>
+	<source os="linux">src/os/unix/ngx_linux_sendfile_chain.c</source>
 	<output type="app">nginx</output>
-	<flags compiler="msvc">MT</flags>
+	<flags compiler="msvc">MT;W3</flags>
+	<flags step="link" compiler="gcc">pthread;lcrypt</flags>
 	<flags step="link" compiler="msvc">SUBSYSTEM:CONSOLE</flags>
 	<link compiler="msvc">ws2_32.lib;kernel32.lib;user32.lib;Advapi32.lib</link>
-	<flags>W3</flags>
 </project>

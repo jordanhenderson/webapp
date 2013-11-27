@@ -159,9 +159,6 @@
     <ClInclude Include="include\FileSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Server.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\sqlite\sqlite3.h">
       <Filter>Header Files\sqlite</Filter>
     </ClInclude>
@@ -190,9 +187,6 @@
       <Filter>Header Files\tinydir</Filter>
     </ClInclude>
     <ClInclude Include="include\Session.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Container.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\Hooks.h">

@@ -153,7 +153,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_WIN32_WINNT=0x0501;ASIO_MSVC;ASIO_WINDOWS;ASIO_STANDALONE;CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>include;../ext/nginx/include;../ext/nginx/src/core/;../ext/nginx/src/http/modules;../ext/nginx/src/event/modules;../ext/nginx/src/event;../ext/nginx/src/http;../ext/nginx/src/os/win32;../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/tbb/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;../ext/ctemplate/include/windows;../ext/ctemplate/include;../ext/cryptopp;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;include/lpeg;include/cjson;include/sha2;../ext/mysql/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;../ext/nginx/include;../ext/nginx/src/core/;../ext/nginx/src/http/modules;../ext/nginx/src/event/modules;../ext/nginx/src/event;../ext/nginx/src/http;../ext/nginx/src/os/win32;../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/tbb/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;../ext/ctemplate/include/windows;../ext/ctemplate/include;../ext/cryptopp;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;include/lpeg;include/cjson;include/readerwriterqueue;include/sha2;../ext/mysql/include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <InterproceduralOptimization>NoIPO</InterproceduralOptimization>
       <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
@@ -179,7 +179,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_WIN32_WINNT=0x0501;ASIO_MSVC;ASIO_WINDOWS;ASIO_STANDALONE;CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>include;../ext/nginx/include;../ext/nginx/src/core/;../ext/nginx/src/http/modules;../ext/nginx/src/event/modules;../ext/nginx/src/event;../ext/nginx/src/http;../ext/nginx/src/os/win32;../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/tbb/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;../ext/ctemplate/include/windows;../ext/ctemplate/include;../ext/cryptopp;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;include/lpeg;include/cjson;include/sha2;../ext/mysql/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;../ext/nginx/include;../ext/nginx/src/core/;../ext/nginx/src/http/modules;../ext/nginx/src/event/modules;../ext/nginx/src/event;../ext/nginx/src/http;../ext/nginx/src/os/win32;../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/tbb/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;../ext/ctemplate/include/windows;../ext/ctemplate/include;../ext/cryptopp;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;include/lpeg;include/cjson;include/readerwriterqueue;include/sha2;../ext/mysql/include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/Qstd=c++11 %(AdditionalOptions)</AdditionalOptions>
       <InterproceduralOptimization>NoIPO</InterproceduralOptimization>
@@ -205,7 +205,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_WIN32_WINNT=0x0501;ASIO_MSVC;ASIO_WINDOWS;ASIO_STANDALONE;CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>include;../ext/nginx/include;../ext/nginx/src/core/;../ext/nginx/src/http/modules;../ext/nginx/src/event/modules;../ext/nginx/src/event;../ext/nginx/src/http;../ext/nginx/src/os/win32;../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/tbb/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;../ext/ctemplate/include/windows;../ext/ctemplate/include;../ext/cryptopp;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;include/lpeg;include/cjson;include/sha2;../ext/mysql/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;../ext/nginx/include;../ext/nginx/src/core/;../ext/nginx/src/http/modules;../ext/nginx/src/event/modules;../ext/nginx/src/event;../ext/nginx/src/http;../ext/nginx/src/os/win32;../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/tbb/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;../ext/ctemplate/include/windows;../ext/ctemplate/include;../ext/cryptopp;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;include/lpeg;include/cjson;include/readerwriterqueue;include/sha2;../ext/mysql/include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <OptimizeForWindowsApplication>true</OptimizeForWindowsApplication>
@@ -243,7 +243,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_WIN32_WINNT=0x0501;ASIO_MSVC;ASIO_WINDOWS;ASIO_STANDALONE;CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>include;../ext/nginx/include;../ext/nginx/src/core/;../ext/nginx/src/http/modules;../ext/nginx/src/event/modules;../ext/nginx/src/event;../ext/nginx/src/http;../ext/nginx/src/os/win32;../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/tbb/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;../ext/ctemplate/include/windows;../ext/ctemplate/include;../ext/cryptopp;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;include/lpeg;include/cjson;include/sha2;../ext/mysql/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;../ext/nginx/include;../ext/nginx/src/core/;../ext/nginx/src/http/modules;../ext/nginx/src/event/modules;../ext/nginx/src/event;../ext/nginx/src/http;../ext/nginx/src/os/win32;../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/tbb/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;../ext/ctemplate/include/windows;../ext/ctemplate/include;../ext/cryptopp;include/fastcgi;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;include/lpeg;include/cjson;include/readerwriterqueue;include/sha2;../ext/mysql/include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <OptimizeForWindowsApplication>false</OptimizeForWindowsApplication>
@@ -391,7 +391,6 @@
     <ClInclude Include="include\cjson\dtoa_config.h" />
     <ClInclude Include="include\cjson\fpconv.h" />
     <ClInclude Include="include\cjson\strbuf.h" />
-    <ClInclude Include="include\Container.h" />
     <ClInclude Include="include\CPlatform.h" />
     <ClInclude Include="include\Database.h" />
     <ClInclude Include="include\FileSystem.h" />
@@ -410,7 +409,6 @@
     <ClInclude Include="include\lpeg\lpvm.h" />
     <ClInclude Include="include\pngnq\neuquant32.h" />
     <ClInclude Include="include\Schema.h" />
-    <ClInclude Include="include\Server.h" />
     <ClInclude Include="include\Parameters.h" />
     <ClInclude Include="include\Platform.h" />
     <ClInclude Include="include\Session.h" />
@@ -425,9 +423,6 @@
     <None Include="Makefile" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ext\cryptopp\cryptlib.vcxproj">
-      <Project>{3423ec9a-52e4-4a4d-9753-edebc38785ef}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\ext\ctemplate\ctemplate.vcxproj">
       <Project>{53d3361b-51d2-4f41-bf13-2a27cb061eeb}</Project>
     </ProjectReference>

@@ -94,6 +94,9 @@
     <ClCompile Include="src\tbb_thread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\condition_variable.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="src\ia32-masm\atomic_support.asm">

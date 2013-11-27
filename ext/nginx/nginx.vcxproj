@@ -134,6 +134,10 @@
       <Project>{feb2ad73-a264-450a-97a3-e1810a14e08b}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\ngx_auto_config.h" />
+    <ClInclude Include="include\ngx_auto_headers.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{20675957-CE52-44AE-99A9-F7056463B0C8}</ProjectGuid>
     <RootNamespace>nginx</RootNamespace>

@@ -2,7 +2,7 @@
 #define SESSION_H
 #include "Platform.h"
 #include "CPlatform.h"
-#include "Container.h"
+#include <random>
 #define SESSION_STORE RamSession
 
 struct Request;
@@ -23,7 +23,7 @@ public:
 typedef std::unordered_map<std::string, std::string> RamStorage;
 class RamSession : public SessionStore {
 private:
-	LockableContainer<RamStorage> _store;
+	RamStorage _store;
 public:
 	void create(const std::string& sessionid);
 	void store(const std::string& key, const std::string& value);
@@ -33,9 +33,15 @@ public:
 
 typedef std::unordered_map<std::string, SessionStore*> SessionMap;
 class Sessions {
+	std::random_device rd;
+	std::mt19937_64 rng;
 private:
-	LockableContainer<SessionMap> session_map;
+	SessionMap session_map;
+	std::string _node;
 public:
+	Sessions(unsigned int node_id) : rng(rd()) {
+		_node = std::to_string(node_id).substr(0, WEBAPP_LEN_SESSIONID);
+	};
 	~Sessions();
 	//Create a new session based on the request.
 	SessionStore* get_session(webapp_str_t* sessionid);

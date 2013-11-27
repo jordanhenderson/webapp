@@ -2,9 +2,8 @@
 
 using namespace std;
 const string& Parameters::get(const string& param) {
-	LockableContainerLock<ParamMap> lock(params);
-	ParamMap::iterator it = lock->find(param);
-	if(it != lock->end())
+	ParamMap::iterator it = params.find(param);
+	if(it != params.end())
 		return it->second;
 
 	return empty;
@@ -15,8 +14,7 @@ const int Parameters::getDigit(const string& param) {
 }
 
 void Parameters::set(string param, string value) {
-	LockableContainerLock<ParamMap> lock(params);
-	lock->insert(make_pair(param, value));
+	params.insert(make_pair(param, value));
 }
 
 bool Parameters::hasParam(string param) {
@@ -25,8 +23,7 @@ bool Parameters::hasParam(string param) {
 }
 
 size_t Parameters::getSize() {
-	LockableContainerLock<ParamMap> lock(params);
-	return lock->size();
+	return params.size();
 }
 
 Parameters::~Parameters() {

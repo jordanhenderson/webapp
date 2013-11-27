@@ -1,5 +1,7 @@
 #include "Platform.h"
 #include "Webapp.h"
+#include <tbb/mutex.h>
+#include <tbb/compat/condition_variable>
 
 extern "C" {
 #include "Hooks.h"
@@ -65,23 +67,23 @@ void DestroySession(SessionStore* session) {
 Request* GetNextRequest(RequestQueue* requests) {
 	if (requests == NULL) return NULL;
 	Request* request = NULL;
-	try {
-		if (!requests->aborted)
-			requests->requests.pop(request);
+	{
+		unique_lock<tbb::mutex> lk(requests->cv_mutex);
+		while (!requests->requests.try_dequeue(request) && !requests->aborted)
+			requests->cv.wait(lk);
 	}
-	catch (tbb::user_abort ex) {
-		//Do nothing...
-	}
-	return request;
 
+	return request;
 }
 
 //Clear the cache (aborts any waiting request handlers, locks connect mutex, clears cache, unlocks).
 void ClearCache(Webapp* app, RequestQueue* requests) {
 	if (app == NULL || requests == NULL) return;
 
-	requests->aborted = 1;
-	requests->requests.abort();
+	for (RequestQueue* queue : app->requests) {
+		queue->aborted = 1;
+		queue->cv.notify_one();
+	}
 
 	//Cleanup when this task completes.
 	app->posttask = new (tbb::task::allocate_root()) CleanupTask(app, requests);

@@ -9,8 +9,12 @@ extern ngx_module_t  ngx_errlog_module;
 extern ngx_module_t  ngx_conf_module;
 extern ngx_module_t  ngx_events_module;
 extern ngx_module_t  ngx_event_core_module;
+#ifdef _WIN32
 extern ngx_module_t  ngx_iocp_module;
 extern ngx_module_t  ngx_select_module;
+#else
+extern ngx_module_t  ngx_epoll_module;
+#endif
 extern ngx_module_t  ngx_http_module;
 extern ngx_module_t  ngx_http_core_module;
 extern ngx_module_t  ngx_http_log_module;
@@ -57,8 +61,12 @@ ngx_module_t *ngx_modules[] = {
     &ngx_conf_module,
     &ngx_events_module,
     &ngx_event_core_module,
+   #ifdef _WIN32
     &ngx_iocp_module,
     &ngx_select_module,
+   #else
+    &ngx_epoll_module,
+   #endif
     &ngx_http_module,
     &ngx_http_core_module,
     &ngx_http_log_module,

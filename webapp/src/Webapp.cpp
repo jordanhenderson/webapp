@@ -1,6 +1,5 @@
 #include "Webapp.h"
 #include "Image.h"
-#include <sha.h>
 #include <tbb/task_scheduler_init.h>
 #include <tbb/task.h>
 
@@ -10,26 +9,38 @@ using namespace asio;
 using namespace asio::ip;
 using namespace tbb;
 
+#ifdef _WIN32
+#pragma warning(disable:4316)
+#endif 
+
 void WebappTask::execute() {
 	while (!_handler->aborted) {
-		LuaParam _v[] = { { "sessions", &_handler->sessions }, { "requests", &_handler->requests }, { "app", _handler }, { "db", &_handler->database } };
+		LuaParam _v[] = { { "sessions", _sessions },
+						  { "requests", _requests }, 
+						  { "app", _handler }, 
+						  { "db", &_handler->database } };
 		_handler->runHandler(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/process.lua");
 
 		//VM has quit.
 		_handler->waiting++;
-		_handler->requests.lock.lock();
+		for (RequestQueue* q : _handler->requests) {
+			q->lock.lock();
+		}
 		if (_handler->posttask != NULL) {
 			tbb::task::spawn_root_and_wait(*_handler->posttask);
 			_handler->posttask = NULL;
 		}
-		_handler->requests.lock.unlock();
+		for (RequestQueue* q : _handler->requests) {
+			q->lock.unlock();
+		}
+		
 		_handler->waiting--;
 	}
 }
 
 void BackgroundQueue::execute() {
 	while (!_handler->aborted) {
-		LuaParam _v[] = { { "sessions", &_handler->sessions }, { "requests", &_handler->requests }, { "app", _handler }, { "db", &_handler->database } };
+		LuaParam _v[] = { { "app", _handler }, { "db", &_handler->database } };
 		_handler->runHandler(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/process_queue.lua");
 		//Since this task must run at all times (not per request - *should* block in lua vm)
 		Sleep(1000); //Lua VM returned, something went wrong.
@@ -43,7 +54,6 @@ tbb::task* CleanupTask::execute() {
 			return this;
 		}
 		else {
-			_requests->requests.clear();
 			_handler->refresh_templates();
 			_requests->aborted = 0;
 			return NULL;
@@ -88,8 +98,9 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates
 										basepath(&params->get("basepath")),
 										dbpath(&params->get("dbpath")), 
 										svc(io_svc), 
-										workers(tbb::task_scheduler_init::default_num_threads() > 2 ?
-												tbb::task_scheduler_init::default_num_threads() - 1 : 2) {
+										nWorkers(tbb::task_scheduler_init::default_num_threads() > 2 ?
+										tbb::task_scheduler_init::default_num_threads() - 1 : 2)
+									{
 
 	//Run init plugin
 	LuaParam _v[] = { { "app", this }, { "db", &database } };
@@ -98,15 +109,20 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates
 	refresh_templates();
 
 	//Create/allocate initial worker tasks.
-	if (background_queue_enabled) 
-		workers.at(0) = new BackgroundQueue(this);
+	if (background_queue_enabled) //uses a worker thread.
+		workers.push_back(new BackgroundQueue(this));
 	
-	for (unsigned int i = background_queue_enabled; i < workers.size(); i++) {
-		workers.at(i) = new WebappTask(this);
+	for (unsigned int i = background_queue_enabled; i < nWorkers; i++) {
+		unsigned int worker_id = background_queue_enabled ? i - 1 : i;
+		Sessions* session = new Sessions(worker_id);
+		RequestQueue* request = new RequestQueue();
+		sessions.push_back(session);
+		requests.push_back(request);
+		workers.push_back(new WebappTask(this, session, request));	
 	}
 
 	asio::io_service::work wrk = asio::io_service::work(svc);
-	tcp::endpoint endpoint(tcp::v4(), 5000);
+	tcp::endpoint endpoint(tcp::v4(), WEBAPP_PORT);
 	acceptor = new tcp::acceptor(svc, endpoint, true);
 	accept_message();
 	svc.run(); //block the main thread.
@@ -117,6 +133,7 @@ void Webapp::processRequest(Request* r, int amount) {
 	asio::async_read(*r->socket, asio::buffer(*r->v), transfer_exactly(amount),
 		[this, r](const asio::error_code& error, std::size_t bytes_transferred) {
 			int read = 0;
+			//Read each input chain variable recieved from nginx appropriately.
 			for(int i = 0; i < STRING_VARS; i++) {
 				if(r->input_chain[i]->data == NULL) {
 					char* h = (char*) r->v->data() + read;
@@ -125,10 +142,26 @@ void Webapp::processRequest(Request* r, int amount) {
 					read += r->input_chain[i]->len + 1;
 				}
 			}
+			//Choose a node, queue the request.
+			int selected_node = -1;
+			if (r->cookies.len > 0) {
+				const char* sessionid = strstr(r->cookies.data, "sessionid=");
+				int node = -1;
+				if (sessionid && sscanf(sessionid + 10, "%" XSTR(WEBAPP_LEN_SESSIONID) "d", &node) == 1) {
+					selected_node = node % nWorkers;
+				}
+			}
+			if (selected_node == -1) {
+				//Something went wrong - node not found, maybe session id missing. 
+				selected_node = node_counter++ % (nWorkers + 1);
+				
+			}
 
-			requests.lock.lock();
-			requests.requests.push(r);
-			requests.lock.unlock();
+			RequestQueue* queue = requests.at(selected_node);
+			queue->lock.lock();
+			queue->requests.enqueue(r);
+			queue->cv.notify_one();
+			queue->lock.unlock();
 	});
 }
 
@@ -177,7 +210,16 @@ void Webapp::accept_message() {
 
 
 Webapp::~Webapp() {
-	for (unsigned int i = 0; i < workers.size(); i++) {
+	for (unsigned int i = background_queue_enabled; i < nWorkers; i++) {
+		RequestQueue* rq = requests.at(i);
+		rq->aborted = 1;
+		delete rq;
+
+		Sessions* session = sessions.at(i);
+		delete session;
+	}
+
+	for (unsigned int i = 0; i < nWorkers; i++) {
 		TaskBase* t = workers.at(i);
 		if (t != NULL) {
 			t->join();
