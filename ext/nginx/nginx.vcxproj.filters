@@ -345,6 +345,12 @@
     <ClCompile Include="src\http\ngx_http_spdy_module.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\ngx_regex.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\http\modules\ngx_http_rewrite_module.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ngx_auto_config.h">

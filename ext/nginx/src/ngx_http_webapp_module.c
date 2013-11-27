@@ -330,6 +330,11 @@ ngx_http_webapp_content_handler(ngx_http_request_t *r) {
 	int path_level = 0;
 	int rc;
 	unsigned int i = 0;
+	ngx_http_webapp_loc_conf_t* wlcf;
+	wlcf = ngx_http_get_module_loc_conf(r, ngx_http_webapp_module);
+	if (wlcf->url == NGX_CONF_UNSET_PTR)
+		return NGX_DECLINED;
+
 	for(i = 0; i < r->uri.len; i++) {
 		if(r->uri.data[i] == '/')
 			path_level++;
@@ -377,6 +382,7 @@ static ngx_int_t ngx_http_webapp_init(ngx_conf_t* cf) {
     }
 
     *h = ngx_http_webapp_content_handler;
+
 	return NGX_OK;
 }
 

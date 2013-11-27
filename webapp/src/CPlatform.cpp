@@ -52,7 +52,7 @@ void add_days(time_t& t, int days) {
 string url_decode(const string& src) {
  string ret;
     char ch;
-    int i, ii;
+    unsigned int i, ii;
     for (i=0; i<src.length(); i++) {
         if (int(src[i])==37) {
             sscanf(src.substr(i+1,2).c_str(), "%x", &ii);

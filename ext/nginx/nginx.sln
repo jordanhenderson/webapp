@@ -1,9 +1,16 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nginx", "nginx.vcxproj", "{20675957-CE52-44AE-99A9-F7056463B0C8}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AB1A397D-3E8B-469B-976A-FA162A57C4E1} = {AB1A397D-3E8B-469B-976A-FA162A57C4E1}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlib", "..\zlib\zlib.vcxproj", "{FEB2AD73-A264-450A-97A3-E1810A14E08B}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pcre", "..\pcre\pcre.vcxproj", "{AB1A397D-3E8B-469B-976A-FA162A57C4E1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +52,18 @@ Global
 		{FEB2AD73-A264-450A-97A3-E1810A14E08B}.Release|Win32.Build.0 = Release|Win32
 		{FEB2AD73-A264-450A-97A3-E1810A14E08B}.Release|x64.ActiveCfg = Release|x64
 		{FEB2AD73-A264-450A-97A3-E1810A14E08B}.Release|x64.Build.0 = Release|x64
+		{AB1A397D-3E8B-469B-976A-FA162A57C4E1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{AB1A397D-3E8B-469B-976A-FA162A57C4E1}.Debug|Win32.Build.0 = Debug|Win32
+		{AB1A397D-3E8B-469B-976A-FA162A57C4E1}.Debug|x64.ActiveCfg = Debug|Win32
+		{AB1A397D-3E8B-469B-976A-FA162A57C4E1}.LinuxDebug|Win32.ActiveCfg = Debug|Win32
+		{AB1A397D-3E8B-469B-976A-FA162A57C4E1}.LinuxDebug|Win32.Build.0 = Debug|Win32
+		{AB1A397D-3E8B-469B-976A-FA162A57C4E1}.LinuxDebug|x64.ActiveCfg = Debug|Win32
+		{AB1A397D-3E8B-469B-976A-FA162A57C4E1}.LinuxRelease|Win32.ActiveCfg = Release|Win32
+		{AB1A397D-3E8B-469B-976A-FA162A57C4E1}.LinuxRelease|Win32.Build.0 = Release|Win32
+		{AB1A397D-3E8B-469B-976A-FA162A57C4E1}.LinuxRelease|x64.ActiveCfg = Release|Win32
+		{AB1A397D-3E8B-469B-976A-FA162A57C4E1}.Release|Win32.ActiveCfg = Release|Win32
+		{AB1A397D-3E8B-469B-976A-FA162A57C4E1}.Release|Win32.Build.0 = Release|Win32
+		{AB1A397D-3E8B-469B-976A-FA162A57C4E1}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

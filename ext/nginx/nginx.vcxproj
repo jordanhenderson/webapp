@@ -42,6 +42,7 @@
     <ClCompile Include="src\core\ngx_queue.c" />
     <ClCompile Include="src\core\ngx_radix_tree.c" />
     <ClCompile Include="src\core\ngx_rbtree.c" />
+    <ClCompile Include="src\core\ngx_regex.c" />
     <ClCompile Include="src\core\ngx_resolver.c" />
     <ClCompile Include="src\core\ngx_shmtx.c" />
     <ClCompile Include="src\core\ngx_slab.c" />
@@ -79,6 +80,7 @@
     <ClCompile Include="src\http\modules\ngx_http_proxy_module.c" />
     <ClCompile Include="src\http\modules\ngx_http_range_filter_module.c" />
     <ClCompile Include="src\http\modules\ngx_http_referer_module.c" />
+    <ClCompile Include="src\http\modules\ngx_http_rewrite_module.c" />
     <ClCompile Include="src\http\modules\ngx_http_scgi_module.c" />
     <ClCompile Include="src\http\modules\ngx_http_split_clients_module.c" />
     <ClCompile Include="src\http\modules\ngx_http_ssi_filter_module.c" />
@@ -130,6 +132,9 @@
     <ClCompile Include="src\os\win32\ngx_wsasend_chain.c" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\pcre\pcre.vcxproj">
+      <Project>{ab1a397d-3e8b-469b-976a-fa162a57c4e1}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\zlib\zlib.vcxproj">
       <Project>{feb2ad73-a264-450a-97a3-e1810a14e08b}</Project>
     </ProjectReference>
@@ -191,9 +196,9 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>src/core;src/event;src/event/modules;src/http/modules;src/http;src/mail;src/mysql;src/os/win32;include;../zlib/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src/core;src/event;src/event/modules;src/http/modules;src/http;src/mail;src/mysql;src/os/win32;include;../zlib/include;../pcre/include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PreprocessorDefinitions>_USING_V110_SDK71_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_USING_V110_SDK71_;PCRE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -208,6 +213,7 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>src/core;src/event;src/event/modules;src/http/modules;src/http;src/mail;src/mysql;src/os/win32;include;../zlib/include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PreprocessorDefinitions>_USING_V110_SDK71_;PCRE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -223,7 +229,8 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>src/core;src/event;src/event/modules;src/http/modules;src/http;src/mail;src/mysql;src/os/win32;include;../zlib/include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src/core;src/event;src/event/modules;src/http/modules;src/http;src/mail;src/mysql;src/os/win32;include;../zlib/include;../pcre/include</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_USING_V110_SDK71_;PCRE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -242,6 +249,7 @@
       <SDLCheck>false</SDLCheck>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalIncludeDirectories>src/core;src/event;src/event/modules;src/http/modules;src/http;src/mail;src/mysql;src/os/win32;include;../zlib/include</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_USING_V110_SDK71_;PCRE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

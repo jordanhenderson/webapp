@@ -66,7 +66,7 @@
 
 
 #ifndef NGX_PCRE
-#define NGX_PCRE 0
+#define NGX_PCRE 1
 #endif
 
 #ifndef NGX_HAVE_PCRE_JIT
