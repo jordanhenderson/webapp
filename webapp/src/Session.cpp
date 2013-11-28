@@ -1,7 +1,6 @@
 #include "Session.h"
 #include "Webapp.h"
-#include "sha2.h"
-
+#include <openssl/sha.h>
 
 using namespace std;
 
@@ -16,18 +15,18 @@ Sessions::~Sessions() {
 
 SessionStore* Sessions::new_session(Request* request) {
 	if (request->host.len == 0 || request->user_agent.len == 0) return NULL; //Cannot build unique session.
-	u_int8_t output[32];
+	unsigned char output[32];
 	char output_hex[32];
 	SHA256_CTX ctx;
 	SHA256_Init(&ctx);
-	SHA256_Update(&ctx, (u_int8_t*)request->host.data, request->host.len);
-	SHA256_Update(&ctx, (u_int8_t*)request->user_agent.data, request->user_agent.len);
+	SHA256_Update(&ctx, (unsigned char*)request->host.data, request->host.len);
+	SHA256_Update(&ctx, (unsigned char*)request->user_agent.data, request->user_agent.len);
 
 	//Calculate random number, add to hash.
 	uniform_int_distribution<int> dis;
 	int r = dis(rng);
 	
-	SHA256_Update(&ctx, (u_int8_t*)&r, sizeof(int));
+	SHA256_Update(&ctx, (unsigned char*)&r, sizeof(int));
 	SHA256_Final(output, &ctx);
 	const char* hex_lookup = "0123456789ABCDEF";
 	char* p = output_hex;

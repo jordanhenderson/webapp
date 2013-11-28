@@ -44,4 +44,14 @@ APIEXPORT void AppendQuery(Query*, webapp_str_t* in);
 APIEXPORT void BindParameter(Query* q, webapp_str_t* in);
 APIEXPORT void GetCell(Query* q, unsigned int column, webapp_str_t* out);
 APIEXPORT void GetColumnName(Query* q, unsigned int column, webapp_str_t* out);
+//Force SHA-function inclusion from openssl.
+FORCE_UNDEFINED_SYMBOL(SHA256_Init)
+FORCE_UNDEFINED_SYMBOL(SHA256_Update)
+FORCE_UNDEFINED_SYMBOL(SHA256_Final)
+FORCE_UNDEFINED_SYMBOL(SHA512_Init)
+FORCE_UNDEFINED_SYMBOL(SHA512_Update)
+FORCE_UNDEFINED_SYMBOL(SHA512_Final)
+FORCE_UNDEFINED_SYMBOL(SHA384_Init)
+FORCE_UNDEFINED_SYMBOL(SHA384_Update)
+FORCE_UNDEFINED_SYMBOL(SHA384_Final)
 #endif

@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
 		FileSystem::Close(&conf);
 	} else {
 		//DEFAULT PARAMETERS
-		params.set("basepath", ".");
+		params.set("basepath", "./");
 		params.set("dbpath", "webapp.sqlite");
 
 	}
