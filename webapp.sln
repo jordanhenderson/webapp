@@ -74,6 +74,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nginx", "ext\nginx\nginx.vc
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pcre", "ext\pcre\pcre.vcxproj", "{AB1A397D-3E8B-469B-976A-FA162A57C4E1}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "openssl", "ext\openssl\openssl.vcxproj", "{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -450,6 +452,18 @@ Global
 		{AB1A397D-3E8B-469B-976A-FA162A57C4E1}.Release|Win32.Build.0 = Release|Win32
 		{AB1A397D-3E8B-469B-976A-FA162A57C4E1}.Release|x64.ActiveCfg = Release|x64
 		{AB1A397D-3E8B-469B-976A-FA162A57C4E1}.Release|x64.Build.0 = Release|x64
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}.Debug|Win32.Build.0 = Debug|Win32
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}.Debug|x64.ActiveCfg = Debug|Win32
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}.LinuxDebug|Win32.ActiveCfg = Debug|Win32
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}.LinuxDebug|Win32.Build.0 = Debug|Win32
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}.LinuxDebug|x64.ActiveCfg = Debug|Win32
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}.LinuxRelease|Win32.ActiveCfg = Release|Win32
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}.LinuxRelease|Win32.Build.0 = Release|Win32
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}.LinuxRelease|x64.ActiveCfg = Release|Win32
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}.Release|Win32.ActiveCfg = Release|Win32
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}.Release|Win32.Build.0 = Release|Win32
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -351,6 +351,15 @@
     <ClCompile Include="src\http\modules\ngx_http_rewrite_module.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\http\modules\ngx_http_ssl_module.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\event\ngx_event_openssl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\event\ngx_event_openssl_stapling.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ngx_auto_config.h">

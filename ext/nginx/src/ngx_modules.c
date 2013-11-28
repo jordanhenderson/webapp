@@ -15,6 +15,7 @@ extern ngx_module_t  ngx_select_module;
 #else
 extern ngx_module_t  ngx_epoll_module;
 #endif
+extern ngx_module_t  ngx_openssl_module;
 extern ngx_module_t  ngx_regex_module;
 extern ngx_module_t  ngx_http_module;
 extern ngx_module_t  ngx_http_core_module;
@@ -32,6 +33,7 @@ extern ngx_module_t  ngx_http_map_module;
 extern ngx_module_t  ngx_http_split_clients_module;
 extern ngx_module_t  ngx_http_referer_module;
 extern ngx_module_t  ngx_http_rewrite_module;
+extern ngx_module_t  ngx_http_ssl_module;
 extern ngx_module_t  ngx_http_proxy_module;
 extern ngx_module_t  ngx_http_fastcgi_module;
 extern ngx_module_t  ngx_http_uwsgi_module;
@@ -69,6 +71,7 @@ ngx_module_t *ngx_modules[] = {
    #else
     &ngx_epoll_module,
    #endif
+	&ngx_openssl_module,
 	&ngx_regex_module,
     &ngx_http_module,
     &ngx_http_core_module,
@@ -86,6 +89,7 @@ ngx_module_t *ngx_modules[] = {
     &ngx_http_split_clients_module,
     &ngx_http_referer_module,
 	&ngx_http_rewrite_module,
+	&ngx_http_ssl_module,
     &ngx_http_proxy_module,
     &ngx_http_fastcgi_module,
     &ngx_http_uwsgi_module,

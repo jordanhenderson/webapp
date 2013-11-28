@@ -6,11 +6,14 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nginx", "nginx.vcxproj", "{20675957-CE52-44AE-99A9-F7056463B0C8}"
 	ProjectSection(ProjectDependencies) = postProject
 		{AB1A397D-3E8B-469B-976A-FA162A57C4E1} = {AB1A397D-3E8B-469B-976A-FA162A57C4E1}
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD} = {945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlib", "..\zlib\zlib.vcxproj", "{FEB2AD73-A264-450A-97A3-E1810A14E08B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pcre", "..\pcre\pcre.vcxproj", "{AB1A397D-3E8B-469B-976A-FA162A57C4E1}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "openssl", "..\openssl\openssl.vcxproj", "{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -64,6 +67,18 @@ Global
 		{AB1A397D-3E8B-469B-976A-FA162A57C4E1}.Release|Win32.ActiveCfg = Release|Win32
 		{AB1A397D-3E8B-469B-976A-FA162A57C4E1}.Release|Win32.Build.0 = Release|Win32
 		{AB1A397D-3E8B-469B-976A-FA162A57C4E1}.Release|x64.ActiveCfg = Release|Win32
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}.Debug|Win32.Build.0 = Debug|Win32
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}.Debug|x64.ActiveCfg = Debug|Win32
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}.LinuxDebug|Win32.ActiveCfg = Debug|Win32
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}.LinuxDebug|Win32.Build.0 = Debug|Win32
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}.LinuxDebug|x64.ActiveCfg = Debug|Win32
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}.LinuxRelease|Win32.ActiveCfg = Release|Win32
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}.LinuxRelease|Win32.Build.0 = Release|Win32
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}.LinuxRelease|x64.ActiveCfg = Release|Win32
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}.Release|Win32.ActiveCfg = Release|Win32
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}.Release|Win32.Build.0 = Release|Win32
+		{945349D4-3F52-4E9B-8B4C-2D3FE58E2ACD}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

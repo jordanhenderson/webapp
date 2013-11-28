@@ -1,5 +1,50 @@
 
 #define NGX_HTTP_SPDY 1
+#define NGX_OPENSSL 1
+#define NGX_HTTP_SSL 1
+#define NGX_SSL 1
+#ifndef NGX_HTTP_X_FORWARDED_FOR
+#define NGX_HTTP_X_FORWARDED_FOR  1
+#endif
+
+
+#ifndef NGX_HTTP_X_FORWARDED_FOR
+#define NGX_HTTP_X_FORWARDED_FOR  1
+#endif
+
+
+#ifndef NGX_PCRE
+#define NGX_PCRE 1
+#endif
+
+#ifndef NGX_HAVE_PCRE_JIT
+#define NGX_HAVE_PCRE_JIT  0
+#endif
+
+#ifndef NGX_ZLIB
+#define NGX_ZLIB  1
+#endif
+
+#ifndef NGX_CRYPT
+#define NGX_CRYPT  1
+#endif
+
+
+#ifndef NGX_HTTP_CACHE
+#define NGX_HTTP_CACHE  1
+#endif
+
+
+#ifndef NGX_HTTP_GZIP
+#define NGX_HTTP_GZIP  1
+#endif
+
+
+#ifndef NGX_HTTP_SSI
+#define NGX_HTTP_SSI  1
+#endif
+
+
 
 #ifdef _MSC_VER
 
@@ -33,50 +78,6 @@
 #ifndef NGX_HAVE_SELECT
 #define NGX_HAVE_SELECT  1
 #endif
-
-
-#ifndef NGX_HTTP_CACHE
-#define NGX_HTTP_CACHE  1
-#endif
-
-
-#ifndef NGX_HTTP_GZIP
-#define NGX_HTTP_GZIP  1
-#endif
-
-
-#ifndef NGX_HTTP_SSI
-#define NGX_HTTP_SSI  1
-#endif
-
-
-#ifndef NGX_CRYPT
-#define NGX_CRYPT  1
-#endif
-
-
-#ifndef NGX_HTTP_X_FORWARDED_FOR
-#define NGX_HTTP_X_FORWARDED_FOR  1
-#endif
-
-
-#ifndef NGX_HTTP_X_FORWARDED_FOR
-#define NGX_HTTP_X_FORWARDED_FOR  1
-#endif
-
-
-#ifndef NGX_PCRE
-#define NGX_PCRE 1
-#endif
-
-#ifndef NGX_HAVE_PCRE_JIT
-#define NGX_HAVE_PCRE_JIT  0
-#endif
-
-#ifndef NGX_ZLIB
-#define NGX_ZLIB  1
-#endif
-
 
 #ifndef NGX_CONF_PREFIX
 #define NGX_CONF_PREFIX  "conf/"
@@ -295,7 +296,11 @@
 
 
 #ifndef NGX_PTR_SIZE
+#ifdef __LP64__
 #define NGX_PTR_SIZE  8
+#else
+#define NGX_PTR_SIZE 4
+#endif
 #endif
 
 
@@ -423,47 +428,6 @@
 #define NGX_HAVE_GETADDRINFO  1
 #endif
 
-
-#ifndef NGX_HTTP_CACHE
-#define NGX_HTTP_CACHE  1
-#endif
-
-
-#ifndef NGX_HTTP_GZIP
-#define NGX_HTTP_GZIP  1
-#endif
-
-
-#ifndef NGX_HTTP_SSI
-#define NGX_HTTP_SSI  1
-#endif
-
-
-#ifndef NGX_CRYPT
-#define NGX_CRYPT  1
-#endif
-
-
-#ifndef NGX_HTTP_X_FORWARDED_FOR
-#define NGX_HTTP_X_FORWARDED_FOR  1
-#endif
-
-
-#ifndef NGX_HTTP_X_FORWARDED_FOR
-#define NGX_HTTP_X_FORWARDED_FOR  1
-#endif
-
-
-#ifndef NGX_PCRE
-#define NGX_PCRE  1
-#endif
-
-
-#ifndef NGX_HAVE_PCRE_JIT
-#define NGX_HAVE_PCRE_JIT  1
-#endif
-
-
 #ifndef NGX_OPENSSL_MD5
 #define NGX_OPENSSL_MD5  0
 #endif
@@ -487,12 +451,6 @@
 #ifndef NGX_HAVE_OPENSSL_SHA1_H
 #define NGX_HAVE_OPENSSL_SHA1_H  0
 #endif
-
-
-#ifndef NGX_ZLIB
-#define NGX_ZLIB  1
-#endif
-
 
 #ifndef NGX_PREFIX
 #define NGX_PREFIX  ""
