@@ -1,21 +1,21 @@
 <?xml version="1.0"?>
 <project>
 	<output type="static">zlib</output>
-	<flags compiler="msvc">W3</flags>
+	<flags compiler="msvc">MT;W3</flags>
 	<include>include</include>
-	<source>src/adler32.c</source>
-	<source>src/compress.c</source>
-	<source>src/crc32.c</source>
-	<source>src/deflate.c</source>
-	<source>src/gzclose.c</source>
-	<source>src/gzlib.c</source>
-	<source>src/gzread.c</source>
-	<source>src/gzwrite.c</source>
-	<source>src/infback.c</source>
-	<source>src/inffast.c</source>
-	<source>src/inflate.c</source>
-	<source>src/inftrees.c</source>
-	<source>src/trees.c</source>
-	<source>src/uncompr.c</source>
-	<source>src/zutil.c</source>
+	<source f="src/adler32.c"/>
+	<source f="src/compress.c"/>
+	<source f="src/crc32.c"/>
+	<source f="src/deflate.c"/>
+	<source f="src/gzclose.c"/>
+	<source f="src/gzlib.c"/>
+	<source f="src/gzread.c"/>
+	<source f="src/gzwrite.c"/>
+	<source f="src/infback.c"/>
+	<source f="src/inffast.c"/>
+	<source f="src/inflate.c"/>
+	<source f="src/inftrees.c"/>
+	<source f="src/trees.c"/>
+	<source f="src/uncompr.c"/>
+	<source f="src/zutil.c"/>
 </project>

@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<project>
+	<output type="static">pcre</output>
+	<flags compiler="msvc">MT;W3</flags>
+	<flags type="pp">HAVE_CONFIG_H;PCRE_STATIC</flags>
+	<include>include</include>
+	<source f="src/pcreposix.c"/>
+	<source f="src/pcre_byte_order.c"/>
+	<source f="src/pcre_chartables.c"/>
+	<source f="src/pcre_compile.c"/>
+	<source f="src/pcre_config.c"/>
+	<source f="src/pcre_dfa_exec.c"/>
+	<source f="src/pcre_exec.c"/>
+	<source f="src/pcre_fullinfo.c"/>
+	<source f="src/pcre_get.c"/>
+	<source f="src/pcre_globals.c"/>
+	<source f="src/pcre_jit_compile.c"/>
+	<source f="src/pcre_maketables.c"/>
+	<source f="src/pcre_newline.c"/>
+	<source f="src/pcre_ord2utf8.c"/>
+	<source f="src/pcre_printint.c"/>
+	<source f="src/pcre_refcount.c"/>
+	<source f="src/pcre_string_utils.c"/>
+	<source f="src/pcre_study.c"/>
+	<source f="src/pcre_tables.c"/>
+	<source f="src/pcre_ucd.c"/>
+	<source f="src/pcre_valid_utf8.c"/>
+	<source f="src/pcre_version.c"/>
+	<source f="src/pcre_xclass.c"/>
+</project>

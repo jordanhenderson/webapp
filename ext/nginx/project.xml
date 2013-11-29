@@ -1,143 +1,151 @@
 <?xml version="1.0"?>
 <project>
 	<depends link="true">../zlib</depends>
-	<include>src/core;src/event;src/event/modules;src/http/modules;src/http;src/mail;src/mysql;include;../zlib/include</include>
+	<depends link="true">../pcre</depends>
+	<depends link="true">../openssl</depends>
+	<include>src/core;src/event;src/event/modules;src/http/modules;src/http;src/mail;src/mysql;include;../zlib/include;../pcre/include;../openssl/include</include>
 	<include os="win32">src/os/win32</include>
 	<include os="linux">src/os/unix</include>
-	<source>src/core/nginx.c</source>
-	<source>src/core/ngx_array.c</source>
-	<source>src/core/ngx_buf.c</source>
-	<source>src/core/ngx_conf_file.c</source>
-	<source>src/core/ngx_connection.c</source>
-	<source>src/core/ngx_cpuinfo.c</source>
-	<source>src/core/ngx_crc32.c</source>
-	<source>src/core/ngx_crypt.c</source>
-	<source>src/core/ngx_cycle.c</source>
-	<source>src/core/ngx_file.c</source>
-	<source>src/core/ngx_hash.c</source>
-	<source>src/core/ngx_inet.c</source>
-	<source>src/core/ngx_list.c</source>
-	<source>src/core/ngx_log.c</source>
-	<source>src/core/ngx_md5.c</source>
-	<source>src/core/ngx_murmurhash.c</source>
-	<source>src/core/ngx_open_file_cache.c</source>
-	<source>src/core/ngx_output_chain.c</source>
-	<source>src/core/ngx_palloc.c</source>
-	<source>src/core/ngx_parse.c</source>
-	<source>src/core/ngx_queue.c</source>
-	<source>src/core/ngx_radix_tree.c</source>
-	<source>src/core/ngx_rbtree.c</source>
-	<source>src/core/ngx_resolver.c</source>
-	<source>src/core/ngx_shmtx.c</source>
-	<source>src/core/ngx_slab.c</source>
-	<source>src/core/ngx_spinlock.c</source>
-	<source>src/core/ngx_string.c</source>
-	<source>src/core/ngx_times.c</source>
-	<source os="win32">src/event/modules/ngx_iocp_module.c</source>
-	<source os="win32">src/event/modules/ngx_win32_select_module.c</source>
-	<source os="linux">src/event/modules/ngx_epoll_module.c</source>
-	<source>src/event/ngx_event.c</source>
-	<source>src/event/ngx_event_accept.c</source>
-	<source os="win32">src/event/ngx_event_acceptex.c</source>
-	<source>src/event/ngx_event_busy_lock.c</source>
-	<source>src/event/ngx_event_connect.c</source>
-	<source>src/event/ngx_event_pipe.c</source>
-	<source>src/event/ngx_event_posted.c</source>
-	<source>src/event/ngx_event_timer.c</source>
-	<source>src/http/modules/ngx_http_access_module.c</source>
-	<source>src/http/modules/ngx_http_auth_basic_module.c</source>
-	<source>src/http/modules/ngx_http_autoindex_module.c</source>
-	<source>src/http/modules/ngx_http_browser_module.c</source>
-	<source>src/http/modules/ngx_http_charset_filter_module.c</source>
-	<source>src/http/modules/ngx_http_chunked_filter_module.c</source>
-	<source>src/http/modules/ngx_http_empty_gif_module.c</source>
-	<source>src/http/modules/ngx_http_fastcgi_module.c</source>
-	<source>src/http/modules/ngx_http_geo_module.c</source>
-	<source>src/http/modules/ngx_http_gzip_filter_module.c</source>
-	<source>src/http/modules/ngx_http_headers_filter_module.c</source>
-	<source>src/http/modules/ngx_http_index_module.c</source>
-	<source>src/http/modules/ngx_http_limit_conn_module.c</source>
-	<source>src/http/modules/ngx_http_limit_req_module.c</source>
-	<source>src/http/modules/ngx_http_log_module.c</source>
-	<source>src/http/modules/ngx_http_map_module.c</source>
-	<source>src/http/modules/ngx_http_memcached_module.c</source>
-	<source>src/http/modules/ngx_http_not_modified_filter_module.c</source>
-	<source>src/http/modules/ngx_http_proxy_module.c</source>
-	<source>src/http/modules/ngx_http_range_filter_module.c</source>
-	<source>src/http/modules/ngx_http_referer_module.c</source>
-	<source>src/http/modules/ngx_http_scgi_module.c</source>
-	<source>src/http/modules/ngx_http_split_clients_module.c</source>
-	<source>src/http/modules/ngx_http_ssi_filter_module.c</source>
-	<source>src/http/modules/ngx_http_static_module.c</source>
-	<source>src/http/modules/ngx_http_upstream_ip_hash_module.c</source>
-	<source>src/http/modules/ngx_http_upstream_keepalive_module.c</source>
-	<source>src/http/modules/ngx_http_upstream_least_conn_module.c</source>
-	<source>src/http/modules/ngx_http_userid_filter_module.c</source>
-	<source>src/http/modules/ngx_http_uwsgi_module.c</source>
-	<source>src/http/ngx_http.c</source>
-	<source>src/http/ngx_http_busy_lock.c</source>
-	<source>src/http/ngx_http_copy_filter_module.c</source>
-	<source>src/http/ngx_http_core_module.c</source>
-	<source>src/http/ngx_http_file_cache.c</source>
-	<source>src/http/ngx_http_header_filter_module.c</source>
-	<source>src/http/ngx_http_parse.c</source>
-	<source>src/http/ngx_http_parse_time.c</source>
-	<source>src/http/ngx_http_postpone_filter_module.c</source>
-	<source>src/http/ngx_http_request.c</source>
-	<source>src/http/ngx_http_request_body.c</source>
-	<source>src/http/ngx_http_script.c</source>
-	<source>src/http/ngx_http_spdy.c</source>
-	<source>src/http/ngx_http_spdy_filter_module.c</source>
-	<source>src/http/ngx_http_spdy_module.c</source>
-	<source>src/http/ngx_http_special_response.c</source>
-	<source>src/http/ngx_http_upstream.c</source>
-	<source>src/http/ngx_http_upstream_round_robin.c</source>
-	<source>src/http/ngx_http_variables.c</source>
-	<source>src/http/ngx_http_write_filter_module.c</source>
-	<source>src/ngx_http_webapp_module.c</source>
-	<source>src/ngx_modules.c</source>
-	<source>src/ngx_pch.c</source>
-	<source os="win32">src/os/win32/ngx_alloc.c</source>
-	<source os="win32">src/os/win32/ngx_errno.c</source>
-	<source os="win32">src/os/win32/ngx_event_log.c</source>
-	<source os="win32">src/os/win32/ngx_files.c</source>
-	<source os="win32">src/os/win32/ngx_process.c</source>
-	<source os="win32">src/os/win32/ngx_process_cycle.c</source>
-	<source os="win32">src/os/win32/ngx_shmem.c</source>
-	<source os="win32">src/os/win32/ngx_socket.c</source>
-	<source os="win32">src/os/win32/ngx_thread.c</source>
-	<source os="win32">src/os/win32/ngx_time.c</source>
-	<source os="win32">src/os/win32/ngx_udp_wsarecv.c</source>
-	<source os="win32">src/os/win32/ngx_user.c</source>
-	<source os="win32">src/os/win32/ngx_win32_init.c</source>
-	<source os="win32">src/os/win32/ngx_wsarecv.c</source>
-	<source os="win32">src/os/win32/ngx_wsarecv_chain.c</source>
-	<source os="win32">src/os/win32/ngx_wsasend.c</source>
-	<source os="win32">src/os/win32/ngx_wsasend_chain.c</source>
-	<source os="linux">src/os/unix/ngx_time.c</source>
-	<source os="linux">src/os/unix/ngx_errno.c</source>
-	<source os="linux">src/os/unix/ngx_alloc.c</source>
-	<source os="linux">src/os/unix/ngx_files.c</source>
-	<source os="linux">src/os/unix/ngx_socket.c</source>
-	<source os="linux">src/os/unix/ngx_recv.c</source>
-	<source os="linux">src/os/unix/ngx_readv_chain.c</source>
-	<source os="linux">src/os/unix/ngx_udp_recv.c</source>
-	<source os="linux">src/os/unix/ngx_send.c</source>
-	<source os="linux">src/os/unix/ngx_writev_chain.c</source>
-	<source os="linux">src/os/unix/ngx_channel.c</source>
-	<source os="linux">src/os/unix/ngx_shmem.c</source>
-	<source os="linux">src/os/unix/ngx_process.c</source>
-	<source os="linux">src/os/unix/ngx_daemon.c</source>
-	<source os="linux">src/os/unix/ngx_setaffinity.c</source>
-	<source os="linux">src/os/unix/ngx_setproctitle.c</source>
-	<source os="linux">src/os/unix/ngx_posix_init.c</source>
-	<source os="linux">src/os/unix/ngx_user.c</source>
-	<source os="linux">src/os/unix/ngx_process_cycle.c</source>
-	<source os="linux">src/os/unix/ngx_linux_init.c</source>
-	<source os="linux">src/os/unix/ngx_linux_sendfile_chain.c</source>
 	<output type="app">nginx</output>
 	<flags compiler="msvc">MT;W3</flags>
 	<flags step="link" compiler="gcc">pthread;lcrypt</flags>
 	<flags step="link" compiler="msvc">SUBSYSTEM:CONSOLE</flags>
-	<link compiler="msvc">ws2_32.lib;kernel32.lib;user32.lib;Advapi32.lib</link>
+	<flags type="pp">PCRE_STATIC</flags>
+	<link compiler="msvc">ws2_32.lib;kernel32.lib;user32.lib;Advapi32.lib;crypt32.lib;Gdi32.lib</link>
+	<source f="src/core/nginx.c"/>
+	<source f="src/core/ngx_array.c"/>
+	<source f="src/core/ngx_buf.c"/>
+	<source f="src/core/ngx_conf_file.c"/>
+	<source f="src/core/ngx_connection.c"/>
+	<source f="src/core/ngx_cpuinfo.c"/>
+	<source f="src/core/ngx_crc32.c"/>
+	<source f="src/core/ngx_crypt.c"/>
+	<source f="src/core/ngx_cycle.c"/>
+	<source f="src/core/ngx_file.c"/>
+	<source f="src/core/ngx_hash.c"/>
+	<source f="src/core/ngx_inet.c"/>
+	<source f="src/core/ngx_list.c"/>
+	<source f="src/core/ngx_log.c"/>
+	<source f="src/core/ngx_md5.c"/>
+	<source f="src/core/ngx_murmurhash.c"/>
+	<source f="src/core/ngx_open_file_cache.c"/>
+	<source f="src/core/ngx_output_chain.c"/>
+	<source f="src/core/ngx_palloc.c"/>
+	<source f="src/core/ngx_parse.c"/>
+	<source f="src/core/ngx_queue.c"/>
+	<source f="src/core/ngx_radix_tree.c"/>
+	<source f="src/core/ngx_rbtree.c"/>
+	<source f="src/core/ngx_regex.c"/>
+	<source f="src/core/ngx_resolver.c"/>
+	<source f="src/core/ngx_shmtx.c"/>
+	<source f="src/core/ngx_slab.c"/>
+	<source f="src/core/ngx_spinlock.c"/>
+	<source f="src/core/ngx_string.c"/>
+	<source f="src/core/ngx_times.c"/>
+	<source f="src/event/modules/ngx_iocp_module.c" os="win32"/>
+	<source f="src/event/modules/ngx_win32_select_module.c" os="win32"/>
+	<source f="src/event/modules/ngx_epoll_module.c" os="linux"/>
+	<source f="src/event/ngx_event.c"/>
+	<source f="src/event/ngx_event_accept.c"/>
+	<source f="src/event/ngx_event_acceptex.c" os="win32"/>
+	<source f="src/event/ngx_event_busy_lock.c"/>
+	<source f="src/event/ngx_event_connect.c"/>
+	<source f="src/event/ngx_event_openssl.c"/>
+	<source f="src/event/ngx_event_openssl_stapling.c"/>
+	<source f="src/event/ngx_event_pipe.c"/>
+	<source f="src/event/ngx_event_posted.c"/>
+	<source f="src/event/ngx_event_timer.c"/>
+	<source f="src/http/modules/ngx_http_access_module.c"/>
+	<source f="src/http/modules/ngx_http_auth_basic_module.c"/>
+	<source f="src/http/modules/ngx_http_autoindex_module.c"/>
+	<source f="src/http/modules/ngx_http_browser_module.c"/>
+	<source f="src/http/modules/ngx_http_charset_filter_module.c"/>
+	<source f="src/http/modules/ngx_http_chunked_filter_module.c"/>
+	<source f="src/http/modules/ngx_http_empty_gif_module.c"/>
+	<source f="src/http/modules/ngx_http_fastcgi_module.c"/>
+	<source f="src/http/modules/ngx_http_geo_module.c"/>
+	<source f="src/http/modules/ngx_http_gzip_filter_module.c"/>
+	<source f="src/http/modules/ngx_http_headers_filter_module.c"/>
+	<source f="src/http/modules/ngx_http_index_module.c"/>
+	<source f="src/http/modules/ngx_http_limit_conn_module.c"/>
+	<source f="src/http/modules/ngx_http_limit_req_module.c"/>
+	<source f="src/http/modules/ngx_http_log_module.c"/>
+	<source f="src/http/modules/ngx_http_map_module.c"/>
+	<source f="src/http/modules/ngx_http_memcached_module.c"/>
+	<source f="src/http/modules/ngx_http_not_modified_filter_module.c"/>
+	<source f="src/http/modules/ngx_http_proxy_module.c"/>
+	<source f="src/http/modules/ngx_http_range_filter_module.c"/>
+	<source f="src/http/modules/ngx_http_referer_module.c"/>
+	<source f="src/http/modules/ngx_http_rewrite_module.c"/>
+	<source f="src/http/modules/ngx_http_scgi_module.c"/>
+	<source f="src/http/modules/ngx_http_split_clients_module.c"/>
+	<source f="src/http/modules/ngx_http_ssi_filter_module.c"/>
+	<source f="src/http/modules/ngx_http_ssl_module.c"/>
+	<source f="src/http/modules/ngx_http_static_module.c"/>
+	<source f="src/http/modules/ngx_http_upstream_ip_hash_module.c"/>
+	<source f="src/http/modules/ngx_http_upstream_keepalive_module.c"/>
+	<source f="src/http/modules/ngx_http_upstream_least_conn_module.c"/>
+	<source f="src/http/modules/ngx_http_userid_filter_module.c"/>
+	<source f="src/http/modules/ngx_http_uwsgi_module.c"/>
+	<source f="src/http/ngx_http.c"/>
+	<source f="src/http/ngx_http_busy_lock.c"/>
+	<source f="src/http/ngx_http_copy_filter_module.c"/>
+	<source f="src/http/ngx_http_core_module.c"/>
+	<source f="src/http/ngx_http_file_cache.c"/>
+	<source f="src/http/ngx_http_header_filter_module.c"/>
+	<source f="src/http/ngx_http_parse.c"/>
+	<source f="src/http/ngx_http_parse_time.c"/>
+	<source f="src/http/ngx_http_postpone_filter_module.c"/>
+	<source f="src/http/ngx_http_request.c"/>
+	<source f="src/http/ngx_http_request_body.c"/>
+	<source f="src/http/ngx_http_script.c"/>
+	<source f="src/http/ngx_http_spdy.c"/>
+	<source f="src/http/ngx_http_spdy_filter_module.c"/>
+	<source f="src/http/ngx_http_spdy_module.c"/>
+	<source f="src/http/ngx_http_special_response.c"/>
+	<source f="src/http/ngx_http_upstream.c"/>
+	<source f="src/http/ngx_http_upstream_round_robin.c"/>
+	<source f="src/http/ngx_http_variables.c"/>
+	<source f="src/http/ngx_http_write_filter_module.c"/>
+	<source f="src/ngx_http_webapp_module.c"/>
+	<source f="src/ngx_modules.c"/>
+	<source f="src/ngx_pch.c"/>
+	<source f="src/os/win32/ngx_alloc.c" os="win32"/>
+	<source f="src/os/win32/ngx_errno.c" os="win32"/>
+	<source f="src/os/win32/ngx_event_log.c" os="win32"/>
+	<source f="src/os/win32/ngx_files.c" os="win32"/>
+	<source f="src/os/win32/ngx_process.c" os="win32"/>
+	<source f="src/os/win32/ngx_process_cycle.c" os="win32"/>
+	<source f="src/os/win32/ngx_shmem.c" os="win32"/>
+	<source f="src/os/win32/ngx_socket.c" os="win32"/>
+	<source f="src/os/win32/ngx_thread.c" os="win32"/>
+	<source f="src/os/win32/ngx_time.c" os="win32"/>
+	<source f="src/os/win32/ngx_udp_wsarecv.c" os="win32"/>
+	<source f="src/os/win32/ngx_user.c" os="win32"/>
+	<source f="src/os/win32/ngx_win32_init.c" os="win32"/>
+	<source f="src/os/win32/ngx_wsarecv.c" os="win32"/>
+	<source f="src/os/win32/ngx_wsarecv_chain.c" os="win32"/>
+	<source f="src/os/win32/ngx_wsasend.c" os="win32"/>
+	<source f="src/os/win32/ngx_wsasend_chain.c" os="win32"/>
+	<source f="src/os/unix/ngx_time.c" os="linux"/>
+	<source f="src/os/unix/ngx_errno.c" os="linux"/>
+	<source f="src/os/unix/ngx_alloc.c" os="linux"/>
+	<source f="src/os/unix/ngx_files.c" os="linux"/>
+	<source f="src/os/unix/ngx_socket.c" os="linux"/>
+	<source f="src/os/unix/ngx_recv.c" os="linux"/>
+	<source f="src/os/unix/ngx_readv_chain.c" os="linux"/>
+	<source f="src/os/unix/ngx_udp_recv.c" os="linux"/>
+	<source f="src/os/unix/ngx_send.c" os="linux"/>
+	<source f="src/os/unix/ngx_writev_chain.c" os="linux"/>
+	<source f="src/os/unix/ngx_channel.c" os="linux"/>
+	<source f="src/os/unix/ngx_shmem.c" os="linux"/>
+	<source f="src/os/unix/ngx_process.c" os="linux"/>
+	<source f="src/os/unix/ngx_daemon.c" os="linux"/>
+	<source f="src/os/unix/ngx_setaffinity.c" os="linux"/>
+	<source f="src/os/unix/ngx_setproctitle.c" os="linux"/>
+	<source f="src/os/unix/ngx_posix_init.c" os="linux"/>
+	<source f="src/os/unix/ngx_user.c" os="linux"/>
+	<source f="src/os/unix/ngx_process_cycle.c" os="linux"/>
+	<source f="src/os/unix/ngx_linux_init.c" os="linux"/>
+	<source f="src/os/unix/ngx_linux_sendfile_chain.c" os="linux"/>
 </project>
