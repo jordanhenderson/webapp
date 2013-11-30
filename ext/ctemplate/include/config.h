@@ -2,16 +2,16 @@
 /* src/config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Namespace for Google classes */
-#define GOOGLE_NAMESPACE ::ctemplate
+#define GOOGLE_NAMESPACE ctemplate
 
 /* the location of <unordered_map> or <hash_map> */
-#define HASH_MAP_H <tr1/unordered_map>
+#define HASH_MAP_H <unordered_map>
 
 /* the namespace of hash_map/hash_set */
-#define HASH_NAMESPACE std::tr1
+#define HASH_NAMESPACE std
 
 /* the location of <unordered_set> or <hash_set> */
-#define HASH_SET_H <tr1/unordered_set>
+#define HASH_SET_H <unordered_set>
 
 /* Define to 1 if you have the <byteswap.h> header file. */
 #define HAVE_BYTESWAP_H 1

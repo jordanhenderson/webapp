@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<project>
+	<output type="static">tbb</output>
+	<flags compiler="msvc">MT;W3;wd4996;EHsc</flags>
+	<include>include;include/tbb;include/rml/include</include>
+	<flags type="pp">__TBB_NO_IMPLICIT_LINKAGE;__TBB_BUILD</flags>
+	<flags type="pp" compiler="msvc">USE_WINTHREAD</flags>
+	<flags type="pp" compiler="gcc">USE_PTHREAD</flags>
+    <source f="include/rml/client/rml_omp.cpp"/>
+    <source f="include/rml/client/rml_tbb.cpp"/>
+    <source f="src/arena.cpp"/>
+    <source f="src/cache_aligned_allocator.cpp"/>
+    <source f="src/concurrent_monitor.cpp"/>
+    <source f="src/concurrent_queue.cpp"/>
+    <source f="src/concurrent_vector.cpp"/>
+    <source f="src/condition_variable.cpp"/>
+    <source f="src/dynamic_link.cpp"/>
+    <source f="src/governor.cpp"/>
+    <source f="src/market.cpp"/>
+    <source f="src/mutex.cpp"/>
+    <source f="src/observer_proxy.cpp"/>
+    <source f="src/private_server.cpp"/>
+    <source f="src/scheduler.cpp"/>
+    <source f="src/semaphore.cpp"/>
+    <source f="src/spin_mutex.cpp"/>
+    <source f="src/spin_rw_mutex.cpp"/>
+    <source f="src/task.cpp"/>
+    <source f="src/task_group_context.cpp"/>
+    <source f="src/tbb_main.cpp"/>
+    <source f="src/tbb_misc.cpp"/>
+    <source f="src/tbb_misc_ex.cpp"/>
+    <source f="src/tbb_thread.cpp"/>
+</project>

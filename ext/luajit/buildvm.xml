@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<project>
+	<output type="app">buildvm</output>
+	<flags compiler="msvc">MT;W3;wd4996</flags>
+	<flags type="pp">LUAJIT_ENABLE_LUA52COMPAT</flags>
+	<include>include</include>
+	<source f="src/host/buildvm.c"></source>
+	<source f="src/host/buildvm_asm.c"></source>
+	<source f="src/host/buildvm_fold.c"></source>
+	<source f="src/host/buildvm_lib.c"></source>
+	<source f="src/host/buildvm_peobj.c"></source>
+	<prebuild os="win32">$(OUTPUT)$(SEP)minilua dynasm/dynasm.lua -LN -D WIN -D JIT -D FFI -o src/host/buildvm_arch.h src/vm_x86.dasc</prebuild>
+</project>

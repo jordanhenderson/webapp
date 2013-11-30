@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<project>
+	<depends link="true">../ext/ctemplate</depends>
+	<depends link="true">../ext/libjpeg</depends>
+	<depends link="true">../ext/lpng</depends>
+	<depends link="true">../ext/mysql</depends>
+	<depends link="true">../ext/luajit</depends>
+	<depends link="true">../ext/opencv</depends>
+	<depends link="true">../ext/openssl</depends>
+	<depends link="true">../ext/tbb</depends>
+	<depends link="true">../ext/zlib</depends>
+	<depends>../ext/nginx</depends>
+	<output type="app">webapp</output>
+	<flags compiler="msvc">MT;W3;wd4996;EHsc</flags>
+	<flags type="pp">UNICODE;_UNICODE;_WIN32_WINNT=0x0501;ASIO_MSVC;ASIO_WINDOWS;ASIO_STANDALONE;CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA</flags>
+	<include>include;../ext/nginx/include;../ext/nginx/src/core/;../ext/nginx/src/http/modules;../ext/nginx/src/event/modules;../ext/nginx/src/event;../ext/nginx/src/http;../ext/nginx/src/os/win32;../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/tbb/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;../ext/ctemplate/include/windows;../ext/ctemplate/include;../ext/openssl/include;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;include/lpeg;include/cjson;include/readerwriterqueue;../ext/mysql/include</include>
+    <source f="src/Session.cpp"/>
+	<source f="src/cjson/dtoa.c"/>
+    <source f="src/cjson/g_fmt.c"/>
+    <source f="src/cjson/lua_cjson.c"/>
+    <source f="src/cjson/strbuf.c"/>
+    <source f="src/CPlatform.cpp"/>
+	<source f="src/Database.cpp"/>
+	<source f="src/FileSystem.cpp"/>
+	<source f="src/Gif.cpp"/>
+	<source f="src/gif/dgif_lib.c"/>
+	<source f="src/gif/egif_lib.c"/>
+	<source f="src/gif/gifalloc.c"/>
+	<source f="src/gif/gif_err.c"/>
+	<source f="src/gif/gif_font.c"/>
+	<source f="src/gif/gif_hash.c"/>
+	<source f="src/Image.cpp"/>
+    <source f="src/lpeg/lpcap.c"/>
+    <source f="src/lpeg/lpcode.c"/>
+    <source f="src/lpeg/lpprint.c"/>
+    <source f="src/lpeg/lptree.c"/>
+    <source f="src/lpeg/lpvm.c"/>
+    <source f="src/main.cpp"/>
+    <source f="src/Hooks.cpp"/>
+    <source f="src/pngnq/neuquant32.c"/>
+	<source f="src/RamSession.cpp"/>
+    <source f="src/Parameters.cpp"/>
+	
+    <source f="src/snprintf.c"/>
+    <source f="src/sqlite/sqlite3.c"/>
+	<source f="src/Webapp.cpp"/>
+</project>

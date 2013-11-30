@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<project>
+	<output type="static">lpng</output>
+	<flags compiler="msvc">MT;W3</flags>
+	<include>include;../zlib/include</include>
+	<source f="src/png.c"/>
+	<source f="src/pngerror.c"/>
+	<source f="src/pngget.c"/>
+	<source f="src/pngmem.c"/>
+	<source f="src/pngpread.c"/>
+	<source f="src/pngread.c"/>
+	<source f="src/pngrio.c"/>
+	<source f="src/pngrtran.c"/>
+	<source f="src/pngrutil.c"/>
+	<source f="src/pngset.c"/>
+	<source f="src/pngtrans.c"/>
+	<source f="src/pngwio.c"/>
+	<source f="src/pngwrite.c"/>
+	<source f="src/pngwtran.c"/>
+	<source f="src/pngwutil.c"/>
+</project>

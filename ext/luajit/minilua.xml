@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<project>
+	<output type="app">minilua</output>
+	<flags compiler="msvc">MT;W3;wd4996</flags>
+	<include>include</include>
+	<source f="src/host/minilua.c"></source>
+</project>

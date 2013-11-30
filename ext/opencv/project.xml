@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<project>
+	<output type="static">opencv</output>
+	<flags compiler="msvc">MT;W3;EHsc</flags>
+	<flags type="pp">__TBB_NO_IMPLICIT_LINKAGE;__OPENCV_BUILD</flags>
+	<include>modules/imgproc/src;modules/imgproc/include;modules/core/include;./;../tbb/include;../zlib/include</include>
+	<source f="modules/core/src/algorithm.cpp"/>
+    <source f="modules/core/src/alloc.cpp"/>
+    <source f="modules/core/src/arithm.cpp"/>
+    <source f="modules/core/src/array.cpp"/>
+    <source f="modules/core/src/convert.cpp"/>
+    <source f="modules/core/src/copy.cpp"/>
+    <source f="modules/core/src/datastructs.cpp"/>
+    <source f="modules/core/src/drawing.cpp"/>
+    <source f="modules/core/src/dxt.cpp"/>
+    <source f="modules/core/src/glob.cpp"/>
+    <source f="modules/core/src/gl_core_3_1.cpp"/>
+    <source f="modules/core/src/gpu_cuda_mem.cpp"/>
+    <source f="modules/core/src/gpu_info.cpp"/>
+    <source f="modules/core/src/gpu_mat.cpp"/>
+    <source f="modules/core/src/gpu_stream.cpp"/>
+    <source f="modules/core/src/lapack.cpp"/>
+    <source f="modules/core/src/mathfuncs.cpp"/>
+    <source f="modules/core/src/matmul.cpp"/>
+    <source f="modules/core/src/matop.cpp"/>
+    <source f="modules/core/src/matrix.cpp"/>
+    <source f="modules/core/src/opengl.cpp"/>
+    <source f="modules/core/src/out.cpp"/>
+    <source f="modules/core/src/parallel.cpp"/>
+    <source f="modules/core/src/persistence.cpp"/>
+    <source f="modules/core/src/rand.cpp"/>
+    <source f="modules/core/src/stat.cpp"/>
+    <source f="modules/core/src/stl.cpp"/>
+    <source f="modules/core/src/system.cpp"/>
+    <source f="modules/core/src/tables.cpp"/>
+    <source f="modules/core/src/types.cpp"/>
+	<source f="modules/imgproc/src/imgwarp.cpp"/>
+</project>
