@@ -73,7 +73,7 @@ void Webapp::runHandler(LuaParam* params, int nArgs, const char* filename) {
 	luaL_loadfile(L, "plugins/process.lua");
 	lua_pushlstring(L, filename, strlen(filename));
 	lua_setglobal(L, "file");
-	webapp_str_t static_strings[WEBAPP_STATIC_STRINGS] = {};
+	webapp_str_t* static_strings = new webapp_str_t[WEBAPP_STATIC_STRINGS];
 	//Create temporary webapp_str_t for string creation between vm/c
 
 	lua_pushlightuserdata(L, static_strings);
@@ -90,6 +90,7 @@ void Webapp::runHandler(LuaParam* params, int nArgs, const char* filename) {
 	if(lua_pcall(L, 0, 0, 0) != 0) {
 		printf("Error: %s", lua_tostring(L, -1));
 	}
+	delete[] static_strings;
 	lua_close(L);
 }
 
@@ -153,7 +154,7 @@ void Webapp::processRequest(Request* r, int amount) {
 			}
 			if (selected_node == -1) {
 				//Something went wrong - node not found, maybe session id missing. 
-				selected_node = node_counter++ % (nWorkers + 1);
+				selected_node = node_counter++ % nWorkers;
 				
 			}
 
