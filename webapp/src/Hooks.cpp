@@ -1,7 +1,5 @@
 #include "Platform.h"
 #include "Webapp.h"
-#include <tbb/mutex.h>
-#include <tbb/compat/condition_variable>
 
 extern "C" {
 #include "Hooks.h"
@@ -28,10 +26,32 @@ int Template_SetValue(TemplateDictionary* dict, webapp_str_t* key, webapp_str_t*
 	return 0;
 }
 
+TemplateDictionary* GetTemplate(Webapp* gallery, webapp_str_t* page) {
+	if(gallery != NULL) return gallery->getTemplate(string(page->data, page->len));
+	else return NULL;
+}
+
+
+void RenderTemplate(Webapp* gallery, ctemplate::TemplateDictionary* dict, webapp_str_t* page, Request* request, webapp_str_t* out) {
+	if (gallery == NULL || dict == NULL || page == NULL || request == NULL || out == NULL) return;
+	string* output = new string;
+	string pagestr(page->data, page->len);
+	ExpandTemplate(*gallery->basepath + "/content/" + pagestr, STRIP_WHITESPACE, dict, output);
+
+	//Clean up the template dictionary.
+	delete dict;
+	
+	out->data = output->c_str();
+	out->len = output->length();
+
+	request->handler.push_back(output);
+
+}
+
 //Cleaned up by backend.
 int GetSessionValue(SessionStore* session, webapp_str_t* key, webapp_str_t* out) {
 	if(session == NULL || key == NULL) 
-		return NULL;
+		return 0;
 
 	const string* s = &session->get(string(key->data, key->len));
 	if (out != NULL) {
@@ -68,7 +88,7 @@ Request* GetNextRequest(RequestQueue* requests) {
 	if (requests == NULL) return NULL;
 	Request* request = NULL;
 	{
-		unique_lock<tbb::mutex> lk(requests->cv_mutex);
+		unique_lock<mutex> lk(requests->cv_mutex);
 		while (!requests->requests.try_dequeue(request) && !requests->aborted)
 			requests->cv.wait(lk);
 	}
@@ -133,28 +153,6 @@ void FinishRequest(Request* request) {
 	delete request;
 }
 
-TemplateDictionary* GetTemplate(Webapp* gallery, webapp_str_t* page) {
-	if(gallery != NULL) return gallery->getTemplate(string(page->data, page->len));
-	else return NULL;
-}
-
-
-void RenderTemplate(Webapp* gallery, ctemplate::TemplateDictionary* dict, webapp_str_t* page, Request* request, webapp_str_t* out) {
-	if (gallery == NULL || dict == NULL || page == NULL || request == NULL || out == NULL) return;
-	string* output = new string;
-	string pagestr(page->data, page->len);
-	ExpandTemplate(*gallery->basepath + "/content/" + pagestr, STRIP_WHITESPACE, dict, output);
-
-	//Clean up the template dictionary.
-	delete dict;
-	
-	out->data = output->c_str();
-	out->len = output->length();
-
-	request->handler.push_back(output);
-
-}
-
 void WriteData(asio::ip::tcp::socket* socket, webapp_str_t* data) {
 	if (socket == NULL || data == NULL || data->data == NULL) return;
 	*(int*)data->data = htons(data->len - 4);
@@ -183,7 +181,7 @@ long long ExecString(Database* db, webapp_str_t* query) {
 }
 
 int SelectQuery(Database* db, Query* q) {
-	if (db == NULL || q == NULL) return NULL;
+	if (db == NULL || q == NULL) return 0;
 	db->select(q);
 	return q->status;
 }

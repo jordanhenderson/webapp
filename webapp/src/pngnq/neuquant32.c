@@ -777,7 +777,7 @@ nq_colour_vector internaliseLearningPixel(int r_in, int g_in, int b_in, int al_i
 
 /* round_clamp(x) rounds x to an integer value and then clamps it in the range [MINZERO, MAX255]. 
  */
-inline float round_clamp(float x) {
+float round_clamp(float x) {
     x = round(x);
     if(x < MINZERO) {
         return MINZERO;
@@ -1242,7 +1242,7 @@ int contest(nq_colour_vector target_pix)
  * 
  * XXX Posneg could be turned into a vector function in various ways.
  */
-inline double posneg(double x) {
+double posneg(double x) {
     if(x < 0) {
         return -1.0;
     } else {

@@ -7,6 +7,7 @@
 #endif
 #endif
 
+#include <algorithm>
 #include <memory>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -21,8 +22,12 @@
 #include <list>
 #include <queue>
 
-#include <tbb/compat/thread>
-#include <tbb/mutex.h>
+#ifdef __GNUC__
+#define HAVE_VSNPRINTF 1
+#define HAVE_SNPRINTF 1
+#define HAVE_VASPRINTF 1
+#define HAVE_ASPRINTF 1
+#endif
 
 extern "C" {
 #if !HAVE_VSNPRINTF

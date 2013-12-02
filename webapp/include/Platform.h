@@ -9,10 +9,12 @@
 #include <unistd.h>
 #endif
 
+#ifdef WIN32
 #define vsnprintf rpl_vsnprintf
 #define snprintf rpl_snprintf
 #define vasprintf rpl_vasprintf
 #define asprintf rpl_asprintf
+#endif
 
 #if _MSC_VER
 	#pragma warning (disable : 4503)

@@ -2,6 +2,7 @@
 <project>
 	<output type="static">ctemplate</output>
 	<flags compiler="msvc">MT;W3;EHsc</flags>
+        <flags compiler="gcc">std=c++11</flags>
 	<include os="win32">include/windows;include</include>
 	<include os="linux">include</include>
 	<source f="src/base/arena.cc"/>

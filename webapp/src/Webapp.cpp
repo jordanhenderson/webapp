@@ -43,7 +43,7 @@ void BackgroundQueue::execute() {
 		LuaParam _v[] = { { "app", _handler }, { "db", &_handler->database } };
 		_handler->runHandler(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/process_queue.lua");
 		//Since this task must run at all times (not per request - *should* block in lua vm)
-		Sleep(1000); //Lua VM returned, something went wrong.
+		this_thread::sleep_for(chrono::milliseconds(1000));
 	}
 }
 
@@ -234,7 +234,7 @@ Webapp::~Webapp() {
 
 }
 
-TemplateDictionary* Webapp::getTemplate(std::string& page) {
+TemplateDictionary* Webapp::getTemplate(const std::string& page) {
 	if(contains(contentList, page)) {
 		TemplateDictionary *d = contentTemplates.MakeCopy("");
 		for(string& data: serverTemplateFiles) {

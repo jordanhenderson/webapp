@@ -2,6 +2,7 @@
 <project>
 	<output type="static">openssl</output>
 	<flags compiler="msvc">MT;W3</flags>
+	<flags type="pp">OPENSSL_NO_ASM</flags>
 	<include>include;src/crypto;src/crypto/asn1;src/crypto/evp;src/crypto/modes;src/ssl;src/engines/</include>
 	<source f="src/crypto/aes/aes_cbc.c" />
     <source f="src/crypto/aes/aes_cfb.c" />
@@ -444,7 +445,6 @@
     <source f="src/crypto/pkcs7/pk7_attr.c" />
     <source f="src/crypto/pkcs7/pk7_dgst.c" />
     <source f="src/crypto/pkcs7/pk7_doit.c" />
-    <source f="src/crypto/pkcs7/pk7_enc.c" />
     <source f="src/crypto/pkcs7/pk7_lib.c" />
     <source f="src/crypto/pkcs7/pk7_mime.c" />
     <source f="src/crypto/pkcs7/pk7_smime.c" />

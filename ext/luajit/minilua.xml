@@ -2,6 +2,7 @@
 <project>
 	<output type="app">minilua</output>
 	<flags compiler="msvc">MT;W3;wd4996</flags>
+	<flags step="link" compiler="gcc">lm</flags>
 	<include>include</include>
 	<source f="src/host/minilua.c"></source>
 </project>

@@ -9,11 +9,13 @@
 #include "Database.h"
 #include "Session.h"
 #include <ctemplate/template.h>
-#include <tbb/compat/thread>
+#include <thread>
+#include <mutex>
+#include <chrono>
+#include <condition_variable>
 #include <tbb/task.h>
-#include <tbb/concurrent_queue.h>
-#include <tbb/compat/condition_variable>
 #include "readerwriterqueue.h"
+#include <tbb/concurrent_queue.h>
 
 extern "C" {
 #include <lua.h>
@@ -25,11 +27,6 @@ extern "C" {
 
 
 #include "Schema.h"
-
-//Default atomic value
-static unsigned int atomic_zero = 0;
-#define ATOMIC_ZERO (tbb::atomic<unsigned int>&)atomic_zero
-
 
 class Logging;
 class Webapp;
@@ -69,10 +66,10 @@ struct Request {
 };
 
 struct RequestQueue {
-	tbb::atomic<unsigned int> aborted = ATOMIC_ZERO;
+	std::atomic<unsigned int> aborted{0};
 	moodycamel::ReaderWriterQueue<Request*> requests;
-	tbb::mutex lock; //Mutex to control the allowance of new connection handling.
-	tbb::mutex cv_mutex; //Mutex to allow ready cv
+	std::mutex lock; //Mutex to control the allowance of new connection handling.
+	std::mutex cv_mutex; //Mutex to allow ready cv
 	std::condition_variable cv;
 	RequestQueue() : requests(WEBAPP_DEFAULT_QUEUESIZE) {};
 };
@@ -83,9 +80,9 @@ struct Process {
 };
 
 
-class TaskBase : public tbb::tbb_thread {
+class TaskBase : public std::thread {
 public:
-	TaskBase(Webapp* handler) : _handler(handler), tbb::tbb_thread(start_thread, this) {};
+	TaskBase(Webapp* handler) : _handler(handler), std::thread(start_thread, this) {};
 	
 	virtual void execute() = 0;
 	static void start_thread(TaskBase* base) { base->execute(); };
@@ -131,8 +128,6 @@ private:
 	//Client Template filedata vector (stores templates for later de-allocation).
 	std::vector<TemplateData> clientTemplateFiles;
 	std::vector<std::string> serverTemplateFiles;
-
-	void process_thread(std::thread*);
 	
 	static int LuaWriter(lua_State* L, const void* p, size_t sz, void* ud);
 	void runHandler(LuaParam* params, int nArgs, const char* filename);
@@ -151,7 +146,7 @@ public:
 	std::vector<TaskBase*> workers;
 	Webapp(Parameters* params, asio::io_service& io_svc);
 	~Webapp();
-	ctemplate::TemplateDictionary* getTemplate(std::string& page);
+	ctemplate::TemplateDictionary* getTemplate(const std::string& page);
 	void refresh_templates();
 	
 	const std::string* basepath;
@@ -161,7 +156,7 @@ public:
 	Database database;
 	std::vector<Sessions*> sessions;
 
-	tbb::atomic<unsigned int> waiting = ATOMIC_ZERO;
+	std::atomic<unsigned int> waiting{0};
 	unsigned int aborted = 0;
 
 	tbb::concurrent_bounded_queue<Process*> background_queue;

@@ -12,8 +12,11 @@
 	<depends>../ext/nginx</depends>
 	<output type="app">webapp</output>
 	<flags compiler="msvc">MT;W3;wd4996;EHsc</flags>
-	<flags type="pp">UNICODE;_UNICODE;_WIN32_WINNT=0x0501;ASIO_MSVC;ASIO_WINDOWS;ASIO_STANDALONE;CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;SQLITE_THREADSAFE=1;WIN32;_CONSOLE;_WIN32;_VISUALC_;SQLITE_ENABLE_COLUMN_METADATA</flags>
-	<include>include;../ext/nginx/include;../ext/nginx/src/core/;../ext/nginx/src/http/modules;../ext/nginx/src/event/modules;../ext/nginx/src/event;../ext/nginx/src/http;../ext/nginx/src/os/win32;../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/tbb/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;../ext/ctemplate/include/windows;../ext/ctemplate/include;../ext/openssl/include;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;include/lpeg;include/cjson;include/readerwriterqueue;../ext/mysql/include</include>
+	<flags compiler="gcc">std=c++11;std=c99</flags>
+	<flags step="link" compiler="gcc">pthread;lcrypt;lstdc++;lm;ldl</flags>
+	<flags type="pp" compiler="msvc">UNICODE;_UNICODE;_WIN32_WINNT=0x0501;ASIO_MSVC;ASIO_WINDOWS;WIN32;_CONSOLE;_WIN32;_VISUALC_</flags>
+	<flags type="pp">CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;ASIO_STANDALONE;SQLITE_THREADSAFE=1;SQLITE_ENABLE_COLUMN_METADATA</flags>
+	<include>include;../ext/nginx/include;../ext/nginx/src/core/;../ext/nginx/src/http/modules;../ext/nginx/src/event/modules;../ext/nginx/src/event;../ext/nginx/src/http;../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/tbb/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;../ext/ctemplate/include;../ext/ctemplate/include;../ext/openssl/include;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;include/lpeg;include/cjson;include/readerwriterqueue;../ext/mysql/include</include>
 	<link compiler="msvc">ws2_32.lib;kernel32.lib;user32.lib;Advapi32.lib;crypt32.lib</link>
     <source f="src/Session.cpp"/>
 	<source f="src/cjson/dtoa.c"/>

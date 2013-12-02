@@ -1,7 +1,9 @@
 <?xml version="1.0"?>
 <project>
 	<output type="static">libmysql</output>
-	<flags compiler="msvc" type="pp">WIN32;_WINDOWS;ENABLED_DEBUG_SYNC;HAVE_YASSL;YASSL_PREFIX;get_tty_password_ext=yassl_mysql_get_tty_password_ext;get_tty_password=yassl_mysql_get_tty_password;HAVE_OPENSSL;MULTI_THREADED;_CRT_SECURE_NO_DEPRECATE;_WIN32_WINNT=0x0502;WIN32_LEAN_AND_MEAN;HAVE_GETCURRENTPROCESSORNUMBER=1;HAVE_CONFIG_H;AUTHENTICATION_WIN;SECURITY_WIN32;DEBUG_ERRROR_LOG;WINAUTH_USE_DBUG_LIB</flags>
+	<flags compiler="msvc" type="pp">WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_WIN32_WINNT=0x0502;WIN32_LEAN_AND_MEAN;AUTHENTICATION_WIN;SECURITY_WIN32;WINAUTH_USE_DBUG_LIB</flags>
+	<flags type="pp">ENABLED_DEBUG_SYNC;HAVE_YASSL;YASSL_PREFIX;get_tty_password_ext=yassl_mysql_get_tty_password_ext;get_tty_password=yassl_mysql_get_tty_password;HAVE_OPENSSL;MULTI_THREADED;HAVE_GETCURRENTPROCESSORNUMBER=1;HAVE_CONFIG_H;DEBUG_ERRROR_LOG</flags>
+	
 	<flags compiler="msvc">MT;W3</flags>
 	<include>include;libmysql;regex;sql;strings;yassl/include;taocrypt/include;taocrypt/mySTL;../zlib/include</include>
 	<include os="win32">authentication_win</include>
