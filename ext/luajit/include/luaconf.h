@@ -40,7 +40,7 @@
 #define LUA_XCPATH
 #endif
 #define LUA_PATH_DEFAULT \
-  "./?.lua;" LUA_JDIR"?.lua;" LUA_LDIR"?.lua;" LUA_LDIR"?/init.lua" LUA_XPATH
+  "./?.lua;" LUA_JDIR"?.lua;" LUA_LDIR"?.lua;" "./plugins/?.lua;" LUA_LDIR"?/init.lua" LUA_XPATH
 #define LUA_CPATH_DEFAULT \
   "./?.so;" LUA_CDIR"?.so;" LUA_XCPATH LUA_CDIR"loadall.so"
 #endif
