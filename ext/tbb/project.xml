@@ -3,7 +3,7 @@
 	<output type="static">tbb</output>
 	<flags compiler="msvc">MT;W3;wd4996;EHsc</flags>
 	<include>include;rml/include</include>
-	<flags type="pp">__TBB_NO_IMPLICIT_LINKAGE;__TBB_BUILD</flags>
+	<flags type="pp">__TBB_NO_IMPLICIT_LINKAGE;__TBB_BUILD;_WIN32_WINNT=0x0502</flags>
 	<flags type="pp" compiler="msvc">USE_WINTHREAD</flags>
 	<flags type="pp" compiler="gcc">USE_PTHREAD</flags>
     <source f="rml/client/rml_omp.cpp"/>

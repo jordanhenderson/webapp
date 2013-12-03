@@ -10,10 +10,10 @@ two modules will be linked.  Preserve this property!
 
 #ifndef WIN32
 #include <unistd.h>
-#define S_IREAD S_IRUSR
-#define S_IWRITE S_IWUSR
 #else
 #include <io.h>
+#define S_IRUSR S_IREAD 
+#define S_IWUSR S_IWRITE 
 #endif
 #include <stdint.h>
 #include <stdlib.h>

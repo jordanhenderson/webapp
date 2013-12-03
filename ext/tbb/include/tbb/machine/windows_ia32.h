@@ -30,6 +30,8 @@
 #error Do not #include this internal file directly; use public TBB headers instead.
 #endif
 
+#include <windows.h> 
+
 #define __TBB_machine_windows_ia32_H
 
 #include "msvc_ia32_common.h"
