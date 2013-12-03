@@ -12,10 +12,10 @@
 	<depends>../ext/nginx</depends>
 	<output type="app">webapp</output>
 	<flags compiler="msvc">MT;W3;wd4996;EHsc</flags>
-	<flags compiler="gcc">std=c++11;std=c99;fvisibility=hidden</flags>
-	<flags step="link" compiler="gcc">pthread;lstdc++;lm;ldl;fvisibility=hidden</flags>
+	<flags compiler="gcc">std=c++11;std=c99;fvisibility=hidden;g</flags>
+	<flags step="link" compiler="gcc">pthread;lstdc++;lm;ldl;fvisibility=hidden;Wl,--dynamic-list=api.exp</flags>
 	<flags type="pp" compiler="msvc">UNICODE;_UNICODE;_WIN32_WINNT=0x0502;ASIO_MSVC;ASIO_WINDOWS;WIN32;_CONSOLE;_WIN32;_VISUALC_</flags>
-	<flags type="pp">CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAG1E;ASIO_STANDALONE;SQLITE_THREADSAFE=1;SQLITE_ENABLE_COLUMN_METADATA</flags>
+	<flags type="pp">CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;ASIO_STANDALONE;SQLITE_THREADSAFE=1;SQLITE_ENABLE_COLUMN_METADATA</flags>
 	<include>include;../ext/nginx/include;../ext/nginx/src/core/;../ext/nginx/src/http/modules;../ext/nginx/src/event/modules;../ext/nginx/src/event;../ext/nginx/src/http;../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/tbb/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;../ext/openssl/include;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;include/lpeg;include/cjson;include/readerwriterqueue;../ext/mysql/include</include>
 	<include os="win32">../ext/ctemplate/include/windows</include>
 	<include os="linux">../ext/ctemplate/include</include>

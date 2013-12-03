@@ -1,0 +1,43 @@
+{
+	GetTemplate;
+	Template_ShowGlobalSection;
+	Template_ShowSection;
+	Template_SetValue;
+	GetSessionValue;
+	SetSessionValue;
+	GetSession;
+	NewSession;
+	DestroySession;
+	GetSessionID;
+	FinishRequest;
+	QueueProcess;
+	GetNextProcess;
+	GetTemplate;
+	RenderTemplate;
+	WriteData;
+	GetParameter;
+
+	GetNextRequest;
+	ClearCache;
+	DisableBackgroundQueue;
+
+	ConnectDatabase;
+	ExecString;
+	SelectQuery;
+	CreateQuery;
+	SetQuery;
+	AppendQuery;
+	BindParameter;
+	GetCell;
+	GetColumnName;
+	
+	SHA256_Init;
+	SHA256_Update;
+	SHA256_Final;
+	SHA512_Init;
+	SHA512_Update;
+	SHA512_Final;
+	SHA384_Init;
+	SHA384_Update;
+	SHA384_Final;
+};
