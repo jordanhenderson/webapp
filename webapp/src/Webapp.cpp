@@ -94,7 +94,7 @@ void Webapp::runHandler(LuaParam* params, int nArgs, const char* filename) {
 	lua_close(L);
 }
 
-Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :  contentTemplates(""),
+Webapp::Webapp(Parameters* params, asio::io_service& io_svc) : 
 										params(params),
 										basepath(&params->get("basepath")),
 										dbpath(&params->get("dbpath")), 
@@ -236,7 +236,7 @@ Webapp::~Webapp() {
 
 TemplateDictionary* Webapp::getTemplate(const std::string& page) {
 	if(contains(contentList, page)) {
-		TemplateDictionary *d = contentTemplates.MakeCopy("");
+		TemplateDictionary *d = new TemplateDictionary("");
 		for(string& data: serverTemplateFiles) {
 			d->AddIncludeDictionary(data)->SetFilename(data);
 		}

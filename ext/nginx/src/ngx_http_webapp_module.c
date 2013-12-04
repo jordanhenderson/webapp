@@ -152,7 +152,7 @@ static void conn_read(ngx_event_t *ev) {
 			}
 		}
 
-	} else if(ev->timedout) {
+	} else {
 		webapp_request_fail(r, c);
 		ev->complete = 1;
 	}
@@ -168,7 +168,7 @@ static void conn_write(ngx_event_t *ev) {
 	ngx_str_t* output_chain[STRING_VARS] = {0};
 	
 	int body_size = 0;
-	if(!ev->timedout) {
+	if(!ev->timedout && !ev->complete) {
 		if(r->method == NGX_HTTP_GET || r->method == NGX_HTTP_POST) {
 			int i = 0; //For later loop.
 			//Initialize possibly unused values to 0.
@@ -262,16 +262,17 @@ static void conn_write(ngx_event_t *ev) {
 			}
 			
 			c->send(c, buf->start, buf->end - buf->start); 
-			
+
+			if (ngx_handle_read_event(c->read, 0) != NGX_OK) {
+				ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
+				return;
+			}
 			ev->complete = 1;
 
 
 			
 		} //WEBAPP_METHOD_PROCESS
-	} else { //ev->timedout
-		webapp_request_fail(r, c);
-		
-	}
+	} 
 	return;
 
 bad_method:

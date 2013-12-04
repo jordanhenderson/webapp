@@ -128,9 +128,6 @@ public:
 
 class Webapp : public Internal {
 private:
-	//template dictionary used by all 'content' templates.
-	ctemplate::TemplateDictionary contentTemplates;
-
 	//(content) template filename vector
 	std::vector<std::string> contentList;
 

@@ -20,9 +20,9 @@ int Template_ShowSection(TemplateDictionary* dict, webapp_str_t* section) {
 	return 0;
 }
 
-int Template_SetValue(TemplateDictionary* dict, webapp_str_t* key, webapp_str_t* value) {
+int Template_SetGlobalValue(TemplateDictionary* dict, webapp_str_t* key, webapp_str_t* value) {
 	if (dict == NULL || key == NULL || value == NULL) return 1;
-	dict->SetValue(TemplateString(key->data, key->len), TemplateString(key->data, key->len));
+	dict->SetTemplateGlobalValue(TemplateString(key->data, key->len), TemplateString(value->data, value->len));
 	return 0;
 }
 
