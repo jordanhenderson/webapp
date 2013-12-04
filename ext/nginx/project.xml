@@ -12,6 +12,7 @@
 	<flags step="link" compiler="msvc">SUBSYSTEM:CONSOLE</flags>
 	<flags type="pp">PCRE_STATIC</flags>
 	<link compiler="msvc">ws2_32.lib;kernel32.lib;user32.lib;Advapi32.lib;crypt32.lib;Gdi32.lib</link>
+	<source f="src/ngx_http_webapp_module.c"/>
 	<source f="src/core/nginx.c"/>
 	<source f="src/core/ngx_array.c"/>
 	<source f="src/core/ngx_buf.c"/>
@@ -107,7 +108,7 @@
 	<source f="src/http/ngx_http_upstream_round_robin.c"/>
 	<source f="src/http/ngx_http_variables.c"/>
 	<source f="src/http/ngx_http_write_filter_module.c"/>
-	<source f="src/ngx_http_webapp_module.c"/>
+
 	<source f="src/ngx_modules.c"/>
 	<source f="src/ngx_pch.c"/>
 	<source f="src/os/win32/ngx_alloc.c" os="win32"/>

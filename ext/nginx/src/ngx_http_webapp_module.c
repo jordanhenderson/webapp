@@ -64,8 +64,6 @@ ngx_module_t  ngx_http_webapp_module = {
 
 typedef struct {
 	ngx_http_request_t* r;
-	ngx_str_t* output_chain[STRING_VARS];
-	int chain_counter;
 	//State machine vars.
 	int read_bytes;
 	int written_bytes;
@@ -104,7 +102,7 @@ static void conn_read(ngx_event_t *ev) {
 	webapp_request_t* wr = c->data;
 	ngx_http_request_t* r = wr->r;
 
-	if(!ev->timedout && wr->chain_counter == STRING_VARS) {
+	if(!ev->timedout) {
 		//TODO: output buffer.
 		if(wr->response_size == 0) {
 			int tmp_recv = ngx_recv(c, wr->tmp_buf + wr->tmp_written, 4 - wr->tmp_written);
@@ -162,121 +160,115 @@ static void conn_read(ngx_event_t *ev) {
 
 static void conn_write(ngx_event_t *ev) {
 	ssize_t bytes;
-	ngx_str_t data_out;
 	ngx_connection_t* c = ev->data;
 	webapp_request_t* wr = c->data;
 	ngx_http_request_t* r = wr->r;
+	ngx_chain_t webapp_request;
+	webapp_request.next = NULL;
+	ngx_str_t* output_chain[STRING_VARS] = {0};
+	
+	int body_size = 0;
 	if(!ev->timedout) {
-		if(wr->written_bytes == 0) {
-			data_out.data = ngx_palloc(r->pool, PROTOCOL_VARS * sizeof(int));
-			//Collect/write size information for client retrieval.
-			if(r->method == NGX_HTTP_GET || r->method == NGX_HTTP_POST) {
-				int content_len = 0;
-				int cookie_len = 0;
-				int agent_len = 0;
-				int host_len = 0;
-				ngx_str_t* cookies = NULL;
-				ngx_str_t* host = NULL;
-				if(r->method == NGX_HTTP_POST && r->headers_in.content_length != NULL)
-					content_len = atoi((const char*)r->headers_in.content_length->value.data);
-				if(r->headers_in.cookies.elts != NULL) {
-					cookies = &(*((ngx_table_elt_t**)r->headers_in.cookies.elts))->value;
-					cookie_len = cookies->len;
-				}
-				if(r->headers_in.host != NULL) {
-					host = &r->headers_in.host->value;
-					host_len = host->len;
-				}
+		if(r->method == NGX_HTTP_GET || r->method == NGX_HTTP_POST) {
+			int i = 0; //For later loop.
+			//Initialize possibly unused values to 0.
+			int content_len = 0, cookie_len = 0, agent_len = 0, host_len = 0;
+			
+			output_chain[0] = &r->unparsed_uri;
 
-				//Start building the size information.
-				*(int*)(data_out.data) = htons(r->unparsed_uri.len); //URI len
-				wr->output_chain[0] = &r->unparsed_uri;
-				
-				*(int*)(data_out.data + INT_INTERVAL(1)) = htons(host_len); //HOST len
-				wr->output_chain[1] = host;
-
-				if (r->headers_in.user_agent != NULL) {
-					agent_len = r->headers_in.user_agent->value.len;
-					*(int*)(data_out.data + INT_INTERVAL(2)) = htons(agent_len); //User agent length
-					wr->output_chain[2] = &r->headers_in.user_agent->value;
-				}
-
-				//TODO: Parse cookie array properly (send raw array chunks to upstream rather than unparsed headers).
-				*(int*)(data_out.data + INT_INTERVAL(3)) = htons(cookie_len); //COOKIES length
-				wr->output_chain[3] = cookies;
-
-				*(int*)(data_out.data + INT_INTERVAL(4)) = htons(r->method); //HTTP Method
-				
-				*(int*)(data_out.data + INT_INTERVAL(5)) = htons(content_len); //Content length
-				data_out.len = PROTOCOL_VARS * sizeof(int);
-
-				if(r->method == NGX_HTTP_POST && r->request_body != NULL && r->request_body->bufs != NULL) {
-					if(r->request_body->bufs->next != NULL) {
-						ngx_chain_t* cl;
+			if(r->headers_in.cookies.elts != NULL) {
+				output_chain[3] = &(*((ngx_table_elt_t**)r->headers_in.cookies.elts))->value;
+				cookie_len = output_chain[3]->len;
+			}
+			if(r->headers_in.host != NULL) {
+				output_chain[1] = &r->headers_in.host->value;
+				host_len = output_chain[1]->len;
+			}
+			if (r->headers_in.user_agent != NULL) {
+				agent_len = r->headers_in.user_agent->value.len;
+				output_chain[2] = &r->headers_in.user_agent->value;
+			}
+			if(r->method == NGX_HTTP_POST && r->headers_in.content_length != NULL &&
+				r->request_body != NULL && r->request_body->bufs != NULL) {
+				content_len = atoi((const char*)r->headers_in.content_length->value.data);
+			}
+			
+			body_size += r->unparsed_uri.len + 1;
+			body_size += host_len + 1;
+			body_size += agent_len + 1;
+			body_size += cookie_len + 1;
+			body_size += content_len + 1;
+			
+			
+			ngx_buf_t* buf = webapp_request.buf = 
+				ngx_create_temp_buf(r->pool, PROTOCOL_VARS * sizeof(int) + body_size);
+			int* last = (int*)buf->pos;
+			//Start building the size information.
+			*last++ = htons(r->unparsed_uri.len); //URI len
+			*last++ = htons(host_len); //HOST len
+			*last++ = htons(agent_len); //User agent length
+			//TODO: Parse cookie array properly (send raw array chunks to upstream rather than unparsed headers).
+			*last++ = htons(cookie_len); //COOKIES length
+			*last++ = htons(r->method); //HTTP Method
+			*last++ = htons(content_len); //Content length
+			//Handle HTTP Body content (only for POST requests).
+			if (content_len > 0) {
+				if(r->request_body->bufs->next != NULL) {
+					ngx_chain_t* cl;
+					ngx_buf_t* buf;
+					int len = 0;
+					for(cl = r->request_body->bufs; cl; cl = cl->next) {
+						buf = cl->buf;
+						len += buf->last - buf->pos;
+					}
+					
+					if(len != 0) {
+						int bytes_out = 0;
+						u_char* req = ngx_palloc(r->pool, len);
 						ngx_buf_t* buf;
-						int len = 0;
 						for(cl = r->request_body->bufs; cl; cl = cl->next) {
+							int current_buf_len;
 							buf = cl->buf;
-							len += buf->last - buf->pos;
+							current_buf_len = buf->last - buf->pos;
+							req = ngx_copy(req, cl->buf->pos, current_buf_len);
+							bytes_out += current_buf_len;
 						}
-						
-						if(len != 0) {
-							int bytes_out = 0;
-							u_char* req = ngx_palloc(r->pool, len);
-							ngx_buf_t* buf;
-							for(cl = r->request_body->bufs; cl; cl = cl->next) {
-								int current_buf_len;
-								buf = cl->buf;
-								current_buf_len = buf->last - buf->pos;
-								req = ngx_copy(req, cl->buf->pos, current_buf_len);
-								bytes_out += current_buf_len;
-							}
-							wr->request_body.data = req - len;
-							wr->request_body.len = content_len;
-						}
-
-					} else {
-						ngx_buf_t* buf = r->request_body->bufs->buf;
-						wr->request_body.data = buf->pos;
+						wr->request_body.data = req - len;
 						wr->request_body.len = content_len;
 					}
-
-					wr->output_chain[4] = &wr->request_body;
+				} else {
+					ngx_buf_t* buf = r->request_body->bufs->buf;
+					wr->request_body.data = buf->pos;
+					wr->request_body.len = content_len;
 				}
-
-			} else {
-				//Bad method type. Don't process.
+				output_chain[4] = &wr->request_body;
+			} //NGX_HTTP_POST
+			
+			buf->last = (u_char*)last;
+			//Create the header buffer.
+			for(i = 0; i < STRING_VARS; i++) {
+				if(output_chain[i] == NULL || output_chain[i]->data == NULL) {
+					ngx_memcpy(buf->last, "\0", 1);
+					buf->last++;
+				} else {
+					buf->last = ngx_copy(buf->last, output_chain[i]->data,
+						output_chain[i]->len + 1);
+				}
+			}
+			
+			if (c->send_chain(c, &webapp_request, 0) == NGX_CHAIN_ERROR) {
 				goto bad_method;
 			}
-		} else if(wr->chain_counter < STRING_VARS) {
-			//write uri
-			if(wr->output_chain[wr->chain_counter] != NULL) {
-				data_out.data = wr->output_chain[wr->chain_counter]->data;
-				data_out.len = wr->output_chain[wr->chain_counter]->len + 1;
-			}
-			else {
-				data_out.len = 1;
-				data_out.data = (u_char*)"\0";
-			}
-			wr->chain_counter++;
-		} else {
 			ev->complete = 1;
-			return;
-		}
-		
-		bytes = ngx_send(c, data_out.data, data_out.len);
-		if(bytes < 0) {
-			ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
-			ngx_close_connection(c);
-			ev->complete = 1;
-		} else {
-			wr->written_bytes+=bytes;
-		}
-		return;
-
-	} else {
+			ngx_add_timer(c->read, 3000);
+			if (ngx_handle_read_event(c->read, 0) != NGX_OK) {
+				ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
+				return;
+			}
+		} //WEBAPP_METHOD_PROCESS
+	} else { //ev->timedout
 		webapp_request_fail(r, c);
-		ev->complete = 1;
+		
 	}
 	return;
 
@@ -316,8 +308,13 @@ static void webapp_body_ready(ngx_http_request_t* r) {
 		conn->data = webapp;
 		conn->read->handler = conn_read;
 		conn->write->handler = conn_write;
-		ngx_add_timer(conn->read, 3000);
 		ngx_add_timer(conn->write, 3000);
+		
+			
+		if (ngx_handle_write_event(conn->write, 0) != NGX_OK) {
+			ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
+			return;
+		}
 
 		//Make our request depend on a (sub) connection (backend peer).
 		if (r->method != NGX_HTTP_POST)

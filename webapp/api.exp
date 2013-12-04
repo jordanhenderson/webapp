@@ -40,4 +40,6 @@
 	SHA384_Init;
 	SHA384_Update;
 	SHA384_Final;
+	
+	GetWebappTime;
 };

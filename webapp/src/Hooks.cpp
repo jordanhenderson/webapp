@@ -224,3 +224,8 @@ void GetParameter(Webapp* app, int param, webapp_str_t* out) {
 		break;
 	}
 }
+
+unsigned long long GetWebappTime() {
+	time_t current_time = time(0);
+	return current_time * 1000000;
+}
