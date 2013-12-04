@@ -80,14 +80,21 @@ struct Process {
 };
 
 
-class TaskBase : public std::thread {
+class TaskBase {
 public:
-	TaskBase(Webapp* handler) : _handler(handler), std::thread(start_thread, this) {};
-	
+	TaskBase(Webapp* handler) : _handler(handler) {};
+	void start() {
+		_worker = std::thread([this]{execute();});
+	}
+	void join() {
+		_worker.join();
+	}
 	virtual void execute() = 0;
 	static void start_thread(TaskBase* base) { base->execute(); };
 protected:
 	Webapp* _handler = NULL;
+private:
+	std::thread _worker;
 };
 
 class WebappTask : public TaskBase {
@@ -97,7 +104,9 @@ private:
 	RequestQueue* _requests;
 public:
 	WebappTask(Webapp* handler, Sessions* sessions, RequestQueue* requests) 
-		: TaskBase(handler), _sessions(sessions), _requests(requests) {};
+		: TaskBase(handler), _sessions(sessions), _requests(requests) {
+			start();
+		};
 	void execute();
 	friend class Webapp;
 };

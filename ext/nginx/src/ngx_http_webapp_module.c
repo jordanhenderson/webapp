@@ -256,10 +256,18 @@ static void conn_write(ngx_event_t *ev) {
 				}
 			}
 			
+			if (ngx_handle_write_event(c->write, 0) != NGX_OK) {
+				ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
+				return;
+			}
+			
 			if (c->send_chain(c, &webapp_request, 0) == NGX_CHAIN_ERROR) {
 				goto bad_method;
 			}
+			
 			ev->complete = 1;
+
+
 			ngx_add_timer(c->read, 3000);
 			if (ngx_handle_read_event(c->read, 0) != NGX_OK) {
 				ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
@@ -310,12 +318,6 @@ static void webapp_body_ready(ngx_http_request_t* r) {
 		conn->write->handler = conn_write;
 		ngx_add_timer(conn->write, 3000);
 		
-			
-		if (ngx_handle_write_event(conn->write, 0) != NGX_OK) {
-			ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
-			return;
-		}
-
 		//Make our request depend on a (sub) connection (backend peer).
 		if (r->method != NGX_HTTP_POST)
 			r->main->count++;
