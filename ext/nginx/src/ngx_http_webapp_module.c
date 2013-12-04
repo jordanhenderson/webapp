@@ -68,7 +68,7 @@ typedef struct {
 	int read_bytes;
 	int written_bytes;
 	int response_size;
-	u_char tmp_buf[4];
+	u_char tmp_buf[2];
 	int tmp_written;
 	u_char* response_buf;
 	ngx_str_t request_body;
@@ -105,10 +105,10 @@ static void conn_read(ngx_event_t *ev) {
 	if(!ev->timedout) {
 		//TODO: output buffer.
 		if(wr->response_size == 0) {
-			int tmp_recv = ngx_recv(c, wr->tmp_buf + wr->tmp_written, 4 - wr->tmp_written);
+			int tmp_recv = ngx_recv(c, wr->tmp_buf + wr->tmp_written, 2 - wr->tmp_written);
 			if(tmp_recv > 0)
 				wr->tmp_written += tmp_recv;
-			if(wr->response_buf == NULL && wr->tmp_written >= 4) {
+			if(wr->response_buf == NULL && wr->tmp_written >= 2) {
 				wr->response_size = ntohs(*(int*)wr->tmp_buf);
 				wr->response_buf = ngx_palloc(r->pool, wr->response_size);
 			}
@@ -261,18 +261,12 @@ static void conn_write(ngx_event_t *ev) {
 				return;
 			}
 			
-			if (c->send_chain(c, &webapp_request, 0) == NGX_CHAIN_ERROR) {
-				goto bad_method;
-			}
+			c->send(c, buf->start, buf->end - buf->start); 
 			
 			ev->complete = 1;
 
 
-			ngx_add_timer(c->read, 3000);
-			if (ngx_handle_read_event(c->read, 0) != NGX_OK) {
-				ngx_http_finalize_request(r, NGX_HTTP_SERVICE_UNAVAILABLE);
-				return;
-			}
+			
 		} //WEBAPP_METHOD_PROCESS
 	} else { //ev->timedout
 		webapp_request_fail(r, c);
@@ -317,7 +311,7 @@ static void webapp_body_ready(ngx_http_request_t* r) {
 		conn->read->handler = conn_read;
 		conn->write->handler = conn_write;
 		ngx_add_timer(conn->write, 3000);
-		
+		ngx_add_timer(conn->read, 3000);
 		//Make our request depend on a (sub) connection (backend peer).
 		if (r->method != NGX_HTTP_POST)
 			r->main->count++;

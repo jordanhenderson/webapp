@@ -161,7 +161,7 @@ void Webapp::processRequest(Request* r, int amount) {
 			RequestQueue* queue = requests.at(selected_node);
 			queue->lock.lock();
 			queue->requests.enqueue(r);
-			queue->cv.notify_one();
+			queue->cv.notify_all();
 			queue->lock.unlock();
 	});
 }

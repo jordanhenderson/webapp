@@ -22,7 +22,7 @@ int Template_ShowSection(TemplateDictionary* dict, webapp_str_t* section) {
 
 int Template_SetValue(TemplateDictionary* dict, webapp_str_t* key, webapp_str_t* value) {
 	if (dict == NULL || key == NULL || value == NULL) return 1;
-	dict->SetValueWithoutCopy(TemplateString(key->data, key->len), TemplateString(key->data, key->len));
+	dict->SetValue(TemplateString(key->data, key->len), TemplateString(key->data, key->len));
 	return 0;
 }
 
@@ -155,7 +155,7 @@ void FinishRequest(Request* request) {
 
 void WriteData(asio::ip::tcp::socket* socket, webapp_str_t* data) {
 	if (socket == NULL || data == NULL || data->data == NULL) return;
-	*(int*)data->data = htons(data->len - 4);
+	*(unsigned short*)data->data = htons(data->len - sizeof(unsigned short));
 	try {
 		asio::write(*socket, asio::buffer(data->data, data->len));
 	}
