@@ -3,8 +3,6 @@
 #include "Platform.h"
 #include "Session.h"
 #include "Webapp.h"
-#include <ctemplate/template.h>
-#include <tbb/concurrent_queue.h>
 
 APIEXPORT int Template_ShowGlobalSection(ctemplate::TemplateDictionary*, webapp_str_t* section);
 APIEXPORT int Template_ShowSection(ctemplate::TemplateDictionary*, webapp_str_t* section);

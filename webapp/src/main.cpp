@@ -6,6 +6,9 @@ using namespace std;
 
 int main(int argc, char* argv[]) {
 	setlocale(LC_ALL, "");
+	#ifdef __GNUC__
+	setvbuf(stdout, NULL, _IONBF, 0);
+	#endif
 	Parameters params;
 	//TODO convert params to file
 	File conf;

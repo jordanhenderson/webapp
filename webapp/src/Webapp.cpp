@@ -1,13 +1,10 @@
 #include "Webapp.h"
 #include "Image.h"
-#include <tbb/task_scheduler_init.h>
-#include <tbb/task.h>
 
 using namespace std;
 using namespace ctemplate;
 using namespace asio;
 using namespace asio::ip;
-using namespace tbb;
 
 #ifdef _WIN32
 #pragma warning(disable:4316)
@@ -32,9 +29,11 @@ void WebappTask::execute() {
 				for (RequestQueue* q : _handler->requests) {
 					q->cleanupTask = 0; //Only clean up once!
 					//Lock the queue, prevent it from finishing until cleaner does
-					q->lock.lock();
 					//Abort the lua vm.
 					q->aborted = 1;
+					//Lock the queue after aborting; if processRequests() locks, then it will abort
+					//shortly after.
+					q->lock.lock();
 					q->cv.notify_one();
 				}
 			}
@@ -106,8 +105,7 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :
 										basepath(&params->get("basepath")),
 										dbpath(&params->get("dbpath")), 
 										svc(io_svc), 
-										nWorkers(tbb::task_scheduler_init::default_num_threads() > 2 ?
-										tbb::task_scheduler_init::default_num_threads() - 1 : 2)
+										nWorkers(WEBAPP_NUM_THREADS - 1)
 									{
 
 	//Run init plugin
@@ -117,8 +115,10 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :
 	refresh_templates();
 
 	//Create/allocate initial worker tasks.
-	if (background_queue_enabled) //uses a worker thread.
+	if (background_queue_enabled) {//uses a worker thread.
+		background_queue = new LockedQueue<Process*>();
 		workers.push_back(new BackgroundQueue(this));
+	}
 	
 	for (unsigned int i = background_queue_enabled; i < nWorkers; i++) {
 		unsigned int worker_id = background_queue_enabled ? i - 1 : i;
@@ -234,6 +234,9 @@ Webapp::~Webapp() {
 			delete t;
 		}
 	}
+	
+	if(background_queue != NULL) delete background_queue;
+	
 	//Clean up client template files.
 	for(TemplateData& file: clientTemplateFiles) {
 		delete(file.data);

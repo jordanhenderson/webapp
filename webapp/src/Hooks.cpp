@@ -113,19 +113,18 @@ void DisableBackgroundQueue(Webapp* app) {
 }
 
 void QueueProcess(Webapp* app, webapp_str_t* func, webapp_str_t* vars) {
-	if (func == NULL || vars == NULL || app == NULL) return;
+	if (func == NULL || vars == NULL || app == NULL 
+		|| !app->background_queue_enabled) return;
 	Process* p = new Process();
 	p->func = webapp_strdup(func);
 	p->vars = webapp_strdup(vars);
-	app->background_queue.push(p);
+	app->background_queue->enqueue(p);
 
 }
 
 Process* GetNextProcess(Webapp* app) {
 	if (app == NULL) return NULL;
-	Process* p = NULL;
-	app->background_queue.pop(p);
-	return p;
+	return app->background_queue->dequeue();
 }
 
 int GetSessionID(SessionStore* session, webapp_str_t* out) {

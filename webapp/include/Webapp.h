@@ -13,9 +13,7 @@
 #include <mutex>
 #include <chrono>
 #include <condition_variable>
-#include <tbb/task.h>
 #include "readerwriterqueue.h"
-#include <tbb/concurrent_queue.h>
 
 extern "C" {
 #include <lua.h>
@@ -80,6 +78,26 @@ struct Process {
 	webapp_str_t* vars = NULL;
 };
 
+template<typename T>
+class LockedQueue {
+private:
+	std::condition_variable cv;
+	std::mutex cv_lk;
+	std::mutex el;
+	moodycamel::ReaderWriterQueue<T> process_queue;
+public:
+	//Each operation (enqueue, dequeue) must be done single threaded.
+	//We need MP (Multi-Producer), so lock production.
+	void enqueue(T i) { el.lock(); process_queue.enqueue(i); cv.notify_one(); el.unlock(); }
+	T dequeue() { 
+		T r;
+		std::unique_lock<std::mutex> lk(cv_lk);
+		while (!process_queue.try_dequeue(r)) cv.wait(lk);
+		return r; 
+	}
+	LockedQueue() : process_queue(WEBAPP_DEFAULT_QUEUESIZE) {};
+};
+
 
 class TaskBase {
 public:
@@ -114,7 +132,9 @@ public:
 
 class BackgroundQueue : public TaskBase {
 public:
-	BackgroundQueue(Webapp* handler) : TaskBase(handler) {};
+	BackgroundQueue(Webapp* handler) : TaskBase(handler) {
+			start();
+		};
 	void execute();
 	friend class Webapp;
 };
@@ -157,7 +177,7 @@ public:
 	std::atomic<unsigned int> waiting{0};
 	unsigned int aborted = 0;
 
-	tbb::concurrent_bounded_queue<Process*> background_queue;
+	LockedQueue<Process*>* background_queue = NULL;
 	unsigned int background_queue_enabled = 1;
 	std::vector<RequestQueue*> requests;
 	int node_counter = 0;
