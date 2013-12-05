@@ -102,7 +102,7 @@ void ClearCache(Webapp* app, RequestQueue* requests) {
 
 	for (RequestQueue* queue : app->requests) {
 		queue->aborted = 1;
-		queue->cv.notify_one();
+		queue->cv.notify_all();
 	}
 
 	//Cleanup when this task completes.

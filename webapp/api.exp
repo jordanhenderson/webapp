@@ -2,7 +2,7 @@
 	GetTemplate;
 	Template_ShowGlobalSection;
 	Template_ShowSection;
-	Template_SetValue;
+	Template_SetGlobalValue;
 	GetSessionValue;
 	SetSessionValue;
 	GetSession;

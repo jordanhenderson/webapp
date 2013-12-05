@@ -23,15 +23,20 @@ void WebappTask::execute() {
 
 		//VM has quit.
 		_handler->waiting++;
-		for (RequestQueue* q : _handler->requests) {
-			q->lock.lock();
-		}
 		if (_handler->posttask != NULL) {
+			//Cleanup worker; worker that recieved CleanCache request
+			for (RequestQueue* q : _handler->requests) {
+				q->lock.lock();
+			}
 			tbb::task::spawn_root_and_wait(*_handler->posttask);
 			_handler->posttask = NULL;
-		}
-		for (RequestQueue* q : _handler->requests) {
-			q->lock.unlock();
+			for (RequestQueue* q : _handler->requests) {
+				q->aborted = 0;
+				q->lock.unlock();
+			}
+		} else {
+			//Just (attempt to) grab own lock.
+			_requests->lock.lock();
 		}
 		
 		_handler->waiting--;
@@ -49,13 +54,13 @@ void BackgroundQueue::execute() {
 
 tbb::task* CleanupTask::execute() {
 	while (!_handler->aborted) {
+		unsigned int i = _handler->waiting;
 		if (_handler->waiting != _handler->workers.size() - _handler->background_queue_enabled) {
 			recycle_as_continuation();
 			return this;
 		}
 		else {
 			_handler->refresh_templates();
-			_requests->aborted = 0;
 			return NULL;
 		}
 	}
