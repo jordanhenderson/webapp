@@ -23,20 +23,37 @@ void WebappTask::execute() {
 
 		//VM has quit.
 		_handler->waiting++;
-		if (_handler->posttask != NULL) {
-			//Cleanup worker; worker that recieved CleanCache request
-			for (RequestQueue* q : _handler->requests) {
-				q->lock.lock();
+		int cleaning = 0;
+		{
+			unique_lock<mutex> lk(_handler->cleanupLock); //Only allow one thread to clean up.	
+			if (_requests->cleanupTask == 1) {
+				cleaning = 1;
+				//Cleanup worker; worker that recieved CleanCache request
+				for (RequestQueue* q : _handler->requests) {
+					q->cleanupTask = 0; //Only clean up once!
+					//Lock the queue, prevent it from finishing until cleaner does
+					q->lock.lock();
+					//Abort the lua vm.
+					q->aborted = 1;
+					q->cv.notify_one();
+				}
 			}
-			tbb::task::spawn_root_and_wait(*_handler->posttask);
-			_handler->posttask = NULL;
+		}
+		
+		if(cleaning) {
+			//Wait for lua vms to finish.
+			while (_handler->waiting != _handler->workers.size() - _handler->background_queue_enabled) {
+				this_thread::sleep_for(chrono::milliseconds(100));
+			}
+			//lua vms finished; clean up.
+			_handler->refresh_templates();
 			for (RequestQueue* q : _handler->requests) {
 				q->aborted = 0;
 				q->lock.unlock();
 			}
 		} else {
 			//Just (attempt to) grab own lock.
-			_requests->lock.lock();
+			unique_lock<mutex> lk(_requests->lock); //Unlock when done to complete the process.
 		}
 		
 		_handler->waiting--;
@@ -50,21 +67,6 @@ void BackgroundQueue::execute() {
 		//Since this task must run at all times (not per request - *should* block in lua vm)
 		this_thread::sleep_for(chrono::milliseconds(1000));
 	}
-}
-
-tbb::task* CleanupTask::execute() {
-	while (!_handler->aborted) {
-		unsigned int i = _handler->waiting;
-		if (_handler->waiting != _handler->workers.size() - _handler->background_queue_enabled) {
-			recycle_as_continuation();
-			return this;
-		}
-		else {
-			_handler->refresh_templates();
-			return NULL;
-		}
-	}
-	return NULL;
 }
 
 //Run script given a LuaChunk. Called by public runScript methods.
@@ -166,7 +168,7 @@ void Webapp::processRequest(Request* r, int amount) {
 			RequestQueue* queue = requests.at(selected_node);
 			queue->lock.lock();
 			queue->requests.enqueue(r);
-			queue->cv.notify_all();
+			queue->cv.notify_one();
 			queue->lock.unlock();
 	});
 }

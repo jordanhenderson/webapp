@@ -92,21 +92,17 @@ Request* GetNextRequest(RequestQueue* requests) {
 		while (!requests->requests.try_dequeue(request) && !requests->aborted)
 			requests->cv.wait(lk);
 	}
-
 	return request;
 }
 
 //Clear the cache (aborts any waiting request handlers, locks connect mutex, clears cache, unlocks).
 void ClearCache(Webapp* app, RequestQueue* requests) {
 	if (app == NULL || requests == NULL) return;
-
-	for (RequestQueue* queue : app->requests) {
-		queue->aborted = 1;
-		queue->cv.notify_all();
-	}
-
+	
+	//Abort this lua vm.
+	requests->aborted = 1;
 	//Cleanup when this task completes.
-	app->posttask = new (tbb::task::allocate_root()) CleanupTask(app, requests);
+	requests->cleanupTask = 1;
 
 }
 

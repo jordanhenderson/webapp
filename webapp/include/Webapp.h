@@ -71,6 +71,7 @@ struct RequestQueue {
 	std::mutex lock; //Mutex to control the allowance of new connection handling.
 	std::mutex cv_mutex; //Mutex to allow ready cv
 	std::condition_variable cv;
+	unsigned int cleanupTask = 0;
 	RequestQueue() : requests(WEBAPP_DEFAULT_QUEUESIZE) {};
 };
 
@@ -118,14 +119,6 @@ public:
 	friend class Webapp;
 };
 
-class CleanupTask : public tbb::task {
-	RequestQueue* _requests = NULL;
-	Webapp* _handler = NULL;
-public:
-	CleanupTask(Webapp* handler, RequestQueue* requests) : _handler(handler), _requests(requests) {};
-	tbb::task* execute();
-};
-
 class Webapp : public Internal {
 private:
 	//(content) template filename vector
@@ -148,7 +141,6 @@ private:
 	friend class BackgroundQueue;
 	unsigned int nWorkers;
 public:
-	CleanupTask* posttask = NULL;
 	std::vector<TaskBase*> workers;
 	Webapp(Parameters* params, asio::io_service& io_svc);
 	~Webapp();
@@ -169,6 +161,8 @@ public:
 	unsigned int background_queue_enabled = 1;
 	std::vector<RequestQueue*> requests;
 	int node_counter = 0;
+	
+	std::mutex cleanupLock;
 };
 
 #endif
