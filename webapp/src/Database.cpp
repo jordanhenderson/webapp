@@ -108,6 +108,7 @@ void Database::process(Query* qry) {
 		if (db_type == DATABASE_TYPE_SQLITE) {
 			lasterror = sqlite3_step((sqlite3_stmt*)stmt);
 			qry->column_count = sqlite3_column_count((sqlite3_stmt*)stmt);
+			qry->lastrowid = sqlite3_last_insert_rowid(sqlite_db);
 		}
 		else if (db_type == DATABASE_TYPE_MYSQL) {
 			if (prepare_meta_result == NULL) {
@@ -118,6 +119,9 @@ void Database::process(Query* qry) {
 			}
 
 			qry->column_count = mysql_num_fields(prepare_meta_result);
+			mysql_lock.lock();
+			qry->lastrowid = mysql_insert_id(mysql_db);
+			mysql_lock.unlock();
 		}
 
 		if (qry->column_count == 0)
@@ -178,7 +182,7 @@ void Database::process(Query* qry) {
 			goto cleanup;
 		}
 		
-		qry->lastrowid = sqlite3_last_insert_rowid(sqlite_db);
+		
 	} else if (db_type == DATABASE_TYPE_MYSQL) {
 		if (bind_output == NULL) {
 			bind_output = new MYSQL_BIND[qry->column_count];

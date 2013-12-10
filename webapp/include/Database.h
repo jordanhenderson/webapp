@@ -58,7 +58,7 @@ private:
 	int shutdown_database = 0;
 	int db_type = 0;
 	void process(Query* q);
-
+	std::mutex mysql_lock;
 
 public:
 	Database() {};

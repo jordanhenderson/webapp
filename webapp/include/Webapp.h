@@ -9,10 +9,6 @@
 #include "Database.h"
 #include "Session.h"
 #include <ctemplate/template.h>
-#include <thread>
-#include <mutex>
-#include <chrono>
-#include <condition_variable>
 #include "readerwriterqueue.h"
 
 extern "C" {

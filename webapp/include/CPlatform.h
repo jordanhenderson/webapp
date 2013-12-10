@@ -21,6 +21,10 @@
 #include <vector>
 #include <list>
 #include <queue>
+#include <thread>
+#include <mutex>
+#include <chrono>
+#include <condition_variable>
 
 #ifdef __GNUC__
 #define HAVE_VSNPRINTF 1
