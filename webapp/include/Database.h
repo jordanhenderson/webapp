@@ -35,6 +35,7 @@ public:
 	webapp_str_t** description = NULL;
 	int desc = 0;
 	int havedesc = 0;
+	int rows_affected = 0;
 
 	std::string* dbq = NULL;
 	QueryRow* params = NULL; 
@@ -58,7 +59,8 @@ private:
 	int shutdown_database = 0;
 	int db_type = 0;
 	void process(Query* q);
-	std::mutex mysql_lock;
+	std::mutex last_rowid_lock;
+	std::mutex rows_affected_lock;
 
 public:
 	Database() {};

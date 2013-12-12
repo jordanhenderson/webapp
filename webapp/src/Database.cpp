@@ -108,7 +108,14 @@ void Database::process(Query* qry) {
 		if (db_type == DATABASE_TYPE_SQLITE) {
 			lasterror = sqlite3_step((sqlite3_stmt*)stmt);
 			qry->column_count = sqlite3_column_count((sqlite3_stmt*)stmt);
+			
+			last_rowid_lock.lock();
 			qry->lastrowid = sqlite3_last_insert_rowid(sqlite_db);
+			last_rowid_lock.unlock();
+			
+			rows_affected_lock.lock();
+			qry->rows_affected = sqlite3_changes(sqlite_db);
+			rows_affected_lock.unlock();
 		}
 		else if (db_type == DATABASE_TYPE_MYSQL) {
 			if (prepare_meta_result == NULL) {
@@ -119,9 +126,13 @@ void Database::process(Query* qry) {
 			}
 
 			qry->column_count = mysql_num_fields(prepare_meta_result);
-			mysql_lock.lock();
+			last_rowid_lock.lock();
 			qry->lastrowid = mysql_insert_id(mysql_db);
-			mysql_lock.unlock();
+			last_rowid_lock.unlock();
+			
+			rows_affected_lock.lock();
+			qry->rows_affected = mysql_affected_rows(mysql_db);
+			rows_affected_lock.unlock();
 		}
 
 		if (qry->column_count == 0)
