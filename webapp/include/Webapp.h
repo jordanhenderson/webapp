@@ -140,8 +140,6 @@ private:
 	//(content) template filename vector
 	std::vector<std::string> contentList;
 
-	//Client Template filedata vector (stores templates for later de-allocation).
-	std::vector<TemplateData> clientTemplateFiles;
 	std::vector<std::string> serverTemplateFiles;
 	
 	static int LuaWriter(lua_State* L, const void* p, size_t sz, void* ud);

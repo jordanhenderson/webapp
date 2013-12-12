@@ -236,11 +236,6 @@ Webapp::~Webapp() {
 	}
 	
 	if(background_queue != NULL) delete background_queue;
-	
-	//Clean up client template files.
-	for(TemplateData& file: clientTemplateFiles) {
-		delete(file.data);
-	}
 
 }
 
@@ -249,9 +244,6 @@ TemplateDictionary* Webapp::getTemplate(const std::string& page) {
 		TemplateDictionary *d = new TemplateDictionary("");
 		for(string& data: serverTemplateFiles) {
 			d->AddIncludeDictionary(data)->SetFilename(data);
-		}
-		for(TemplateData& file: clientTemplateFiles) {
-			d->SetValueWithoutCopy(file.name, TemplateString(file.data->data, file.data->size));
 		}
 		return d;
 	}
@@ -293,29 +285,6 @@ void Webapp::refresh_templates() {
 			mutable_default_template_cache()->Delete(template_name);
 			StringToTemplateCache(template_name, data.data, data.size, STRIP_WHITESPACE);
 			serverTemplateFiles.push_back(template_name);
-		}
-	}
-	
-	//Load client templates (inline insertion into content templates) - these are Handbrake (JS) templates.
-	//First delete existing filedata. This should be optimised later.
-	for(TemplateData& file: clientTemplateFiles) {
-		delete file.data;
-	}
-	clientTemplateFiles.clear();
-
-	templatepath = basepath + "templates/client/";
-	{
-		vector<string> files = FileSystem::GetFiles(templatepath, "", 0);
-		contentList.reserve(files.size());
-		for(string& s: FileSystem::GetFiles(templatepath, "", 0)) {
-			File f;
-			FileData* data = new FileData();
-			FileSystem::Open(templatepath + s, "rb", &f);
-			string template_name = "T_" + s.substr(0, s.find_last_of("."));
-			FileSystem::Read(&f, data);
-			std::transform(template_name.begin(), template_name.end(), template_name.begin(), ::toupper);
-			TemplateData d = {template_name, data};
-			clientTemplateFiles.push_back(d);
 		}
 	}
 }
