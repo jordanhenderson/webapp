@@ -59,13 +59,18 @@ struct Request {
 
 };
 
-struct RequestQueue {
-	std::atomic<unsigned int> aborted{0};
-	moodycamel::ReaderWriterQueue<Request*> requests;
-	std::mutex lock; //Mutex to control the allowance of new connection handling.
-	std::mutex cv_mutex; //Mutex to allow ready cv
-	std::condition_variable cv;
+class TaskQueue {
+public:
 	unsigned int cleanupTask = 0;
+	std::atomic<unsigned int> aborted{0};
+	std::mutex lock; //Mutex to control the allowance of new connection handling.
+	std::condition_variable cv;
+};
+
+class RequestQueue : public TaskQueue {
+public:
+	moodycamel::ReaderWriterQueue<Request*> requests;
+	std::mutex cv_mutex; //Mutex to allow ready cv
 	RequestQueue() : requests(WEBAPP_DEFAULT_QUEUESIZE) {};
 };
 
@@ -75,20 +80,20 @@ struct Process {
 };
 
 template<typename T>
-class LockedQueue {
+class LockedQueue : public TaskQueue {
 private:
-	std::condition_variable cv;
 	std::mutex cv_lk;
-	std::mutex el;
 	moodycamel::ReaderWriterQueue<T> process_queue;
 public:
 	//Each operation (enqueue, dequeue) must be done single threaded.
 	//We need MP (Multi-Producer), so lock production.
-	void enqueue(T i) { el.lock(); process_queue.enqueue(i); cv.notify_one(); el.unlock(); }
+	void notify() {cv.notify_one();}
+	void enqueue(T i) { lock.lock(); process_queue.enqueue(i); cv.notify_one(); lock.unlock(); }
 	T dequeue() { 
 		T r;
 		std::unique_lock<std::mutex> lk(cv_lk);
-		while (!process_queue.try_dequeue(r)) cv.wait(lk);
+		while (!process_queue.try_dequeue(r) && !aborted) cv.wait(lk);
+		if(aborted) return NULL;
 		return r; 
 	}
 	LockedQueue() : process_queue(WEBAPP_DEFAULT_QUEUESIZE) {};
@@ -115,35 +120,30 @@ private:
 class WebappTask : public TaskBase {
 private:
 	unsigned int _id;
+	unsigned int _bg;
 	Sessions* _sessions;
-	RequestQueue* _requests;
+	TaskQueue* _requests;
 public:
-	WebappTask(Webapp* handler, Sessions* sessions, RequestQueue* requests) 
-		: TaskBase(handler), _sessions(sessions), _requests(requests) {
+	WebappTask(Webapp* handler, Sessions* sessions, TaskQueue* requests, int background_task=0) 
+		: TaskBase(handler), _sessions(sessions), _requests(requests), _bg(background_task) {
 			start();
 		};
 	void execute();
 	friend class Webapp;
 };
 
-class BackgroundQueue : public TaskBase {
-public:
-	BackgroundQueue(Webapp* handler) : TaskBase(handler) {
-			start();
-		};
-	void execute();
-	friend class Webapp;
-};
+typedef enum {SCRIPT_INIT, SCRIPT_QUEUE, SCRIPT_REQUEST, SCRIPT_HANDLERS} script_t;
 
 class Webapp : public Internal {
 private:
+	std::array<webapp_str_t, WEBAPP_SCRIPTS> scripts;
 	//(content) template filename vector
 	std::vector<std::string> contentList;
 
 	std::vector<std::string> serverTemplateFiles;
 	
-	static int LuaWriter(lua_State* L, const void* p, size_t sz, void* ud);
-	void runHandler(LuaParam* params, int nArgs, const char* filename);
+	void runWorker(LuaParam* params, int nArgs, script_t script);
+	void compileScript(const char* filename, script_t output);
 	//IPC api
 	asio::ip::tcp::acceptor* acceptor;
 	void accept_message();
@@ -152,7 +152,6 @@ private:
 	void processRequest(Request* r, int len);
 
 	friend class WebappTask;
-	friend class BackgroundQueue;
 	unsigned int nWorkers;
 public:
 	std::vector<TaskBase*> workers;
@@ -171,7 +170,6 @@ public:
 	std::atomic<unsigned int> waiting{0};
 	unsigned int aborted = 0;
 
-	LockedQueue<Process*>* background_queue = NULL;
 	unsigned int background_queue_enabled = 1;
 	std::vector<RequestQueue*> requests;
 	int node_counter = 0;

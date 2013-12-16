@@ -12,21 +12,28 @@ using namespace asio::ip;
 
 void WebappTask::execute() {
 	while (!_handler->aborted) {
-		LuaParam _v[] = { { "sessions", _sessions },
-						  { "requests", _requests }, 
-						  { "app", _handler }, 
-						  { "db", &_handler->database } };
-		_handler->runHandler(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/process.lua");
+		if(!_bg) {
+			LuaParam _v[] = { { "sessions", _sessions },
+							  { "requests", _requests }, 
+							  { "app", _handler }, 
+							  { "db", &_handler->database } };
+			_handler->runWorker(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_REQUEST);
+		} else {
+			LuaParam _v[] = { { "queue", _requests }, 
+							  { "app", _handler }, 
+							  { "db", &_handler->database } };
+			_handler->runWorker(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_QUEUE);
+		}
 
 		//VM has quit.
 		_handler->waiting++;
 		int cleaning = 0;
 		{
-			unique_lock<mutex> lk(_handler->cleanupLock); //Only allow one thread to clean up.	
+			unique_lock<mutex> lk(_handler->cleanupLock); //Only allow one thread to clean up.
 			if (_requests->cleanupTask == 1) {
 				cleaning = 1;
 				//Cleanup worker; worker that recieved CleanCache request
-				for (RequestQueue* q : _handler->requests) {
+				for (TaskQueue* q : _handler->requests) {
 					q->cleanupTask = 0; //Only clean up once!
 					//Lock the queue, prevent it from finishing until cleaner does
 					//Abort the lua vm.
@@ -41,47 +48,82 @@ void WebappTask::execute() {
 		
 		if(cleaning) {
 			//Wait for lua vms to finish.
-			while (_handler->waiting != _handler->workers.size() - _handler->background_queue_enabled) {
+			while (_handler->waiting != _handler->workers.size()) {
 				this_thread::sleep_for(chrono::milliseconds(100));
 			}
+
+			//Delete loaded scripts
+			for(int i = 0; i < WEBAPP_SCRIPTS; i++) {
+				if(_handler->scripts[i].data != NULL) {
+					delete[] _handler->scripts[i].data;
+				}
+			}
+			
+			_handler->compileScript("plugins/init.lua", SCRIPT_INIT);
+			if (_handler->background_queue_enabled)
+				_handler->compileScript("plugins/core/process_queue.lua", SCRIPT_QUEUE);
+			
+			_handler->compileScript("plugins/core/process.lua", SCRIPT_REQUEST);
+			_handler->compileScript("plugins/core/handlers.lua", SCRIPT_HANDLERS);
+			
 			//lua vms finished; clean up.
 			_handler->refresh_templates();
-			for (RequestQueue* q : _handler->requests) {
+			for (TaskQueue* q : _handler->requests) {
 				q->aborted = 0;
 				q->lock.unlock();
 			}
 		} else {
 			//Just (attempt to) grab own lock.
 			unique_lock<mutex> lk(_requests->lock); //Unlock when done to complete the process.
+			
 		}
 		
 		_handler->waiting--;
 	}
 }
 
-void BackgroundQueue::execute() {
-	while (!_handler->aborted) {
-		LuaParam _v[] = { { "app", _handler }, { "db", &_handler->database } };
-		_handler->runHandler(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/process_queue.lua");
-		//Since this task must run at all times (not per request - *should* block in lua vm)
-		this_thread::sleep_for(chrono::milliseconds(1000));
+void Webapp::compileScript(const char* filename, script_t output) {
+	lua_State* L = luaL_newstate();
+	luaL_openlibs(L);
+	luaopen_lpeg(L);
+
+	int ret = luaL_loadfile(L, "plugins/process.lua");
+	if(ret) {
+		printf("Error: %s\n", lua_tostring(L, -1));
 	}
+	lua_pushlstring(L, filename, strlen(filename));
+	lua_setglobal(L, "file");
+	if(lua_pcall(L, 0, 1, 0) != 0) {
+		printf("Error: %s\n", lua_tostring(L, -1));
+	}
+	else {
+		size_t* len = &scripts[output].len;
+		const char* chunk = lua_tolstring(L, -1, len);
+		scripts[output].data = new char[*len + 1];
+		memcpy((char*)scripts[output].data, chunk, *len + 1);
+	}
+	lua_close(L);
 }
 
 //Run script given a LuaChunk. Called by public runScript methods.
-void Webapp::runHandler(LuaParam* params, int nArgs, const char* filename) {
+void Webapp::runWorker(LuaParam* params, int nArgs, script_t script) {
+	if(scripts[script].data == NULL) return;
 	lua_State* L = luaL_newstate();
 	luaL_openlibs(L);
 	luaopen_lpeg(L);
 	luaopen_cjson(L);
-	//Preprocess the lua file first.
 
-	luaL_loadfile(L, "plugins/process.lua");
-	lua_pushlstring(L, filename, strlen(filename));
-	lua_setglobal(L, "file");
+	if(script == SCRIPT_REQUEST) {
+		//Preload handlers.
+		int ret = luaL_loadbuffer(L, scripts[SCRIPT_HANDLERS].data, scripts[SCRIPT_HANDLERS].len, "core/process");
+
+		ret = lua_pcall (L, 0, 1, 0);
+		// store funky module table in global var
+		lua_setfield (L, LUA_GLOBALSINDEX, "load_handlers");
+	}
+		
 	webapp_str_t* static_strings = new webapp_str_t[WEBAPP_STATIC_STRINGS];
 	//Create temporary webapp_str_t for string creation between vm/c
-
 	lua_pushlightuserdata(L, static_strings);
 	lua_setglobal(L, "static_strings");
 
@@ -92,9 +134,13 @@ void Webapp::runHandler(LuaParam* params, int nArgs, const char* filename) {
 			lua_setglobal(L, p->name);
 		}
 	}
-
+	
+	int ret = luaL_loadbuffer(L, scripts[script].data, scripts[script].len, "");
+	if(ret) {
+		printf("Error: %s\n", lua_tostring(L, -1));
+	}
 	if(lua_pcall(L, 0, 0, 0) != 0) {
-		printf("Error: %s", lua_tostring(L, -1));
+		printf("Error: %s\n", lua_tostring(L, -1));
 	}
 	delete[] static_strings;
 	lua_close(L);
@@ -109,17 +155,22 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :
 									{
 
 	//Run init plugin
+	
 	LuaParam _v[] = { { "app", this }, { "db", &database } };
-	runHandler(_v, sizeof(_v) / sizeof(LuaParam), "plugins/init.lua");
+	compileScript("plugins/init.lua", SCRIPT_INIT);
+	runWorker(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_INIT);
 
 	refresh_templates();
 
 	//Create/allocate initial worker tasks.
-	if (background_queue_enabled) {//uses a worker thread.
-		background_queue = new LockedQueue<Process*>();
-		workers.push_back(new BackgroundQueue(this));
+	if (background_queue_enabled) {
+		compileScript("plugins/core/process_queue.lua", SCRIPT_QUEUE);
+		LockedQueue<Process*>* background_queue = new LockedQueue<Process*>();
+		workers.push_back(new WebappTask(this, NULL, background_queue, 1));
 	}
 	
+	compileScript("plugins/core/process.lua", SCRIPT_REQUEST);
+	compileScript("plugins/core/handlers.lua", SCRIPT_HANDLERS);
 	for (unsigned int i = background_queue_enabled; i < nWorkers; i++) {
 		unsigned int worker_id = background_queue_enabled ? i - 1 : i;
 		Sessions* session = new Sessions(worker_id);
@@ -218,9 +269,10 @@ void Webapp::accept_message() {
 
 
 Webapp::~Webapp() {
-	for (unsigned int i = background_queue_enabled; i < nWorkers; i++) {
+	for (unsigned int i = 0; i < nWorkers; i++) {
 		RequestQueue* rq = requests.at(i);
 		rq->aborted = 1;
+		rq->cv.notify_one();
 		delete rq;
 
 		Sessions* session = sessions.at(i);
@@ -234,9 +286,13 @@ Webapp::~Webapp() {
 			delete t;
 		}
 	}
-	
-	if(background_queue != NULL) delete background_queue;
 
+	//Delete loaded scripts
+	for(int i = 0; i < WEBAPP_SCRIPTS; i++) {
+		if(scripts[i].data != NULL) {
+			delete[] scripts[i].data;
+		}
+	}
 }
 
 TemplateDictionary* Webapp::getTemplate(const std::string& page) {

@@ -92,6 +92,7 @@ Request* GetNextRequest(RequestQueue* requests) {
 		while (!requests->requests.try_dequeue(request) && !requests->aborted)
 			requests->cv.wait(lk);
 	}
+	if(requests->aborted) return NULL;
 	return request;
 }
 
@@ -112,19 +113,19 @@ void DisableBackgroundQueue(Webapp* app) {
 	app->background_queue_enabled = false;
 }
 
-void QueueProcess(Webapp* app, webapp_str_t* func, webapp_str_t* vars) {
-	if (func == NULL || vars == NULL || app == NULL 
-		|| !app->background_queue_enabled) return;
+void QueueProcess(LockedQueue<Process*>* background_queue, webapp_str_t* func, webapp_str_t* vars) {
+	if (func == NULL || vars == NULL || background_queue == NULL 
+		|| background_queue->aborted) return;
 	Process* p = new Process();
 	p->func = webapp_strdup(func);
 	p->vars = webapp_strdup(vars);
-	app->background_queue->enqueue(p);
+	background_queue->enqueue(p);
 
 }
 
-Process* GetNextProcess(Webapp* app) {
-	if (app == NULL) return NULL;
-	return app->background_queue->dequeue();
+Process* GetNextProcess(LockedQueue<Process*>* background_queue) {
+	if (background_queue == NULL) return NULL;
+	return background_queue->dequeue();
 }
 
 int GetSessionID(SessionStore* session, webapp_str_t* out) {

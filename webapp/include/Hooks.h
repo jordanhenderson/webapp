@@ -19,8 +19,8 @@ APIEXPORT void DestroySession(SessionStore*);
 
 APIEXPORT int GetSessionID(SessionStore*, webapp_str_t* out);
 APIEXPORT void FinishRequest(Request*);
-APIEXPORT void QueueProcess(Webapp*, webapp_str_t* func, webapp_str_t* vars);
-APIEXPORT Process* GetNextProcess(Webapp*);
+APIEXPORT void QueueProcess(LockedQueue<Process*>*, webapp_str_t* func, webapp_str_t* vars);
+APIEXPORT Process* GetNextProcess(LockedQueue<Process*>*);
 APIEXPORT ctemplate::TemplateDictionary* GetTemplate(Webapp*, webapp_str_t*);
 APIEXPORT void RenderTemplate(Webapp*, ctemplate::TemplateDictionary*, webapp_str_t*, Request*, webapp_str_t* out);
 APIEXPORT void WriteData(asio::ip::tcp::socket*, webapp_str_t* data);
