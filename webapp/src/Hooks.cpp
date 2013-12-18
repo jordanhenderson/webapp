@@ -31,7 +31,6 @@ TemplateDictionary* GetTemplate(Webapp* gallery, webapp_str_t* page) {
 	else return NULL;
 }
 
-
 void RenderTemplate(Webapp* gallery, ctemplate::TemplateDictionary* dict, webapp_str_t* page, Request* request, webapp_str_t* out) {
 	if (gallery == NULL || dict == NULL || page == NULL || request == NULL || out == NULL) return;
 	string* output = new string;

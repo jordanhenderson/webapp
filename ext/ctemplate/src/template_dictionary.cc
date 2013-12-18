@@ -336,7 +336,7 @@ TemplateDictionary* TemplateDictionary::InternalMakeCopy(
         // parents are not inherited across include-dictionaries.
         dicts->push_back(subdict->InternalMakeCopy(
                              subdict->name(), newdict->arena_,
-                             NULL, newdict->template_global_dict_owner_));
+                             newdict, newdict->template_global_dict_owner_));
       }
     }
   }
@@ -637,7 +637,7 @@ TemplateDictionary* TemplateDictionary::AddIncludeDictionary(
   const string newname(CreateSubdictName(name_, include_name,
                                          dicts->size() + 1, ""));
   TemplateDictionary* retval = CreateTemplateSubdict(
-      newname, arena_, NULL, template_global_dict_owner_);
+      newname, arena_, this, template_global_dict_owner_);
   dicts->push_back(retval);
   return retval;
 }

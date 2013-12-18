@@ -115,9 +115,12 @@ void Webapp::runWorker(LuaParam* params, int nArgs, script_t script) {
 
 	if(script == SCRIPT_REQUEST) {
 		//Preload handlers.
-		int ret = luaL_loadbuffer(L, scripts[SCRIPT_HANDLERS].data, scripts[SCRIPT_HANDLERS].len, "core/process");
+		if(luaL_loadbuffer(L, scripts[SCRIPT_HANDLERS].data, scripts[SCRIPT_HANDLERS].len, "core/process"))
+			goto lua_error;
 
-		ret = lua_pcall (L, 0, 1, 0);
+		if(lua_pcall (L, 0, 1, 0)) 
+			goto lua_error;
+		
 		// store funky module table in global var
 		lua_setfield (L, LUA_GLOBALSINDEX, "load_handlers");
 	}
@@ -135,15 +138,17 @@ void Webapp::runWorker(LuaParam* params, int nArgs, script_t script) {
 		}
 	}
 	
-	int ret = luaL_loadbuffer(L, scripts[script].data, scripts[script].len, "");
-	if(ret) {
-		printf("Error: %s\n", lua_tostring(L, -1));
-	}
-	if(lua_pcall(L, 0, 0, 0) != 0) {
-		printf("Error: %s\n", lua_tostring(L, -1));
-	}
+	if(luaL_loadbuffer(L, scripts[script].data, scripts[script].len, "")) 
+		goto lua_error;
+	
+	if(lua_pcall(L, 0, 0, 0) != 0) 
+		goto lua_error;
+	
 	delete[] static_strings;
 	lua_close(L);
+	return;
+lua_error:
+	printf("Error: %s\n", lua_tostring(L, -1));
 }
 
 Webapp::Webapp(Parameters* params, asio::io_service& io_svc) : 
@@ -151,7 +156,8 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :
 										basepath(&params->get("basepath")),
 										dbpath(&params->get("dbpath")), 
 										svc(io_svc), 
-										nWorkers(WEBAPP_NUM_THREADS - 1)
+                                        nWorkers(WEBAPP_NUM_THREADS - 1),
+                                        cleanTemplate("")
 									{
 
 	//Run init plugin
@@ -160,7 +166,7 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :
 	compileScript("plugins/init.lua", SCRIPT_INIT);
 	runWorker(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_INIT);
 
-	refresh_templates();
+    refresh_templates();
 
 	//Create/allocate initial worker tasks.
 	if (background_queue_enabled) {
@@ -297,11 +303,7 @@ Webapp::~Webapp() {
 
 TemplateDictionary* Webapp::getTemplate(const std::string& page) {
 	if(contains(contentList, page)) {
-		TemplateDictionary *d = new TemplateDictionary("");
-		for(string& data: serverTemplateFiles) {
-			d->AddIncludeDictionary(data)->SetFilename(data);
-		}
-		return d;
+        return cleanTemplate.MakeCopy("base");
 	}
 	return NULL;
 }
@@ -314,33 +316,26 @@ void Webapp::refresh_templates() {
 	contentList.clear();
 	string basepath = *this->basepath + '/';
 	string templatepath = basepath + "content/";
-	{
-		vector<string> files = FileSystem::GetFiles(templatepath, "", 0);
-		contentList.reserve(files.size());
-		for(string& s : files) {
-			//Preload templates.
-			LoadTemplate(templatepath + s, STRIP_WHITESPACE);
-			contentList.push_back(s);
-		}
-	}
 
-	//Load server templates.
-	templatepath = basepath + "templates/server/";
-	serverTemplateFiles.clear();
+    vector<string> files = FileSystem::GetFiles(templatepath, "", 0);
+    contentList.reserve(files.size());
+    for(string& s : files) {
+        //Preload templates.
+        LoadTemplate(templatepath + s, STRIP_WHITESPACE);
+        contentList.push_back(s);
+    }
 
-	{
-		vector<string> files = FileSystem::GetFiles(templatepath, "", 0);
-		serverTemplateFiles.reserve(files.size());
-		for(string& s: files) {
-			File f;
-			FileData data;
-			FileSystem::Open(templatepath + s, "rb", &f);
-			string template_name = "T_" + s.substr(0, s.find_last_of("."));
-			FileSystem::Read(&f, &data);
-			std::transform(template_name.begin(), template_name.end(), template_name.begin(), ::toupper);
-			mutable_default_template_cache()->Delete(template_name);
-			StringToTemplateCache(template_name, data.data, data.size, STRIP_WHITESPACE);
-			serverTemplateFiles.push_back(template_name);
-		}
-	}
+
+    //Load server templates.
+    templatepath = basepath + "templates/server/";
+
+    files = FileSystem::GetFiles(templatepath, "", 0);
+    for(string& s: files) {
+        if(!contains(serverTemplateList, s)) {
+            string t = "T_" + s.substr(0, s.find_last_of("."));
+            std::transform(t.begin()+2, t.end(), t.begin()+2, ::toupper);
+            cleanTemplate.AddIncludeDictionary(t)->SetFilename(templatepath + s);
+            serverTemplateList.push_back(s);
+        }
+    }
 }

@@ -55,7 +55,7 @@ struct Request {
 		if (v != NULL) delete v;
 		if (headers != NULL) delete headers;
 
-	};
+    }
 
 };
 
@@ -71,7 +71,7 @@ class RequestQueue : public TaskQueue {
 public:
 	moodycamel::ReaderWriterQueue<Request*> requests;
 	std::mutex cv_mutex; //Mutex to allow ready cv
-	RequestQueue() : requests(WEBAPP_DEFAULT_QUEUESIZE) {};
+    RequestQueue() : requests(WEBAPP_DEFAULT_QUEUESIZE) {}
 };
 
 struct Process {
@@ -96,13 +96,13 @@ public:
 		if(aborted) return NULL;
 		return r; 
 	}
-	LockedQueue() : process_queue(WEBAPP_DEFAULT_QUEUESIZE) {};
+    LockedQueue() : process_queue(WEBAPP_DEFAULT_QUEUESIZE) {}
 };
 
 
 class TaskBase {
 public:
-	TaskBase(Webapp* handler) : _handler(handler) {};
+    TaskBase(Webapp* handler) : _handler(handler) {}
 	void start() {
 		_worker = std::thread([this]{execute();});
 	}
@@ -110,7 +110,7 @@ public:
 		_worker.join();
 	}
 	virtual void execute() = 0;
-	static void start_thread(TaskBase* base) { base->execute(); };
+    static void start_thread(TaskBase* base) { base->execute(); }
 protected:
 	Webapp* _handler = NULL;
 private:
@@ -127,7 +127,7 @@ public:
 	WebappTask(Webapp* handler, Sessions* sessions, TaskQueue* requests, int background_task=0) 
 		: TaskBase(handler), _sessions(sessions), _requests(requests), _bg(background_task) {
 			start();
-		};
+        }
 	void execute();
 	friend class Webapp;
 };
@@ -136,23 +136,24 @@ typedef enum {SCRIPT_INIT, SCRIPT_QUEUE, SCRIPT_REQUEST, SCRIPT_HANDLERS} script
 
 class Webapp : public Internal {
 private:
+	void runWorker(LuaParam* params, int nArgs, script_t script);
+	void compileScript(const char* filename, script_t output);
 	std::array<webapp_str_t, WEBAPP_SCRIPTS> scripts;
 	//(content) template filename vector
 	std::vector<std::string> contentList;
 
-	std::vector<std::string> serverTemplateFiles;
-	
-	void runWorker(LuaParam* params, int nArgs, script_t script);
-	void compileScript(const char* filename, script_t output);
+    std::vector<std::string> serverTemplateList;
+
 	//IPC api
 	asio::ip::tcp::acceptor* acceptor;
 	void accept_message();
-
 	asio::io_service& svc;
+	
 	void processRequest(Request* r, int len);
-
-	friend class WebappTask;
+	
+    ctemplate::TemplateDictionary cleanTemplate;
 	unsigned int nWorkers;
+	friend class WebappTask;
 public:
 	std::vector<TaskBase*> workers;
 	Webapp(Parameters* params, asio::io_service& io_svc);
