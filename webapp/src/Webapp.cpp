@@ -112,7 +112,8 @@ void Webapp::runWorker(LuaParam* params, int nArgs, script_t script) {
 	luaL_openlibs(L);
 	luaopen_lpeg(L);
 	luaopen_cjson(L);
-
+	webapp_str_t* static_strings = new webapp_str_t[WEBAPP_STATIC_STRINGS];
+	
 	if(script == SCRIPT_REQUEST) {
 		//Preload handlers.
 		if(luaL_loadbuffer(L, scripts[SCRIPT_HANDLERS].data, scripts[SCRIPT_HANDLERS].len, "core/process"))
@@ -125,7 +126,7 @@ void Webapp::runWorker(LuaParam* params, int nArgs, script_t script) {
 		lua_setfield (L, LUA_GLOBALSINDEX, "load_handlers");
 	}
 		
-	webapp_str_t* static_strings = new webapp_str_t[WEBAPP_STATIC_STRINGS];
+	
 	//Create temporary webapp_str_t for string creation between vm/c
 	lua_pushlightuserdata(L, static_strings);
 	lua_setglobal(L, "static_strings");
@@ -143,18 +144,18 @@ void Webapp::runWorker(LuaParam* params, int nArgs, script_t script) {
 	
 	if(lua_pcall(L, 0, 0, 0) != 0) 
 		goto lua_error;
+		
+	goto finish;
 	
-	delete[] static_strings;
-	lua_close(L);
-	return;
 lua_error:
 	printf("Error: %s\n", lua_tostring(L, -1));
+
+finish:
+	delete[] static_strings;
+	lua_close(L);
 }
 
-Webapp::Webapp(Parameters* params, asio::io_service& io_svc) : 
-										params(params),
-										basepath(&params->get("basepath")),
-										dbpath(&params->get("dbpath")), 
+Webapp::Webapp(asio::io_service& io_svc) : 
 										svc(io_svc), 
                                         nWorkers(WEBAPP_NUM_THREADS - 1),
                                         cleanTemplate("")
@@ -187,7 +188,7 @@ Webapp::Webapp(Parameters* params, asio::io_service& io_svc) :
 	}
 
 	asio::io_service::work wrk = asio::io_service::work(svc);
-	tcp::endpoint endpoint(tcp::v4(), WEBAPP_PORT);
+	tcp::endpoint endpoint(tcp::v4(), 5000);
 	acceptor = new tcp::acceptor(svc, endpoint, true);
 	accept_message();
 	svc.run(); //block the main thread.
@@ -314,27 +315,23 @@ void Webapp::refresh_templates() {
 
 	//Load content files (applicable templates)
 	contentList.clear();
-	string basepath = *this->basepath + '/';
-	string templatepath = basepath + "content/";
 
-    vector<string> files = FileSystem::GetFiles(templatepath, "", 0);
+    vector<string> files = FileSystem::GetFiles("content/", "", 0);
     contentList.reserve(files.size());
     for(string& s : files) {
         //Preload templates.
-        LoadTemplate(templatepath + s, STRIP_WHITESPACE);
+        LoadTemplate("content/" + s, STRIP_WHITESPACE);
         contentList.push_back(s);
     }
 
 
     //Load server templates.
-    templatepath = basepath + "templates/server/";
-
-    files = FileSystem::GetFiles(templatepath, "", 0);
+    files = FileSystem::GetFiles("templates/server/", "", 0);
     for(string& s: files) {
         if(!contains(serverTemplateList, s)) {
             string t = "T_" + s.substr(0, s.find_last_of("."));
             std::transform(t.begin()+2, t.end(), t.begin()+2, ::toupper);
-            cleanTemplate.AddIncludeDictionary(t)->SetFilename(templatepath + s);
+            cleanTemplate.AddIncludeDictionary(t)->SetFilename("templates/server/" + s);
             serverTemplateList.push_back(s);
         }
     }

@@ -5,7 +5,6 @@
 #include "Platform.h"
 #include "CPlatform.h"
 #include "FileSystem.h"
-#include "Parameters.h"
 #include "Database.h"
 #include "Session.h"
 #include <ctemplate/template.h>
@@ -156,15 +155,11 @@ private:
 	friend class WebappTask;
 public:
 	std::vector<TaskBase*> workers;
-	Webapp(Parameters* params, asio::io_service& io_svc);
+	Webapp(asio::io_service& io_svc);
 	~Webapp();
 	ctemplate::TemplateDictionary* getTemplate(const std::string& page);
 	void refresh_templates();
 	
-	const std::string* basepath;
-	const std::string* dbpath;
-
-	Parameters* params;
 	Database database;
 	std::vector<Sessions*> sessions;
 

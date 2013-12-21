@@ -35,7 +35,7 @@ void RenderTemplate(Webapp* gallery, ctemplate::TemplateDictionary* dict, webapp
 	if (gallery == NULL || dict == NULL || page == NULL || request == NULL || out == NULL) return;
 	string* output = new string;
 	string pagestr(page->data, page->len);
-	ExpandTemplate(*gallery->basepath + "/content/" + pagestr, STRIP_WHITESPACE, dict, output);
+	ExpandTemplate("content/" + pagestr, STRIP_WHITESPACE, dict, output);
 
 	//Clean up the template dictionary.
 	delete dict;
@@ -200,24 +200,6 @@ void SetQuery(Query* q, webapp_str_t* in) {
 void BindParameter(Query* q, webapp_str_t* param) {
 	if (q == NULL || param == NULL || param->data == NULL) return;
 	q->params->push_back(string(param->data, param->len));
-}
-
-void GetParameter(Webapp* app, int param, webapp_str_t* out) {
-	if (app == NULL) return;
-	switch (param) {
-	case WEBAPP_PARAM_BASEPATH:
-		out->data = app->basepath->c_str();
-		out->len = app->basepath->length();
-		break;
-	case WEBAPP_PARAM_DBPATH:
-		out->data = app->dbpath->c_str();
-		out->len = app->dbpath->length();
-		break;
-	default:
-		out->data = NULL;
-		out->len = 0;
-		break;
-	}
 }
 
 unsigned long long GetWebappTime() {

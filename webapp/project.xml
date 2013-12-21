@@ -45,7 +45,6 @@
     <source f="src/Hooks.cpp"/>
     <source f="src/pngnq/neuquant32.c"/>
 	<source f="src/RamSession.cpp"/>
-    <source f="src/Parameters.cpp"/>
 	
     <source f="src/snprintf.c"/>
     <source f="src/sqlite/sqlite3.c"/>
