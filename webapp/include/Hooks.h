@@ -37,7 +37,6 @@ APIEXPORT long long ExecString(Database*, webapp_str_t* in);
 APIEXPORT int SelectQuery(Database*, Query*);
 APIEXPORT Query* CreateQuery(webapp_str_t* in, Request* request, int desc);
 APIEXPORT void SetQuery(Query*, webapp_str_t* in);
-APIEXPORT void AppendQuery(Query*, webapp_str_t* in);
 APIEXPORT void BindParameter(Query* q, webapp_str_t* in);
 APIEXPORT void GetCell(Query* q, unsigned int column, webapp_str_t* out);
 APIEXPORT void GetColumnName(Query* q, unsigned int column, webapp_str_t* out);

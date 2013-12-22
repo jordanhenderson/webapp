@@ -25,7 +25,6 @@
 	SelectQuery;
 	CreateQuery;
 	SetQuery;
-	AppendQuery;
 	BindParameter;
 	GetCell;
 	GetColumnName;

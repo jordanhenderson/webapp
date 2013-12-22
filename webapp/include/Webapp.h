@@ -62,14 +62,13 @@ class TaskQueue {
 public:
 	unsigned int cleanupTask = 0;
 	std::atomic<unsigned int> aborted{0};
-	std::mutex lock; //Mutex to control the allowance of new connection handling.
 	std::condition_variable cv;
+	std::mutex cv_mutex; //Mutex to allow ready cv
 };
 
 class RequestQueue : public TaskQueue {
 public:
 	moodycamel::ReaderWriterQueue<Request*> requests;
-	std::mutex cv_mutex; //Mutex to allow ready cv
     RequestQueue() : requests(WEBAPP_DEFAULT_QUEUESIZE) {}
 };
 
@@ -81,17 +80,18 @@ struct Process {
 template<typename T>
 class LockedQueue : public TaskQueue {
 private:
-	std::mutex cv_lk;
 	moodycamel::ReaderWriterQueue<T> process_queue;
 public:
 	//Each operation (enqueue, dequeue) must be done single threaded.
 	//We need MP (Multi-Producer), so lock production.
 	void notify() {cv.notify_one();}
-	void enqueue(T i) { lock.lock(); process_queue.enqueue(i); cv.notify_one(); lock.unlock(); }
+	void enqueue(T i) { cv_mutex.lock(); process_queue.enqueue(i); cv_mutex.unlock(); cv.notify_one();  }
 	T dequeue() { 
 		T r;
-		std::unique_lock<std::mutex> lk(cv_lk);
-		while (!process_queue.try_dequeue(r) && !aborted) cv.wait(lk);
+		{
+			std::unique_lock<std::mutex> lk(cv_mutex);
+			while (!process_queue.try_dequeue(r) && !aborted) cv.wait(lk);
+		}
 		if(aborted) return NULL;
 		return r; 
 	}

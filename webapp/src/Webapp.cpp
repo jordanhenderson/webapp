@@ -26,7 +26,6 @@ void WebappTask::execute() {
 		}
 
 		//VM has quit.
-		_handler->waiting++;
 		int cleaning = 0;
 		{
 			unique_lock<mutex> lk(_handler->cleanupLock); //Only allow one thread to clean up.
@@ -35,13 +34,14 @@ void WebappTask::execute() {
 				//Cleanup worker; worker that recieved CleanCache request
 				for (TaskQueue* q : _handler->requests) {
 					q->cleanupTask = 0; //Only clean up once!
-					//Lock the queue, prevent it from finishing until cleaner does
-					//Abort the lua vm.
+					//Set the queue to aborted
 					q->aborted = 1;
-					//Lock the queue after aborting; if processRequests() locks, then it will abort
-					//shortly after.
-					q->lock.lock();
+					//Notify any blocked threads to process the next request.
 					q->cv.notify_one();
+					//Prevent any new requests from being queued.
+					q->cv_mutex.lock();
+
+					
 				}
 			}
 		}
@@ -70,15 +70,14 @@ void WebappTask::execute() {
 			_handler->refresh_templates();
 			for (TaskQueue* q : _handler->requests) {
 				q->aborted = 0;
-				q->lock.unlock();
+				q->cv_mutex.unlock();
 			}
 		} else {
 			//Just (attempt to) grab own lock.
-			unique_lock<mutex> lk(_requests->lock); //Unlock when done to complete the process.
+			unique_lock<mutex> lk(_requests->cv_mutex); //Unlock when done to complete the process.
 			
 		}
 		
-		_handler->waiting--;
 	}
 }
 
@@ -224,10 +223,10 @@ void Webapp::processRequest(Request* r, int amount) {
 			}
 
 			RequestQueue* queue = requests.at(selected_node);
-			queue->lock.lock();
+			queue->cv_mutex.lock();
 			queue->requests.enqueue(r);
+			queue->cv_mutex.unlock();
 			queue->cv.notify_one();
-			queue->lock.unlock();
 	});
 }
 
