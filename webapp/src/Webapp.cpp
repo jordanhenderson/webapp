@@ -10,47 +10,51 @@ using namespace asio::ip;
 #pragma warning(disable:4316)
 #endif 
 
+void WebappTask::cleanup(TaskQueue* q) {
+	q->cleanupTask = 0; //Only clean up once!
+	//Set the queue to aborted
+	q->aborted = 1;
+	//Notify any blocked threads to process the next request.
+	while(!q->finished) {
+		q->cv.notify_one();
+		this_thread::sleep_for(chrono::milliseconds(100));
+	}
+	//Prevent any new requests from being queued.
+	q->cv_mutex.lock();
+}
+
 void WebappTask::execute() {
 	while (!_handler->aborted) {
+		_q->finished = 0;
 		if(!_bg) {
 			LuaParam _v[] = { { "sessions", _sessions },
-							  { "requests", _requests }, 
+							  { "requests", _q }, 
 							  { "app", _handler }, 
 							  { "db", &_handler->database } };
 			_handler->runWorker(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_REQUEST);
 		} else {
-			LuaParam _v[] = { { "queue", _requests }, 
+			LuaParam _v[] = { { "queue", _q }, 
 							  { "app", _handler }, 
 							  { "db", &_handler->database } };
 			_handler->runWorker(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_QUEUE);
 		}
 
+		_q->finished = 1;
 		//VM has quit.
 		int cleaning = 0;
 		{
 			unique_lock<mutex> lk(_handler->cleanupLock); //Only allow one thread to clean up.
-			if (_requests->cleanupTask == 1) {
+			if (_q->cleanupTask == 1) {
 				cleaning = 1;
 				//Cleanup worker; worker that recieved CleanCache request
-				for (TaskQueue* q : _handler->requests) {
-					q->cleanupTask = 0; //Only clean up once!
-					//Set the queue to aborted
-					q->aborted = 1;
-					//Notify any blocked threads to process the next request.
-					q->cv.notify_one();
-					//Prevent any new requests from being queued.
-					q->cv_mutex.lock();
-
-					
+				for (TaskBase* task: _handler->workers) {
+					cleanup(task->_q);
 				}
 			}
 		}
 		
 		if(cleaning) {
 			//Wait for lua vms to finish.
-			while (_handler->waiting != _handler->workers.size()) {
-				this_thread::sleep_for(chrono::milliseconds(100));
-			}
 
 			//Delete loaded scripts
 			for(int i = 0; i < WEBAPP_SCRIPTS; i++) {
@@ -68,13 +72,13 @@ void WebappTask::execute() {
 			
 			//lua vms finished; clean up.
 			_handler->refresh_templates();
-			for (TaskQueue* q : _handler->requests) {
-				q->aborted = 0;
-				q->cv_mutex.unlock();
+			for (TaskBase* task: _handler->workers) {
+				task->_q->aborted = 0;
+				task->_q->cv_mutex.unlock();
 			}
 		} else {
 			//Just (attempt to) grab own lock.
-			unique_lock<mutex> lk(_requests->cv_mutex); //Unlock when done to complete the process.
+			unique_lock<mutex> lk(_q->cv_mutex); //Unlock when done to complete the process.
 			
 		}
 		
@@ -171,15 +175,14 @@ Webapp::Webapp(asio::io_service& io_svc) :
 	//Create/allocate initial worker tasks.
 	if (background_queue_enabled) {
 		compileScript("plugins/core/process_queue.lua", SCRIPT_QUEUE);
-		LockedQueue<Process*>* background_queue = new LockedQueue<Process*>();
-		workers.push_back(new WebappTask(this, NULL, background_queue, 1));
+		workers.push_back(new WebappTask(this, NULL, new LockedQueue<Process*>(), 1));
+		nWorkers--;
 	}
 	
 	compileScript("plugins/core/process.lua", SCRIPT_REQUEST);
 	compileScript("plugins/core/handlers.lua", SCRIPT_HANDLERS);
-	for (unsigned int i = background_queue_enabled; i < nWorkers; i++) {
-		unsigned int worker_id = background_queue_enabled ? i - 1 : i;
-		Sessions* session = new Sessions(worker_id);
+	for (unsigned int i = 0; i < nWorkers; i++) {
+		Sessions* session = new Sessions(i);
 		RequestQueue* request = new RequestQueue();
 		sessions.push_back(session);
 		requests.push_back(request);

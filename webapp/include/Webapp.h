@@ -62,6 +62,7 @@ class TaskQueue {
 public:
 	unsigned int cleanupTask = 0;
 	std::atomic<unsigned int> aborted{0};
+	unsigned int finished = 0;
 	std::condition_variable cv;
 	std::mutex cv_mutex; //Mutex to allow ready cv
 };
@@ -101,19 +102,22 @@ public:
 
 class TaskBase {
 public:
-    TaskBase(Webapp* handler) : _handler(handler) {}
+    TaskBase(Webapp* handler, TaskQueue* q) : _handler(handler), _q(q) {}
 	void start() {
 		_worker = std::thread([this]{execute();});
 	}
 	void join() {
 		_worker.join();
 	}
+	TaskQueue* _q = NULL;
 	virtual void execute() = 0;
     static void start_thread(TaskBase* base) { base->execute(); }
 protected:
 	Webapp* _handler = NULL;
+	
 private:
 	std::thread _worker;
+	
 };
 
 class WebappTask : public TaskBase {
@@ -121,10 +125,10 @@ private:
 	unsigned int _id;
 	unsigned int _bg;
 	Sessions* _sessions;
-	TaskQueue* _requests;
+	void cleanup(TaskQueue*);
 public:
-	WebappTask(Webapp* handler, Sessions* sessions, TaskQueue* requests, int background_task=0) 
-		: TaskBase(handler), _sessions(sessions), _requests(requests), _bg(background_task) {
+	WebappTask(Webapp* handler, Sessions* sessions, TaskQueue* queue, int background_task=0) 
+		: TaskBase(handler, queue), _sessions(sessions), _bg(background_task) {
 			start();
         }
 	void execute();
@@ -163,7 +167,6 @@ public:
 	Database database;
 	std::vector<Sessions*> sessions;
 
-	std::atomic<unsigned int> waiting{0};
 	unsigned int aborted = 0;
 
 	unsigned int background_queue_enabled = 1;
