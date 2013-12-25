@@ -333,12 +333,12 @@ void Webapp::refresh_templates() {
 
 
     //Load server templates.
-    files = FileSystem::GetFiles("templates/server/", "", 0);
+    files = FileSystem::GetFiles("templates/", "", 0);
     for(string& s: files) {
         if(!contains(serverTemplateList, s)) {
             string t = "T_" + s.substr(0, s.find_last_of("."));
             std::transform(t.begin()+2, t.end(), t.begin()+2, ::toupper);
-            cleanTemplate.AddIncludeDictionary(t)->SetFilename("templates/server/" + s);
+            cleanTemplate.AddIncludeDictionary(t)->SetFilename("templates/" + s);
             serverTemplateList.push_back(s);
         }
     }
