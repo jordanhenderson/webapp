@@ -16,6 +16,7 @@
 	RenderTemplate;
 	WriteData;
 
+	SetParamInt;
 	GetNextRequest;
 	ClearCache;
 	DisableBackgroundQueue;

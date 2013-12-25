@@ -8,6 +8,7 @@
 	<include os="linux">src/os/unix</include>
 	<output type="app">nginx</output>
 	<flags compiler="msvc">MT;W3</flags>
+	<flags>O2</flags>
 	<flags step="link" compiler="gcc">pthread;lcrypt</flags>
 	<flags step="link" compiler="msvc">SUBSYSTEM:CONSOLE</flags>
 	<flags type="pp">PCRE_STATIC</flags>

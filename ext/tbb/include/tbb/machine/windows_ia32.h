@@ -30,8 +30,6 @@
 #error Do not #include this internal file directly; use public TBB headers instead.
 #endif
 
-#include <windows.h> 
-
 #define __TBB_machine_windows_ia32_H
 
 #include "msvc_ia32_common.h"
@@ -67,26 +65,6 @@ extern "C" {
     __int64 __TBB_EXPORTED_FUNC __TBB_machine_fetchstore8 (volatile void *ptr, __int64 value );
     void __TBB_EXPORTED_FUNC __TBB_machine_store8 (volatile void *ptr, __int64 value );
     __int64 __TBB_EXPORTED_FUNC __TBB_machine_load8 (const volatile void *ptr);
-}
-
-inline long __TBB_machine_cmpswp4 (volatile void *ptr, __int32 value, __int32 comparand ) {
-    return _InterlockedCompareExchange( (long*)ptr, value, comparand );
-}
-inline long __TBB_machine_fetchadd4 (volatile void *ptr, __int32 addend ) {
-    return _InterlockedExchangeAdd( (long*)ptr, addend );
-}
-inline long __TBB_machine_fetchstore4 (volatile void *ptr, __int32 value ) {
-    return _InterlockedExchange( (long*)ptr, value );
-}
-
-inline __int64 __TBB_machine_cmpswp8 (volatile void *ptr, __int64 value, __int64 comparand ) {
-    return _InterlockedCompareExchange64( (__int64*)ptr, value, comparand );
-}
-inline __int64 __TBB_machine_fetchadd8 (volatile void *ptr, __int64 addend ) {
-    return _InterlockedExchangeAdd64( (__int64*)ptr, addend );
-}
-inline __int64 __TBB_machine_fetchstore8 (volatile void *ptr, __int64 value ) {
-    return _InterlockedExchange64( (__int64*)ptr, value );
 }
 
 //TODO: use _InterlockedXXX intrinsics as they available since VC 2005
@@ -134,8 +112,7 @@ static inline T __TBB_machine_fetchstore##S ( volatile void * ptr, U value ) { \
 
 __TBB_MACHINE_DEFINE_ATOMICS(1, __int8, __int8, al, cl)
 __TBB_MACHINE_DEFINE_ATOMICS(2, __int16, __int16, ax, cx)
-
-
+__TBB_MACHINE_DEFINE_ATOMICS(4, ptrdiff_t, ptrdiff_t, eax, ecx)
 
 #undef __TBB_MACHINE_DEFINE_ATOMICS
 

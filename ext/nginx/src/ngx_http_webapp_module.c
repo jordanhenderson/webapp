@@ -167,12 +167,12 @@ static void conn_write(ngx_event_t *ev) {
 	webapp_request.next = NULL;
 	ngx_str_t* output_chain[STRING_VARS] = {0};
 	
-	int body_size = 0;
+	size_t body_size = 0;
 	if(!ev->timedout && !ev->complete) {
 		if(r->method == NGX_HTTP_GET || r->method == NGX_HTTP_POST) {
 			int i = 0; //For later loop.
 			//Initialize possibly unused values to 0.
-			int content_len = 0, cookie_len = 0, agent_len = 0, host_len = 0;
+			size_t content_len = 0, cookie_len = 0, agent_len = 0, host_len = 0;
 			
 			output_chain[0] = &r->unparsed_uri;
 
@@ -216,7 +216,7 @@ static void conn_write(ngx_event_t *ev) {
 				if(r->request_body->bufs->next != NULL) {
 					ngx_chain_t* cl;
 					ngx_buf_t* buf;
-					int len = 0;
+					size_t len = 0;
 					for(cl = r->request_body->bufs; cl; cl = cl->next) {
 						buf = cl->buf;
 						len += buf->last - buf->pos;
@@ -229,7 +229,7 @@ static void conn_write(ngx_event_t *ev) {
 						for(cl = r->request_body->bufs; cl; cl = cl->next) {
 							int current_buf_len;
 							buf = cl->buf;
-							current_buf_len = buf->last - buf->pos;
+							current_buf_len = (int)buf->last - (int)buf->pos;
 							req = ngx_copy(req, cl->buf->pos, current_buf_len);
 							bytes_out += current_buf_len;
 						}
@@ -322,7 +322,7 @@ static void webapp_body_ready(ngx_http_request_t* r) {
 static ngx_int_t
 ngx_http_webapp_content_handler(ngx_http_request_t *r) {
 	int path_level = 0;
-	int rc;
+	ngx_int_t rc;
 	unsigned int i = 0;
 	ngx_http_webapp_loc_conf_t* wlcf;
 	wlcf = ngx_http_get_module_loc_conf(r, ngx_http_webapp_module);

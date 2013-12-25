@@ -172,7 +172,7 @@ public:
 	unsigned int background_queue_enabled = 1;
 	std::vector<RequestQueue*> requests;
 	int node_counter = 0;
-	
+	unsigned int port = WEBAPP_PORT_DEFAULT;
 	std::mutex cleanupLock;
 };
 

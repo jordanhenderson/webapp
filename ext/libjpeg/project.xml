@@ -2,6 +2,7 @@
 <project>
 	<output type="static">libjpeg</output>
 	<flags compiler="msvc">MT;W3</flags>
+	<flags>O2</flags>
 	<include>include</include>
 	<source f="./src/bmp.c"/>
 	<source f="./src/cdjpeg.c"/>

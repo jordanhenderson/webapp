@@ -83,6 +83,15 @@ void DestroySession(SessionStore* session) {
 	session->destroy();
 }
 
+void SetParamInt(Webapp* app, unsigned int key, unsigned int value) {
+	if(app == NULL) return;
+	switch(key) {
+		case WEBAPP_PARAM_PORT:
+			app->port = value;
+			break;
+	}
+}
+
 Request* GetNextRequest(RequestQueue* requests) {
 	if (requests == NULL) return NULL;
 	Request* request = NULL;
@@ -151,7 +160,7 @@ void FinishRequest(Request* request) {
 
 void WriteData(asio::ip::tcp::socket* socket, webapp_str_t* data) {
 	if (socket == NULL || data == NULL || data->data == NULL) return;
-	*(unsigned short*)data->data = htons(data->len - sizeof(unsigned short));
+	*(unsigned short*)data->data = htons((unsigned short)data->len - sizeof(unsigned short));
 	try {
 		asio::write(*socket, asio::buffer(data->data, data->len));
 	}

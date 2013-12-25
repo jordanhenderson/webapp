@@ -104,10 +104,18 @@
     #define __TBB_MAKE_EXCEPTION_PTR_PRESENT          (_MSC_VER >= 1700 || (__GXX_EXPERIMENTAL_CXX0X__ && __TBB_GCC_VERSION >= 40600))
     #define __TBB_STATIC_ASSERT_PRESENT               (__INTEL_CXX11_MODE__ || _MSC_VER >= 1600)
     #define __TBB_CPP11_TUPLE_PRESENT                 (_MSC_VER >= 1600 || (__GXX_EXPERIMENTAL_CXX0X__ && __TBB_GCC_VERSION >= 40300))
-    /** TODO: re-check for compiler version greater than 12.1 if it supports initializer lists**/
-    #define __TBB_INITIALIZER_LISTS_PRESENT           0
-    #define __TBB_CONSTEXPR_PRESENT                   0
-    #define __TBB_DEFAULTED_AND_DELETED_FUNC_PRESENT  __INTEL_CXX11_MODE__ 
+    /**Intel C++ compiler 14.0 crashes on using __has_include. When it fixed, condition will need to be updated. **/
+    #if (__clang__ && __INTEL_COMPILER > 1400)
+        #if (__has_feature(__cxx_generalized_initializers__) && __has_include(<initializer_list>))
+            #define __TBB_INITIALIZER_LISTS_PRESENT   1
+        #endif
+    #else
+        /** TODO: when MSVC2013 is supported by Intel C++ compiler, it will be enabled silently by compiler, so rule will need to be updated.**/
+        #define __TBB_INITIALIZER_LISTS_PRESENT       __INTEL_CXX11_MODE__ && __INTEL_COMPILER >= 1400 && (_MSC_VER >= 1800 || __TBB_GCC_VERSION >= 40400 || _LIBCPP_VERSION)
+    #endif
+    
+    #define __TBB_CONSTEXPR_PRESENT                   __INTEL_CXX11_MODE__ && __INTEL_COMPILER >= 1400
+    #define __TBB_DEFAULTED_AND_DELETED_FUNC_PRESENT  __INTEL_CXX11_MODE__ && __INTEL_COMPILER >= 1200
 #elif __clang__
 //TODO: these options need to be rechecked
 /** on OS X* the only way to get C++11 is to use clang. For library features (e.g. exception_ptr) libc++ is also
@@ -143,15 +151,15 @@
     #define __TBB_CONSTEXPR_PRESENT                   (__GXX_EXPERIMENTAL_CXX0X__ && __TBB_GCC_VERSION >= 40400)
     #define __TBB_DEFAULTED_AND_DELETED_FUNC_PRESENT  (__GXX_EXPERIMENTAL_CXX0X__ && __TBB_GCC_VERSION >= 40400)
 #elif _MSC_VER
-    #define __TBB_CPP11_VARIADIC_TEMPLATES_PRESENT    0
+    #define __TBB_CPP11_VARIADIC_TEMPLATES_PRESENT    (_MSC_VER >= 1800)
     #define __TBB_CPP11_RVALUE_REF_PRESENT            (_MSC_VER >= 1600)
     #define __TBB_EXCEPTION_PTR_PRESENT               (_MSC_VER >= 1600)
     #define __TBB_STATIC_ASSERT_PRESENT               (_MSC_VER >= 1600)
     #define __TBB_MAKE_EXCEPTION_PTR_PRESENT          (_MSC_VER >= 1700)
     #define __TBB_CPP11_TUPLE_PRESENT                 (_MSC_VER >= 1600)
-    #define __TBB_INITIALIZER_LISTS_PRESENT           0
+    #define __TBB_INITIALIZER_LISTS_PRESENT           (_MSC_VER >= 1800)
     #define __TBB_CONSTEXPR_PRESENT                   0
-    #define __TBB_DEFAULTED_AND_DELETED_FUNC_PRESENT  0
+    #define __TBB_DEFAULTED_AND_DELETED_FUNC_PRESENT  (_MSC_VER >= 1800)
 #else
     #define __TBB_CPP11_VARIADIC_TEMPLATES_PRESENT    0
     #define __TBB_CPP11_RVALUE_REF_PRESENT            0
@@ -195,6 +203,12 @@
     #define __TBB_ICC_BUILTIN_ATOMICS_PRESENT 1
 #endif
 
+#if __MIC__ || __MIC2__
+#define __TBB_DEFINE_MIC 1
+#endif
+
+#define __TBB_TSX_INTRINSICS_PRESENT ( (__TBB_GCC_VERSION>=40800) || (_MSC_VER>=1700) || (__INTEL_COMPILER>=1300) ) && !__TBB_DEFINE_MIC
+
 /** User controlled TBB features & modes **/
 
 #ifndef TBB_USE_DEBUG
@@ -232,10 +246,6 @@
 #define TBB_USE_PERFORMANCE_WARNINGS TBB_USE_DEBUG
 #endif /* TBB_PEFORMANCE_WARNINGS */
 #endif /* TBB_USE_PERFORMANCE_WARNINGS */
-
-#if __MIC__ || __MIC2__
-#define __TBB_DEFINE_MIC 1
-#endif
 
 #if !defined(__EXCEPTIONS) && !defined(_CPPUNWIND) && !defined(__SUNPRO_CC) || defined(_XBOX)
     #if TBB_USE_EXCEPTIONS
@@ -321,32 +331,31 @@
     #define __TBB_SCHEDULER_OBSERVER 1
 #endif /* __TBB_SCHEDULER_OBSERVER */
 
-#if !defined(TBB_PREVIEW_TASK_ARENA) && __TBB_BUILD
-    #define TBB_PREVIEW_TASK_ARENA __TBB_CPF_BUILD
-#endif /* TBB_PREVIEW_TASK_ARENA */
-#define __TBB_TASK_ARENA TBB_PREVIEW_TASK_ARENA
-#if TBB_PREVIEW_TASK_ARENA
-    #define TBB_PREVIEW_LOCAL_OBSERVER 1
-    #define __TBB_NO_IMPLICIT_LINKAGE 1
-    #define __TBB_RECYCLE_TO_ENQUEUE 1
-    #ifndef __TBB_TASK_PRIORITY
-        #define __TBB_TASK_PRIORITY 0 // TODO: it will be removed in next versions
-    #endif
+#ifndef __TBB_TASK_ARENA
+    #define __TBB_TASK_ARENA (__TBB_BUILD||TBB_PREVIEW_TASK_ARENA)
+#endif /* __TBB_TASK_ARENA  */
+#if __TBB_TASK_ARENA
+    #define __TBB_RECYCLE_TO_ENQUEUE __TBB_BUILD // keep non-official
     #if !__TBB_SCHEDULER_OBSERVER
         #error TBB_PREVIEW_TASK_ARENA requires __TBB_SCHEDULER_OBSERVER to be enabled
     #endif
-#endif /* TBB_PREVIEW_TASK_ARENA */
+#endif /* __TBB_TASK_ARENA */
 
 #if !defined(TBB_PREVIEW_LOCAL_OBSERVER) && __TBB_BUILD && __TBB_SCHEDULER_OBSERVER
     #define TBB_PREVIEW_LOCAL_OBSERVER 1
 #endif /* TBB_PREVIEW_LOCAL_OBSERVER */
+
+
+#ifndef __TBB_ITT_STRUCTURE_API
+#define __TBB_ITT_STRUCTURE_API ( !__TBB_DEFINE_MIC && (__TBB_CPF_BUILD || TBB_PREVIEW_FLOW_GRAPH_TRACE) )
+#endif
 
 #if TBB_USE_EXCEPTIONS && !__TBB_TASK_GROUP_CONTEXT
     #error TBB_USE_EXCEPTIONS requires __TBB_TASK_GROUP_CONTEXT to be enabled
 #endif
 
 #ifndef __TBB_TASK_PRIORITY
-    #define __TBB_TASK_PRIORITY __TBB_TASK_GROUP_CONTEXT
+    #define __TBB_TASK_PRIORITY (!__TBB_CPF_BUILD&&__TBB_TASK_GROUP_CONTEXT) // TODO: it will be enabled for CPF in the next versions
 #endif /* __TBB_TASK_PRIORITY */
 
 #if __TBB_TASK_PRIORITY && !__TBB_TASK_GROUP_CONTEXT
@@ -382,6 +391,11 @@
 #endif
 #endif
 
+#if !defined(TBB_PREVIEW_SPECULATIVE_SPIN_RW_MUTEX)
+    #define TBB_PREVIEW_SPECULATIVE_SPIN_RW_MUTEX __TBB_CPF_BUILD
+#endif /* TBB_PREVIEW_SPECULATIVE_SPIN_RW_MUTEX */
+
+
 /** __TBB_WIN8UI_SUPPORT enables support of New Windows*8 Store Apps and limit a possibility to load
     shared libraries at run time only from application container **/
 #if defined(WINAPI_FAMILY) && WINAPI_FAMILY == WINAPI_FAMILY_APP
@@ -413,6 +427,8 @@
 #       define __TBB_generic_arch 1
 #   endif
 #endif
+
+#define __TBB_TSX_AVAILABLE  (__TBB_x86_32 || __TBB_x86_64) && !__TBB_DEFINE_MIC
 
 /** Macros of the form __TBB_XXX_BROKEN denote known issues that are caused by
     the bugs in compilers, standard or OS specific libraries. They should be
@@ -525,7 +541,7 @@
     #define __TBB_LIBSTDCPP_EXCEPTION_HEADERS_BROKEN 0
 #endif
 
-#if __TBB_x86_32 && (__linux__ || __APPLE__ || _WIN32 || __sun) &&  ((defined(__INTEL_COMPILER) && __INTEL_COMPILER <= 1300) || (__GNUC__==3 && __GNUC_MINOR__==3 ) || defined(__SUNPRO_CC))
+#if __TBB_x86_32 && (__linux__ || __APPLE__ || _WIN32 || __sun) &&  ((defined(__INTEL_COMPILER) && __INTEL_COMPILER <= 1400) || (__GNUC__==3 && __GNUC_MINOR__==3 ) || defined(__SUNPRO_CC))
     // Some compilers for IA-32 fail to provide 8-byte alignment of objects on the stack,
     // even if the object specifies 8-byte alignment.  On such platforms, the IA-32 implementation
     // of 64 bit atomics (e.g. atomic<long long>) use different tactics depending upon
@@ -540,6 +556,12 @@
 #endif
 /** End of __TBB_XXX_BROKEN macro section **/
 
+#if defined(_MSC_VER) && _MSC_VER>=1500 && !defined(__INTEL_COMPILER)
+    // A macro to suppress erroneous or benign "unreachable code" MSVC warning (4702)
+    #define __TBB_MSVC_UNREACHABLE_CODE_IGNORED 1
+#endif
+
 #define __TBB_ATOMIC_CTORS     (__TBB_CONSTEXPR_PRESENT && __TBB_DEFAULTED_AND_DELETED_FUNC_PRESENT && (!__TBB_ZERO_INIT_WITH_DEFAULTED_CTOR_BROKEN))
 
+#define __TBB_ALLOCATOR_CONSTRUCT_VARIADIC      (__TBB_CPP11_VARIADIC_TEMPLATES_PRESENT && __TBB_CPP11_RVALUE_REF_PRESENT)
 #endif /* __TBB_tbb_config_H */

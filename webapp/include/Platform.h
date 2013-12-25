@@ -62,5 +62,7 @@
 #define INT_INTERVAL(i) sizeof(int)*i
 #define WEBAPP_DEFAULT_QUEUESIZE 1023
 #define WEBAPP_SCRIPTS 4
+#define WEBAPP_PARAM_PORT 0
+#define WEBAPP_PORT_DEFAULT 5000
 #endif
 

@@ -64,11 +64,11 @@ void WebappTask::execute() {
 			}
 			
 			_handler->compileScript("plugins/init.lua", SCRIPT_INIT);
+			_handler->compileScript("plugins/core/process.lua", SCRIPT_REQUEST);
+			_handler->compileScript("plugins/core/handlers.lua", SCRIPT_HANDLERS);
 			if (_handler->background_queue_enabled)
 				_handler->compileScript("plugins/core/process_queue.lua", SCRIPT_QUEUE);
 			
-			_handler->compileScript("plugins/core/process.lua", SCRIPT_REQUEST);
-			_handler->compileScript("plugins/core/handlers.lua", SCRIPT_HANDLERS);
 			
 			//lua vms finished; clean up.
 			_handler->refresh_templates();
@@ -116,24 +116,28 @@ void Webapp::runWorker(LuaParam* params, int nArgs, script_t script) {
 	luaopen_lpeg(L);
 	luaopen_cjson(L);
 	webapp_str_t* static_strings = new webapp_str_t[WEBAPP_STATIC_STRINGS];
+	Request* r = NULL;
 	
-	if(script == SCRIPT_REQUEST) {
-		//Preload handlers.
-		if(luaL_loadbuffer(L, scripts[SCRIPT_HANDLERS].data, scripts[SCRIPT_HANDLERS].len, "core/process"))
-			goto lua_error;
+	//Preload handlers.
+	if(luaL_loadbuffer(L, scripts[SCRIPT_HANDLERS].data, scripts[SCRIPT_HANDLERS].len, "core/process"))
+		goto lua_error;
 
-		if(lua_pcall (L, 0, 1, 0)) 
-			goto lua_error;
-		
-		// store funky module table in global var
-		lua_setfield (L, LUA_GLOBALSINDEX, "load_handlers");
-	}
-		
+	if(lua_pcall (L, 0, 1, 0)) 
+		goto lua_error;
+	
+	// store funky module table in global var
+	lua_setfield (L, LUA_GLOBALSINDEX, "load_handlers");
 	
 	//Create temporary webapp_str_t for string creation between vm/c
 	lua_pushlightuserdata(L, static_strings);
 	lua_setglobal(L, "static_strings");
-
+	
+	if(script == SCRIPT_INIT) {
+		r = new Request();
+		lua_pushlightuserdata(L, r);
+		lua_setglobal(L, "tmp_request");
+	}
+	
 	if(params != NULL) {
 		for(int i = 0; i < nArgs; i++) {
 			LuaParam* p = params + i;
@@ -155,6 +159,7 @@ lua_error:
 
 finish:
 	delete[] static_strings;
+	if(r != NULL) delete r;
 	lua_close(L);
 }
 
@@ -168,6 +173,8 @@ Webapp::Webapp(asio::io_service& io_svc) :
 	
 	LuaParam _v[] = { { "app", this }, { "db", &database } };
 	compileScript("plugins/init.lua", SCRIPT_INIT);
+	compileScript("plugins/core/process.lua", SCRIPT_REQUEST);
+	compileScript("plugins/core/handlers.lua", SCRIPT_HANDLERS);
 	runWorker(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_INIT);
 
     refresh_templates();
@@ -179,8 +186,6 @@ Webapp::Webapp(asio::io_service& io_svc) :
 		nWorkers--;
 	}
 	
-	compileScript("plugins/core/process.lua", SCRIPT_REQUEST);
-	compileScript("plugins/core/handlers.lua", SCRIPT_HANDLERS);
 	for (unsigned int i = 0; i < nWorkers; i++) {
 		Sessions* session = new Sessions(i);
 		RequestQueue* request = new RequestQueue();
@@ -190,7 +195,7 @@ Webapp::Webapp(asio::io_service& io_svc) :
 	}
 
 	asio::io_service::work wrk = asio::io_service::work(svc);
-	tcp::endpoint endpoint(tcp::v4(), 5000);
+	tcp::endpoint endpoint(tcp::v4(), port);
 	acceptor = new tcp::acceptor(svc, endpoint, true);
 	accept_message();
 	svc.run(); //block the main thread.

@@ -2,6 +2,7 @@
 <project>
 	<output type="static">lpng</output>
 	<flags compiler="msvc">MT;W3</flags>
+	<flags>O2</flags>
 	<include>include;../zlib/include</include>
 	<source f="src/png.c"/>
 	<source f="src/pngerror.c"/>

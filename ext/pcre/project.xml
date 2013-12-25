@@ -2,6 +2,7 @@
 <project>
 	<output type="static">pcre</output>
 	<flags compiler="msvc">MT;W3</flags>
+	<flags>O2</flags>
 	<flags type="pp">HAVE_CONFIG_H;PCRE_STATIC</flags>
 	<include>include</include>
 	<source f="src/pcreposix.c"/>

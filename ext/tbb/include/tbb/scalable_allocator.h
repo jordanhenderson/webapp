@@ -102,7 +102,10 @@ typedef enum {
 typedef enum {
     TBBMALLOC_USE_HUGE_PAGES,  /* value turns using huge pages on and off */
     /* deprecated, kept for backward compatibility only */
-    USE_HUGE_PAGES = TBBMALLOC_USE_HUGE_PAGES
+    USE_HUGE_PAGES = TBBMALLOC_USE_HUGE_PAGES,
+    /* try to limit memory consumption value Bytes, clean internal buffers
+       if limit is exceeded, but not prevents from requesting memory from OS */
+    TBBMALLOC_SET_SOFT_HEAP_LIMIT
 } AllocationModeParam;
 
 /** Set TBB allocator-specific allocation modes.
@@ -129,6 +132,7 @@ int __TBB_EXPORTED_FUNC scalable_allocation_command(int cmd, void *param);
 
 #ifdef __cplusplus
 
+//! The namespace rml contains components of low-level memory pool interface.
 namespace rml {
 class MemoryPool;
 
@@ -260,7 +264,7 @@ public:
         size_type absolutemax = static_cast<size_type>(-1) / sizeof (value_type);
         return (absolutemax > 0 ? absolutemax : 1);
     }
-#if __TBB_CPP11_VARIADIC_TEMPLATES_PRESENT && __TBB_CPP11_RVALUE_REF_PRESENT
+#if __TBB_ALLOCATOR_CONSTRUCT_VARIADIC
     template<typename U, typename... Args>
     void construct(U *p, Args&&... args)
  #if __TBB_CPP11_STD_FORWARD_BROKEN
@@ -268,9 +272,9 @@ public:
  #else
         { ::new((void *)p) U(std::forward<Args>(args)...); }
  #endif
-#else // __TBB_CPP11_VARIADIC_TEMPLATES_PRESENT && __TBB_CPP11_RVALUE_REF_PRESENT
+#else // __TBB_ALLOCATOR_CONSTRUCT_VARIADIC
     void construct( pointer p, const value_type& value ) {::new((void*)(p)) value_type(value);}
-#endif // __TBB_CPP11_VARIADIC_TEMPLATES_PRESENT && __TBB_CPP11_RVALUE_REF_PRESENT
+#endif // __TBB_ALLOCATOR_CONSTRUCT_VARIADIC
     void destroy( pointer p ) {p->~value_type();}
 };
 
