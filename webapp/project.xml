@@ -11,8 +11,8 @@
 	<depends link="true">../ext/zlib</depends>
 	<depends>../ext/nginx</depends>
 	<output type="app">webapp</output>
-	<flags>O2</flags>
 	<flags compiler="msvc">MT;W3;wd4996;EHsc</flags>
+	<flags>O2</flags>
 	<flags compiler="gcc">std=c++11;std=c99;fvisibility=hidden;g</flags>
 	<flags step="link" compiler="gcc">pthread;lstdc++;lm;ldl;fvisibility=hidden;Wl,--dynamic-list=api.exp</flags>
 	<flags type="pp" compiler="msvc">UNICODE;_UNICODE;_WIN32_WINNT=0x0502;ASIO_MSVC;ASIO_WINDOWS;WIN32;_CONSOLE;_WIN32;_VISUALC_</flags>

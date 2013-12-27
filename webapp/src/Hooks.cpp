@@ -169,6 +169,19 @@ void WriteData(asio::ip::tcp::socket* socket, webapp_str_t* data) {
 	}
 }
 
+Database* CreateDatabase(Webapp* app) {
+	if(app == NULL) return NULL;
+	Database* db = new Database();
+	app->databases.push_back(db);
+	return db;
+}
+
+Database* GetDatabase(Webapp* app, int index) {
+	if(app == NULL) return NULL;
+	if(index < app->databases.size()) return app->databases.at(index);
+	return NULL;
+}
+
 int ConnectDatabase(Database* db, int database_type, const char* host, const char* username, const char* password, const char* database) {
 	if (db == NULL) return -1;
 
@@ -180,17 +193,17 @@ long long ExecString(Database* db, webapp_str_t* query) {
 	return db->exec(string(query->data, query->len));
 }
 
-int SelectQuery(Database* db, Query* q) {
-	if (db == NULL || q == NULL) return 0;
-	db->select(q);
+int SelectQuery(Query* q) {
+	if (q == NULL) return 0;
+	q->process();
 	return q->status;
 }
 
-Query* CreateQuery(webapp_str_t* in, Request* r, int desc) {
+Query* CreateQuery(webapp_str_t* in, Request* r, Database* db, int desc) {
 	if (r == NULL) return NULL;
 	Query* q = NULL;
-	if (in == NULL) q = new Query(desc);
-	else q = new Query(string(in->data, in->len), desc);
+	if (in == NULL) q = new Query(db, desc);
+	else q = new Query(db, string(in->data, in->len), desc);
 
 	r->queries.push_back(q);
 	return q;

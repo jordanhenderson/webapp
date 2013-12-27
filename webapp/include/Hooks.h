@@ -33,10 +33,12 @@ APIEXPORT void DisableBackgroundQueue(Webapp* app);
 APIEXPORT unsigned long long GetWebappTime();
 
 //Database
+APIEXPORT Database* CreateDatabase(Webapp*);
+APIEXPORT Database* GetDatabase(Webapp*, int index);
 APIEXPORT int ConnectDatabase(Database*, int database_type, const char* host, const char* username, const char* password, const char* database);
 APIEXPORT long long ExecString(Database*, webapp_str_t* in);
-APIEXPORT int SelectQuery(Database*, Query*);
-APIEXPORT Query* CreateQuery(webapp_str_t* in, Request* request, int desc);
+APIEXPORT int SelectQuery(Query*);
+APIEXPORT Query* CreateQuery(webapp_str_t* in, Request* request, Database* db, int desc);
 APIEXPORT void SetQuery(Query*, webapp_str_t* in);
 APIEXPORT void BindParameter(Query* q, webapp_str_t* in);
 APIEXPORT void GetCell(Query* q, unsigned int column, webapp_str_t* out);

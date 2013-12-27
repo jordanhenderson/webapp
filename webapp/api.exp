@@ -21,6 +21,8 @@
 	ClearCache;
 	DisableBackgroundQueue;
 
+	CreateDatabase;
+	GetDatabase;
 	ConnectDatabase;
 	ExecString;
 	SelectQuery;

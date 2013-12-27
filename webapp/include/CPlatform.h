@@ -48,15 +48,6 @@ extern "C" {
 #endif
 };
 
-class Internal {
-public:
-	Internal() { nError = 0; };
-	int GetLastError() {
-		return nError;
-	};
-protected: int nError;
-};
-
 //webapp string, helper functions.
 struct webapp_str_t {
 	const char* data = NULL;

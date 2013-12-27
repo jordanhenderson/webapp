@@ -10,27 +10,28 @@
 
 struct GifFileType;
 
-class Image : public Internal {
+class Image {
 private:
-	void cleanup();
-	unsigned char* _resize(unsigned char* image, int width, int height, int oldWidth, int oldHeight);
-	int imageType;
-	int width;
-	int height;
-	int nBytes;
-	unsigned char* pixels;
+	unsigned int nError = 0;
+	int imageType = 0;
+	int width = 0;
+	int height = 0;
+	int nBytes = 0;
+	unsigned char* pixels = NULL;
 	void changeType(const std::string& filename);
 	//PNG ONLY
-	int bitdepth;
-	unsigned char** row_pointers; 
-	void regenRowPointers();
+	int bitdepth = 0;
+	unsigned char** row_pointers = NULL; 
 	//GIF ONLY
-	int imagecount;
-	GifFileType* gif;
-	unsigned char** frames;
+	int imagecount = 0;
+	GifFileType* gif = NULL;
+	unsigned char** frames = NULL;
 	int gifGetTransparentColor(int frame);
 	void gifInsertFrame(int frame);
 	void gifMakeMap(unsigned char* image, int width, int height, unsigned char** map, unsigned char** raster);
+	void cleanup();
+	unsigned char* _resize(unsigned char* image, int width, int height, int oldWidth, int oldHeight);
+	void regenRowPointers();
 public:
 	Image(const std::string& filename);
 	~Image();
@@ -40,6 +41,7 @@ public:
 	inline int getHeight() {
 		return height;	
 	};
+	inline unsigned int GetLastError() { return nError; };
 	void load(const std::string& filename);
 	void resize(int width, int height);
 	void save(const std::string& filename);

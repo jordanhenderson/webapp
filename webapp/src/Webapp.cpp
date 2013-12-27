@@ -29,13 +29,11 @@ void WebappTask::execute() {
 		if(!_bg) {
 			LuaParam _v[] = { { "sessions", _sessions },
 							  { "requests", _q }, 
-							  { "app", _handler }, 
-							  { "db", &_handler->database } };
+							  { "app", _handler } };
 			_handler->runWorker(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_REQUEST);
 		} else {
 			LuaParam _v[] = { { "queue", _q }, 
-							  { "app", _handler }, 
-							  { "db", &_handler->database } };
+							  { "app", _handler } };
 			_handler->runWorker(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_QUEUE);
 		}
 
@@ -171,7 +169,7 @@ Webapp::Webapp(asio::io_service& io_svc) :
 
 	//Run init plugin
 	
-	LuaParam _v[] = { { "app", this }, { "db", &database } };
+	LuaParam _v[] = { { "app", this } };
 	compileScript("plugins/init.lua", SCRIPT_INIT);
 	compileScript("plugins/core/process.lua", SCRIPT_REQUEST);
 	compileScript("plugins/core/handlers.lua", SCRIPT_HANDLERS);
@@ -201,11 +199,11 @@ Webapp::Webapp(asio::io_service& io_svc) :
 	svc.run(); //block the main thread.
 }
 
-void Webapp::processRequest(Request* r, int amount) {
+void Webapp::processRequest(Request* r, size_t amount) {
 	r->v = new std::vector<char>(amount);
 	asio::async_read(*r->socket, asio::buffer(*r->v), transfer_exactly(amount),
 		[this, r](const asio::error_code& error, std::size_t bytes_transferred) {
-			int read = 0;
+			size_t read = 0;
 			//Read each input chain variable recieved from nginx appropriately.
 			for(int i = 0; i < STRING_VARS; i++) {
 				if(r->input_chain[i]->data == NULL) {
@@ -266,7 +264,7 @@ void Webapp::accept_message() {
 						r->input_chain[3] = &r->cookies;
 						r->input_chain[4] = &r->request_body;
 
-						int len = 0;
+						size_t len = 0;
 						for(int i = 0; i < STRING_VARS; i++) {
 							len += r->input_chain[i]->len + 1;
 						}
@@ -299,6 +297,11 @@ Webapp::~Webapp() {
 			t->join();
 			delete t;
 		}
+	}
+	
+	//Delete databases
+	for(Database* db : databases) {
+		if (db != NULL) delete db;
 	}
 
 	//Delete loaded scripts

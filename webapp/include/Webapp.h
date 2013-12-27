@@ -137,8 +137,9 @@ public:
 
 typedef enum {SCRIPT_INIT, SCRIPT_QUEUE, SCRIPT_REQUEST, SCRIPT_HANDLERS} script_t;
 
-class Webapp : public Internal {
+class Webapp {
 private:
+	unsigned int nError = 0;
 	void runWorker(LuaParam* params, int nArgs, script_t script);
 	void compileScript(const char* filename, script_t output);
 	std::array<webapp_str_t, WEBAPP_SCRIPTS> scripts;
@@ -152,21 +153,21 @@ private:
 	void accept_message();
 	asio::io_service& svc;
 	
-	void processRequest(Request* r, int len);
+	void processRequest(Request* r, size_t len);
 	
     ctemplate::TemplateDictionary cleanTemplate;
 	unsigned int nWorkers;
 	friend class WebappTask;
 public:
+	inline unsigned int GetLastError() { return nError; };
 	std::vector<TaskBase*> workers;
 	Webapp(asio::io_service& io_svc);
 	~Webapp();
 	ctemplate::TemplateDictionary* getTemplate(const std::string& page);
 	void refresh_templates();
 	
-	Database database;
 	std::vector<Sessions*> sessions;
-
+	std::vector<Database*> databases;
 	unsigned int aborted = 0;
 
 	unsigned int background_queue_enabled = 1;
