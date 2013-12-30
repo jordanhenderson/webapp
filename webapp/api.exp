@@ -22,6 +22,7 @@
 	DisableBackgroundQueue;
 
 	CreateDatabase;
+	DestroyDatabase;
 	GetDatabase;
 	ConnectDatabase;
 	ExecString;

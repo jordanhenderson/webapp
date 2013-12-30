@@ -1,6 +1,10 @@
+/* Copyright (C) Jordan Henderson - All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ * Written by Jordan Henderson <jordan.henderson@ioflame.com>, 2013
+ */
 
 #include "Webapp.h"
-
 
 using namespace std;
 
@@ -11,9 +15,8 @@ int main(int argc, char* argv[]) {
 	#endif
 
 	asio::io_service svc;
-	Webapp* gallery = new Webapp(svc);
-		
-	delete gallery;
-	return 0;
+	Webapp app(svc);
+
+	return app.Start();
 }
 

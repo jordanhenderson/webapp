@@ -1,4 +1,8 @@
-
+/* Copyright (C) Jordan Henderson - All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ * Written by Jordan Henderson <jordan.henderson@ioflame.com>, 2013
+ */
 /*
 int getData(Webapp* webapp, void* vars, webapp_str_t* out, SessionStore* store) {
 	/*

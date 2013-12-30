@@ -1,3 +1,9 @@
+/* Copyright (C) Jordan Henderson - All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ * Written by Jordan Henderson <jordan.henderson@ioflame.com>, 2013
+ */
+
 #include "Webapp.h"
 #include "Image.h"
 
@@ -52,8 +58,6 @@ void WebappTask::execute() {
 		}
 		
 		if(cleaning) {
-			//Wait for lua vms to finish.
-
 			//Delete loaded scripts
 			for(int i = 0; i < WEBAPP_SCRIPTS; i++) {
 				if(_handler->scripts[i].data != NULL) {
@@ -66,20 +70,15 @@ void WebappTask::execute() {
 			_handler->compileScript("plugins/core/handlers.lua", SCRIPT_HANDLERS);
 			if (_handler->background_queue_enabled)
 				_handler->compileScript("plugins/core/process_queue.lua", SCRIPT_QUEUE);
-			
-			
 			//lua vms finished; clean up.
 			_handler->refresh_templates();
 			for (TaskBase* task: _handler->workers) {
 				task->_q->aborted = 0;
 				task->_q->cv_mutex.unlock();
 			}
-		} else {
 			//Just (attempt to) grab own lock.
-			unique_lock<mutex> lk(_q->cv_mutex); //Unlock when done to complete the process.
-			
-		}
-		
+		} else unique_lock<mutex> lk(_q->cv_mutex); 
+		//Unlock when done to complete the process.
 	}
 }
 
@@ -163,19 +162,17 @@ finish:
 
 Webapp::Webapp(asio::io_service& io_svc) : 
 										svc(io_svc), 
-                                        nWorkers(WEBAPP_NUM_THREADS - 1),
-                                        cleanTemplate("")
+										cleanTemplate("")
 									{
 
 	//Run init plugin
-	
 	LuaParam _v[] = { { "app", this } };
 	compileScript("plugins/init.lua", SCRIPT_INIT);
 	compileScript("plugins/core/process.lua", SCRIPT_REQUEST);
 	compileScript("plugins/core/handlers.lua", SCRIPT_HANDLERS);
 	runWorker(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_INIT);
 
-    refresh_templates();
+	refresh_templates();
 
 	//Create/allocate initial worker tasks.
 	if (background_queue_enabled) {
@@ -186,17 +183,16 @@ Webapp::Webapp(asio::io_service& io_svc) :
 	
 	for (unsigned int i = 0; i < nWorkers; i++) {
 		Sessions* session = new Sessions(i);
-		RequestQueue* request = new RequestQueue();
+		LockedQueue<Request*>* requests = new LockedQueue<Request*>();
 		sessions.push_back(session);
-		requests.push_back(request);
-		workers.push_back(new WebappTask(this, session, request));	
+		request_queues.push_back(requests);
+		workers.push_back(new WebappTask(this, session, requests));	
 	}
 
 	asio::io_service::work wrk = asio::io_service::work(svc);
 	tcp::endpoint endpoint(tcp::v4(), port);
 	acceptor = new tcp::acceptor(svc, endpoint, true);
 	accept_message();
-	svc.run(); //block the main thread.
 }
 
 void Webapp::processRequest(Request* r, size_t amount) {
@@ -228,11 +224,8 @@ void Webapp::processRequest(Request* r, size_t amount) {
 				
 			}
 
-			RequestQueue* queue = requests.at(selected_node);
-			queue->cv_mutex.lock();
-			queue->requests.enqueue(r);
-			queue->cv_mutex.unlock();
-			queue->cv.notify_one();
+			LockedQueue<Request*>* queue = request_queues.at(selected_node);
+			queue->enqueue(r);
 	});
 }
 
@@ -279,10 +272,9 @@ void Webapp::accept_message() {
 	});
 }
 
-
 Webapp::~Webapp() {
 	for (unsigned int i = 0; i < nWorkers; i++) {
-		RequestQueue* rq = requests.at(i);
+		LockedQueue<Request*>* rq = request_queues.at(i);
 		rq->aborted = 1;
 		rq->cv.notify_one();
 		delete rq;
@@ -300,7 +292,8 @@ Webapp::~Webapp() {
 	}
 	
 	//Delete databases
-	for(Database* db : databases) {
+	for(auto db_entry : databases) {
+		auto db = db_entry.second;
 		if (db != NULL) delete db;
 	}
 
@@ -314,7 +307,7 @@ Webapp::~Webapp() {
 
 TemplateDictionary* Webapp::getTemplate(const std::string& page) {
 	if(contains(contentList, page)) {
-        return cleanTemplate.MakeCopy("base");
+		return cleanTemplate.MakeCopy("base");
 	}
 	return NULL;
 }
@@ -326,23 +319,44 @@ void Webapp::refresh_templates() {
 	//Load content files (applicable templates)
 	contentList.clear();
 
-    vector<string> files = FileSystem::GetFiles("content/", "", 0);
-    contentList.reserve(files.size());
-    for(string& s : files) {
-        //Preload templates.
-        LoadTemplate("content/" + s, STRIP_WHITESPACE);
-        contentList.push_back(s);
-    }
+	vector<string> files = FileSystem::GetFiles("content/", "", 0);
+	contentList.reserve(files.size());
+	for(string& s : files) {
+		//Preload templates.
+		LoadTemplate("content/" + s, STRIP_WHITESPACE);
+		contentList.push_back(s);
+	}
 
+	//Load server templates.
+	files = FileSystem::GetFiles("templates/", "", 0);
+	for(string& s: files) {
+		if(!contains(serverTemplateList, s)) {
+			string t = "T_" + s.substr(0, s.find_last_of("."));
+			std::transform(t.begin()+2, t.end(), t.begin()+2, ::toupper);
+			cleanTemplate.AddIncludeDictionary(t)->SetFilename("templates/" + s);
+			serverTemplateList.push_back(s);
+		}
+	}
+}
 
-    //Load server templates.
-    files = FileSystem::GetFiles("templates/", "", 0);
-    for(string& s: files) {
-        if(!contains(serverTemplateList, s)) {
-            string t = "T_" + s.substr(0, s.find_last_of("."));
-            std::transform(t.begin()+2, t.end(), t.begin()+2, ::toupper);
-            cleanTemplate.AddIncludeDictionary(t)->SetFilename("templates/" + s);
-            serverTemplateList.push_back(s);
-        }
-    }
+Database* Webapp::CreateDatabase() {
+	unsigned int id = databases.size();
+	Database* db = new Database(id);
+	auto db_entry = make_pair(id, db);
+	databases.insert(db_entry);
+	return db;
+}
+
+Database* Webapp::GetDatabase(int index) {
+	try {
+		return databases.at(index);
+	} catch (...) {
+		return NULL;
+	}
+}
+
+void Webapp::DestroyDatabase(Database* db) {
+	unsigned int id = db->GetID();
+	databases.erase(id);
+	delete db;
 }

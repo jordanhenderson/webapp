@@ -1,3 +1,13 @@
+/* Copyright (C) Jordan Henderson - All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ * Written by Jordan Henderson <jordan.henderson@ioflame.com>, 2013
+ *
+ * This file makes use of headers from the OpenSSL project licensed under
+ * BSD-Style Open Source Licenses. See relevant license files for further
+ * information.
+ */
+
 #include "Session.h"
 #include "Webapp.h"
 #include <openssl/sha.h>

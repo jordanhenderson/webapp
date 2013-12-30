@@ -1,3 +1,11 @@
+/* Copyright (C) Jordan Henderson - All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ * Written by Jordan Henderson <jordan.henderson@ioflame.com>, 2013
+ 
+ * Some portions of this file may be licensed under public domain.
+ */
+ 
 #ifndef HELPERS_H
 #define HELPERS_H
 
@@ -62,21 +70,19 @@ webapp_str_t* webapp_strdup(webapp_str_t*);
 
 bool endsWith(const std::string &a, const std::string &b);
 bool is_number(const std::string &a);
-const char* date_format(const char* fmt, const size_t datesize, time_t* t = NULL, int gmt = 0);
-void add_days(time_t& t, int days);
 std::string replaceAll(std::string const& original, std::string const& before, std::string const& after);
 std::string url_decode(const std::string& src);
 
-template< class T, class X>
-bool contains(T& needle, X& haystack) {
-	return std::find(needle.begin(), needle.end(), haystack) != needle.end();
+template<class T, class X>
+bool contains(T& n, X& h) {
+	return std::find(n.begin(), n.end(), h) != n.end();
 };
 
-template < class ContainerT >
-void tokenize(const std::string& str, ContainerT& tokens,
+template < class T >
+void tokenize(const std::string& str, T& tokens,
 	const std::string& delimiters = " ", bool trimEmpty = false)
 {
-	typedef ContainerT Base; typedef typename Base::value_type ValueType; typedef typename ValueType::size_type SizeType;
+	typedef T Base; typedef typename Base::value_type VType; typedef typename VType::size_type SType;
 	std::string::size_type pos, lastPos = 0;
 	while (true)
 	{
@@ -86,16 +92,16 @@ void tokenize(const std::string& str, ContainerT& tokens,
 			pos = str.length();
 
 			if (pos != lastPos || !trimEmpty)
-				tokens.push_back(ValueType(str.data() + lastPos,
-				(SizeType)pos - lastPos));
+				tokens.push_back(VType(str.data() + lastPos,
+				(SType)pos - lastPos));
 
 			break;
 		}
 		else
 		{
 			if (pos != lastPos || !trimEmpty)
-				tokens.push_back(ValueType(str.data() + lastPos,
-				(SizeType)pos - lastPos));
+				tokens.push_back(VType(str.data() + lastPos,
+				(SType)pos - lastPos));
 		}
 
 		lastPos = pos + 1;

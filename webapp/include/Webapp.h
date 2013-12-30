@@ -1,5 +1,11 @@
-#ifndef GALLERY_H
-#define GALLERY_H
+/* Copyright (C) Jordan Henderson - All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ * Written by Jordan Henderson <jordan.henderson@ioflame.com>, 2013
+ */
+
+#ifndef WEBAPP_H
+#define WEBAPP_H
 
 #include <asio.hpp>
 #include "Platform.h"
@@ -65,12 +71,7 @@ public:
 	unsigned int finished = 0;
 	std::condition_variable cv;
 	std::mutex cv_mutex; //Mutex to allow ready cv
-};
-
-class RequestQueue : public TaskQueue {
-public:
-	moodycamel::ReaderWriterQueue<Request*> requests;
-    RequestQueue() : requests(WEBAPP_DEFAULT_QUEUESIZE) {}
+	void notify() {cv.notify_one();}
 };
 
 struct Process {
@@ -81,22 +82,21 @@ struct Process {
 template<typename T>
 class LockedQueue : public TaskQueue {
 private:
-	moodycamel::ReaderWriterQueue<T> process_queue;
+	moodycamel::ReaderWriterQueue<T> queue;
 public:
 	//Each operation (enqueue, dequeue) must be done single threaded.
 	//We need MP (Multi-Producer), so lock production.
-	void notify() {cv.notify_one();}
-	void enqueue(T i) { cv_mutex.lock(); process_queue.enqueue(i); cv_mutex.unlock(); cv.notify_one();  }
+	void enqueue(T i) { cv_mutex.lock(); queue.enqueue(i); cv_mutex.unlock(); cv.notify_one();  }
 	T dequeue() { 
 		T r;
 		{
 			std::unique_lock<std::mutex> lk(cv_mutex);
-			while (!process_queue.try_dequeue(r) && !aborted) cv.wait(lk);
+			while (!queue.try_dequeue(r) && !aborted) cv.wait(lk);
 		}
 		if(aborted) return NULL;
 		return r; 
 	}
-    LockedQueue() : process_queue(WEBAPP_DEFAULT_QUEUESIZE) {}
+    LockedQueue() : queue(WEBAPP_DEFAULT_QUEUESIZE) {}
 };
 
 
@@ -117,7 +117,6 @@ protected:
 	
 private:
 	std::thread _worker;
-	
 };
 
 class WebappTask : public TaskBase {
@@ -145,8 +144,10 @@ private:
 	std::array<webapp_str_t, WEBAPP_SCRIPTS> scripts;
 	//(content) template filename vector
 	std::vector<std::string> contentList;
-
-    std::vector<std::string> serverTemplateList;
+	std::vector<std::string> serverTemplateList;
+	
+	//Keep track of dynamic databases
+	std::unordered_map<int, Database*> databases;
 
 	//IPC api
 	asio::ip::tcp::acceptor* acceptor;
@@ -155,24 +156,28 @@ private:
 	
 	void processRequest(Request* r, size_t len);
 	
-    ctemplate::TemplateDictionary cleanTemplate;
-	unsigned int nWorkers;
+	ctemplate::TemplateDictionary cleanTemplate;
+	unsigned int nWorkers = WEBAPP_NUM_THREADS - 1;
+	unsigned int node_counter = 0;
 	friend class WebappTask;
 public:
 	inline unsigned int GetLastError() { return nError; };
-	std::vector<TaskBase*> workers;
 	Webapp(asio::io_service& io_svc);
 	~Webapp();
+	unsigned int Start() { svc.run(); return nError; };
 	ctemplate::TemplateDictionary* getTemplate(const std::string& page);
+	Database* CreateDatabase();
+	Database* GetDatabase(int index);
+	void DestroyDatabase(Database*);
 	void refresh_templates();
 	
+	std::vector<TaskBase*> workers;
 	std::vector<Sessions*> sessions;
-	std::vector<Database*> databases;
+	std::vector<LockedQueue<Request*>*> request_queues;
+	
 	unsigned int aborted = 0;
-
 	unsigned int background_queue_enabled = 1;
-	std::vector<RequestQueue*> requests;
-	int node_counter = 0;
+	
 	unsigned int port = WEBAPP_PORT_DEFAULT;
 	std::mutex cleanupLock;
 };

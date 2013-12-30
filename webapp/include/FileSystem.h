@@ -1,6 +1,11 @@
+/* Copyright (C) Jordan Henderson - All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ * Written by Jordan Henderson <jordan.henderson@ioflame.com>, 2013
+ */
+
 #ifndef FILE_H
 #define FILE_H
-
 
 #include "Platform.h"
 #include "CPlatform.h"

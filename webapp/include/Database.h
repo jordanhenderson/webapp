@@ -1,3 +1,9 @@
+/* Copyright (C) Jordan Henderson - All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ * Written by Jordan Henderson <jordan.henderson@ioflame.com>, 2013
+ */
+
 #ifndef DATABASE_H
 #define DATABASE_H
 
@@ -56,14 +62,16 @@ public:
 class Database {
 private:
 	unsigned int nError = 0;
-	int db_type = 0;
+	unsigned int db_type = 0;
+	unsigned int _db_id = 0;
 public:
 	sqlite3* sqlite_db = NULL;
 	MYSQL* mysql_db = NULL;
 	inline unsigned int GetLastError() { return nError; };
 	inline unsigned int GetDBType() { return db_type; };
+	inline unsigned int GetID() { return _db_id; };
 
-	Database() {};
+	Database(int db_id) : _db_id(db_id) {};
 	~Database();
 	int connect(int database_type, const char* host, const char* username, const char* password, const char* database);
 	long long exec(Query* query);

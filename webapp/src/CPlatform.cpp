@@ -5,7 +5,6 @@
 #include <ctime>
 using namespace std;
 bool endsWith(const string &a, const string &b) {
-
 	if (a.length() >= b.length()) {
 		return (a.compare (a.length() - b.length(), b.length(), b) == 0);
 	} else {
@@ -31,21 +30,6 @@ string replaceAll( string const& original, string const& before, string const& a
 	}
 	retval.append( current, next );
 	return retval;
-}
-
-const char* date_format(const char* fmt, const size_t datesize, time_t* t, int gmt) {
-	time_t actual_time;
-	if(t == NULL) {
-		time(&actual_time);
-	} else actual_time = *t;
-	char* str = (char*)malloc(datesize+1);
-	if(!gmt) strftime(str, datesize+1, fmt, localtime(&actual_time));
-	else strftime(str, datesize+1, fmt, gmtime(&actual_time));
-	return str;
-}
-
-void add_days(time_t& t, int days) {
-	t += days * 24 * 3600;
 }
 
 //Copypasta'd from http://stackoverflow.com/questions/154536/encode-decode-urls-in-c

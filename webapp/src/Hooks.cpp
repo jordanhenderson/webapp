@@ -1,3 +1,9 @@
+/* Copyright (C) Jordan Henderson - All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ * Written by Jordan Henderson <jordan.henderson@ioflame.com>, 2013
+ */
+
 #include "Platform.h"
 #include "Webapp.h"
 
@@ -26,13 +32,13 @@ int Template_SetGlobalValue(TemplateDictionary* dict, webapp_str_t* key, webapp_
 	return 0;
 }
 
-TemplateDictionary* GetTemplate(Webapp* gallery, webapp_str_t* page) {
-	if(gallery != NULL) return gallery->getTemplate(string(page->data, page->len));
+TemplateDictionary* GetTemplate(Webapp* app, webapp_str_t* page) {
+	if(app != NULL) return app->getTemplate(string(page->data, page->len));
 	else return NULL;
 }
 
-void RenderTemplate(Webapp* gallery, ctemplate::TemplateDictionary* dict, webapp_str_t* page, Request* request, webapp_str_t* out) {
-	if (gallery == NULL || dict == NULL || page == NULL || request == NULL || out == NULL) return;
+void RenderTemplate(Webapp* app, ctemplate::TemplateDictionary* dict, webapp_str_t* page, Request* request, webapp_str_t* out) {
+	if (app == NULL || dict == NULL || page == NULL || request == NULL || out == NULL) return;
 	string* output = new string;
 	string pagestr(page->data, page->len);
 	ExpandTemplate("content/" + pagestr, STRIP_WHITESPACE, dict, output);
@@ -92,34 +98,24 @@ void SetParamInt(Webapp* app, unsigned int key, unsigned int value) {
 	}
 }
 
-Request* GetNextRequest(RequestQueue* requests) {
+Request* GetNextRequest(LockedQueue<Request*>* requests) {
 	if (requests == NULL) return NULL;
-	Request* request = NULL;
-	{
-		unique_lock<mutex> lk(requests->cv_mutex);
-		while (!requests->requests.try_dequeue(request) && !requests->aborted)
-			requests->cv.wait(lk);
-	}
-	if(requests->aborted) return NULL;
-	return request;
+	return requests->dequeue();
 }
 
 //Clear the cache (aborts any waiting request handlers, locks connect mutex, clears cache, unlocks).
-void ClearCache(Webapp* app, RequestQueue* requests) {
+void ClearCache(Webapp* app, LockedQueue<Request*>* requests) {
 	if (app == NULL || requests == NULL) return;
-	
 	//Abort this lua vm.
 	requests->aborted = 1;
 	//Cleanup when this task completes.
 	requests->cleanupTask = 1;
-
 }
 
 //Only call this upon init.
 void DisableBackgroundQueue(Webapp* app) {
 	if (app == NULL) return;
 	app->background_queue_enabled = false;
-
 }
 
 void QueueProcess(LockedQueue<Process*>* background_queue, webapp_str_t* func, webapp_str_t* vars) {
@@ -171,20 +167,21 @@ void WriteData(asio::ip::tcp::socket* socket, webapp_str_t* data) {
 
 Database* CreateDatabase(Webapp* app) {
 	if(app == NULL) return NULL;
-	Database* db = new Database();
-	app->databases.push_back(db);
-	return db;
+	return app->CreateDatabase();
+}
+
+void DestroyDatabase(Webapp* app, Database* db) {
+	if(app == NULL) return;
+	return app->DestroyDatabase(db);
 }
 
 Database* GetDatabase(Webapp* app, int index) {
 	if(app == NULL) return NULL;
-	if(index < app->databases.size()) return app->databases.at(index);
-	return NULL;
+	return app->GetDatabase(index);
 }
 
 int ConnectDatabase(Database* db, int database_type, const char* host, const char* username, const char* password, const char* database) {
 	if (db == NULL) return -1;
-
 	return db->connect(database_type, host, username, password, database);
 }
 

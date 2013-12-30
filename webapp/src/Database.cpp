@@ -1,9 +1,12 @@
-
+/* Copyright (C) Jordan Henderson - All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ * Written by Jordan Henderson <jordan.henderson@ioflame.com>, 2013
+ */
 
 #include "Database.h"
 #include "my_global.h"
 #include "mysql.h"
-
 
 using namespace std;
 Query::Query(Database* db, int desc) : _db(db) {
@@ -132,7 +135,6 @@ void Query::process() {
 				description[i] = new webapp_str_t;
 			}
 		}
-		
 	}
 	else if(status == DATABASE_QUERY_STARTED) {
 		//Clean up existing row results.
@@ -172,8 +174,6 @@ void Query::process() {
 		else {
 			goto cleanup;
 		}
-		
-		
 	} else if (db_type == DATABASE_TYPE_MYSQL) {
 		if (bind_output == NULL) {
 			bind_output = new MYSQL_BIND[column_count];
@@ -209,10 +209,8 @@ void Query::process() {
 		else {
 			goto cleanup;
 		}
-
 	}
-
-//Update the query object
+	//Update the query object
 	status = DATABASE_QUERY_STARTED;
 	return;
 cleanup:
@@ -233,9 +231,7 @@ cleanup:
 		if (stmt != NULL) sqlite3_finalize((sqlite3_stmt*)stmt);
 	}
 	stmt = NULL;
-
-
-} 
+}
 
 int Database::connect(int database_type, const char* host, const char* username, const char* password, const char* database) {
 	db_type = database_type;
@@ -268,7 +264,6 @@ Database::~Database() {
 		mysql_close(mysql_db); 
 		mysql_library_end();
 	}
-
 }
 
 long long Database::exec(Query* query) {
