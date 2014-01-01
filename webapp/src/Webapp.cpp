@@ -77,7 +77,9 @@ void WebappTask::execute() {
 				task->_q->cv_mutex.unlock();
 			}
 			//Just (attempt to) grab own lock.
-		} else unique_lock<mutex> lk(_q->cv_mutex); 
+		} else {
+			unique_lock<mutex> lk(_q->cv_mutex); 
+		}
 		//Unlock when done to complete the process.
 	}
 }
