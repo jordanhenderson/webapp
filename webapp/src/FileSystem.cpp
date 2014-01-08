@@ -15,7 +15,7 @@ int FileSystem::Open(const string& fileName, const string& flags, File* outFile)
 		actualFlag.append("b");
 	}
 	FILE* tmpFile;
-#ifdef WIN32
+#ifdef _WIN32
 	wchar_t* wfileName, *wflags;
 	wfileName = strtowide(fileName.c_str());
 	wflags = strtowide(flags.c_str());
@@ -146,7 +146,7 @@ void FileSystem::DeletePath(const string& path) {
 		tinydir_file f;
 		tinydir_readfile(&dir, &f);
 		if(!f.is_dir) {
-#ifdef WIN32
+#ifdef _WIN32
 			wchar_t* file = strtowide(f.path);
 			_wunlink(file);
 			delete[] file;
@@ -161,7 +161,7 @@ void FileSystem::DeletePath(const string& path) {
 	}
 	
 	tinydir_close(&dir);
-#ifdef WIN32
+#ifdef _WIN32
 	wchar_t* wPath = strtowide(path.c_str());
 	_wrmdir(wPath);
 	delete[] wPath;

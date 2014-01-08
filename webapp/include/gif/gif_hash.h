@@ -7,7 +7,7 @@ gif_hash.h - magfic constants and declarations for GIF LZW
 #ifndef _GIF_HASH_H_
 #define _GIF_HASH_H_
 
-#ifndef WIN32
+#ifndef _WIN32
 #include <unistd.h>
 #else
 #include <io.h>

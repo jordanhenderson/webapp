@@ -8,22 +8,16 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
-#ifdef WIN32
+#ifdef _WIN32
 #define ENV_NEWLINE "\r\n"
 #else
 #define ENV_NEWLINE "\n"
 #include <unistd.h>
 #endif
 
-#ifdef WIN32
-#define vsnprintf rpl_vsnprintf
-#define snprintf rpl_snprintf
-#define vasprintf rpl_vasprintf
-#define asprintf rpl_asprintf
-#endif
-
 #if _MSC_VER
 	#pragma warning (disable : 4503)
+	#define snprintf _snprintf
 #endif
 
 #define ERROR_SUCCESS 0L

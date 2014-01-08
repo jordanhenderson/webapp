@@ -156,7 +156,7 @@
 #include <math.h>
 #include <stdlib.h>
 
-#ifdef WIN32
+#ifdef _WIN32
  double round(double x)
  {
 	 //middle value point test
