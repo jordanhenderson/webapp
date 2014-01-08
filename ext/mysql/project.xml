@@ -5,7 +5,7 @@
 	<flags type="pp">ENABLED_DEBUG_SYNC;HAVE_OPENSSL;CLIENT_PROTOCOL_TRACING;HAVE_OPENSSL;MULTI_THREADED;HAVE_GETCURRENTPROCESSORNUMBER=1;HAVE_CONFIG_H;DEBUG_ERRROR_LOG</flags>
 	<flags>O2</flags>
 	<flags compiler="msvc">MT;W3</flags>
-	<include>include;libmysql;regex;mysys;sql;strings;taocrypt/include;taocrypt/mySTL;../zlib/include;../openssl/include</include>
+	<include>include;libmysql;regex;mysys;sql;strings;../zlib/include;../openssl/include</include>
 	<include os="win32">authentication_win</include>
 	<source f="dbug/dbug.c"></source>
     <source f="sql-common/client_authentication.cc"/>
@@ -113,11 +113,11 @@
     <source f="mysys/my_rdtsc.c"/>
     <source f="mysys/psi_noop.c"/>
     <source f="mysys/my_syslog.c"/>
-    <source f="mysys/my_winthread.c"/>
-    <source f="mysys/my_wincond.c"/>
-    <source f="mysys/my_winerr.c"/>
-    <source f="mysys/my_winfile.c"/>
-    <source f="mysys/my_windac.c"/>
+    <source os="win32" f="mysys/my_winthread.c"/>
+    <source os="win32" f="mysys/my_wincond.c"/>
+    <source os="win32" f="mysys/my_winerr.c"/>
+    <source os="win32" f="mysys/my_winfile.c"/>
+    <source os="win32" f="mysys/my_windac.c"/>
     <source f="mysys/my_conio.c"/>
     <source f="mysys_ssl/crypt_genhash_impl.cc"/>
     <source f="mysys_ssl/my_default.cc"/>
@@ -178,7 +178,7 @@
     <source f="vio/vio.c"/>
     <source f="vio/viosocket.c"/>
     <source f="vio/viossl.c"/>
-    <source f="vio/viopipe.c"/>
-    <source f="vio/vioshm.c"/>
+    <source os="win32" f="vio/viopipe.c"/>
+    <source os="win32" f="vio/vioshm.c"/>
     <source f="vio/viosslfactories.c"/>
 </project>
