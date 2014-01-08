@@ -468,16 +468,16 @@
 
 #define MYSQL_VERSION_MAJOR 6
 #define MYSQL_VERSION_MINOR 1
-#define MYSQL_VERSION_PATCH 1
+#define MYSQL_VERSION_PATCH 3
 #define MYSQL_VERSION_EXTRA ""
 
 #define PACKAGE "mysql"
 #define PACKAGE_BUGREPORT ""
 #define PACKAGE_NAME "MySQL Server"
-#define PACKAGE_STRING "MySQL Server 6.1.1"
+#define PACKAGE_STRING "MySQL Server 6.1.3"
 #define PACKAGE_TARNAME "mysql"
-#define PACKAGE_VERSION "6.1.1"
-#define VERSION "6.1.1"
+#define PACKAGE_VERSION "6.1.3"
+#define VERSION "6.1.3"
 #define PROTOCOL_VERSION 10
 
 
@@ -946,16 +946,16 @@
 
 #define MYSQL_VERSION_MAJOR 6
 #define MYSQL_VERSION_MINOR 1
-#define MYSQL_VERSION_PATCH 1
+#define MYSQL_VERSION_PATCH 3
 #define MYSQL_VERSION_EXTRA ""
 
 #define PACKAGE "mysql"
 #define PACKAGE_BUGREPORT ""
 #define PACKAGE_NAME "MySQL Server"
-#define PACKAGE_STRING "MySQL Server 6.1.1"
+#define PACKAGE_STRING "MySQL Server 6.1.3"
 #define PACKAGE_TARNAME "mysql"
-#define PACKAGE_VERSION "6.1.1"
-#define VERSION "6.1.1"
+#define PACKAGE_VERSION "6.1.3"
+#define VERSION "6.1.3"
 #define PROTOCOL_VERSION 10
 
 

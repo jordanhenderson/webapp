@@ -2,10 +2,10 @@
 <project>
 	<output type="static">libmysql</output>
 	<flags compiler="msvc" type="pp">WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_WIN32_WINNT=0x0502;WIN32_LEAN_AND_MEAN;AUTHENTICATION_WIN;SECURITY_WIN32;WINAUTH_USE_DBUG_LIB</flags>
-	<flags type="pp">ENABLED_DEBUG_SYNC;HAVE_YASSL;YASSL_PREFIX;get_tty_password_ext=yassl_mysql_get_tty_password_ext;get_tty_password=yassl_mysql_get_tty_password;HAVE_OPENSSL;MULTI_THREADED;HAVE_GETCURRENTPROCESSORNUMBER=1;HAVE_CONFIG_H;DEBUG_ERRROR_LOG</flags>
+	<flags type="pp">ENABLED_DEBUG_SYNC;HAVE_OPENSSL;CLIENT_PROTOCOL_TRACING;HAVE_OPENSSL;MULTI_THREADED;HAVE_GETCURRENTPROCESSORNUMBER=1;HAVE_CONFIG_H;DEBUG_ERRROR_LOG</flags>
 	<flags>O2</flags>
 	<flags compiler="msvc">MT;W3</flags>
-	<include>include;libmysql;regex;sql;strings;yassl/include;taocrypt/include;taocrypt/mySTL;../zlib/include</include>
+	<include>include;libmysql;regex;mysys;sql;strings;taocrypt/include;taocrypt/mySTL;../zlib/include;../openssl/include</include>
 	<include os="win32">authentication_win</include>
 	<source f="dbug/dbug.c"></source>
     <source f="sql-common/client_authentication.cc"/>
@@ -15,6 +15,7 @@
     <source f="libmysql/get_password.c"/>
     <source f="libmysql/libmysql.c"/>
     <source f="libmysql/errmsg.c"/>
+	<source f="libmysql/mysql_trace.c"/>
     <source f="sql-common/client.c"/>
     <source f="sql-common/my_time.c"/>
     <source f="sql-common/client_plugin.c"/>
@@ -73,7 +74,6 @@
     <source f="mysys/my_getwd.c"/>
     <source f="mysys/my_compare.c"/>
     <source f="mysys/my_init.c"/>
-    <source f="mysys/my_isnan.c"/>
     <source f="mysys/my_lib.c"/>
     <source f="mysys/my_lock.c"/>
     <source f="mysys/my_malloc.c"/>
@@ -83,7 +83,6 @@
     <source f="mysys/my_once.c"/>
     <source f="mysys/my_open.c"/>
     <source f="mysys/my_pread.c"/>
-    <source f="mysys/my_pthread.c"/>
     <source f="mysys/my_read.c"/>
     <source f="mysys/my_redel.c"/>
     <source f="mysys/my_rename.c"/>
@@ -107,7 +106,6 @@
     <source f="mysys/typelib.c"/>
     <source f="mysys/base64.c"/>
     <source f="mysys/my_memmem.c"/>
-    <source f="mysys/my_getpagesize.c"/>
     <source f="mysys/lf_alloc-pin.c"/>
     <source f="mysys/lf_dynarray.c"/>
     <source f="mysys/lf_hash.c"/>
@@ -169,53 +167,18 @@
     <source f="strings/strend.c"/>
     <source f="strings/strfill.c"/>
     <source f="strings/strmake.c"/>
-    <source f="strings/strmov.c"/>
-    <source f="strings/strnmov.c"/>
     <source f="strings/strxmov.c"/>
     <source f="strings/strxnmov.c"/>
+	<source f="strings/my_stpmov.c"/>
+	<source f="strings/my_stpnmov.c"/>
     <source f="strings/xml.c"/>
     <source f="strings/my_strchr.c"/>
     <source f="strings/strcont.c"/>
     <source f="strings/strappend.c"/>
-	<source f="taocrypt/src/aes.cpp"/>
-    <source f="taocrypt/src/aestables.cpp"/>
-    <source f="taocrypt/src/algebra.cpp"/>
-    <source f="taocrypt/src/arc4.cpp"/>
-    <source f="taocrypt/src/asn.cpp"/>
-    <source f="taocrypt/src/coding.cpp"/>
-    <source f="taocrypt/src/des.cpp"/>
-    <source f="taocrypt/src/dh.cpp"/>
-    <source f="taocrypt/src/dsa.cpp"/>
-    <source f="taocrypt/src/file.cpp"/>
-    <source f="taocrypt/src/hash.cpp"/>
-    <source f="taocrypt/src/integer.cpp"/>
-    <source f="taocrypt/src/md2.cpp"/>
-    <source f="taocrypt/src/md4.cpp"/>
-    <source f="taocrypt/src/md5.cpp"/>
-    <source f="taocrypt/src/misc.cpp"/>
-    <source f="taocrypt/src/random.cpp"/>
-    <source f="taocrypt/src/ripemd.cpp"/>
-    <source f="taocrypt/src/rsa.cpp"/>
-    <source f="taocrypt/src/sha.cpp"/>
-    <source f="taocrypt/src/rabbit.cpp"/>
-    <source f="taocrypt/src/hc128.cpp"/>
     <source f="vio/vio.c"/>
     <source f="vio/viosocket.c"/>
     <source f="vio/viossl.c"/>
     <source f="vio/viopipe.c"/>
     <source f="vio/vioshm.c"/>
     <source f="vio/viosslfactories.c"/>
-	<source f="yassl/src/yassl_int.cpp"/>
-    <source f="yassl/src/buffer.cpp"/>
-    <source f="yassl/src/cert_wrapper.cpp"/>
-    <source f="yassl/src/crypto_wrapper.cpp"/>
-    <source f="yassl/src/handshake.cpp"/>
-    <source f="yassl/src/lock.cpp"/>
-    <source f="yassl/src/log.cpp"/>
-    <source f="yassl/src/socket_wrapper.cpp"/>
-    <source f="yassl/src/ssl.cpp"/>
-    <source f="yassl/src/timer.cpp"/>
-    <source f="yassl/src/yassl_error.cpp"/>
-    <source f="yassl/src/yassl_imp.cpp"/>
-	<source f="yassl/src/_get_password.c"/>
 </project>

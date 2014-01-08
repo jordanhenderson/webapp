@@ -27,7 +27,7 @@
 
 #  else
 
-#include "../taocrypt/include/sha.hpp"
+#include "../extra/yassl/taocrypt/include/sha.hpp"
 
 #    ifdef __cplusplus
 extern "C" {

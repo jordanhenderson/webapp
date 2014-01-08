@@ -20,7 +20,6 @@
 #include <my_dir.h>
 #include <my_xml.h>
 
-
 /*
   The code below implements this functionality:
   
@@ -59,15 +58,12 @@ static my_bool init_state_maps(CHARSET_INFO *cs)
   uchar *state_map;
   uchar *ident_map;
 
-  if (!(cs->state_map= (uchar*) my_once_alloc(256, MYF(MY_WME))))
-    return 1;
-    
-  if (!(cs->ident_map= (uchar*) my_once_alloc(256, MYF(MY_WME))))
+  if (!(cs->state_map= state_map= (uchar*) my_once_alloc(256, MYF(MY_WME))))
     return 1;
 
-  state_map= cs->state_map;
-  ident_map= cs->ident_map;
-  
+  if (!(cs->ident_map= ident_map= (uchar*) my_once_alloc(256, MYF(MY_WME))))
+    return 1;
+
   /* Fill state_map with states to get a faster parser */
   for (i=0; i < 256 ; i++)
   {
@@ -112,6 +108,7 @@ static my_bool init_state_maps(CHARSET_INFO *cs)
   state_map[(uchar)'x']= state_map[(uchar)'X']= (uchar) MY_LEX_IDENT_OR_HEX;
   state_map[(uchar)'b']= state_map[(uchar)'B']= (uchar) MY_LEX_IDENT_OR_BIN;
   state_map[(uchar)'n']= state_map[(uchar)'N']= (uchar) MY_LEX_IDENT_OR_NCHAR;
+
   return 0;
 }
 
@@ -289,7 +286,7 @@ static int add_collation(CHARSET_INFO *cs)
       }
       else
       {
-        uchar *sort_order= all_charsets[cs->number]->sort_order;
+        const uchar *sort_order= all_charsets[cs->number]->sort_order;
         simple_cs_init_functions(all_charsets[cs->number]);
         newcs->mbminlen= 1;
         newcs->mbmaxlen= 1;
@@ -374,13 +371,19 @@ my_once_alloc_c(size_t size)
 
 static void *
 my_malloc_c(size_t size)
-{ return my_malloc(size, MYF(MY_WME)); }
+{ return my_malloc(key_memory_charset_loader, size, MYF(MY_WME)); }
 
 
 static void *
 my_realloc_c(void *old, size_t size)
-{ return my_realloc(old, size, MYF(MY_WME)); }
+{ return my_realloc(key_memory_charset_loader,
+                    old, size, MYF(MY_WME)); }
 
+static void
+my_free_c(void *ptr)
+{
+  my_free(ptr);
+}
 
 /**
   Initialize character set loader to use mysys memory management functions.
@@ -393,7 +396,7 @@ my_charset_loader_init_mysys(MY_CHARSET_LOADER *loader)
   loader->once_alloc= my_once_alloc_c;
   loader->malloc= my_malloc_c;
   loader->realloc= my_realloc_c;
-  loader->free= my_free;
+  loader->free= my_free_c;
   loader->reporter= my_charset_error_reporter;
   loader->add_collation= add_collation;
 }
@@ -417,7 +420,8 @@ my_read_charset_file(MY_CHARSET_LOADER *loader,
   
   if (!my_stat(filename, &stat_info, MYF(myflags)) ||
        ((len= (uint)stat_info.st_size) > MY_MAX_ALLOWED_BUF) ||
-       !(buf= (uchar*) my_malloc(len,myflags)))
+       !(buf= (uchar*) my_malloc(key_memory_charset_file,
+                                 len,myflags)))
     return TRUE;
   
   if ((fd= mysql_file_open(key_file_charset, filename, O_RDONLY, myflags)) < 0)
@@ -502,7 +506,7 @@ static void init_available_charsets(void)
   }
 
   my_charset_loader_init_mysys(&loader);
-  strmov(get_charsets_dir(fname), MY_CHARSET_INDEX);
+  my_stpcpy(get_charsets_dir(fname), MY_CHARSET_INDEX);
   my_read_charset_file(&loader, fname, MYF(0));
 }
 
@@ -660,7 +664,7 @@ CHARSET_INFO *get_charset(uint cs_number, myf flags)
   if (!cs && (flags & MY_WME))
   {
     char index_file[FN_REFLEN + sizeof(MY_CHARSET_INDEX)], cs_string[23];
-    strmov(get_charsets_dir(index_file),MY_CHARSET_INDEX);
+    my_stpcpy(get_charsets_dir(index_file),MY_CHARSET_INDEX);
     cs_string[0]='#';
     int10_to_str(cs_number, cs_string+1, 10);
     my_error(EE_UNKNOWN_CHARSET, MYF(ME_BELL), cs_string, index_file);
@@ -693,7 +697,7 @@ my_collation_get_by_name(MY_CHARSET_LOADER *loader,
   if (!cs && (flags & MY_WME))
   {
     char index_file[FN_REFLEN + sizeof(MY_CHARSET_INDEX)];
-    strmov(get_charsets_dir(index_file),MY_CHARSET_INDEX);
+    my_stpcpy(get_charsets_dir(index_file),MY_CHARSET_INDEX);
     my_error(EE_UNKNOWN_COLLATION, MYF(ME_BELL), name, index_file);
   }
   return cs;
@@ -734,7 +738,7 @@ my_charset_get_by_name(MY_CHARSET_LOADER *loader,
   if (!cs && (flags & MY_WME))
   {
     char index_file[FN_REFLEN + sizeof(MY_CHARSET_INDEX)];
-    strmov(get_charsets_dir(index_file),MY_CHARSET_INDEX);
+    my_stpcpy(get_charsets_dir(index_file),MY_CHARSET_INDEX);
     my_error(EE_UNKNOWN_CHARSET, MYF(ME_BELL), cs_name, index_file);
   }
 

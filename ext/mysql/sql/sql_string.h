@@ -22,6 +22,7 @@
 #include "my_sys.h"              /* alloc_root, my_free, my_realloc */
 #include "m_string.h"                           /* TRASH */
 
+extern PSI_memory_key key_memory_String_value;
 
 /**
   A wrapper class for null-terminated constant strings.
@@ -129,9 +130,6 @@ uint32 well_formed_copy_nchars(const CHARSET_INFO *to_cs,
                                const char **well_formed_error_pos,
                                const char **cannot_convert_error_pos,
                                const char **from_end_pos);
-size_t my_copy_with_hex_escaping(const CHARSET_INFO *cs,
-                                 char *dst, size_t dstlen,
-                                 const char *src, size_t srclen);
 uint convert_to_printable(char *to, size_t to_len,
                           const char *from, size_t from_len,
                           const CHARSET_INFO *from_cs, size_t nbytes= 0);
@@ -333,7 +331,8 @@ public:
     if (arg_length < Alloced_length)
     {
       char *new_ptr;
-      if (!(new_ptr=(char*) my_realloc(Ptr,arg_length,MYF(0))))
+      if (!(new_ptr=(char*) my_realloc(key_memory_String_value,
+                                       Ptr,arg_length,MYF(0))))
       {
 	Alloced_length = 0;
 	real_alloc(arg_length);
