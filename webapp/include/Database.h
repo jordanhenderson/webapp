@@ -63,15 +63,15 @@ class Database {
 private:
 	unsigned int nError = 0;
 	unsigned int db_type = 0;
-	unsigned int _db_id = 0;
+	size_t _db_id = 0;
 public:
 	sqlite3* sqlite_db = NULL;
 	MYSQL* mysql_db = NULL;
 	inline unsigned int GetLastError() { return nError; };
 	inline unsigned int GetDBType() { return db_type; };
-	inline unsigned int GetID() { return _db_id; };
+	inline size_t GetID() { return _db_id; };
 
-	Database(int db_id) : _db_id(db_id) {};
+	Database(size_t db_id) : _db_id(db_id) {};
 	~Database();
 	int connect(int database_type, const char* host, const char* username, const char* password, const char* database);
 	long long exec(Query* query);

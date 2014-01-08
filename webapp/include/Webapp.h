@@ -147,7 +147,8 @@ private:
 	std::vector<std::string> serverTemplateList;
 	
 	//Keep track of dynamic databases
-	std::unordered_map<int, Database*> databases;
+	std::unordered_map<size_t, Database*> databases;
+	std::atomic<size_t> db_count{0};
 
 	//IPC api
 	asio::ip::tcp::acceptor* acceptor;
@@ -167,7 +168,7 @@ public:
 	unsigned int Start() { svc.run(); return nError; };
 	ctemplate::TemplateDictionary* getTemplate(const std::string& page);
 	Database* CreateDatabase();
-	Database* GetDatabase(int index);
+	Database* GetDatabase(size_t index);
 	void DestroyDatabase(Database*);
 	void refresh_templates();
 	

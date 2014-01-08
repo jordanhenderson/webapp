@@ -342,14 +342,14 @@ void Webapp::refresh_templates() {
 }
 
 Database* Webapp::CreateDatabase() {
-	unsigned int id = databases.size();
+	size_t id = db_count++;
 	Database* db = new Database(id);
 	auto db_entry = make_pair(id, db);
 	databases.insert(db_entry);
 	return db;
 }
 
-Database* Webapp::GetDatabase(int index) {
+Database* Webapp::GetDatabase(size_t index) {
 	try {
 		return databases.at(index);
 	} catch (...) {

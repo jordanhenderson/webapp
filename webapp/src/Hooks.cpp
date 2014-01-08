@@ -175,7 +175,7 @@ void DestroyDatabase(Webapp* app, Database* db) {
 	return app->DestroyDatabase(db);
 }
 
-Database* GetDatabase(Webapp* app, int index) {
+Database* GetDatabase(Webapp* app, size_t index) {
 	if(app == NULL) return NULL;
 	return app->GetDatabase(index);
 }
