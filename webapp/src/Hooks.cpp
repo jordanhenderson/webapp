@@ -6,6 +6,7 @@
 
 #include "Platform.h"
 #include "Webapp.h"
+#include "Image.h"
 
 extern "C" {
 #include "Hooks.h"
@@ -220,4 +221,26 @@ void BindParameter(Query* q, webapp_str_t* param) {
 unsigned long long GetWebappTime() {
 	time_t current_time = time(0);
 	return current_time * 1000000;
+}
+
+/* Image API */
+Image* LoadImage(webapp_str_t* filename) {
+	if(filename == NULL) return NULL;
+	return new Image(string(filename->data, filename->len));
+}
+
+void ResizeImage(Image* img, int width, int height) {
+	if(img == NULL) return;
+	img->resize(width, height);
+}
+
+void SaveImage(Image* img, webapp_str_t* out, int destroy) {
+	if(img == NULL || out == NULL) return;
+	img->save(string(out->data, out->len));
+	if(destroy) delete img;
+}
+
+void DestroyImage(Image* img) {
+	if(img == NULL) return;
+	delete img;
 }

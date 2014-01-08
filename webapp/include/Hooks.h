@@ -48,6 +48,13 @@ APIEXPORT void SetQuery(Query*, webapp_str_t*);
 APIEXPORT void BindParameter(Query* q, webapp_str_t* in);
 APIEXPORT void GetCell(Query* q, unsigned int column, webapp_str_t* out);
 APIEXPORT void GetColumnName(Query* q, unsigned int column, webapp_str_t* out);
+
+//Image API
+APIEXPORT Image* LoadImage(webapp_str_t* filename);
+APIEXPORT void ResizeImage(Image* img, int width, int height);
+APIEXPORT void SaveImage(Image* img, webapp_str_t* out, int destroy);
+APIEXPORT void DestroyImage(Image* img); 
+
 //Force SHA-function inclusion from openssl.
 FORCE_UNDEFINED_SYMBOL(SHA256_Init)
 FORCE_UNDEFINED_SYMBOL(SHA256_Update)

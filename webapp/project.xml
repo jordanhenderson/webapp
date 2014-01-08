@@ -14,7 +14,9 @@
 	<output type="app">webapp</output>
 	<flags compiler="msvc">MT;W3;wd4996;EHsc</flags>
 	<flags>O2</flags>
-	<flags compiler="gcc">std=c++11;std=c99;fvisibility=hidden;g</flags>
+	<flags compiler="gcc" ext="cpp">std=c++11</flags>
+	<flags compiler="gcc" ext="c">std=c99</flags>
+	<flags compiler="gcc">fvisibility=hidden;g</flags>
 	<flags step="link" compiler="gcc">pthread;lstdc++;lm;ldl;fvisibility=hidden;Wl,--dynamic-list=api.exp</flags>
 	<flags type="pp" compiler="msvc">UNICODE;_UNICODE;_WIN32_WINNT=0x0502;ASIO_MSVC;ASIO_WINDOWS;_CONSOLE;_WIN32;_VISUALC_</flags>
 	<flags type="pp">CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;ASIO_STANDALONE</flags>

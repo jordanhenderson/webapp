@@ -98,7 +98,6 @@ void Image::changeType(const string& filename) {
 }
 
 void Image::load(const string& filename) {
-
 	//Check image extension. Use IMAGE_TYPE_JPEG for bmp/gif/jpg/jpeg, IMAGE_TYPE_PNG for png.
 	//nError = ERROR_IMAGE_TYPE_NOT_SUPPORTED if image extension not recognised.
 	width = height = nBytes = bitdepth = 0;
@@ -159,8 +158,6 @@ void Image::load(const string& filename) {
 			imagecount = 1;
 			jpeg_finish_decompress(&cinfo);
 			jpeg_destroy_decompress(&cinfo);
-
-			
 		}
 		break;
 	case IMAGE_TYPE_PNG: 
@@ -204,32 +201,29 @@ void Image::load(const string& filename) {
 			int trns = png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS);
 			if(colorType == PNG_COLOR_TYPE_RGB)
 				png_set_filler(png_ptr, 0xff, PNG_FILLER_AFTER);
-		   if (colorType == PNG_COLOR_TYPE_PALETTE) {
-			  png_set_expand(png_ptr);
-			  png_set_filler(png_ptr, 0xff, PNG_FILLER_AFTER);
-		   }
+			if (colorType == PNG_COLOR_TYPE_PALETTE) {
+				png_set_expand(png_ptr);
+				png_set_filler(png_ptr, 0xff, PNG_FILLER_AFTER);
+			}
 
-		   /* expand grayscale images to the full 8 bits */
-		   if (colorType == PNG_COLOR_TYPE_GRAY &&
-			  bitdepth < 8)
-			  png_set_expand(png_ptr);
+			/* expand grayscale images to the full 8 bits */
+			if (colorType == PNG_COLOR_TYPE_GRAY &&
+				bitdepth < 8)
+				png_set_expand(png_ptr);
 
-		   /* expand images with transparency to full alpha channels */
-		   if (trns)
-			  png_set_expand(png_ptr);
+			/* expand images with transparency to full alpha channels */
+			if (trns)
+				png_set_expand(png_ptr);
 
-		   if(colorType == PNG_COLOR_TYPE_GRAY || colorType == PNG_COLOR_TYPE_GRAY_ALPHA) {
-			   png_set_gray_to_rgb(png_ptr);
-			   png_set_filler(png_ptr, 0xff, PNG_FILLER_AFTER);
-		   }
-
+			if(colorType == PNG_COLOR_TYPE_GRAY || colorType == PNG_COLOR_TYPE_GRAY_ALPHA) {
+				png_set_gray_to_rgb(png_ptr);
+				png_set_filler(png_ptr, 0xff, PNG_FILLER_AFTER);
+			}
 	
 			png_read_update_info(png_ptr, info_ptr);
 
 			width = png_get_image_width(png_ptr, info_ptr);
 			height = png_get_image_height(png_ptr, info_ptr);
-			
-			
 
 			//Get bytes per row.
 
@@ -282,10 +276,8 @@ void Image::load(const string& filename) {
 
 			//File now handled by giflib.
 			file.pszFile = NULL;
-			
 		}
 		break;
-
 	}
 
 	nError = ERROR_SUCCESS;
@@ -334,7 +326,6 @@ void Image::save(const string& filename) {
 		break;
 	case IMAGE_TYPE_PNG:
 		{
-
 			png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 			if (!png_ptr) {
 				nError = ERROR_IMAGE_PROCESSING_FAILED;
@@ -366,7 +357,6 @@ void Image::save(const string& filename) {
 			png_write_image(png_ptr,row_pointers);
 			png_write_end(png_ptr, info_ptr);
 			png_destroy_write_struct(&png_ptr, &info_ptr);
-
 		}
 		break;
 	case IMAGE_TYPE_GIF: 
@@ -380,14 +370,12 @@ void Image::save(const string& filename) {
 
 			output->SWidth = width;
 			output->SHeight = height;
-			
 			output->SColorResolution = bitdepth;
 			output->SBackGroundColor = gif->SBackGroundColor;
 			output->SColorMap = GifMakeMapObject(gif->SColorMap->ColorCount, gif->SColorMap->Colors);
 			output->ImageCount = imagecount;
 			SavedImage* saved_images;
 			saved_images = output->SavedImages = (SavedImage *)malloc(sizeof(SavedImage)*imagecount);
-
 
 			for (int i = 0; i < imagecount; i++) {
 				memset(&saved_images[i], '\0', sizeof(SavedImage));
@@ -396,7 +384,6 @@ void Image::save(const string& filename) {
 				saved_images[i].ImageDesc.Height = height;
 				saved_images[i].ExtensionBlockCount = gif->SavedImages[i].ExtensionBlockCount;
 				saved_images[i].ExtensionBlocks = gif->SavedImages[i].ExtensionBlocks;
-			
 				//Remove subimage rasterbits issues
 				gifMakeMap(frames[i], width, height, (unsigned char**)&saved_images[i].ImageDesc.ColorMap, (unsigned char**)&saved_images[i].RasterBits);
 				//Clean up rasterbits/maps.					
@@ -420,7 +407,6 @@ void Image::save(const string& filename) {
 			}
 
 			free(saved_images);
-
 		}
 		break;
 	}

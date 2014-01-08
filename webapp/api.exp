@@ -33,6 +33,11 @@
 	GetCell;
 	GetColumnName;
 	
+	LoadImage;
+	ResizeImage;
+	SaveImage;
+	DestroyImage;
+	
 	SHA256_Init;
 	SHA256_Update;
 	SHA256_Final;

@@ -50,5 +50,5 @@ namespace FileSystem {
 	//Return a vector containing a list of files found in path.
 	std::vector<std::string> GetFiles(const std::string& base, const std::string& path, int recurse);
 	std::list<std::string> GetFilesAsList(const std::string& base, const std::string& path, int recurse);
-};		
+};
 #endif

@@ -2,7 +2,7 @@
 <project>
 	<output type="static">ctemplate</output>
 	<flags compiler="msvc">MT;W3;EHsc</flags>
-	<flags compiler="gcc">std=c++11</flags>
+	<flags compiler="gcc" ext="cc">std=c++11</flags>
 	<flags>O2</flags>
 	<flags compiler="msvc" type="pp">CTEMPLATE_DLL_DECL=</flags>
 	<include os="win32">include/windows;include</include>
