@@ -28,6 +28,7 @@ struct st_mysql;
 typedef struct st_mysql MYSQL;
 typedef struct st_mysql_res MYSQL_RES;
 typedef struct st_mysql_bind MYSQL_BIND;
+typedef struct st_mysql_stmt MYSQL_STMT;
 
 typedef std::vector<std::string> QueryRow;
 class Database;
@@ -41,12 +42,12 @@ public:
 	int desc = 0;
 	int havedesc = 0;
 	int rows_affected = 0;
-
 	std::string* dbq = NULL;
 	QueryRow* params = NULL; 
 //Database instance parameters
 	Database* _db;
-	void* stmt = NULL;
+	MYSQL_STMT* mysql_stmt = NULL;
+	sqlite3_stmt* sqlite_stmt = NULL;
 	unsigned long* size_arr = NULL;
 	unsigned long* out_size_arr = NULL;
 	MYSQL_RES* prepare_meta_result = NULL;
@@ -56,7 +57,6 @@ public:
 	Query(Database* db, int desc=0);
 	Query(Database* db, const std::string& dbq, int desc=0);
 	~Query();
-
 };
 
 class Database {
@@ -74,7 +74,6 @@ public:
 	Database(size_t db_id) : _db_id(db_id) {};
 	~Database();
 	int connect(int database_type, const char* host, const char* username, const char* password, const char* database);
-	long long exec(Query* query);
 	long long exec(const std::string& query);
 };
 #endif

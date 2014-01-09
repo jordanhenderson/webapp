@@ -6,7 +6,16 @@
 
 #include "FileSystem.h"
 #include "tinydir.h"
+
 using namespace std;
+
+/**
+ * Open a File object.
+ * @param fileName the file to open
+ * @param flags the file mode used to open the file.
+ * @param outFile the File object to open.
+ * @return the success of the file.
+*/
 int FileSystem::Open(const string& fileName, const string& flags, File* outFile) {
 	//ensure file is opened in binary mode
 	int flen = flags.length();
@@ -66,13 +75,11 @@ long FileSystem::Size(File* file) {
 	return sz;
 }
 
-
 void FileSystem::Process(File* file, void* userdata, void* callback, FileData* outData) {
 	if(file == NULL || file->pszFile == NULL || outData == NULL)
 		return;
 	
 	//Seek to the beginning.
-	
 	FILE* tmpFile = file->pszFile;
 	rewind(file->pszFile);
 	int size = Size(file);
@@ -97,9 +104,7 @@ void FileSystem::Process(File* file, void* userdata, void* callback, FileData* o
 		}
 		else {
 			//Simply read the entire file. Hopefully improve performance.
-
 			size_t nRead = fread(outData->data, sizeof(char), size, tmpFile);
-			
 			outData->data[nRead] = '\0';
 		}
 	outData->size = size;
@@ -168,17 +173,14 @@ void FileSystem::DeletePath(const string& path) {
 #else
 	rmdir(path.c_str());
 #endif
-	
 }
 
 vector<string> FileSystem::GetFiles(const string& base, const string& path, int recurse) {
 	vector<string> files;
-
 	tinydir_dir dir;
 	string abase = base + '/' + path;
 	tinydir_open(&dir, abase.c_str());
 	while(dir.has_next) {
-		
 		tinydir_file file;
 		tinydir_readfile(&dir, &file);
 		string dpath = path.empty() ? file.name : path + '/' + file.name;
@@ -190,38 +192,8 @@ vector<string> FileSystem::GetFiles(const string& base, const string& path, int 
 			files.insert(files.end(), rfiles.begin(), rfiles.end());
 		}
 		tinydir_next(&dir);
-		
 	}
+
 	tinydir_close(&dir);
-		
 	return files;
-	
-}
-
-
-list<string> FileSystem::GetFilesAsList(const string& base, const string& path, int recurse) {
-	list<string> files;
-
-	tinydir_dir dir;
-	string abase = base + '/' + path;
-	tinydir_open(&dir, abase.c_str());
-	while(dir.has_next) {
-		
-		tinydir_file file;
-		tinydir_readfile(&dir, &file);
-		string dpath = path.empty() ? file.name : path + '/' + file.name;
-		if(!file.is_dir) 
-			files.push_back(dpath);
-		else if(recurse && file.name[0] != '.') {
-			//Get+append files from subdirectory. (recursive case)
-			list<string> rfiles = GetFilesAsList(base, dpath, 1);
-			files.insert(files.end(), rfiles.begin(), rfiles.end());
-		}
-		tinydir_next(&dir);
-		
-	}
-	tinydir_close(&dir);
-		
-	return files;
-	
 }
