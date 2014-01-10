@@ -22,4 +22,4 @@
 #define PROTOCOL_VARS 6
 #define STRING_VARS 5
 #define PROTOCOL_LENGTH_SIZEINFO sizeof(int) * PROTOCOL_VARS
-#endif
+#endif //SCHEMA_H

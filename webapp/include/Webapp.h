@@ -121,7 +121,7 @@ private:
 	unsigned int _id;
 	unsigned int _bg;
 	Sessions* _sessions;
-	void cleanup(TaskQueue*);
+	void handleCleanup();
 public:
 	WebappTask(Webapp* handler, Sessions* sessions, TaskQueue* queue, int background_task=0) 
 		: TaskBase(handler, queue), _sessions(sessions), _bg(background_task) {
@@ -149,9 +149,13 @@ private:
 	//IPC api
 	asio::ip::tcp::acceptor* acceptor;
 	void accept_message();
+	void accept_message_async(asio::ip::tcp::socket*, const asio::error_code&);
+	void process_message_async(Request *r, const asio::error_code&, std::size_t);
+	void process_request(Request* r, size_t len);
+	void process_request_async(Request* r, const asio::error_code&, std::size_t);
 	asio::io_service& svc;
+
 	
-	void processRequest(Request* r, size_t len);
 	
 	ctemplate::TemplateDictionary cleanTemplate;
 	unsigned int nWorkers = WEBAPP_NUM_THREADS - 1;
@@ -166,6 +170,7 @@ public:
 	Database* GetDatabase(size_t index);
 	void DestroyDatabase(Database*);
 	void refresh_templates();
+	void reload_all();
 	
 	std::vector<TaskBase*> workers;
 	std::vector<Sessions*> sessions;
@@ -178,4 +183,4 @@ public:
 	std::mutex cleanupLock;
 };
 
-#endif
+#endif //WEBAPP_H

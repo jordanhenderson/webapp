@@ -6,12 +6,12 @@
 
 #ifndef SESSION_H
 #define SESSION_H
+
 #include "Platform.h"
 #include "CPlatform.h"
 #include "Schema.h"
-#define SESSION_STORE RamSession
 
-struct Request;
+#define SESSION_STORE RamSession
 
 class SessionStore {
 public:
@@ -24,7 +24,6 @@ public:
 	SessionStore() : empty("") {};
 };
 
-
 //Default ram storage of session data.
 typedef std::unordered_map<std::string, std::string> RamStorage;
 class RamSession : public SessionStore {
@@ -36,6 +35,8 @@ public:
 	const std::string& get(const std::string& key);
 	void destroy();
 };
+
+struct Request;
 
 typedef std::unordered_map<std::string, SessionStore*> SessionMap;
 class Sessions {
@@ -53,4 +54,4 @@ public:
 	SessionStore* get_session(webapp_str_t* sessionid);
 	SessionStore* new_session(Request* request);
 };
-#endif
+#endif //SESSION_H

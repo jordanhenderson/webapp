@@ -59,7 +59,6 @@ public:
 };
 
 class Database {
-private:
 	unsigned int db_type = 0;
 	size_t _db_id = 0;
 public:
@@ -70,7 +69,9 @@ public:
 
 	Database(size_t db_id) : _db_id(db_id) {};
 	~Database();
-	int connect(int database_type, const char* host, const char* username, const char* password, const char* database);
+	int connect(int database_type, const char* host, const char* username, 
+		const char* password, const char* database);
 	long long exec(const std::string& query);
 };
-#endif
+
+#endif //DATABASE_H

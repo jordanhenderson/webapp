@@ -15,15 +15,16 @@
 #endif
 #endif
 
-#include <algorithm>
-#include <memory>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <algorithm>
+#include <memory>
 #include <vector>
 #include <unordered_map>
 #include <string>
-#include <string.h>
+#include <cstring>
 #include <cstdio>
+#include <cstdint>
 #include <cstdarg>
 #include <vector>
 #include <queue>
@@ -32,19 +33,14 @@
 #include <chrono>
 #include <condition_variable>
 #include <random>
+#include <functional>
 
-//webapp string, helper functions.
 struct webapp_str_t {
 	const char* data = NULL;
 	size_t len = 0;
 };
 
 webapp_str_t* webapp_strdup(webapp_str_t*);
-
-#ifdef contains
-#undef contains
-#endif
-
 bool endsWith(const std::string &a, const std::string &b);
 bool is_number(const std::string &a);
 std::string replaceAll(std::string const& original, std::string const& before, 

@@ -14,8 +14,6 @@ void Image::gifInsertFrame(int frame) {
 	unsigned char bgcolor;
 	GifImageDesc* img = &gif->SavedImages[frame].ImageDesc;
 	int rastersize = width * height;
-
-	
 	//Set color map to use local or global color map. Local overrides global.
 	ColorMapObject* map = img->ColorMap ? img->ColorMap : gif->SColorMap;
 	GraphicsControlBlock gcb;
@@ -52,7 +50,6 @@ void Image::gifInsertFrame(int frame) {
 	}
 
 	unsigned char* framePixels = new unsigned char[width * height * 4]();
-
 	for( int i = 0; i < img->Height; i++) {
 		int pixelRowNumber = i;	
 		pixelRowNumber += img->Top;

@@ -10,7 +10,6 @@
 #include "Platform.h"
 #include "CPlatform.h"
 
-
 #ifdef _WIN32
 #define ENV_NEWLINE "\r\n"
 #else

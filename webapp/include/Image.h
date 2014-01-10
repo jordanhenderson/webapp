@@ -6,6 +6,7 @@
 
 #ifndef IMAGE_H
 #define IMAGE_H
+
 #include "Platform.h"
 #include "CPlatform.h"
 
@@ -37,9 +38,11 @@ private:
 	unsigned char** frames = NULL;
 	int gifGetTransparentColor(int frame);
 	void gifInsertFrame(int frame);
-	void gifMakeMap(unsigned char* image, int width, int height, unsigned char** map, unsigned char** raster);
+	void gifMakeMap(unsigned char* image, int width, int height, 
+		unsigned char** map, unsigned char** raster);
 	void cleanup();
-	unsigned char* _resize(unsigned char* image, int width, int height, int oldWidth, int oldHeight);
+	unsigned char* _resize(unsigned char* image, int width, int height, 
+		int oldWidth, int oldHeight);
 	void regenRowPointers();
 
 public:
@@ -56,4 +59,4 @@ public:
 	int save(const std::string& filename);
 };
 
-#endif
+#endif //IMAGE_H
