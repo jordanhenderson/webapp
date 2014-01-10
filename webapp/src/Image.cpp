@@ -6,11 +6,18 @@
 
 #include <opencv2/imgproc.hpp>
 #include "Image.h"
+#include "FileSystem.h"
+
+//JPEG includes
 #include "jpeglib.h"
 #include "jerror.h"
+
+//PNG includes
 #include "png.h"
+
+//Gif includes
 #include "gif_lib.h"
-#include <algorithm>
+
 const char* THUMB_EXTENSIONS_JPEG[] = THUMB_EXTENSIONS_JPEG_D;
 using namespace std;
 
@@ -97,9 +104,9 @@ void Image::changeType(const string& filename) {
 	
 }
 
-void Image::load(const string& filename) {
+int Image::load(const string& filename) {
+	int err = ERROR_SUCCESS;
 	//Check image extension. Use IMAGE_TYPE_JPEG for bmp/gif/jpg/jpeg, IMAGE_TYPE_PNG for png.
-	//nError = ERROR_IMAGE_TYPE_NOT_SUPPORTED if image extension not recognised.
 	width = height = nBytes = bitdepth = 0;
 	gif = NULL;
 
@@ -108,14 +115,12 @@ void Image::load(const string& filename) {
 	changeType(filename);
 
 	if(imageType == -1) {
-		nError = ERROR_IMAGE_NOT_SUPPORTED;
-		return;
+		return ERROR_IMAGE_NOT_SUPPORTED;
 	}
 
 	File file;
 	if(!FileSystem::Open(filename, "rb", &file)){
-		nError = ERROR_FILE_NOT_FOUND;
-		return;
+		return ERROR_FILE_NOT_FOUND;
 	}
 	
 	switch(imageType) {
@@ -123,8 +128,7 @@ void Image::load(const string& filename) {
 		{
 			int v = setjmp(buf);
 			if(v) {
-				//ERROR
-				nError = ERROR_INVALID_IMAGE;
+				err = ERROR_INVALID_IMAGE;
 				goto finish;
 			}
 			struct jpeg_decompress_struct cinfo;
@@ -166,7 +170,7 @@ void Image::load(const string& filename) {
 			fread(header, 1, 8, file.pszFile);
 			int is_png = !png_sig_cmp(header, 0, 8);
 			if(!is_png) {
-				nError = ERROR_INVALID_IMAGE;
+				err = ERROR_INVALID_IMAGE;
 				goto finish;
 			}
 			png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -177,14 +181,14 @@ void Image::load(const string& filename) {
 			if (!info_ptr)
 			{
 				png_destroy_read_struct(&png_ptr, (png_infopp)NULL, (png_infopp)NULL);
-				nError = ERROR_IMAGE_PROCESSING_FAILED;
+				err = ERROR_IMAGE_PROCESSING_FAILED;
 				goto finish;
 			}
 
 			//Set our error handler.
 			if(setjmp(png_jmpbuf(png_ptr))) {
 				png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
-				nError = ERROR_IMAGE_PROCESSING_FAILED;
+				err = ERROR_IMAGE_PROCESSING_FAILED;
 				goto finish;
 			}
 
@@ -234,7 +238,7 @@ void Image::load(const string& filename) {
 			pixels = new unsigned char[nBytes];
 
 			if(row_pointers != NULL) {
-				nError = ERROR_IMAGE_PROCESSING_FAILED;
+				err = ERROR_IMAGE_PROCESSING_FAILED;
 				goto finish;
 			}
 
@@ -253,13 +257,13 @@ void Image::load(const string& filename) {
 
 			file.pszFile = NULL;
 			if(!gif) {
-				nError = ERROR_IMAGE_PROCESSING_FAILED;
+				err = ERROR_IMAGE_PROCESSING_FAILED;
 				goto finish;
 			}
 			//Read the image
 			if(DGifSlurp(gif) != GIF_OK) {
 				DGifCloseFile(gif);
-				nError = ERROR_IMAGE_PROCESSING_FAILED;
+				err = ERROR_IMAGE_PROCESSING_FAILED;
 				goto finish;
 			}
 
@@ -280,14 +284,16 @@ void Image::load(const string& filename) {
 		break;
 	}
 
-	nError = ERROR_SUCCESS;
+	err = ERROR_SUCCESS;
 finish:
 	if(file.pszFile != NULL)
 		FileSystem::Close(&file);
+	return err;
 
 }
 
-void Image::save(const string& filename) {
+int Image::save(const string& filename) {
+	int err = ERROR_SUCCESS;
 	File file;
 	FileSystem::Open(filename, "wb", &file);
 	//Temporarily change the type, to allow output handling to correctly work with different image types.
@@ -320,29 +326,27 @@ void Image::save(const string& filename) {
 
 			jpeg_finish_compress(&cinfo);
 			jpeg_destroy_compress(&cinfo);
-			
-			
 		}
 		break;
 	case IMAGE_TYPE_PNG:
 		{
 			png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 			if (!png_ptr) {
-				nError = ERROR_IMAGE_PROCESSING_FAILED;
+				err = ERROR_IMAGE_PROCESSING_FAILED;
 				goto finish;
 			}
 
 			png_infop info_ptr = png_create_info_struct(png_ptr);
 			if (!info_ptr) {
 				png_destroy_read_struct(&png_ptr, (png_infopp)NULL, (png_infopp)NULL);
-				nError = ERROR_IMAGE_PROCESSING_FAILED;
+				err = ERROR_IMAGE_PROCESSING_FAILED;
 				goto finish;
 			}
 
 			//Set our error handler.
 			if(setjmp(png_jmpbuf(png_ptr))) {
 				png_destroy_write_struct(&png_ptr, &info_ptr);
-				nError = ERROR_IMAGE_PROCESSING_FAILED;
+				err = ERROR_IMAGE_PROCESSING_FAILED;
 				goto finish;
 			}
 
@@ -364,7 +368,7 @@ void Image::save(const string& filename) {
 			int error;
 			GifFileType* output = EGifOpenFileHandle(fileno(file.pszFile), &error);
 			if(!output) {
-				nError = ERROR_IMAGE_PROCESSING_FAILED;
+				err = ERROR_IMAGE_PROCESSING_FAILED;
 				goto finish;
 			}
 
@@ -390,7 +394,7 @@ void Image::save(const string& filename) {
 			}
 
 			if(EGifSpew(output) != GIF_OK) {
-				nError = ERROR_IMAGE_PROCESSING_FAILED;
+				err = ERROR_IMAGE_PROCESSING_FAILED;
 			} else {
 				file.pszFile = NULL;
 			}
@@ -411,12 +415,12 @@ void Image::save(const string& filename) {
 		break;
 	}
 
-	nError = ERROR_SUCCESS;
+	err = ERROR_SUCCESS;
 finish:
 	imageType = oldType;
 	if(file.pszFile != NULL)
 		FileSystem::Close(&file);
-	
+	return err;
 }
 
 void Image::resize(int width, int height) {

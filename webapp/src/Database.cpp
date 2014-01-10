@@ -24,7 +24,7 @@ Query::Query(Database* db, int desc) : _db(db) {
 /**
  * Create a new Query instance, providing an initial query string.
  * @see Query
- * @param dbq The initial query string.
+ * @param dbq The initial query string
 */
 Query::Query(Database* db, const string& dbq, int desc) : _db(db) {
 	params = new QueryRow();
@@ -272,14 +272,12 @@ int Database::connect(int database_type, const char* host, const char* username,
 	if(database_type == DATABASE_TYPE_SQLITE) {
 		int ret = sqlite3_open(host, &sqlite_db);
 		if(sqlite_db == NULL || ret != SQLITE_OK) {
-			nError = ERROR_DB_FAILED;
 			return DATABASE_FAILED;
 		}
 	} else if(database_type == DATABASE_TYPE_MYSQL) {
 		mysql_library_init(0, NULL, NULL);
 		mysql_db = mysql_init(NULL);
 		if(mysql_db == NULL) {
-			nError = ERROR_DB_FAILED;
 			return DATABASE_FAILED;
 		}
 		mysql_real_connect(mysql_db, host, username, password, database, 0, NULL, 0);
@@ -305,12 +303,10 @@ Database::~Database() {
 /**
  * Execute a string, creating a temporary query object.
  * @param query the string to execute
- * @return the last inserted row ID, or -1 if query fails.
+ * @return the last inserted row ID
 */
 long long Database::exec(const string& query) {
 	Query q(this, query);
 	q.process();
-	if(nError != ERROR_DB_FAILED)
-		return q.lastrowid;
-	return -1;
+	return q.lastrowid;
 }

@@ -18,11 +18,9 @@ using namespace std;
 */
 int FileSystem::Open(const string& fileName, const string& flags, File* outFile) {
 	//ensure file is opened in binary mode
-	int flen = flags.length();
+	int flag_len = flags.length();
 	string actualFlag = flags;
-	if(flags[flen-1] != 'b') {
-		actualFlag.append("b");
-	}
+	if(flags[flag_len - 1] != 'b') actualFlag += 'b';
 	FILE* tmpFile;
 #ifdef _WIN32
 	wchar_t* wfileName, *wflags;
@@ -46,27 +44,38 @@ int FileSystem::Open(const string& fileName, const string& flags, File* outFile)
 	return success;
 }
 
+/**
+ * Destroy the FileData object.
+*/
 FileData::~FileData() {
-	delete[] data;
+	if (data != NULL) delete[] data;
 }
 
+/**
+ * Destroy the File object.
+*/
 File::~File() {
-	if(pszFile != NULL)
-		fclose(pszFile);
+	if(pszFile != NULL) fclose(pszFile);
 }
 
-File::File() {
-	pszFile = NULL;
-}
-
+/**
+ * Close a File object, setting pointers to NULL.
+ * @param file the File object to close.
+*/
 void FileSystem::Close(File* file) {
-	if(file == NULL || file->pszFile == NULL)
-		return;
+	if(file == NULL || file->pszFile == NULL) return;
 	fclose(file->pszFile);
 	file->pszFile = NULL;
 }
 
+/**
+ * Seek a file to the end, retrieving file size, then restore its previous
+ * position.
+ * @param file the File object 
+ * @return file size
+*/
 long FileSystem::Size(File* file) {
+	//Seek the file to the end, retrieve
 	int old = ftell(file->pszFile);
 	fseek(file->pszFile, 0L, SEEK_END);
 	int sz = ftell(file->pszFile);
@@ -75,42 +84,39 @@ long FileSystem::Size(File* file) {
 	return sz;
 }
 
-void FileSystem::Process(File* file, void* userdata, void* callback, FileData* outData) {
-	if(file == NULL || file->pszFile == NULL || outData == NULL)
-		return;
+/**
+ * Read a file in full, storing the read data in outData.
+ * @param file the File object to read.
+ * @param outData the location to store the read file.
+*/
+void FileSystem::Read(File* file, FileData* outData) {
+	if(file == NULL || file->pszFile == NULL || outData == NULL) return;
+	//Clean up existing file data, if any.
+	if(outData->data != NULL) delete[] outData;
 	
 	//Seek to the beginning.
 	FILE* tmpFile = file->pszFile;
 	rewind(file->pszFile);
+	
+	//Get the file size.
 	int size = Size(file);
 	
-	outData->data = new char[size * sizeof(char) + 1];
-
-		if(callback != NULL) {
-			int baseBytes = 0;
-			int count = 0;
-			while(!feof(tmpFile)) {
-					
-				//Read files line by line
-					int oldBaseBytes = ftell(tmpFile);
-					fgets(outData->data + baseBytes, 4096, tmpFile);
-					int nBytesRead = ftell(tmpFile) - oldBaseBytes;
-					baseBytes += nBytesRead;
-					FILE_LINE_CALLBACK callbackFn = (FILE_LINE_CALLBACK)(callback);
-					callbackFn(userdata, outData->data + (oldBaseBytes-count), nBytesRead);
-				} 
-				baseBytes--;
-				
-		}
-		else {
-			//Simply read the entire file. Hopefully improve performance.
-			size_t nRead = fread(outData->data, sizeof(char), size, tmpFile);
-			outData->data[nRead] = '\0';
-		}
+	//Allocate room for the data.
+	outData->data = new char[size * sizeof(char)];
+	//Read the entire file into memory. Not for large files.
+	size_t nRead = fread(outData->data, sizeof(char), size, tmpFile);
+	
+	//Update the File size.
 	outData->size = size;
 	return;
 }
 
+/**
+ * Write the provided buffer to a file object.
+ * Writes according to filemode specified upon opening the file.
+ * @param file the target File object
+ * @param buffer the buffer to write
+*/
 void FileSystem::Write(File* file, const string& buffer) {
 	if(file == NULL || file->pszFile == NULL)
 		return;
@@ -118,10 +124,21 @@ void FileSystem::Write(File* file, const string& buffer) {
 	fflush(file->pszFile);
 }
 
+/**
+ * Write the provided line to a file object, appending an appropriate newline
+ * @param file the target File object
+ * @param buffer the buffer to write, followed by a NEWLINE character
+ * @see Write
+*/
 void FileSystem::WriteLine(File* file, const string& buffer) {
 	Write(file, string(buffer).append(ENV_NEWLINE));
 }
 
+/**
+ * Create a directory tree recursively using tinydir.
+ * @param path the directory tree which should be created.
+ * @return whether the directory tree was created successfully.
+*/
 int FileSystem::MakePath(const string& path) {
 	//Recurisvely make a path structure.
 	string tmpPath = string(path);
@@ -142,6 +159,10 @@ int FileSystem::MakePath(const string& path) {
 	return 1;
 }
 
+/**
+ * Delete a path recursively, including all files contained within.
+ * @param path the directory to delete.
+*/
 void FileSystem::DeletePath(const string& path) {
 	tinydir_dir dir;
 	tinydir_open(&dir, path.c_str());
@@ -175,25 +196,34 @@ void FileSystem::DeletePath(const string& path) {
 #endif
 }
 
+/**
+ * Get a vector containing a list of files within a directory.
+ * @param base the base directory to begin searching.
+ * @param path the path to prepend to each filename in the output.
+ * @param recurse whether to recurse into subdirectories.
+ * @return a vector containing a list of files within the directory path.
+*/
 vector<string> FileSystem::GetFiles(const string& base, const string& path, int recurse) {
 	vector<string> files;
 	tinydir_dir dir;
-	string abase = base + '/' + path;
-	tinydir_open(&dir, abase.c_str());
+	string start_dir = base + '/' + path;
+	tinydir_open(&dir, start_dir.c_str());
+	//Iterate over each item in the directory.
 	while(dir.has_next) {
 		tinydir_file file;
 		tinydir_readfile(&dir, &file);
-		string dpath = path.empty() ? file.name : path + '/' + file.name;
-		if(!file.is_dir) 
-			files.push_back(dpath);
+		//If path provided prepend it, otherwise just store the filename.
+		string dir_path = path.empty() ? file.name : path + '/' + file.name;
+		//Push the filename onto the resultant vector.
+		if(!file.is_dir) files.push_back(dir_path);
 		else if(recurse && file.name[0] != '.') {
-			//Get+append files from subdirectory. (recursive case)
-			vector<string> rfiles = GetFiles(base, dpath, 1);
-			files.insert(files.end(), rfiles.begin(), rfiles.end());
+			//Retrieve and append files from subdirectory.
+			vector<string> subdir_files = GetFiles(base, dir_path, 1);
+			files.insert(files.end(), subdir_files.begin(), subdir_files.end());
 		}
 		tinydir_next(&dir);
 	}
-
+	
 	tinydir_close(&dir);
 	return files;
 }

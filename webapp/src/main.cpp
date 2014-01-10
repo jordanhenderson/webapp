@@ -17,6 +17,7 @@ int main(int argc, char* argv[]) {
 	asio::io_service svc;
 	Webapp app(svc);
 
-	return app.Start();
+	app.Start();
+	return 0;
 }
 

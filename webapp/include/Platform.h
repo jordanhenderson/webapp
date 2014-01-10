@@ -8,25 +8,12 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
-#ifdef _WIN32
-#define ENV_NEWLINE "\r\n"
-#else
-#define ENV_NEWLINE "\n"
-#include <unistd.h>
-#endif
-
 #if _MSC_VER
 	#pragma warning (disable : 4503)
 	#define snprintf _snprintf
 #endif
 
 #define ERROR_SUCCESS 0L
-#define ERROR_FILE_NOT_FOUND 2L
-#define ERROR_SOCKET_FAILED 3L
-#define ERROR_DB_FAILED 4L
-#define ERROR_INVALID_IMAGE 5L
-#define ERROR_IMAGE_PROCESSING_FAILED 6L
-#define ERROR_IMAGE_NOT_SUPPORTED 7L
 
 #define XSTR(a) STR(a)
 #define STR(a) #a
@@ -53,16 +40,5 @@
 # define FORCE_UNDEFINED_SYMBOL(x) void x(void); void (*__ ## x ## _fp)(void)=&x;
 #endif
 
-#define GETCHK(s) s.empty() ? 0 : 1
-#define WEBAPP_PARAM_BASEPATH 0
-#define WEBAPP_PARAM_DBPATH 1
-#define WEBAPP_STATIC_STRINGS 3
-#define WEBAPP_LEN_SESSIONID 1
-#define WEBAPP_NUM_THREADS 8
-#define INT_INTERVAL(i) sizeof(int)*i
-#define WEBAPP_DEFAULT_QUEUESIZE 1023
-#define WEBAPP_SCRIPTS 4
-#define WEBAPP_PARAM_PORT 0
-#define WEBAPP_PORT_DEFAULT 5000
 #endif
 

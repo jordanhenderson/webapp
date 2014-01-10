@@ -13,6 +13,7 @@
 #include "FileSystem.h"
 #include "Database.h"
 #include "Session.h"
+#include "Schema.h"
 #include <ctemplate/template.h>
 #include "readerwriterqueue.h"
 
@@ -24,11 +25,6 @@ extern "C" {
 #include "cjson.h"
 }
 
-
-#include "Schema.h"
-
-class Logging;
-class Webapp;
 //LuaParams are temporary containers to hold stack variables for lua scripts.
 struct LuaParam {
 	const char* name;
@@ -100,6 +96,7 @@ public:
 };
 
 
+class Webapp;
 class TaskBase {
 public:
     TaskBase(Webapp* handler, TaskQueue* q) : _handler(handler), _q(q) {}
@@ -138,7 +135,6 @@ typedef enum {SCRIPT_INIT, SCRIPT_QUEUE, SCRIPT_REQUEST, SCRIPT_HANDLERS} script
 
 class Webapp {
 private:
-	unsigned int nError = 0;
 	void runWorker(LuaParam* params, int nArgs, script_t script);
 	void compileScript(const char* filename, script_t output);
 	std::array<webapp_str_t, WEBAPP_SCRIPTS> scripts;
@@ -162,10 +158,9 @@ private:
 	unsigned int node_counter = 0;
 	friend class WebappTask;
 public:
-	inline unsigned int GetLastError() { return nError; };
 	Webapp(asio::io_service& io_svc);
 	~Webapp();
-	unsigned int Start() { svc.run(); return nError; };
+	void  Start() { svc.run(); };
 	ctemplate::TemplateDictionary* getTemplate(const std::string& page);
 	Database* CreateDatabase();
 	Database* GetDatabase(size_t index);

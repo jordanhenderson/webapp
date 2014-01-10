@@ -8,7 +8,7 @@
 #define SESSION_H
 #include "Platform.h"
 #include "CPlatform.h"
-#include <random>
+#include "Schema.h"
 #define SESSION_STORE RamSession
 
 struct Request;

@@ -9,7 +9,6 @@
 
 #include "CPlatform.h"
 #include "Platform.h"
-
 #include "sqlite3.h"
 
 #define DATABASE_STATUS_PROCESS 0
@@ -61,13 +60,11 @@ public:
 
 class Database {
 private:
-	unsigned int nError = 0;
 	unsigned int db_type = 0;
 	size_t _db_id = 0;
 public:
 	sqlite3* sqlite_db = NULL;
 	MYSQL* mysql_db = NULL;
-	inline unsigned int GetLastError() { return nError; };
 	inline unsigned int GetDBType() { return db_type; };
 	inline size_t GetID() { return _db_id; };
 

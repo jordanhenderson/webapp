@@ -229,7 +229,7 @@ static void conn_write(ngx_event_t *ev) {
 						for(cl = r->request_body->bufs; cl; cl = cl->next) {
 							int current_buf_len;
 							buf = cl->buf;
-							current_buf_len = (int)buf->last - (int)buf->pos;
+							current_buf_len = (int)(buf->last - buf->pos);
 							req = ngx_copy(req, cl->buf->pos, current_buf_len);
 							bytes_out += current_buf_len;
 						}
