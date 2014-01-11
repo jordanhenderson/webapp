@@ -90,13 +90,9 @@ void DestroySession(SessionStore* session) {
 	session->destroy();
 }
 
-void SetParamInt(Webapp* app, unsigned int key, unsigned int value) {
+void SetParamInt(Webapp* app, unsigned int key, int value) {
 	if(app == NULL) return;
-	switch(key) {
-		case WEBAPP_PARAM_PORT:
-			app->port = value;
-			break;
-	}
+	app->SetParamInt(key, value);
 }
 
 Request* GetNextRequest(LockedQueue<Request*>* requests) {
@@ -116,7 +112,7 @@ void ClearCache(Webapp* app, LockedQueue<Request*>* requests) {
 //Only call this upon init.
 void DisableBackgroundQueue(Webapp* app) {
 	if (app == NULL) return;
-	app->background_queue_enabled = false;
+	app->SetParamInt(WEBAPP_PARAM_BGQUEUE, false);
 }
 
 void QueueProcess(LockedQueue<Process*>* background_queue, webapp_str_t* func, webapp_str_t* vars) {

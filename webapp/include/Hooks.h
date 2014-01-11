@@ -33,7 +33,7 @@ APIEXPORT void RenderTemplate(Webapp*, ctemplate::TemplateDictionary* tmpl,
 APIEXPORT void WriteData(asio::ip::tcp::socket*, webapp_str_t* data);
 
 //Webapp stuff
-APIEXPORT void SetParamInt(Webapp*, unsigned int key, unsigned int value);
+APIEXPORT void SetParamInt(Webapp*, unsigned int key, int value);
 APIEXPORT Request* GetNextRequest(LockedQueue<Request*>*);
 APIEXPORT void ClearCache(Webapp*, LockedQueue<Request*>*);
 APIEXPORT void DisableBackgroundQueue(Webapp*);

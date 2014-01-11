@@ -55,9 +55,7 @@ struct Request {
 		if (socket != NULL) delete socket;
 		if (v != NULL) delete v;
 		if (headers != NULL) delete headers;
-
-    }
-
+	}
 };
 
 class TaskQueue {
@@ -77,7 +75,6 @@ struct Process {
 
 template<typename T>
 class LockedQueue : public TaskQueue {
-private:
 	moodycamel::ReaderWriterQueue<T> queue;
 public:
 	//Each operation (enqueue, dequeue) must be done single threaded.
@@ -98,6 +95,7 @@ public:
 
 class Webapp;
 class TaskBase {
+	std::thread _worker;
 public:
     TaskBase(Webapp* handler, TaskQueue* q) : _handler(handler), _q(q) {}
 	void start() {
@@ -111,76 +109,84 @@ public:
     static void start_thread(TaskBase* base) { base->execute(); }
 protected:
 	Webapp* _handler = NULL;
-	
-private:
-	std::thread _worker;
 };
 
 class WebappTask : public TaskBase {
-private:
+	friend class Webapp;
 	unsigned int _id;
 	unsigned int _bg;
 	Sessions* _sessions;
 	void handleCleanup();
 public:
-	WebappTask(Webapp* handler, Sessions* sessions, TaskQueue* queue, int background_task=0) 
-		: TaskBase(handler, queue), _sessions(sessions), _bg(background_task) {
+	WebappTask(Webapp* handler, Sessions* sessions, TaskQueue* queue, int bg_task=0) 
+		: TaskBase(handler, queue), _sessions(sessions), _bg(bg_task) {
 			start();
-        }
+		}
 	void execute();
-	friend class Webapp;
 };
 
 typedef enum {SCRIPT_INIT, SCRIPT_QUEUE, SCRIPT_REQUEST, SCRIPT_HANDLERS} script_t;
+static const char* script_t_names[] = {"SCRIPT_INIT", "SCRIPT_QUEUE", 
+	"SCRIPT_REQUEST", "SCRIPT_HANDLERS"};
 
 class Webapp {
-private:
 	void runWorker(LuaParam* params, int nArgs, script_t script);
-	void compileScript(const char* filename, script_t output);
 	std::array<webapp_str_t, WEBAPP_SCRIPTS> scripts;
-	//(content) template filename vector
+	
 	std::vector<std::string> contentList;
 	std::vector<std::string> serverTemplateList;
+	std::vector<TaskBase*> workers;
+	std::vector<Sessions*> sessions;
+	
+	//Parameters
+	unsigned int aborted = 0;
+	unsigned int background_queue_enabled = 1;
+	unsigned int port = WEBAPP_PORT_DEFAULT;
+	
+	std::mutex cleanupLock;
 	
 	//Keep track of dynamic databases
 	std::unordered_map<size_t, Database*> databases;
 	std::atomic<size_t> db_count{0};
+	std::vector<LockedQueue<Request*>*> request_queues;
 
 	//IPC api
 	asio::ip::tcp::acceptor* acceptor;
-	void accept_message();
-	void accept_message_async(asio::ip::tcp::socket*, const asio::error_code&);
-	void process_message_async(Request *r, const asio::error_code&, std::size_t);
+	void accept_conn();
+	void accept_conn_async(asio::ip::tcp::socket*, const asio::error_code&);
+	void process_header_async(Request *r, const asio::error_code&, std::size_t);
 	void process_request(Request* r, size_t len);
 	void process_request_async(Request* r, const asio::error_code&, std::size_t);
 	asio::io_service& svc;
 
-	
-	
+	//Keep a clean template for later duplication.
 	ctemplate::TemplateDictionary cleanTemplate;
+	
+	//Worker/node variables
 	unsigned int nWorkers = WEBAPP_NUM_THREADS - 1;
 	unsigned int node_counter = 0;
-	friend class WebappTask;
 public:
 	Webapp(asio::io_service& io_svc);
 	~Webapp();
-	void  Start() { svc.run(); };
+	
+	//Public webapp methods
+	void Start() { svc.run(); };
 	ctemplate::TemplateDictionary* getTemplate(const std::string& page);
 	Database* CreateDatabase();
 	Database* GetDatabase(size_t index);
 	void DestroyDatabase(Database*);
+	void CompileScript(const char* filename, webapp_str_t* output);
+	void SetParamInt(unsigned int key, int value);
+	int GetParamInt(unsigned int key);
+	
+	//Worker methods
+	void StartWorker(WebappTask*);
+	
+	//Cleanup methods.
 	void refresh_templates();
 	void reload_all();
-	
-	std::vector<TaskBase*> workers;
-	std::vector<Sessions*> sessions;
-	std::vector<LockedQueue<Request*>*> request_queues;
-	
-	unsigned int aborted = 0;
-	unsigned int background_queue_enabled = 1;
-	
-	unsigned int port = WEBAPP_PORT_DEFAULT;
-	std::mutex cleanupLock;
+	int start_cleanup(TaskQueue*);
+	void perform_cleanup();
 };
 
 #endif //WEBAPP_H

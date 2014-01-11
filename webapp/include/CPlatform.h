@@ -38,6 +38,7 @@
 struct webapp_str_t {
 	const char* data = NULL;
 	size_t len = 0;
+	~webapp_str_t() { if (data != NULL) delete[] data; };
 };
 
 webapp_str_t* webapp_strdup(webapp_str_t*);

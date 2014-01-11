@@ -18,89 +18,146 @@ using namespace std::placeholders;
 #endif 
 
 /**
- * Clean up a TaskQueue. Called as each task is signalled to finish.
- * Performs actual cleanup from originally signalled thread when
- * other threads are waiting (q->finished = 1)
+ * Clean up a worker thread. Called as each task is signalled to finish.
+ * Performs actual cleanup from originally signalled thread while
+ * other threads are waiting/blocked (q->finished = 1)
 */
 void WebappTask::handleCleanup() {
+	//Set the finished flag to signify this thread is waiting.
 	_q->finished = 1;
-	//VM has quit.
-	int cleaning = 0;
-	{
-		unique_lock<mutex> lk(_handler->cleanupLock); //Only allow one thread to clean up.
-		if (_q->cleanupTask == 1) {
-			cleaning = 1;
-			//Cleanup worker; worker that recieved CleanCache request
-			for (TaskBase* task: _handler->workers) {
-				TaskQueue* q = task->_q;
-				q->cleanupTask = 0; //Only clean up once!
-				//Set the queue to aborted
-				q->aborted = 1;
-				//Notify any blocked threads to process the next request.
-				while(!q->finished) {
-					q->cv.notify_one();
-					this_thread::sleep_for(chrono::milliseconds(100));
-				}
-				//Prevent any new requests from being queued.
-				q->cv_mutex.lock();
-			}
-		}
-	}
 	
+	int cleaning = _handler->start_cleanup(_q);
+	//Actual cleaning stage, performed after all workers terminated.
 	if(cleaning) {
-		_handler->reload_all();
-		
-		for (TaskBase* task: _handler->workers) {
-			task->_q->aborted = 0;
-			task->_q->cv_mutex.unlock();
-		}
-		//Just (attempt to) grab own lock.
+		_handler->perform_cleanup();
 	} else {
+		//Just (attempt to) grab own lock. 
 		unique_lock<mutex> lk(_q->cv_mutex); 
+		//(Automatically) unlock when done to complete the process.
 	}
-	//Unlock when done to complete the process.
 }
 
+/**
+ * Execute a worker task. Uses SCRIPT_REQUEST or SCRIPT_QUEUE.
+ * Worker tasks process queues of recieved requests (each single threaded)
+ * The LUA VM must only block after handling each request.
+ * Performs cleanup when finished.
+*/
 void WebappTask::execute() {
-	while (!_handler->aborted) {
+	while (!_handler->GetParamInt(WEBAPP_PARAM_ABORTED)) {
 		_q->finished = 0;
-		if(!_bg) {
-			LuaParam _v[] = { { "sessions", _sessions },
-							  { "requests", _q }, 
-							  { "app", _handler } };
-			_handler->runWorker(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_REQUEST);
-		} else {
-			LuaParam _v[] = { { "queue", _q }, 
-							  { "app", _handler } };
-			_handler->runWorker(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_QUEUE);
-		}
-		
+
 		handleCleanup();
 	}
 }
 
-void Webapp::compileScript(const char* filename, script_t output) {
+/**
+ * Start a worker, executing the appropriate script.
+ * @param t the task to start.
+*/
+void Webapp::StartWorker(WebappTask* t) {
+	if(!t->_bg) {
+		LuaParam _v[] = { { "sessions", t->_sessions },
+						  { "requests", t->_q }, 
+						  { "app", this } };
+		runWorker(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_REQUEST);
+	} else {
+		LuaParam _v[] = { { "queue", t->_q }, 
+						  { "app", this } };
+		runWorker(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_QUEUE);
+	}
+}
+
+/**
+ * Begin the reload process by stopping all workers.
+ * @param _q the taskqueue of the cleaning up worker.
+ * @return 1 if the calling thread should perform the actual cleanup.
+*/
+int Webapp::start_cleanup(TaskQueue* _q) {
+	int cleaning = 0;
+	//Lock the following to prevent more than one thread from
+	//cleaning at a time.
+	unique_lock<mutex> lk(cleanupLock); 
+	if (_q->cleanupTask == 1) {
+		cleaning = 1;
+		
+		//Ensure each worker is aborted, waiting to be restarted.
+		for (TaskBase* task: workers) {
+			TaskQueue* q = task->_q;
+			//Ensure no other thread is cleaning.
+			q->cleanupTask = 0;
+			
+			//Abort the worker (aborts any new requests).
+			q->aborted = 1;
+			
+			//Notify any blocked threads to process the next request.
+			while(!q->finished) {
+				q->cv.notify_one();
+				//Sleep to allow thread to finish, then check again.
+				this_thread::sleep_for(chrono::milliseconds(100));
+			}
+			//Prevent any new requests from being queued.
+			q->cv_mutex.lock();
+		}
+	}
+	return cleaning;
+}
+
+/**
+ * Perform the actual cleanup process, reloading any cached data.
+ * Signals all workers to unpause, when cleanup is finished.
+*/
+void Webapp::perform_cleanup() {
+	//Reload the webapp.
+	reload_all();
+	
+	//Restart all workers.
+	for (TaskBase* task: workers) {
+		task->_q->aborted = 0;
+		task->_q->cv_mutex.unlock();
+	}
+}
+
+/**
+ * Compile a lua script (preprocess macros etc.)
+ * Stores the compiled script text in scripts[output]
+ * Relies on lua script "plugins/process.lua" and LuaMacro.
+ * @param filename the script to preprocess
+ * @param output the destination webapp_str_t
+*/
+void Webapp::CompileScript(const char* filename, webapp_str_t* output) {
+	if(filename == NULL || output == NULL) return;
+	//Create a new lua state, with minimal libs for LuaMacro.
 	lua_State* L = luaL_newstate();
 	luaL_openlibs(L);
 	luaopen_lpeg(L);
 
+	//Execute the LuaMacro preprocessor.
 	int ret = luaL_loadfile(L, "plugins/process.lua");
 	if(ret) printf("Error: %s\n", lua_tostring(L, -1));
 
+	//Provide the target filename to preprocess.
 	lua_pushlstring(L, filename, strlen(filename));
 	lua_setglobal(L, "file");
+	
+	//Execute the VM, store the results.
 	if(lua_pcall(L, 0, 1, 0) != 0) 
 		printf("Error: %s\n", lua_tostring(L, -1));
 	else {
-		size_t* len = &scripts[output].len;
+		size_t* len = &output->len;
 		const char* chunk = lua_tolstring(L, -1, len);
-		scripts[output].data = new char[*len + 1];
-		memcpy((char*)scripts[output].data, chunk, *len + 1);
+		if(output->data != NULL) delete[] output->data;
+		output->data = new char[*len + 1];
+		memcpy((char*)output->data, chunk, *len + 1);
 	}
 	lua_close(L);
 }
 
+/**
+ * Reload all cached data as necessary.
+*/
 void Webapp::reload_all() {
+	//Delete cached preprocessed scripts.
 	for(int i = 0; i < WEBAPP_SCRIPTS; i++) 
 		if(scripts[i].data != NULL) 
 			delete[] scripts[i].data;
@@ -114,30 +171,40 @@ void Webapp::reload_all() {
 	//Reset db_count to ensure new databases are created from index 0.
 	db_count = 0;
 	
-	compileScript("plugins/core/init.lua", SCRIPT_INIT);
-	compileScript("plugins/core/process.lua", SCRIPT_REQUEST);
-	compileScript("plugins/core/handlers.lua", SCRIPT_HANDLERS);
+	//Recompile scripts.
+	CompileScript("plugins/core/init.lua", &scripts[SCRIPT_INIT]);
+	CompileScript("plugins/core/process.lua", &scripts[SCRIPT_REQUEST]);
+	CompileScript("plugins/core/handlers.lua", &scripts[SCRIPT_HANDLERS]);
 
-	//Run init plugin
+	//Run init script.
 	LuaParam _v[] = { { "app", this } };
 	runWorker(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_INIT);
 
 	if (background_queue_enabled)
-		compileScript("plugins/core/process_queue.lua", SCRIPT_QUEUE);
+		CompileScript("plugins/core/process_queue.lua", &scripts[SCRIPT_QUEUE]);
 	
-	//Refresh any loaded ctemplates.
+	//Reload templates as required.
 	refresh_templates();
 }
 
-//Run script given a LuaChunk. Called by public runScript methods.
+/**
+ * Run script stored in scripts[] array, passing in provided params.
+ * @param params parameters to provide to the Lua instance
+ * @param nArgs amount of parameters
+ * @param index of script in scripts[] to execute.
+*/
 void Webapp::runWorker(LuaParam* params, int nArgs, script_t script) {
 	if(scripts[script].data == NULL) return;
+	Request* r = NULL;
+	
+	//Initialize a lua state, loading appropriate libraries.
 	lua_State* L = luaL_newstate();
 	luaL_openlibs(L);
 	luaopen_lpeg(L);
 	luaopen_cjson(L);
+	
+	//Allocate memory for temporary string operations.
 	webapp_str_t* static_strings = new webapp_str_t[WEBAPP_STATIC_STRINGS];
-	Request* r = NULL;
 	
 	//Preload handlers.
 	if(luaL_loadbuffer(L, scripts[SCRIPT_HANDLERS].data,
@@ -147,19 +214,22 @@ void Webapp::runWorker(LuaParam* params, int nArgs, script_t script) {
 	if(lua_pcall (L, 0, 1, 0)) 
 		goto lua_error;
 	
-	// store funky module table in global var
+	//Store loaded script buffer in 'load_handlers' global.
 	lua_setfield (L, LUA_GLOBALSINDEX, "load_handlers");
 	
-	//Create temporary webapp_str_t for string creation between vm/c
+	//Provide and set temporary string memory global.
 	lua_pushlightuserdata(L, static_strings);
 	lua_setglobal(L, "static_strings");
 	
+	//If script is SCRIPT_INIT, provide a temporary Request object
+	//to operate on (Request needed when calling handlers)
 	if(script == SCRIPT_INIT) {
 		r = new Request();
 		lua_pushlightuserdata(L, r);
 		lua_setglobal(L, "tmp_request");
 	}
 	
+	//Pass each param into the Lua state.
 	if(params != NULL) {
 		for(int i = 0; i < nArgs; i++) {
 			LuaParam* p = params + i;
@@ -168,7 +238,9 @@ void Webapp::runWorker(LuaParam* params, int nArgs, script_t script) {
 		}
 	}
 	
-	if(luaL_loadbuffer(L, scripts[script].data, scripts[script].len, "")) 
+	//Load the lua buffer.
+	if(luaL_loadbuffer(L, scripts[script].data, scripts[script].len, 
+		script_t_names[script]))
 		goto lua_error;
 	
 	if(lua_pcall(L, 0, 0, 0) != 0) 
@@ -185,6 +257,10 @@ finish:
 	lua_close(L);
 }
 
+/**
+ * Webapp constructor.
+ * @param io_svc the asio service object to listen upon
+*/
 Webapp::Webapp(asio::io_service& io_svc) : 
 										svc(io_svc), 
 										cleanTemplate("")
@@ -198,6 +274,7 @@ Webapp::Webapp(asio::io_service& io_svc) :
 		nWorkers--;
 	}
 	
+	//Create session objects and request queues for each workers.
 	for (unsigned int i = 0; i < nWorkers; i++) {
 		Sessions* session = new Sessions(i);
 		LockedQueue<Request*>* requests = new LockedQueue<Request*>();
@@ -206,14 +283,25 @@ Webapp::Webapp(asio::io_service& io_svc) :
 		workers.push_back(new WebappTask(this, session, requests));	
 	}
 
+	//Create the service work object to inform the service there is work.
 	asio::io_service::work wrk = asio::io_service::work(svc);
+
+	//Create the TCP endpoint and acceptor.
 	tcp::endpoint endpoint(tcp::v4(), port);
 	acceptor = new tcp::acceptor(svc, endpoint, true);
-	accept_message();
+	accept_conn();
 }
 
+/**
+ * Process a recieved request. 
+ * By this stage, the entire request has been recieved. This stage reads
+ * in/sets each variable and passes the request to lua workers.
+ * @param r the Request object
+ * @param ec the asio error code, if any.
+ * @param bytes_transferred the amount of bytes transferred.
+*/
 void Webapp::process_request_async(
-	Request* r, const asio::error_code&, std::size_t bytes_transferred) {
+	Request* r, const asio::error_code& ec, std::size_t bytes_transferred) {
 	size_t read = 0;
 	//Read each input chain variable recieved from nginx appropriately.
 	for(int i = 0; i < STRING_VARS; i++) {
@@ -243,13 +331,29 @@ void Webapp::process_request_async(
 	queue->enqueue(r);
 }
 
+/**
+ * Signal ASIO to wait for the rest of the request.
+ * At this stage, the initial request header has been recieved. 
+ * The protocol header has provided the amount of variable length data still
+ * to be transferred. Use this value as the async_read CompletionCondition.
+ * @param r Request object
+ * @param amount the amount of bytes still to recieve
+*/
 void Webapp::process_request(Request* r, std::size_t amount) {
 	r->v = new std::vector<char>(amount);
 	asio::async_read(*r->socket, asio::buffer(*r->v), transfer_exactly(amount),
 		std::bind(&Webapp::process_request_async, this, r, _1, _2));
 }
 
-void Webapp::process_message_async(Request* r, const asio::error_code& err,
+/**
+ * Begin to process the request header. At this stage, exactly
+ * PROTOCOL_LENGTH_SIZEINFO bytes have been recieved, providing all 
+ * variable length data for further stages.
+ * @param r the Request object
+ * @param ec the asio error code, if any
+ * @param bytes_transferred the amount bytes transferred
+*/
+void Webapp::process_header_async(Request* r, const asio::error_code& ec,
 	std::size_t bytes_transferred) {
 	if(r->uri.data == NULL && !r->method) {
 		const char* headers = r->headers->data();
@@ -276,28 +380,45 @@ void Webapp::process_message_async(Request* r, const asio::error_code& err,
 		process_request(r, len);
 	}
 }
-void Webapp::accept_message_async(asio::ip::tcp::socket* s, const asio::error_code& error) {
+
+/**
+ * Begin to process a Request. 
+ * At this stage, the connection has been accepted asynchronously.
+ * The next stage will be executed after async_read completes as necessary.
+ * @param s the asio socket object of the accepted connection.
+*/
+void Webapp::accept_conn_async(asio::ip::tcp::socket* s, const asio::error_code& error) {
 	Request* r = new Request();
 	r->socket = s;
 	r->headers = new std::vector<char>(PROTOCOL_LENGTH_SIZEINFO);
 
 	try {
-		asio::async_read(*r->socket, asio::buffer(*r->headers), transfer_exactly(PROTOCOL_LENGTH_SIZEINFO),
-			bind(&Webapp::process_message_async, this, r, _1, _2));
-		accept_message();
+		asio::async_read(*r->socket, asio::buffer(*r->headers), 
+			transfer_exactly(PROTOCOL_LENGTH_SIZEINFO), bind(
+				&Webapp::process_header_async, this, r, _1, _2));
+		accept_conn();
 	} catch(std::system_error er) {
 		delete r;
-		accept_message();
+		accept_conn();
 	}
 }
 
-void Webapp::accept_message() {
+/**
+ * First connection stage. Called to provide an entry point for new 
+ * connections. Re-called after each async_accept callback is completed.
+*/
+void Webapp::accept_conn() {
 	ip::tcp::socket* current_socket = new ip::tcp::socket(svc);
 	acceptor->async_accept(*current_socket, 
-		std::bind(&Webapp::accept_message_async, this, current_socket, std::placeholders::_1));
+		std::bind(&Webapp::accept_conn_async, this, 
+			current_socket, std::placeholders::_1));
 }
 
+/**
+ * Deconstruct Webapp object.
+*/
 Webapp::~Webapp() {
+	//Abort each worker request queue and session.
 	for (unsigned int i = 0; i < nWorkers; i++) {
 		LockedQueue<Request*>* rq = request_queues.at(i);
 		rq->aborted = 1;
@@ -308,6 +429,7 @@ Webapp::~Webapp() {
 		delete session;
 	}
 
+	//Join each worker.
 	for (unsigned int i = 0; i < nWorkers; i++) {
 		TaskBase* t = workers.at(i);
 		if (t != NULL) {
@@ -330,13 +452,19 @@ Webapp::~Webapp() {
 	}
 }
 
+/**
+ * Get a clean TemplateDictionary if the page provided exists in contentList
+ * @param page the content page that may be contained within contentList
+ * @return a clean TemplateDictionary
+*/
 TemplateDictionary* Webapp::getTemplate(const std::string& page) {
-	if(contains(contentList, page)) {
-		return cleanTemplate.MakeCopy("base");
-	}
+	if(contains(contentList, page)) return cleanTemplate.MakeCopy("base");
 	return NULL;
 }
 
+/**
+ * Refresh loaded templates.
+*/
 void Webapp::refresh_templates() {
 	//Force reload templates
 	mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::IMMEDIATE_RELOAD);
@@ -344,6 +472,7 @@ void Webapp::refresh_templates() {
 	//Load content files (applicable templates)
 	contentList.clear();
 
+	//Load all main content templates from the content directory.
 	vector<string> files = FileSystem::GetFiles("content/", "", 0);
 	contentList.reserve(files.size());
 	for(string& s : files) {
@@ -352,10 +481,11 @@ void Webapp::refresh_templates() {
 		contentList.push_back(s);
 	}
 
-	//Load server templates.
+	//Load sub (include) templates.
 	files = FileSystem::GetFiles("templates/", "", 0);
 	for(string& s: files) {
 		if(!contains(serverTemplateList, s)) {
+			//Template name should be T_FILENAME (without extension)
 			string t = "T_" + s.substr(0, s.find_last_of("."));
 			std::transform(t.begin()+2, t.end(), t.begin()+2, ::toupper);
 			cleanTemplate.AddIncludeDictionary(t)->SetFilename("templates/" + s);
@@ -364,6 +494,11 @@ void Webapp::refresh_templates() {
 	}
 }
 
+/**
+ * Create a Database object, incrementing the db_count.
+ * Store the Database object in the databases hashmap.
+ * @return the newly created Database object.
+*/
 Database* Webapp::CreateDatabase() {
 	size_t id = db_count++;
 	Database* db = new Database(id);
@@ -372,6 +507,12 @@ Database* Webapp::CreateDatabase() {
 	return db;
 }
 
+/**
+ * Retrieve a Database object from the databases hashmap, using the 
+ * provided index.
+ * @param index the Database object key. See db_count in CreateDatabase.
+ * @return the newly created Database object.
+*/
 Database* Webapp::GetDatabase(size_t index) {
 	try {
 		return databases.at(index);
@@ -380,8 +521,40 @@ Database* Webapp::GetDatabase(size_t index) {
 	}
 }
 
+/**
+ * Destroy a Database object.
+ * @param db the Database object to destroy
+*/
 void Webapp::DestroyDatabase(Database* db) {
 	unsigned int id = db->GetID();
 	databases.erase(id);
 	delete db;
+}
+
+/**
+ * Set a webapp parameter.
+ * @param key the parameter key
+ * @param value the value
+*/
+void Webapp::SetParamInt(unsigned int key, int value) {
+	switch(key) {
+		case WEBAPP_PARAM_PORT: port = value; break;
+		case WEBAPP_PARAM_BGQUEUE: background_queue_enabled = value; break;
+		case WEBAPP_PARAM_ABORTED: aborted = value; break;
+		default: return; break;
+	}
+}
+
+/**
+ * Get a webapp parameter.
+ * @param key the parameter key
+ * @return the parameter
+*/
+int Webapp::GetParamInt(unsigned int key) {
+	switch(key) {
+		case WEBAPP_PARAM_PORT: return port; break;
+		case WEBAPP_PARAM_BGQUEUE: return background_queue_enabled; break;
+		case WEBAPP_PARAM_ABORTED: return aborted; break;
+		default: return 0; break;
+	}
 }
