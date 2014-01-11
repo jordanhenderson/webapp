@@ -95,6 +95,11 @@ void SetParamInt(Webapp* app, unsigned int key, int value) {
 	app->SetParamInt(key, value);
 }
 
+int GetParamInt(Webapp* app, unsigned int key) {
+	if(app == NULL) return 0;
+	return app->GetParamInt(key);
+}
+
 Request* GetNextRequest(LockedQueue<Request*>* requests) {
 	if (requests == NULL) return NULL;
 	return requests->dequeue();
