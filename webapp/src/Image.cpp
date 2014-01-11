@@ -388,9 +388,9 @@ int Image::save(const string& filename) {
 				saved_images[i].ImageDesc.Height = height;
 				saved_images[i].ExtensionBlockCount = gif->SavedImages[i].ExtensionBlockCount;
 				saved_images[i].ExtensionBlocks = gif->SavedImages[i].ExtensionBlocks;
-				//Remove subimage rasterbits issues
-				gifMakeMap(frames[i], width, height, (unsigned char**)&saved_images[i].ImageDesc.ColorMap, (unsigned char**)&saved_images[i].RasterBits);
-				//Clean up rasterbits/maps.					
+				//
+				gifRasterizeFrame(i, (unsigned char**)&saved_images[i].ImageDesc.ColorMap, 
+					(unsigned char**)&saved_images[i].RasterBits);
 			}
 
 			if(EGifSpew(output) != GIF_OK) {

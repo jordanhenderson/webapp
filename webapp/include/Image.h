@@ -28,6 +28,8 @@ private:
 	int height = 0;
 	int nBytes = 0;
 	unsigned char* pixels = NULL;
+	unsigned char* _resize(unsigned char* image, int width, int height, 
+		int oldWidth, int oldHeight);
 	void changeType(const std::string& filename);
 	//PNG ONLY
 	int bitdepth = 0;
@@ -36,13 +38,10 @@ private:
 	int imagecount = 0;
 	GifFileType* gif = NULL;
 	unsigned char** frames = NULL;
-	int gifGetTransparentColor(int frame);
-	void gifInsertFrame(int frame);
-	void gifMakeMap(unsigned char* image, int width, int height, 
-		unsigned char** map, unsigned char** raster);
+	void gifInsertFrame(unsigned int frame);
+	void gifRasterizeFrame(unsigned int frame, unsigned char** map,
+		unsigned char** raster);
 	void cleanup();
-	unsigned char* _resize(unsigned char* image, int width, int height, 
-		int oldWidth, int oldHeight);
 	void regenRowPointers();
 
 public:
