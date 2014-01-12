@@ -460,7 +460,8 @@ void Image::regenRowPointers() {
 	}
 }
 
-unsigned char* Image::_resize(unsigned char* image, int width, int height, int oldWidth, int oldHeight) {
+unsigned char* Image::_resize(unsigned char* image, int width, int height,
+							  int oldWidth, int oldHeight) {
 	if(width == oldWidth && height == oldHeight)
 		return image;
 
@@ -468,7 +469,6 @@ unsigned char* Image::_resize(unsigned char* image, int width, int height, int o
 	unsigned char* tmpBuf = new unsigned char[(width * height * 4) + 4];
 	cv::Mat input(oldHeight, oldWidth, CV_8UC4, image);
 	cv::Mat output(height, width, CV_8UC4, tmpBuf);
-	int area = output.size().area();
 	
 	cv::resize(input, output, output.size(), 0, 0, cv::INTER_AREA);
 	

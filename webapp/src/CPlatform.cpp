@@ -38,7 +38,8 @@ bool is_number(const string &s) {
  * @param after the value to replace before with
  * @return the resultant string
 */
-string replaceAll( string const& original, string const& before, string const& after ) {
+string replaceAll( string const& original, string const& before,
+				   string const& after ) {
 	string retval;
 	string::const_iterator end     = original.end();
 	string::const_iterator current = original.begin();

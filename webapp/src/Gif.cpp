@@ -137,7 +137,8 @@ void Image::gifInsertFrame(unsigned int frame) {
  * @param map the output colour map destination
  * @param raster the output raster array destination
 */
-void Image::gifRasterizeFrame(unsigned int frame, unsigned char** map, unsigned char** raster) {
+void Image::gifRasterizeFrame(unsigned int frame, unsigned char** map,
+							  unsigned char** raster) {
 	unsigned char* image = frames[frame];
 	palinitnet(NULL, 0, 1.0, image, width * height * 4, 256,
 		1, 1.8, 0.0, 0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 0);

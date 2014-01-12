@@ -24,7 +24,7 @@ Sessions::~Sessions() {
 }
 
 SessionStore* Sessions::new_session(Request* request) {
-	if (request->host.len == 0 || request->user_agent.len == 0) return NULL; //Cannot build unique session.
+	if (request->host.len == 0 || request->user_agent.len == 0) return NULL;
 	unsigned char output[32];
 	char output_hex[32];
 	SHA256_CTX ctx;
@@ -47,30 +47,51 @@ SessionStore* Sessions::new_session(Request* request) {
 
 	string str_hex = _node + string((char*)output_hex, 32);
 	
-	
 	SessionMap::iterator it = session_map.find(str_hex);
-	//Delete any existing map, if any (clean up possible existing orphan session data).
-	if (it != session_map.end()) {
-		SessionStore* sto = it->second;
-		sto->destroy();
-		delete sto;
-		session_map.erase(it);
+	//If session map already exists, try to generate a new one.
+	if (it != session_map.end()) return new_session(request);
+
+	if(session_map.size() >= max_sessions) {
+		//Sessions have filled up completely.
+		//Ram needs to be increased, sessions moved to different storage (disk)
+		//or server is being DOS'ed.
+		//TODO: Alert server operators.
+		//Try cleaning up empty sessions.
+		auto it = session_map.begin();
+		while(it != session_map.end()) {
+			SessionStore* session = it->second;
+			if(session->count() == 0) {
+				delete session;
+				session_map.erase(it++);
+			} else {
+				++it;
+			}
+		}
+		//If still a problem - we have no option than to destroy sessions.
+		if(session_map.size() >= max_sessions) {
+			auto it = session_map.begin();
+			SessionStore* session = it->second;
+			delete session;
+			session_map.erase(it);
+		}
 	}
-	
 
 	SessionStore* session_store = new SESSION_STORE();
 	session_store->create(str_hex);
-	//should use output
 	session_map.insert(make_pair(str_hex, session_store));
 	
 	return session_store;
 }
 
 SessionStore* Sessions::get_session(webapp_str_t* sessionid) {
-	SessionMap::iterator it = session_map.find(string(sessionid->data, sessionid->len));
+	auto it = session_map.find(string(sessionid->data, sessionid->len));
 	if(it != session_map.end())
 		return it->second;
 
 	return NULL;
 }
 
+void Sessions::SetMaxSessions(int value) {
+	max_sessions = value;
+	session_map.reserve(value);
+}

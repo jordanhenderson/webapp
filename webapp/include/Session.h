@@ -20,8 +20,9 @@ public:
 	virtual void create(const std::string& sessionid) = 0;
 	virtual void store(const std::string& key, const std::string& value) = 0;
 	virtual const std::string& get(const std::string& key) = 0;
+	virtual int count() = 0;
 	virtual void destroy() = 0;
-	SessionStore() : empty("") {};
+	SessionStore() : empty("") {}
 };
 
 //Default ram storage of session data.
@@ -34,6 +35,7 @@ public:
 	void store(const std::string& key, const std::string& value);
 	const std::string& get(const std::string& key);
 	void destroy();
+	int count();
 };
 
 struct Request;
@@ -45,14 +47,17 @@ class Sessions {
 private:
 	SessionMap session_map;
 	std::string _node;
+	int max_sessions = WEBAPP_DEFAULT_SESSION_LIMIT;
 public:
 	Sessions(unsigned int node_id) : rng(rd()) {
 		_node = std::to_string(node_id).substr(0, WEBAPP_LEN_SESSIONID);
-	};
+		session_map.reserve(max_sessions);
+	}
 	~Sessions();
 	//Create a new session based on the request.
 	SessionStore* get_session(webapp_str_t* sessionid);
 	SessionStore* new_session(Request* request);
+	void SetMaxSessions(int value);
 };
 
 #endif //SESSION_H

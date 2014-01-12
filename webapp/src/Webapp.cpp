@@ -84,7 +84,7 @@ int Webapp::start_cleanup(TaskQueue* _q) {
 		cleaning = 1;
 		
 		//Ensure each worker is aborted, waiting to be restarted.
-		for (TaskBase* task: workers) {
+		for (WebappTask* task: workers) {
 			TaskQueue* q = task->_q;
 			//Ensure no other thread is cleaning.
 			q->cleanupTask = 0;
@@ -114,7 +114,7 @@ void Webapp::perform_cleanup() {
 	reload_all();
 	
 	//Restart all workers.
-	for (TaskBase* task: workers) {
+	for (WebappTask* task: workers) {
 		task->_q->aborted = 0;
 		task->_q->cv_mutex.unlock();
 	}
@@ -436,7 +436,7 @@ Webapp::~Webapp() {
 
 	//Join each worker.
 	for (unsigned int i = 0; i < nWorkers; i++) {
-		TaskBase* t = workers.at(i);
+		WebappTask* t = workers.at(i);
 		if (t != NULL) {
 			t->join();
 			delete t;

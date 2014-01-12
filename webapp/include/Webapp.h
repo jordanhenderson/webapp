@@ -24,17 +24,25 @@ extern "C" {
 #include "cjson.h"
 }
 
-//LuaParams are temporary containers to hold stack variables for lua scripts.
+/**
+ * @brief Provide name, pointer pairs to set as lua globals.
+ */
 struct LuaParam {
 	const char* name;
 	void* ptr;
 };
 
+/**
+ * @brief Iteratable containers accessible by lua.
+ */
 struct LuaContainer {
 	void* container = NULL;
 	int type = 0;
 };
 
+/**
+ * @brief Required information per request.
+ */
 struct Request {
 	asio::ip::tcp::socket* socket = NULL;
 	std::vector<char>* v = NULL;
@@ -52,44 +60,49 @@ struct Request {
 	webapp_str_t* input_chain[STRING_VARS];
 	std::vector<Query*> queries;
 	~Request() {
-		for(std::vector<std::string*>::iterator it = strings.begin();
-			it != strings.end(); ++it) {
-			delete *it;
-		}
-
-		for (std::vector<Query*>::iterator it = queries.begin();
-			it != queries.end(); ++it) {
-			delete *it;
-		}
-		
+		for(auto it: strings) delete it;
+		for(auto it: queries) delete it;
 		if (socket != NULL) delete socket;
 		if (v != NULL) delete v;
 		if (headers != NULL) delete headers;
 	}
 };
 
+/**
+ * @brief TaskQueue provides the base locking mechanisms for queues, and support
+ * for required webapp functionality.
+ */
 class TaskQueue {
 public:
 	unsigned int cleanupTask = 0;
 	std::atomic<unsigned int> aborted{0};
 	unsigned int finished = 0;
 	std::condition_variable cv;
-	std::mutex cv_mutex; //Mutex to allow ready cv
+	std::mutex cv_mutex;
 	void notify() {cv.notify_one();}
 };
 
+/**
+ * @brief Process is used to pass requests to Background Queue.
+ */
 struct Process {
 	webapp_str_t* func = NULL;
 	webapp_str_t* vars = NULL;
 };
 
+/**
+ * @brief LockedQueue is a bounded multi-thread safe queue that provides
+ * signalling capabilities.
+ * Uses moodycamel's ReaderWriterQueue (lock free queue)
+ */
 template<typename T>
 class LockedQueue : public TaskQueue {
 	moodycamel::ReaderWriterQueue<T> queue;
 public:
 	//Each operation (enqueue, dequeue) must be done single threaded.
 	//We need MP (Multi-Producer), so lock production.
-	void enqueue(T i) {cv_mutex.lock(); queue.enqueue(i); cv_mutex.unlock(); cv.notify_one();}
+	void enqueue(T i) {cv_mutex.lock(); queue.enqueue(i);
+					   cv_mutex.unlock(); cv.notify_one();}
 	T dequeue() { 
 		T r;
 		{
@@ -102,41 +115,33 @@ public:
     LockedQueue() : queue(WEBAPP_DEFAULT_QUEUESIZE) {}
 };
 
-
 class Webapp;
-class TaskBase {
-	std::thread _worker;
-public:
-    TaskBase(Webapp* handler, TaskQueue* q) : _handler(handler), _q(q) {}
-	void start() {
-		_worker = std::thread([this]{execute();});
-	}
-	void join() {
-		_worker.join();
-	}
-	TaskQueue* _q = NULL;
-	virtual void execute() = 0;
-    static void start_thread(TaskBase* base) { base->execute(); }
-protected:
-	Webapp* _handler = NULL;
-};
-
-class WebappTask : public TaskBase {
+/**
+ * @brief WebappTask provides a worker thread wrapper for each Lua VM.
+ */
+class WebappTask {
 	friend class Webapp;
+	Webapp* _handler = NULL;
+	std::thread _worker;
 	unsigned int _id;
 	unsigned int _bg;
 	Sessions* _sessions;
 	void handleCleanup();
+	TaskQueue* _q = NULL;
 public:
-	WebappTask(Webapp* handler, Sessions* sessions, TaskQueue* queue, int bg_task=0) 
-		: TaskBase(handler, queue), _sessions(sessions), _bg(bg_task) {
+	void start() { _worker = std::thread([this]{execute();}); }
+	void join() { _worker.join(); }
+	static void start_thread(WebappTask* task) { task->execute(); }
+
+	WebappTask(Webapp* handler, Sessions* sessions, TaskQueue* q, int bg_task=0)
+		: _sessions(sessions), _bg(bg_task), _handler(handler), _q(q) {
 			start();
 		}
 	void execute();
 };
 
 typedef enum {SCRIPT_INIT, SCRIPT_QUEUE, SCRIPT_REQUEST, SCRIPT_HANDLERS} script_t;
-static const char* script_t_names[] = {"SCRIPT_INIT", "SCRIPT_QUEUE", 
+static const char* script_t_names[] = {"SCRIPT_INIT", "SCRIPT_QUEUE",
 	"SCRIPT_REQUEST", "SCRIPT_HANDLERS"};
 
 class Webapp {
@@ -145,7 +150,7 @@ class Webapp {
 	
 	std::vector<std::string> contentList;
 	std::vector<std::string> serverTemplateList;
-	std::vector<TaskBase*> workers;
+	std::vector<WebappTask*> workers;
 	std::vector<Sessions*> sessions;
 	
 	//Parameters
@@ -180,7 +185,7 @@ public:
 	~Webapp();
 	
 	//Public webapp methods
-	void Start() { svc.run(); };
+	void Start() { svc.run(); }
 	ctemplate::TemplateDictionary* GetTemplate();
 	Database* CreateDatabase();
 	Database* GetDatabase(size_t index);

@@ -21,9 +21,11 @@ int Template_ShowSection(TemplateDictionary* dict, webapp_str_t* section) {
 	return 0;
 }
 
-int Template_SetGlobalValue(TemplateDictionary* dict, webapp_str_t* key, webapp_str_t* value) {
+int Template_SetGlobalValue(TemplateDictionary* dict, webapp_str_t* key,
+							webapp_str_t* value) {
 	if (dict == NULL || key == NULL || value == NULL) return 1;
-	dict->SetTemplateGlobalValue(TemplateString(key->data, key->len), TemplateString(value->data, value->len));
+	dict->SetTemplateGlobalValue(TemplateString(key->data, key->len),
+								 TemplateString(value->data, value->len));
 	return 0;
 }
 
@@ -111,7 +113,8 @@ void ClearCache(Webapp* app, LockedQueue<Request*>* requests) {
 	requests->cleanupTask = 1;
 }
 
-void QueueProcess(LockedQueue<Process*>* background_queue, webapp_str_t* func, webapp_str_t* vars) {
+void QueueProcess(LockedQueue<Process*>* background_queue, webapp_str_t* func,
+				  webapp_str_t* vars) {
 	if (func == NULL || vars == NULL || background_queue == NULL 
 		|| background_queue->aborted) return;
 	Process* p = new Process();
@@ -163,7 +166,9 @@ Database* GetDatabase(Webapp* app, size_t index) {
 	return app->GetDatabase(index);
 }
 
-int ConnectDatabase(Database* db, int database_type, const char* host, const char* username, const char* password, const char* database) {
+int ConnectDatabase(Database* db, int database_type, const char* host,
+					const char* username, const char* password,
+					const char* database) {
 	if (db == NULL) return -1;
 	return db->connect(database_type, host, username, password, database);
 }
@@ -190,7 +195,8 @@ Query* CreateQuery(webapp_str_t* in, Request* r, Database* db, int desc) {
 }
 
 void SetQuery(Query* q, webapp_str_t* in) {
-	if (in == NULL || in->data == NULL || q == NULL || q->status != DATABASE_QUERY_INIT) return;
+	if (in == NULL || in->data == NULL || q == NULL
+			|| q->status != DATABASE_QUERY_INIT) return;
 	if (q->dbq != NULL) delete q->dbq;
 	q->dbq = new string(in->data, in->len);
 }

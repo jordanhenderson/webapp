@@ -199,7 +199,8 @@ void Query::process() {
 
 			if (description != NULL && !havedesc) {
 				MYSQL_FIELD *field;
-				for (unsigned int i = 0; (field = mysql_fetch_field(prepare_meta_result)); i++) {
+				for (unsigned int i = 0;
+					 (field = mysql_fetch_field(prepare_meta_result)); i++) {
 					description[i].data = field->name;
 					description[i].len = field->name_length;
 				}

@@ -26,9 +26,9 @@ class File {
 	std::vector<const char*> buffers;
 public:
 	int Open(const std::string& fileName, const std::string& flags="rb");
-	File() {};
+	File() {}
 	File(const std::string& fileName, const std::string& flags="rb") {
-		Open(fileName, flags); };
+		Open(fileName, flags); }
 	~File();
 
 	const char* Read();
@@ -46,6 +46,7 @@ public:
 namespace FileSystem {
 	int MakePath(const std::string& path);
 	void DeletePath(const std::string& path);
-	std::vector<std::string> GetFiles(const std::string& base, const std::string& path, int recurse);
+	std::vector<std::string> GetFiles(const std::string& base,
+									  const std::string& path, int recurse);
 };
 #endif

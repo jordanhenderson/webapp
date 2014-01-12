@@ -13,7 +13,7 @@
 #define IMAGE_TYPE_JPEG 0
 #define IMAGE_TYPE_PNG 1
 #define IMAGE_TYPE_GIF 2
-#define THUMB_EXTENSIONS_JPEG_D {".jpg", ".jpeg", NULL};
+#define THUMB_EXTENSIONS_JPEG_D {".jpg", ".jpeg", NULL}
 #define ERROR_INVALID_IMAGE 1
 #define ERROR_IMAGE_NOT_SUPPORTED 2
 #define ERROR_FILE_NOT_FOUND 3

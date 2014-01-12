@@ -64,11 +64,11 @@ class Database {
 public:
 	sqlite3* sqlite_db = NULL;
 	MYSQL* mysql_db = NULL;
-	inline unsigned int GetDBType() { return db_type; };
-	inline size_t GetID() { return _db_id; };
-
-	Database(size_t db_id) : _db_id(db_id) {};
+	inline unsigned int GetDBType() { return db_type; }
+	inline size_t GetID() { return _db_id; }
+	Database(size_t db_id) : _db_id(db_id) {}
 	~Database();
+
 	int connect(int database_type, const char* host, const char* username, 
 		const char* password, const char* database);
 	long long exec(const std::string& query);

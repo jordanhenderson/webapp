@@ -22,11 +22,12 @@ void RamSession::store(const string& key, const string& value) {
 }
 
 const string& RamSession::get(const string& key) {
-	for(std::unordered_map<std::string, std::string>::iterator it = _store.begin();
-		it != _store.end(); ++it) {
-			if(it->first == key)
-				return it->second;
+	for(auto it = _store.begin(); it != _store.end(); ++it) {
+		if(it->first == key) return it->second;
 	}
 	return empty;
 }
 
+int RamSession::count() {
+	return _store.size();
+}
