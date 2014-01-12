@@ -13,10 +13,9 @@ using namespace std;
  * Open a File object.
  * @param fileName the file to open
  * @param flags the file mode used to open the file.
- * @param outFile the File object to open.
  * @return the success of the file.
 */
-int FileSystem::Open(const string& fileName, const string& flags, File* outFile) {
+int File::Open(const string& fileName, const string& flags) {
 	//ensure file is opened in binary mode
 	int flag_len = flags.length();
 	string actualFlag = flags;
@@ -34,21 +33,16 @@ int FileSystem::Open(const string& fileName, const string& flags, File* outFile)
 	tmpFile = fopen(fileName.c_str(), flags.c_str());
 #endif
 	int success = (tmpFile != NULL);
-	if(success && outFile != NULL) {
-		outFile->fileName = fileName;
-		outFile->flags = actualFlag;
-		outFile->pszFile = tmpFile;
-	} else if(success) 
-		fclose(tmpFile);
+	if(success) {
+		_fileName = fileName;
+		_flags = actualFlag;
+		pszFile = tmpFile;
+	}
+	
+	//Update the file size.
+	Size();
 	
 	return success;
-}
-
-/**
- * Destroy the FileData object.
-*/
-FileData::~FileData() {
-	if (data != NULL) delete[] data;
 }
 
 /**
@@ -59,79 +53,110 @@ File::~File() {
 }
 
 /**
- * Close a File object, setting pointers to NULL.
- * @param file the File object to close.
+ * Detach the File pointer (pszFile) from the object.
+ * Allows other libraries to handle closing it (If absolutely necessary)
+ * @return the detached file pointer.
 */
-void FileSystem::Close(File* file) {
-	if(file == NULL || file->pszFile == NULL) return;
-	fclose(file->pszFile);
-	file->pszFile = NULL;
+FILE* File::Detach() {
+	FILE* tmp = pszFile;
+	pszFile = NULL;
+	return tmp;
+}
+
+/**
+ * Get the internal file pointer.
+ * @return the file pointer.
+*/
+FILE* File::GetPointer() {
+	return pszFile;
+}
+
+/**
+ * Signal any cached data (stat etc) to be reloaded at next pass.
+*/
+void File::Refresh() {
+	refresh = 1;
+}
+
+/**
+ * Close a File object, setting pointers to NULL.
+*/
+void File::Close() {
+	if(pszFile == NULL) return;
+	fclose(pszFile);
+	pszFile = NULL;
 }
 
 /**
  * Seek a file to the end, retrieving file size, then restore its previous
  * position.
- * @param file the File object 
  * @return file size
 */
-long FileSystem::Size(File* file) {
-	//Seek the file to the end, retrieve
-	int old = ftell(file->pszFile);
-	fseek(file->pszFile, 0L, SEEK_END);
-	int sz = ftell(file->pszFile);
-	//restore previous position
-	fseek(file->pszFile, 0L, old);
-	return sz;
+long long File::Size() {
+	if(refresh == 1) {
+		//Seek the file to the end, retrieve
+		int old = ftell64(pszFile);
+		fseek64(pszFile, 0L, SEEK_END);
+		size = ftell64(pszFile);
+		//restore previous position
+		fseek64(pszFile, 0L, old);
+		refresh = 0;
+	}
+	return size;
 }
 
 /**
- * Read a file in full, storing the read data in outData.
- * @param file the File object to read.
- * @param outData the location to store the read file.
+ * Read a file in full, storing the read data as a raw char pointer.
+ * Data returned is cleaned up by calling File::Cleanup();
+ * @param out the char* to store read data
+ * @return the file size
 */
-void FileSystem::Read(File* file, FileData* outData) {
-	if(file == NULL || file->pszFile == NULL || outData == NULL) return;
-	//Clean up existing file data, if any.
-	if(outData->data != NULL) delete[] outData;
-	
-	//Seek to the beginning.
-	FILE* tmpFile = file->pszFile;
-	rewind(file->pszFile);
-	
+const char* File::Read() {
 	//Get the file size.
-	int size = Size(file);
+	long long size = Size();
+	char* buf = NULL;
+
+	//Seek to the beginning.
+	FILE* tmpFile = pszFile;
+	rewind(pszFile);
 	
 	//Allocate room for the data.
-	outData->data = new char[size * sizeof(char)];
+	buf = new char[size * sizeof(char)];
 	//Read the entire file into memory. Not for large files.
-	size_t nRead = fread(outData->data, sizeof(char), size, tmpFile);
-	
-	//Update the File size.
-	outData->size = size;
-	return;
+	size_t nRead = fread(buf, sizeof(char), size, tmpFile);
+	buffers.push_back(buf);
+	return buf;
 }
 
 /**
- * Write the provided buffer to a file object.
+ * Clear all buffers returned from File::Read().
+ * Use to allow reading file multiple times without destroying the object.
+*/
+void File::Cleanup() {
+	for(auto buf: buffers) {
+		delete buf;
+	}
+	buffers.clear();
+}
+
+/**
+ * Write the provided buffer to a file.
  * Writes according to filemode specified upon opening the file.
- * @param file the target File object
  * @param buffer the buffer to write
 */
-void FileSystem::Write(File* file, const string& buffer) {
-	if(file == NULL || file->pszFile == NULL)
-		return;
-	fputs(buffer.c_str(), file->pszFile);
-	fflush(file->pszFile);
+void File::Write(const string& buffer) {
+	if(pszFile == NULL) return;
+	fputs(buffer.c_str(), pszFile);
+	fflush(pszFile);
 }
 
 /**
- * Write the provided line to a file object, appending an appropriate newline
- * @param file the target File object
+ * Write the provided line to a file, appending an appropriate newline
  * @param buffer the buffer to write, followed by a NEWLINE character
  * @see Write
 */
-void FileSystem::WriteLine(File* file, const string& buffer) {
-	Write(file, string(buffer).append(ENV_NEWLINE));
+void File::WriteLine(const string& buffer) {
+	Write(string(buffer).append(ENV_NEWLINE));
 }
 
 /**

@@ -18,29 +18,32 @@
 #endif
 
 class File {
-public:
 	FILE* pszFile = NULL;
-	std::string fileName;
-	std::string flags;
-	~File();
-	File() {};
-};
-
-class FileData {
+	std::string _fileName;
+	std::string _flags;
+	long long size = 0;
+	int refresh = 1;
+	std::vector<const char*> buffers;
 public:
-	size_t size = 0;
-	char* data = NULL;
-	~FileData();
-	FileData() {};
+	int Open(const std::string& fileName, const std::string& flags="rb");
+	File() {};
+	File(const std::string& fileName, const std::string& flags="rb") {
+		Open(fileName, flags); };
+	~File();
+
+	const char* Read();
+	void Close();
+	void Cleanup();
+	long long Size();
+	void Refresh();
+	
+	void Write(const std::string& buffer);
+	void WriteLine(const std::string& buffer);
+	FILE* GetPointer();
+	FILE* Detach();
 };
 
 namespace FileSystem {
-	int Open(const std::string& fileName, const std::string& flags="rb", File* outFile=NULL);
-	void Read(File* file, FileData* data);
-	void Close(File* file);
-	void Write(File* file, const std::string& buffer);
-	void WriteLine(File* file, const std::string& buffer);
-	long Size(File* file);
 	int MakePath(const std::string& path);
 	void DeletePath(const std::string& path);
 	std::vector<std::string> GetFiles(const std::string& base, const std::string& path, int recurse);

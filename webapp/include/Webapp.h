@@ -10,7 +10,6 @@
 #include <asio.hpp>
 #include "Platform.h"
 #include "CPlatform.h"
-#include "FileSystem.h"
 #include "Database.h"
 #include "Session.h"
 #include "Schema.h"
@@ -31,9 +30,9 @@ struct LuaParam {
 	void* ptr;
 };
 
-struct TemplateData {
-	std::string name;
-	FileData* data;
+struct LuaContainer {
+	void* container = NULL;
+	int type = 0;
 };
 
 struct Request {
@@ -48,10 +47,21 @@ struct Request {
 	webapp_str_t user_agent;
 	webapp_str_t cookies;
 	webapp_str_t request_body;
-	std::vector<std::string*> handler;
+	std::vector<std::string*> strings;
+	std::vector<LuaContainer*> containers;
 	webapp_str_t* input_chain[STRING_VARS];
 	std::vector<Query*> queries;
 	~Request() {
+		for(std::vector<std::string*>::iterator it = strings.begin();
+			it != strings.end(); ++it) {
+			delete *it;
+		}
+
+		for (std::vector<Query*>::iterator it = queries.begin();
+			it != queries.end(); ++it) {
+			delete *it;
+		}
+		
 		if (socket != NULL) delete socket;
 		if (v != NULL) delete v;
 		if (headers != NULL) delete headers;
@@ -79,7 +89,7 @@ class LockedQueue : public TaskQueue {
 public:
 	//Each operation (enqueue, dequeue) must be done single threaded.
 	//We need MP (Multi-Producer), so lock production.
-	void enqueue(T i) { cv_mutex.lock(); queue.enqueue(i); cv_mutex.unlock(); cv.notify_one();  }
+	void enqueue(T i) {cv_mutex.lock(); queue.enqueue(i); cv_mutex.unlock(); cv.notify_one();}
 	T dequeue() { 
 		T r;
 		{
@@ -171,7 +181,7 @@ public:
 	
 	//Public webapp methods
 	void Start() { svc.run(); };
-	ctemplate::TemplateDictionary* getTemplate(const std::string& page);
+	ctemplate::TemplateDictionary* GetTemplate();
 	Database* CreateDatabase();
 	Database* GetDatabase(size_t index);
 	void DestroyDatabase(Database*);

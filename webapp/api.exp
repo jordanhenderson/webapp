@@ -20,7 +20,6 @@
 	GetParamInt;
 	GetNextRequest;
 	ClearCache;
-	DisableBackgroundQueue;
 
 	CreateDatabase;
 	DestroyDatabase;
@@ -38,7 +37,14 @@
 	ResizeImage;
 	SaveImage;
 	DestroyImage;
-	
+
+	OpenFile;
+	CloseFile;
+	ReadFile;
+	WriteFile;
+	FileSize;
+	CleanupFile;
+
 	SHA256_Init;
 	SHA256_Update;
 	SHA256_Final;

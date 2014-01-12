@@ -15,6 +15,8 @@
 #endif
 #endif
 
+#define _FILE_OFFSET_BITS 64
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <algorithm>
@@ -35,10 +37,18 @@
 #include <random>
 #include <functional>
 
+//Support large (64 bit) seek and tell operations.
+#ifdef _WIN32
+#define ftell64(a) _ftelli64(a)
+#define fseek64(a,b,c) _fseeki64(a,b,c)
+#else
+#define ftell64(a) ftello(a)
+#define fseek64(a,b,c) fseeko(a,b,c)
+#endif
+
 struct webapp_str_t {
 	const char* data = NULL;
-	size_t len = 0;
-	~webapp_str_t() { if (data != NULL) delete[] data; };
+	long long len = 0;
 };
 
 webapp_str_t* webapp_strdup(webapp_str_t*);

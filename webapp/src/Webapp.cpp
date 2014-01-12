@@ -46,6 +46,8 @@ void WebappTask::handleCleanup() {
 void WebappTask::execute() {
 	while (!_handler->GetParamInt(WEBAPP_PARAM_ABORTED)) {
 		_q->finished = 0;
+		
+		_handler->StartWorker(this);
 
 		handleCleanup();
 	}
@@ -144,11 +146,12 @@ void Webapp::CompileScript(const char* filename, webapp_str_t* output) {
 	if(lua_pcall(L, 0, 1, 0) != 0) 
 		printf("Error: %s\n", lua_tostring(L, -1));
 	else {
-		size_t* len = &output->len;
-		const char* chunk = lua_tolstring(L, -1, len);
+		size_t len;
+		const char* chunk = lua_tolstring(L, -1, &len);
 		if(output->data != NULL) delete[] output->data;
-		output->data = new char[*len + 1];
-		memcpy((char*)output->data, chunk, *len + 1);
+		output->data = new char[len];
+		output->len = len;
+		memcpy((char*)output->data, chunk, len);
 	}
 	lua_close(L);
 }
@@ -453,27 +456,25 @@ Webapp::~Webapp() {
 }
 
 /**
- * Get a clean TemplateDictionary if the page provided exists in contentList
- * @param page the content page that may be contained within contentList
- * @return a clean TemplateDictionary
+ * Return a clean TemplateDictionary. Reponsibility of caller to clean up.
+ * @return a clean TemplateDictionary pointer.
 */
-TemplateDictionary* Webapp::getTemplate(const std::string& page) {
-	if(contains(contentList, page)) return cleanTemplate.MakeCopy("base");
-	return NULL;
+TemplateDictionary* Webapp::GetTemplate() {
+	return cleanTemplate.MakeCopy("base");
 }
 
 /**
  * Refresh loaded templates.
 */
 void Webapp::refresh_templates() {
-	//Force reload templates
+	/*//Force reload templates
 	mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::IMMEDIATE_RELOAD);
 
 	//Load content files (applicable templates)
 	contentList.clear();
 
 	//Load all main content templates from the content directory.
-	vector<string> files = FileSystem::GetFiles("content/", "", 0);
+	vector<string> files = Filesystem::GetFiles("content/", "", 0);
 	contentList.reserve(files.size());
 	for(string& s : files) {
 		//Preload templates.
@@ -482,7 +483,7 @@ void Webapp::refresh_templates() {
 	}
 
 	//Load sub (include) templates.
-	files = FileSystem::GetFiles("templates/", "", 0);
+	files = Filesystem::GetFiles("templates/", "", 0);
 	for(string& s: files) {
 		if(!contains(serverTemplateList, s)) {
 			//Template name should be T_FILENAME (without extension)
@@ -491,7 +492,7 @@ void Webapp::refresh_templates() {
 			cleanTemplate.AddIncludeDictionary(t)->SetFilename("templates/" + s);
 			serverTemplateList.push_back(s);
 		}
-	}
+	}*/
 }
 
 /**

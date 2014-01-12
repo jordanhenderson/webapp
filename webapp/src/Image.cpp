@@ -119,9 +119,10 @@ int Image::load(const string& filename) {
 	}
 
 	File file;
-	if(!FileSystem::Open(filename, "rb", &file)){
+	if(!file.Open(filename, "rb")) {
 		return ERROR_FILE_NOT_FOUND;
 	}
+	FILE* file_ptr = file.GetPointer();
 	
 	switch(imageType) {
 	case IMAGE_TYPE_JPEG: 
@@ -137,7 +138,7 @@ int Image::load(const string& filename) {
 			cinfo.err = jpeg_std_error (&jerr);
 			jpeg_create_decompress (&cinfo);
 
-			jpeg_stdio_src(&cinfo, file.pszFile);
+			jpeg_stdio_src(&cinfo, file_ptr);
 			jpeg_read_header(&cinfo, TRUE);
 
 			width = cinfo.image_width;
@@ -153,7 +154,6 @@ int Image::load(const string& filename) {
 			unsigned int scanline_count = 0;
 			unsigned int scanline_length = cinfo.output_width * 4;
 			while(cinfo.output_scanline < cinfo.output_height) {
-
 				output_data[0] = (pixels + (scanline_count * scanline_length));
 				jpeg_read_scanlines(&cinfo, output_data, 1);
 				scanline_count++;
@@ -167,19 +167,17 @@ int Image::load(const string& filename) {
 	case IMAGE_TYPE_PNG: 
 		{
 			png_byte header[8];
-			fread(header, 1, 8, file.pszFile);
+			fread(header, 1, 8, file_ptr);
 			int is_png = !png_sig_cmp(header, 0, 8);
 			if(!is_png) {
 				err = ERROR_INVALID_IMAGE;
 				goto finish;
 			}
 			png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-			if (!png_ptr)
-				goto finish;
+			if (!png_ptr) goto finish;
 
 			png_infop info_ptr = png_create_info_struct(png_ptr);
-			if (!info_ptr)
-			{
+			if (!info_ptr) {
 				png_destroy_read_struct(&png_ptr, (png_infopp)NULL, (png_infopp)NULL);
 				err = ERROR_IMAGE_PROCESSING_FAILED;
 				goto finish;
@@ -192,7 +190,7 @@ int Image::load(const string& filename) {
 				goto finish;
 			}
 
-			png_init_io(png_ptr, file.pszFile);
+			png_init_io(png_ptr, file_ptr);
 			png_set_sig_bytes(png_ptr, 8);
 
 			png_read_info(png_ptr, info_ptr);
@@ -230,7 +228,6 @@ int Image::load(const string& filename) {
 			height = png_get_image_height(png_ptr, info_ptr);
 
 			//Get bytes per row.
-
 			int scanline_length = png_get_rowbytes(png_ptr, info_ptr);
 			nBytes = height * scanline_length;
 
@@ -253,9 +250,8 @@ int Image::load(const string& filename) {
 	case IMAGE_TYPE_GIF: 
 		{
 			int error;
-			gif = DGifOpenFileHandle(fileno(file.pszFile), &error);
+			gif = DGifOpenFileHandle(fileno(file_ptr), &error);
 
-			file.pszFile = NULL;
 			if(!gif) {
 				err = ERROR_IMAGE_PROCESSING_FAILED;
 				goto finish;
@@ -277,25 +273,21 @@ int Image::load(const string& filename) {
 				gifInsertFrame(i);
 			}
 			pixels = frames[0];
-
-			//File now handled by giflib.
-			file.pszFile = NULL;
 		}
 		break;
 	}
 
 	err = ERROR_SUCCESS;
 finish:
-	if(file.pszFile != NULL)
-		FileSystem::Close(&file);
+	file.Close();
 	return err;
 
 }
 
 int Image::save(const string& filename) {
 	int err = ERROR_SUCCESS;
-	File file;
-	FileSystem::Open(filename, "wb", &file);
+	File file(filename, "wb");
+	FILE* file_ptr = file.GetPointer();
 	//Temporarily change the type, to allow output handling to correctly work with different image types.
 	int oldType = imageType;
 	changeType(filename);
@@ -307,7 +299,7 @@ int Image::save(const string& filename) {
 			unsigned char* input_data[1];
 			cinfo.err = jpeg_std_error (&jerr);
 			jpeg_create_compress(&cinfo);
-			jpeg_stdio_dest(&cinfo, file.pszFile);
+			jpeg_stdio_dest(&cinfo, file_ptr);
 			cinfo.image_width = width;
 			cinfo.image_height = height;
 			cinfo.input_components = 4;
@@ -350,7 +342,7 @@ int Image::save(const string& filename) {
 				goto finish;
 			}
 
-			png_init_io(png_ptr, file.pszFile);
+			png_init_io(png_ptr, file_ptr);
 			png_set_IHDR(png_ptr, info_ptr, width, height,
 				bitdepth, PNG_COLOR_TYPE_RGBA, PNG_INTERLACE_NONE,
 				PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
@@ -366,7 +358,7 @@ int Image::save(const string& filename) {
 	case IMAGE_TYPE_GIF: 
 		{
 			int error;
-			GifFileType* output = EGifOpenFileHandle(fileno(file.pszFile), &error);
+			GifFileType* output = EGifOpenFileHandle(fileno(file_ptr), &error);
 			if(!output) {
 				err = ERROR_IMAGE_PROCESSING_FAILED;
 				goto finish;
@@ -376,19 +368,24 @@ int Image::save(const string& filename) {
 			output->SHeight = height;
 			output->SColorResolution = bitdepth;
 			output->SBackGroundColor = gif->SBackGroundColor;
-			output->SColorMap = GifMakeMapObject(gif->SColorMap->ColorCount, gif->SColorMap->Colors);
+			output->SColorMap = 
+				GifMakeMapObject(gif->SColorMap->ColorCount, gif->SColorMap->Colors);
 			output->ImageCount = imagecount;
 			SavedImage* saved_images;
-			saved_images = output->SavedImages = (SavedImage *)malloc(sizeof(SavedImage)*imagecount);
+			saved_images = output->SavedImages = 
+				(SavedImage*)malloc(sizeof(SavedImage) * imagecount);
 
 			for (int i = 0; i < imagecount; i++) {
 				memset(&saved_images[i], '\0', sizeof(SavedImage));
 				//Remove optimisation on savedimages.
 				saved_images[i].ImageDesc.Width = width;
 				saved_images[i].ImageDesc.Height = height;
-				saved_images[i].ExtensionBlockCount = gif->SavedImages[i].ExtensionBlockCount;
-				saved_images[i].ExtensionBlocks = gif->SavedImages[i].ExtensionBlocks;
-				//
+				saved_images[i].ExtensionBlockCount = 
+					gif->SavedImages[i].ExtensionBlockCount;
+				saved_images[i].ExtensionBlocks = 
+					gif->SavedImages[i].ExtensionBlocks;
+				
+				//Rasterize the frame.
 				gifRasterizeFrame(i, (unsigned char**)&saved_images[i].ImageDesc.ColorMap, 
 					(unsigned char**)&saved_images[i].RasterBits);
 			}
@@ -396,7 +393,7 @@ int Image::save(const string& filename) {
 			if(EGifSpew(output) != GIF_OK) {
 				err = ERROR_IMAGE_PROCESSING_FAILED;
 			} else {
-				file.pszFile = NULL;
+				file.Detach();
 			}
 
 			//Clean up generated maps.
@@ -418,8 +415,7 @@ int Image::save(const string& filename) {
 	err = ERROR_SUCCESS;
 finish:
 	imageType = oldType;
-	if(file.pszFile != NULL)
-		FileSystem::Close(&file);
+	file.Close();
 	return err;
 }
 

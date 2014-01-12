@@ -4,13 +4,7 @@
  * Written by Jordan Henderson <jordan.henderson@ioflame.com>, 2013
  */
 
-#include "Platform.h"
-#include "Webapp.h"
-#include "Image.h"
-
-extern "C" {
 #include "Hooks.h"
-}
 
 using namespace ctemplate;
 using namespace std;
@@ -33,13 +27,16 @@ int Template_SetGlobalValue(TemplateDictionary* dict, webapp_str_t* key, webapp_
 	return 0;
 }
 
-TemplateDictionary* GetTemplate(Webapp* app, webapp_str_t* page) {
-	if(app != NULL) return app->getTemplate(string(page->data, page->len));
+TemplateDictionary* GetTemplate(Webapp* app) {
+	if(app != NULL) return app->GetTemplate();
 	else return NULL;
 }
 
-void RenderTemplate(Webapp* app, ctemplate::TemplateDictionary* dict, webapp_str_t* page, Request* request, webapp_str_t* out) {
-	if (app == NULL || dict == NULL || page == NULL || request == NULL || out == NULL) return;
+void RenderTemplate(Webapp* app, ctemplate::TemplateDictionary* dict, 
+	webapp_str_t* page, Request* request, webapp_str_t* out) {
+	if (app == NULL || dict == NULL || page == NULL || 
+		request == NULL || out == NULL) return;
+
 	string* output = new string;
 	string pagestr(page->data, page->len);
 	ExpandTemplate("content/" + pagestr, STRIP_WHITESPACE, dict, output);
@@ -50,12 +47,12 @@ void RenderTemplate(Webapp* app, ctemplate::TemplateDictionary* dict, webapp_str
 	out->data = output->c_str();
 	out->len = output->length();
 
-	request->handler.push_back(output);
-
+	request->strings.push_back(output);
 }
 
 //Cleaned up by backend.
-int GetSessionValue(SessionStore* session, webapp_str_t* key, webapp_str_t* out) {
+int GetSessionValue(SessionStore* session, webapp_str_t* key, 
+	webapp_str_t* out) {
 	if(session == NULL || key == NULL) 
 		return 0;
 
@@ -69,7 +66,8 @@ int GetSessionValue(SessionStore* session, webapp_str_t* key, webapp_str_t* out)
 	return !s->empty();
 }
 
-int SetSessionValue(SessionStore* session, webapp_str_t* key, webapp_str_t* val) {
+int SetSessionValue(SessionStore* session, webapp_str_t* key,
+	webapp_str_t* val) {
 	if (session == NULL || key == NULL || val == NULL)
 		return 0;
 	session->store(string(key->data, key->len), string(val->data, val->len));
@@ -105,19 +103,12 @@ Request* GetNextRequest(LockedQueue<Request*>* requests) {
 	return requests->dequeue();
 }
 
-//Clear the cache (aborts any waiting request handlers, locks connect mutex, clears cache, unlocks).
 void ClearCache(Webapp* app, LockedQueue<Request*>* requests) {
 	if (app == NULL || requests == NULL) return;
 	//Abort this lua vm.
 	requests->aborted = 1;
 	//Cleanup when this task completes.
 	requests->cleanupTask = 1;
-}
-
-//Only call this upon init.
-void DisableBackgroundQueue(Webapp* app) {
-	if (app == NULL) return;
-	app->SetParamInt(WEBAPP_PARAM_BGQUEUE, false);
 }
 
 void QueueProcess(LockedQueue<Process*>* background_queue, webapp_str_t* func, webapp_str_t* vars) {
@@ -127,7 +118,6 @@ void QueueProcess(LockedQueue<Process*>* background_queue, webapp_str_t* func, w
 	p->func = webapp_strdup(func);
 	p->vars = webapp_strdup(vars);
 	background_queue->enqueue(p);
-
 }
 
 Process* GetNextProcess(LockedQueue<Process*>* background_queue) {
@@ -144,15 +134,6 @@ int GetSessionID(SessionStore* session, webapp_str_t* out) {
 
 void FinishRequest(Request* request) {
 	if(request == NULL) return;
-
-	for(std::vector<string*>::iterator it = request->handler.begin(); it != request->handler.end(); ++it) {
-		delete *it;
-	}
-
-	for (std::vector<Query*>::iterator it = request->queries.begin(); it != request->queries.end(); ++it) {
-		delete *it;
-	}
-
 	delete request;
 }
 
@@ -224,7 +205,7 @@ unsigned long long GetWebappTime() {
 	return current_time * 1000000;
 }
 
-/* Image API */
+//Image API 
 Image* LoadImage(webapp_str_t* filename) {
 	if(filename == NULL) return NULL;
 	return new Image(string(filename->data, filename->len));
@@ -244,4 +225,39 @@ void SaveImage(Image* img, webapp_str_t* out, int destroy) {
 void DestroyImage(Image* img) {
 	if(img == NULL) return;
 	delete img;
+}
+
+//File API
+File* OpenFile(webapp_str_t* filename, webapp_str_t* mode) {
+	if(filename == NULL || mode == NULL) return NULL;
+	File* f = new File(string(filename->data, filename->len),
+		string(mode->data, mode->len));
+	return f;
+}
+
+void CloseFile(File* f) {
+	if(f == NULL) return;
+	f->Close();
+	delete f;
+}
+
+void ReadFile(File* f, webapp_str_t* out) {
+	if(f == NULL || out == NULL) return;
+	out->data = f->Read();
+	out->len = f->Size();
+}
+
+void WriteFile(File* f, webapp_str_t* buf) {
+	if(f == NULL || buf == NULL) return;
+	f->Write(string(buf->data, buf->len));
+}
+
+void CleanupFile(File* f) {
+	if(f == NULL) return;
+	f->Cleanup();
+}
+
+long long FileSize(File* f) {
+	if(f == NULL) return 0;
+	return f->Size();
 }

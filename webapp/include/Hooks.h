@@ -10,6 +10,10 @@
 #include "Platform.h"
 #include "Session.h"
 #include "Webapp.h"
+#include "FileSystem.h"
+#include "Image.h"
+
+extern "C" {
 
 APIEXPORT int Template_ShowGlobalSection(ctemplate::TemplateDictionary*, webapp_str_t* section);
 APIEXPORT int Template_ShowSection(ctemplate::TemplateDictionary*, webapp_str_t* section);
@@ -27,7 +31,7 @@ APIEXPORT int GetSessionID(SessionStore*, webapp_str_t* out);
 APIEXPORT void FinishRequest(Request*);
 APIEXPORT void QueueProcess(LockedQueue<Process*>*, webapp_str_t* funtion, webapp_str_t* vars);
 APIEXPORT Process* GetNextProcess(LockedQueue<Process*>*);
-APIEXPORT ctemplate::TemplateDictionary* GetTemplate(Webapp*, webapp_str_t* out);
+APIEXPORT ctemplate::TemplateDictionary* GetTemplate(Webapp*);
 APIEXPORT void RenderTemplate(Webapp*, ctemplate::TemplateDictionary* tmpl,
 	webapp_str_t* page, Request*, webapp_str_t* out);
 APIEXPORT void WriteData(asio::ip::tcp::socket*, webapp_str_t* data);
@@ -37,7 +41,6 @@ APIEXPORT void SetParamInt(Webapp*, unsigned int key, int value);
 APIEXPORT int GetParamInt(Webapp*, unsigned int key);
 APIEXPORT Request* GetNextRequest(LockedQueue<Request*>*);
 APIEXPORT void ClearCache(Webapp*, LockedQueue<Request*>*);
-APIEXPORT void DisableBackgroundQueue(Webapp*);
 APIEXPORT unsigned long long GetWebappTime();
 
 //Database
@@ -60,6 +63,14 @@ APIEXPORT void ResizeImage(Image* img, int width, int height);
 APIEXPORT void SaveImage(Image* img, webapp_str_t* out, int destroy);
 APIEXPORT void DestroyImage(Image* img); 
 
+//File API
+APIEXPORT File* OpenFile(webapp_str_t* filename, webapp_str_t* mode);
+APIEXPORT void CloseFile(File*);
+APIEXPORT void ReadFile(File*, webapp_str_t* out);
+APIEXPORT void WriteFile(File*, webapp_str_t* buf);
+APIEXPORT long long FileSize(File*);
+APIEXPORT void CleanupFile(File*);
+
 //Force SHA-function inclusion from openssl.
 FORCE_UNDEFINED_SYMBOL(SHA256_Init)
 FORCE_UNDEFINED_SYMBOL(SHA256_Update)
@@ -70,4 +81,5 @@ FORCE_UNDEFINED_SYMBOL(SHA512_Final)
 FORCE_UNDEFINED_SYMBOL(SHA384_Init)
 FORCE_UNDEFINED_SYMBOL(SHA384_Update)
 FORCE_UNDEFINED_SYMBOL(SHA384_Final)
+};
 #endif //HOOKS_H
