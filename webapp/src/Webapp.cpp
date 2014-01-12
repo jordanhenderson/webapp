@@ -162,8 +162,10 @@ void Webapp::CompileScript(const char* filename, webapp_str_t* output) {
 void Webapp::reload_all() {
 	//Delete cached preprocessed scripts.
 	for(int i = 0; i < WEBAPP_SCRIPTS; i++) 
-		if(scripts[i].data != NULL) 
+		if(scripts[i].data != NULL) {
 			delete[] scripts[i].data;
+			scripts[i].data = NULL;
+		}
 
 	//Clear any databases.
 	for(auto it = databases.cbegin(); it != databases.cend(); ) {

@@ -42,17 +42,11 @@ Query::~Query() {
 
 	//Clean up description fields.
 	if (description != NULL) {
-		for (int i = 0; i < column_count; i++) {
-			if (description[i] != NULL) delete[] description[i];
-		}
 		delete[] description;
 	}
 
 	//Clean up any current row fields.
 	if (row != NULL) {
-		for (int i = 0; i < column_count; i++) {
-			if (row[i] != NULL) delete[] row[i];
-		}
 		delete[] row;
 	}
 
@@ -152,18 +146,12 @@ void Query::process() {
 
 		//Initialize row memory.
 		if (row == NULL) {
-			row = new webapp_str_t*[column_count]();
-			for (int i = 0; i < column_count; i++) {
-				row[i] = new webapp_str_t;
-			}
+			row = new webapp_str_t[column_count]();
 		}
 		
 		//Initialize description memory.
 		if (desc && description == NULL) {
-			description = new webapp_str_t*[column_count]();
-			for (int i = 0; i < column_count; i++) {
-				description[i] = new webapp_str_t;
-			}
+			description = new webapp_str_t[column_count]();
 		}
 	} else if(status == DATABASE_QUERY_STARTED) {
 		//Populate next row.
@@ -182,14 +170,14 @@ void Query::process() {
 			for (int col = 0; col < column_count; col++) {
 				//Push back the column name
 				if (description != NULL && !havedesc) {
-					description[col]->data = sqlite3_column_name(sqlite_stmt, col);
-					description[col]->len = strlen(description[col]->data);
+					description[col].data = sqlite3_column_name(sqlite_stmt, col);
+					description[col].len = strlen(description[col].data);
 				}
 				//Push back the column text
 				const char* text = (const char*)sqlite3_column_text(sqlite_stmt, col);
 				int size = sqlite3_column_bytes(sqlite_stmt, col);
-				row[col]->data = text;
-				row[col]->len = size;
+				row[col].data = text;
+				row[col].len = size;
 			}
 			//We have the column description after the first pass.
 			if (description != NULL) havedesc = 1;
@@ -212,8 +200,8 @@ void Query::process() {
 			if (description != NULL && !havedesc) {
 				MYSQL_FIELD *field;
 				for (unsigned int i = 0; (field = mysql_fetch_field(prepare_meta_result)); i++) {
-					description[i]->data = field->name;
-					description[i]->len = field->name_length;
+					description[i].data = field->name;
+					description[i].len = field->name_length;
 				}
 				havedesc = 1;
 			}
@@ -222,9 +210,9 @@ void Query::process() {
 		//Get the next row.
 		if (mysql_stmt_fetch(mysql_stmt)) {
 			for (int col = 0; col < column_count; col++) {
-				bind_output[col].buffer = (void*)row[col]->data;
+				bind_output[col].buffer = (void*)&row[col].data;
 				bind_output[col].buffer_length = out_size_arr[col] + 1;
-				bind_output[col].length = (unsigned long*)row[col]->len;
+				bind_output[col].length = (unsigned long*)&row[col].len;
 				mysql_stmt_fetch_column(mysql_stmt, &bind_output[col], col, 0);
 			}
 		}
