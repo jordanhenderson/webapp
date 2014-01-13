@@ -29,23 +29,28 @@ int Template_SetGlobalValue(TemplateDictionary* dict, webapp_str_t* key,
 	return 0;
 }
 
-TemplateDictionary* GetTemplate(Webapp* app) {
-	if(app != NULL) return app->GetTemplate();
-	else return NULL;
+TemplateDictionary* GetTemplate(Webapp* app, Request* request) {
+	if(app == NULL) return NULL;
+	TemplateDictionary* dict = app->GetTemplate();
+	if(dict != NULL) request->dicts.push_back(dict);
+	return dict;
 }
 
-void RenderTemplate(Webapp* app, ctemplate::TemplateDictionary* dict, 
-	webapp_str_t* page, Request* request, webapp_str_t* out) {
-	if (app == NULL || dict == NULL || page == NULL || 
+void ReloadTemplates() {
+	mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::IMMEDIATE_RELOAD);
+}
+
+void RenderTemplate(ctemplate::TemplateCache* cache,
+					ctemplate::TemplateDictionary* dict, webapp_str_t* page,
+					Request* request, webapp_str_t* out) {
+	if (cache == NULL || dict == NULL || page == NULL ||
 		request == NULL || out == NULL) return;
 
 	string* output = new string;
 	string pagestr(page->data, page->len);
-	ExpandTemplate("content/" + pagestr, STRIP_WHITESPACE, dict, output);
+	cache->ExpandNoLoad("content/" + pagestr, STRIP_WHITESPACE, dict, NULL,
+						  output);
 
-	//Clean up the template dictionary.
-	delete dict;
-	
 	out->data = output->c_str();
 	out->len = output->length();
 

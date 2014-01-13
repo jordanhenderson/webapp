@@ -57,11 +57,13 @@ struct Request {
 	webapp_str_t request_body;
 	std::vector<std::string*> strings;
 	std::vector<LuaContainer*> containers;
+	std::vector<ctemplate::TemplateDictionary*> dicts;
 	webapp_str_t* input_chain[STRING_VARS];
 	std::vector<Query*> queries;
 	~Request() {
 		for(auto it: strings) delete it;
 		for(auto it: queries) delete it;
+		for(auto it: dicts) delete it;
 		if (socket != NULL) delete socket;
 		if (v != NULL) delete v;
 		if (headers != NULL) delete headers;
@@ -128,7 +130,7 @@ public:
 	void join() { _worker.join(); }
 	WebappTask(Webapp* handler, TaskQueue* q): _handler(handler),
 		_q(q) { start(); }
-	virtual void execute() = 0;
+	virtual void Execute() = 0;
 	virtual void Cleanup() = 0;
 
 protected:
@@ -144,7 +146,7 @@ class BackgroundQueue : public WebappTask {
 public:
 	BackgroundQueue(Webapp* handler) :
 		WebappTask(handler, &_lq) {}
-	void execute();
+	void Execute();
 	void Cleanup() {}
 };
 
@@ -154,14 +156,14 @@ public:
  */
 class RequestQueue : public WebappTask {
 	Sessions _sessions;
-	ctemplate::TemplateCache _cache;
+	ctemplate::TemplateCache* _cache = NULL;
 	LockedQueue<Request*> _rq;
 public:
 	RequestQueue(Webapp* handler, unsigned int id) :
 		WebappTask(handler, &_rq), _sessions(id) {}
-	void execute();
-	void enqueue(Request* r) { _rq.enqueue(r); }
+	void Execute();
 	void Cleanup();
+	void enqueue(Request* r) { _rq.enqueue(r); }
 };
 
 typedef enum {SCRIPT_INIT, SCRIPT_QUEUE, SCRIPT_REQUEST, SCRIPT_HANDLERS} script_t;

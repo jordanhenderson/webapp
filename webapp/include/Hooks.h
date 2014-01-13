@@ -21,6 +21,7 @@ APIEXPORT int Template_ShowSection(ctemplate::TemplateDictionary*,
 								   webapp_str_t* section);
 APIEXPORT int Template_SetGlobalValue(ctemplate::TemplateDictionary* dict,
 									  webapp_str_t* key, webapp_str_t* value);
+APIEXPORT void ReloadTemplates();
 
 //Get a string stored in the session.
 APIEXPORT int GetSessionValue(SessionStore*, webapp_str_t*, webapp_str_t* out);
@@ -34,9 +35,10 @@ APIEXPORT void FinishRequest(Request*);
 APIEXPORT void QueueProcess(LockedQueue<Process*>*, webapp_str_t* funtion,
 							webapp_str_t* vars);
 APIEXPORT Process* GetNextProcess(LockedQueue<Process*>*);
-APIEXPORT ctemplate::TemplateDictionary* GetTemplate(Webapp*);
-APIEXPORT void RenderTemplate(Webapp*, ctemplate::TemplateDictionary* tmpl,
-	webapp_str_t* page, Request*, webapp_str_t* out);
+APIEXPORT ctemplate::TemplateDictionary* GetTemplate(Webapp*, Request* request);
+APIEXPORT void RenderTemplate(ctemplate::TemplateCache*,
+							  ctemplate::TemplateDictionary* tmpl,
+							  webapp_str_t* page, Request*, webapp_str_t* out);
 APIEXPORT void WriteData(asio::ip::tcp::socket*, webapp_str_t* data);
 
 //Webapp stuff

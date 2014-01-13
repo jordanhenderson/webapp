@@ -47,25 +47,28 @@ void WebappTask::start() {
 	 _worker = std::thread([this] {
 		 while (!_handler->GetParamInt(WEBAPP_PARAM_ABORTED)) {
 			 _q->finished = 0;
-			execute();
+			Execute();
 			handleCleanup();
 		 }
 	 });
 }
 
-void RequestQueue::execute() {
+void RequestQueue::Execute() {
 	LuaParam _v[] = { { "sessions", &_sessions },
 					  { "requests", _q },
-					  { "template", &_cache},
+					  { "templates", _cache},
 					  { "app", _handler } };
 	_handler->RunScript(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_REQUEST);
 }
 
 void RequestQueue::Cleanup() {
 	_sessions.CleanupSessions();
+	if(_cache != NULL) delete _cache;
+	_cache = mutable_default_template_cache()->Clone();
+	_cache->Freeze();
 }
 
-void BackgroundQueue::execute() {
+void BackgroundQueue::Execute() {
 	LuaParam _v[] = { { "queue", _q },
 					  { "app", _handler } };
 	_handler->RunScript(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_QUEUE);
@@ -173,11 +176,6 @@ void Webapp::reload_all() {
 		delete (*it).second;
 		databases.erase(it++);
 	}
-
-	//Cleanup any empty sessions.
-	for(WebappTask* worker: workers) {
-		worker->Cleanup();
-	}
 	
 	//Reset db_count to ensure new databases are created from index 0.
 	db_count = 0;
@@ -193,9 +191,11 @@ void Webapp::reload_all() {
 
 	if (background_queue_enabled)
 		CompileScript("plugins/core/process_queue.lua", &scripts[SCRIPT_QUEUE]);
-	
-	//Reload templates as required.
-	refresh_templates();
+
+	//Cleanup workers.
+	for(WebappTask* worker: workers) {
+		worker->Cleanup();
+	}
 }
 
 /**
