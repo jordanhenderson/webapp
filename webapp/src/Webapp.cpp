@@ -32,42 +32,43 @@ void WebappTask::handleCleanup() {
 		_handler->perform_cleanup();
 	} else {
 		//Just (attempt to) grab own lock. 
-		unique_lock<mutex> lk(_q->cv_mutex); 
+		unique_lock<mutex> lk(_q->cv_mutex);
 		//(Automatically) unlock when done to complete the process.
 	}
 }
 
 /**
- * Execute a worker task. Uses SCRIPT_REQUEST or SCRIPT_QUEUE.
+ * Execute a worker task.
  * Worker tasks process queues of recieved requests (each single threaded)
  * The LUA VM must only block after handling each request.
  * Performs cleanup when finished.
 */
-void WebappTask::execute() {
-	while (!_handler->GetParamInt(WEBAPP_PARAM_ABORTED)) {
-		_q->finished = 0;
-		
-		_handler->StartWorker(this);
-
-		handleCleanup();
-	}
+void WebappTask::start() {
+	 _worker = std::thread([this] {
+		 while (!_handler->GetParamInt(WEBAPP_PARAM_ABORTED)) {
+			 _q->finished = 0;
+			execute();
+			handleCleanup();
+		 }
+	 });
 }
 
-/**
- * Start a worker, executing the appropriate script.
- * @param t the task to start.
-*/
-void Webapp::StartWorker(WebappTask* t) {
-	if(!t->_bg) {
-		LuaParam _v[] = { { "sessions", t->_sessions },
-						  { "requests", t->_q }, 
-						  { "app", this } };
-		runWorker(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_REQUEST);
-	} else {
-		LuaParam _v[] = { { "queue", t->_q }, 
-						  { "app", this } };
-		runWorker(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_QUEUE);
-	}
+void RequestQueue::execute() {
+	LuaParam _v[] = { { "sessions", &_sessions },
+					  { "requests", _q },
+					  { "template", &_cache},
+					  { "app", _handler } };
+	_handler->RunScript(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_REQUEST);
+}
+
+void RequestQueue::Cleanup() {
+	_sessions.CleanupSessions();
+}
+
+void BackgroundQueue::execute() {
+	LuaParam _v[] = { { "queue", _q },
+					  { "app", _handler } };
+	_handler->RunScript(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_QUEUE);
 }
 
 /**
@@ -172,6 +173,11 @@ void Webapp::reload_all() {
 		delete (*it).second;
 		databases.erase(it++);
 	}
+
+	//Cleanup any empty sessions.
+	for(WebappTask* worker: workers) {
+		worker->Cleanup();
+	}
 	
 	//Reset db_count to ensure new databases are created from index 0.
 	db_count = 0;
@@ -183,7 +189,7 @@ void Webapp::reload_all() {
 
 	//Run init script.
 	LuaParam _v[] = { { "app", this } };
-	runWorker(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_INIT);
+	RunScript(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_INIT);
 
 	if (background_queue_enabled)
 		CompileScript("plugins/core/process_queue.lua", &scripts[SCRIPT_QUEUE]);
@@ -198,7 +204,7 @@ void Webapp::reload_all() {
  * @param nArgs amount of parameters
  * @param index of script in scripts[] to execute.
 */
-void Webapp::runWorker(LuaParam* params, int nArgs, script_t script) {
+void Webapp::RunScript(LuaParam* params, int nArgs, script_t script) {
 	if(scripts[script].data == NULL) return;
 	Request* r = NULL;
 	
@@ -268,28 +274,25 @@ finish:
 */
 Webapp::Webapp(asio::io_service& io_svc) : 
 										svc(io_svc), 
+										wrk(svc),
 										cleanTemplate("")
 									{
 	//Reload all cached data.
 	reload_all();
 
+	//Probably a good idea to reserve vector size. Not necessarily needed.
+	workers.reserve(nWorkers);
+
 	//Create/allocate initial worker tasks.
 	if (background_queue_enabled) {
-		workers.push_back(new WebappTask(this, NULL, new LockedQueue<Process*>(), 1));
+		workers.push_back(new BackgroundQueue(this));
 		nWorkers--;
 	}
-	
-	//Create session objects and request queues for each workers.
-	for (unsigned int i = 0; i < nWorkers; i++) {
-		Sessions* session = new Sessions(i);
-		LockedQueue<Request*>* requests = new LockedQueue<Request*>();
-		sessions.push_back(session);
-		request_queues.push_back(requests);
-		workers.push_back(new WebappTask(this, session, requests));	
-	}
 
-	//Create the service work object to inform the service there is work.
-	asio::io_service::work wrk = asio::io_service::work(svc);
+	//Create session objects and request queues for each worker.
+	for (unsigned int i = 0; i < nWorkers; i++) {
+		workers.push_back(new RequestQueue(this, i));
+	}
 
 	//Create the TCP endpoint and acceptor.
 	tcp::endpoint endpoint(tcp::v4(), port);
@@ -322,18 +325,19 @@ void Webapp::process_request_async(
 	if (r->cookies.len > 0) {
 		const char* sessionid = strstr(r->cookies.data, "sessionid=");
 		int node = -1;
-		if (sessionid && sscanf(sessionid + 10, "%" XSTR(WEBAPP_LEN_SESSIONID) "d", &node) == 1) {
+		if (sessionid && sscanf(sessionid + 10, "%" XSTR(WEBAPP_LEN_SESSIONID) "d",
+								&node) == 1) {
 			selected_node = node % nWorkers;
 		}
 	}
 	if (selected_node == -1) {
 		//Something went wrong - node not found, maybe session id missing. 
 		selected_node = node_counter++ % nWorkers;
-		
 	}
 
-	LockedQueue<Request*>* queue = request_queues.at(selected_node);
-	queue->enqueue(r);
+	if(background_queue_enabled) selected_node++;
+	RequestQueue* worker =  dynamic_cast<RequestQueue*>(workers.at(selected_node));
+	if(worker != NULL) worker->enqueue(r);
 }
 
 /**
@@ -424,25 +428,16 @@ void Webapp::accept_conn() {
 */
 Webapp::~Webapp() {
 	//Abort each worker request queue and session.
-	for (unsigned int i = 0; i < nWorkers; i++) {
-		LockedQueue<Request*>* rq = request_queues.at(i);
-		rq->aborted = 1;
-		rq->cv.notify_one();
-		delete rq;
-
-		Sessions* session = sessions.at(i);
-		delete session;
+	for (unsigned int i = background_queue_enabled; i < nWorkers; i++) {
+		RequestQueue* worker = dynamic_cast<RequestQueue*>(workers.at(i));
+		if(worker != NULL) delete worker;
 	}
 
-	//Join each worker.
-	for (unsigned int i = 0; i < nWorkers; i++) {
-		WebappTask* t = workers.at(i);
-		if (t != NULL) {
-			t->join();
-			delete t;
-		}
+	if(background_queue_enabled) {
+		BackgroundQueue* bg = dynamic_cast<BackgroundQueue*>(workers.at(0));
+		if(bg != NULL) delete bg;
 	}
-	
+
 	//Delete databases
 	for(auto db_entry : databases) {
 		auto db = db_entry.second;

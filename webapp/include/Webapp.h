@@ -121,23 +121,48 @@ class Webapp;
  */
 class WebappTask {
 	friend class Webapp;
-	Webapp* _handler = NULL;
 	std::thread _worker;
-	unsigned int _id;
-	unsigned int _bg;
-	Sessions* _sessions;
 	void handleCleanup();
-	TaskQueue* _q = NULL;
 public:
-	void start() { _worker = std::thread([this]{execute();}); }
+	void start();
 	void join() { _worker.join(); }
 	static void start_thread(WebappTask* task) { task->execute(); }
+	WebappTask(Webapp* handler, TaskQueue* q): _handler(handler),
+		_q(q) { start(); }
+	virtual void execute() = 0;
+	virtual void Cleanup() = 0;
 
-	WebappTask(Webapp* handler, Sessions* sessions, TaskQueue* q, int bg_task=0)
-		: _sessions(sessions), _bg(bg_task), _handler(handler), _q(q) {
-			start();
-		}
+protected:
+	Webapp* _handler;
+	TaskQueue* _q;
+};
+
+/**
+ * @brief BackgroundQueue provides a Lua VM with a Process queue
+ */
+class BackgroundQueue : public WebappTask {
+	LockedQueue<Process*> _lq;
+public:
+	BackgroundQueue(Webapp* handler) :
+		WebappTask(handler, &_lq) {}
 	void execute();
+	void Cleanup() {}
+};
+
+/**
+ * @brief RequestQueue provides a Lua VM with a session container, template
+ * cache and queue for Requests.
+ */
+class RequestQueue : public WebappTask {
+	Sessions _sessions;
+	ctemplate::TemplateCache _cache;
+	LockedQueue<Request*> _rq;
+public:
+	RequestQueue(Webapp* handler, unsigned int id) :
+		WebappTask(handler, &_rq), _sessions(id) {}
+	void execute();
+	void enqueue(Request* r) { _rq.enqueue(r); }
+	void Cleanup();
 };
 
 typedef enum {SCRIPT_INIT, SCRIPT_QUEUE, SCRIPT_REQUEST, SCRIPT_HANDLERS} script_t;
@@ -145,13 +170,11 @@ static const char* script_t_names[] = {"SCRIPT_INIT", "SCRIPT_QUEUE",
 	"SCRIPT_REQUEST", "SCRIPT_HANDLERS"};
 
 class Webapp {
-	void runWorker(LuaParam* params, int nArgs, script_t script);
 	std::array<webapp_str_t, WEBAPP_SCRIPTS> scripts;
-	
-	std::vector<std::string> contentList;
-	std::vector<std::string> serverTemplateList;
 	std::vector<WebappTask*> workers;
-	std::vector<Sessions*> sessions;
+
+	//Keep a clean template for later duplication.
+	ctemplate::TemplateDictionary cleanTemplate;
 	
 	//Parameters
 	unsigned int aborted = 0;
@@ -163,7 +186,6 @@ class Webapp {
 	//Keep track of dynamic databases
 	std::unordered_map<size_t, Database*> databases;
 	std::atomic<size_t> db_count{0};
-	std::vector<LockedQueue<Request*>*> request_queues;
 
 	//IPC api
 	asio::ip::tcp::acceptor* acceptor;
@@ -173,10 +195,8 @@ class Webapp {
 	void process_request(Request* r, size_t len);
 	void process_request_async(Request* r, const asio::error_code&, std::size_t);
 	asio::io_service& svc;
+	asio::io_service::work wrk;
 
-	//Keep a clean template for later duplication.
-	ctemplate::TemplateDictionary cleanTemplate;
-	
 	//Worker/node variables
 	unsigned int nWorkers = WEBAPP_NUM_THREADS - 1;
 	unsigned int node_counter = 0;
@@ -193,7 +213,8 @@ public:
 	void CompileScript(const char* filename, webapp_str_t* output);
 	void SetParamInt(unsigned int key, int value);
 	int GetParamInt(unsigned int key);
-	
+	void RunScript(LuaParam* params, int nArgs, script_t script);
+
 	//Worker methods
 	void StartWorker(WebappTask*);
 	

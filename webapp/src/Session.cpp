@@ -57,23 +57,7 @@ SessionStore* Sessions::new_session(Request* request) {
 		//or server is being DOS'ed.
 		//TODO: Alert server operators.
 		//Try cleaning up empty sessions.
-		auto it = session_map.begin();
-		while(it != session_map.end()) {
-			SessionStore* session = it->second;
-			if(session->count() == 0) {
-				delete session;
-				session_map.erase(it++);
-			} else {
-				++it;
-			}
-		}
-		//If still a problem - we have no option than to destroy sessions.
-		if(session_map.size() >= max_sessions) {
-			auto it = session_map.begin();
-			SessionStore* session = it->second;
-			delete session;
-			session_map.erase(it);
-		}
+		CleanupSessions();
 	}
 
 	SessionStore* session_store = new SESSION_STORE();
@@ -81,6 +65,32 @@ SessionStore* Sessions::new_session(Request* request) {
 	session_map.insert(make_pair(str_hex, session_store));
 	
 	return session_store;
+}
+
+/**
+ * @brief Cleanup sessions removes empty sessions or (as a last resort)
+ * removes the first session. This *should* never happen, as max_sessions
+ * and available RAM should be appropriately adjusted to allow more sessions.
+ * This function is also used to cull empty sessions.
+ */
+void Sessions::CleanupSessions() {
+	auto it = session_map.begin();
+	while(it != session_map.end()) {
+		SessionStore* session = it->second;
+		if(session->count() == 0) {
+			delete session;
+			session_map.erase(it++);
+		} else {
+			++it;
+		}
+	}
+	//If still a problem - we have no other option than to destroy a session.
+	if(session_map.size() >= max_sessions) {
+		auto it = session_map.begin();
+		SessionStore* session = it->second;
+		delete session;
+		session_map.erase(it);
+	}
 }
 
 SessionStore* Sessions::get_session(webapp_str_t* sessionid) {

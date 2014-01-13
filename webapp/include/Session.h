@@ -58,6 +58,7 @@ public:
 	SessionStore* get_session(webapp_str_t* sessionid);
 	SessionStore* new_session(Request* request);
 	void SetMaxSessions(int value);
+	void CleanupSessions();
 };
 
 #endif //SESSION_H

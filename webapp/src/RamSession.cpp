@@ -3,7 +3,7 @@
  * Proprietary and confidential
  * Written by Jordan Henderson <jordan.henderson@ioflame.com>, 2013
  */
-//RamSession storage
+
 #include "Session.h"
 
 using namespace std;

@@ -24,6 +24,8 @@
 #include <vector>
 #include <unordered_map>
 #include <string>
+#include <cctype>
+#include <ctime>
 #include <cstring>
 #include <cstdio>
 #include <cstdint>
