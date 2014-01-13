@@ -112,7 +112,7 @@ public:
 		if(aborted) return NULL;
 		return r; 
 	}
-    LockedQueue() : queue(WEBAPP_DEFAULT_QUEUESIZE) {}
+	LockedQueue() : queue(WEBAPP_DEFAULT_QUEUESIZE) {}
 };
 
 class Webapp;
@@ -126,7 +126,6 @@ class WebappTask {
 public:
 	void start();
 	void join() { _worker.join(); }
-	static void start_thread(WebappTask* task) { task->execute(); }
 	WebappTask(Webapp* handler, TaskQueue* q): _handler(handler),
 		_q(q) { start(); }
 	virtual void execute() = 0;
