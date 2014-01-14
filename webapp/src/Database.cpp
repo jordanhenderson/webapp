@@ -170,11 +170,11 @@ void Query::process() {
 			for (int col = 0; col < column_count; col++) {
 				//Push back the column name
 				if (description != NULL && !havedesc) {
-					description[col].data = sqlite3_column_name(sqlite_stmt, col);
+					description[col].data = (char*)sqlite3_column_name(sqlite_stmt, col);
 					description[col].len = strlen(description[col].data);
 				}
 				//Push back the column text
-				const char* text = (const char*)sqlite3_column_text(sqlite_stmt, col);
+				char* text = (char*)sqlite3_column_text(sqlite_stmt, col);
 				int size = sqlite3_column_bytes(sqlite_stmt, col);
 				row[col].data = text;
 				row[col].len = size;

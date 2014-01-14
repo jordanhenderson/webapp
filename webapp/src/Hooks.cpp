@@ -51,7 +51,7 @@ void RenderTemplate(ctemplate::TemplateCache* cache,
 	cache->ExpandNoLoad("content/" + pagestr, STRIP_WHITESPACE, dict, NULL,
 						  output);
 
-	out->data = output->c_str();
+	out->data = (char*)output->c_str();
 	out->len = output->length();
 
 	request->strings.push_back(output);
@@ -66,7 +66,7 @@ int GetSessionValue(SessionStore* session, webapp_str_t* key,
 	const string* s = &session->get(string(key->data, key->len));
 	if (out != NULL) {
 		//Write to out
-		out->data = s->c_str();
+		out->data = (char*)s->c_str();
 		out->len = s->length();
 	}
 
@@ -122,9 +122,7 @@ void QueueProcess(LockedQueue<Process*>* background_queue, webapp_str_t* func,
 				  webapp_str_t* vars) {
 	if (func == NULL || vars == NULL || background_queue == NULL 
 		|| background_queue->aborted) return;
-	Process* p = new Process();
-	p->func = webapp_strdup(func);
-	p->vars = webapp_strdup(vars);
+	Process* p = new Process(func, vars);
 	background_queue->enqueue(p);
 }
 
@@ -133,9 +131,13 @@ Process* GetNextProcess(LockedQueue<Process*>* background_queue) {
 	return background_queue->dequeue();
 }
 
+void FinishProcess(Process* process) {
+	delete process;
+}
+
 int GetSessionID(SessionStore* session, webapp_str_t* out) {
 	if(session == NULL || out == NULL) return 0;
-	out->data = session->sessionid.c_str();
+	out->data = (char*)session->sessionid.c_str();
 	out->len = session->sessionid.length();
 	return 1;
 }
@@ -219,7 +221,7 @@ unsigned long long GetWebappTime() {
 //Image API 
 Image* LoadImage(webapp_str_t* filename) {
 	if(filename == NULL) return NULL;
-	return new Image(string(filename->data, filename->len));
+	return new Image(filename);
 }
 
 void ResizeImage(Image* img, int width, int height) {
@@ -227,9 +229,9 @@ void ResizeImage(Image* img, int width, int height) {
 	img->resize(width, height);
 }
 
-void SaveImage(Image* img, webapp_str_t* out, int destroy) {
-	if(img == NULL || out == NULL) return;
-	img->save(string(out->data, out->len));
+void SaveImage(Image* img, webapp_str_t* filename, int destroy) {
+	if(img == NULL || filename == NULL) return;
+	img->save(filename);
 	if(destroy) delete img;
 }
 
@@ -241,8 +243,7 @@ void DestroyImage(Image* img) {
 //File API
 File* OpenFile(webapp_str_t* filename, webapp_str_t* mode) {
 	if(filename == NULL || mode == NULL) return NULL;
-	File* f = new File(string(filename->data, filename->len),
-		string(mode->data, mode->len));
+	File* f = new File(filename, mode);
 	return f;
 }
 
@@ -254,13 +255,12 @@ void CloseFile(File* f) {
 
 void ReadFile(File* f, webapp_str_t* out) {
 	if(f == NULL || out == NULL) return;
-	out->data = f->Read();
-	out->len = f->Size();
+	*out = f->Read();
 }
 
 void WriteFile(File* f, webapp_str_t* buf) {
 	if(f == NULL || buf == NULL) return;
-	f->Write(string(buf->data, buf->len));
+	f->Write(buf);
 }
 
 void CleanupFile(File* f) {

@@ -60,7 +60,7 @@ void Image::cleanup() {
 	}
 }
 
-Image::Image(const string& filename) {
+Image::Image(const webapp_str_t& filename) {
 	imageType = -1; 
 	row_pointers = NULL;
 	pixels = NULL;
@@ -70,8 +70,8 @@ Image::Image(const string& filename) {
 	
 }
 
-void Image::changeType(const string& filename) {
-	string f = filename;
+void Image::changeType(const webapp_str_t& filename) {
+	string f = string(filename.data, filename.len);
 	std::transform(f.begin(), f.end(),f.begin(), ::tolower);
 	for(int i = 0; THUMB_EXTENSIONS_JPEG[i] != NULL; i++) {
 		if(endsWith(f, THUMB_EXTENSIONS_JPEG[i])) {
@@ -104,7 +104,7 @@ void Image::changeType(const string& filename) {
 	
 }
 
-int Image::load(const string& filename) {
+int Image::load(const webapp_str_t& filename) {
 	int err = ERROR_SUCCESS;
 	//Check image extension. Use IMAGE_TYPE_JPEG for bmp/gif/jpg/jpeg, IMAGE_TYPE_PNG for png.
 	width = height = nBytes = bitdepth = 0;
@@ -284,7 +284,7 @@ finish:
 
 }
 
-int Image::save(const string& filename) {
+int Image::save(const webapp_str_t& filename) {
 	int err = ERROR_SUCCESS;
 	File file(filename, "wb");
 	FILE* file_ptr = file.GetPointer();

@@ -49,11 +49,46 @@
 #endif
 
 struct webapp_str_t {
-	const char* data = NULL;
+	char* data = NULL;
 	long long len = 0;
+	int allocated = 0;
+	webapp_str_t() {}
+	webapp_str_t(const char* s, long long len) {
+		allocated = 1;
+		data = new char[len];
+		memcpy(data, s, len);
+	}
+	webapp_str_t(long long _len) {
+		allocated = 1;
+		data = new char[len];
+		_len = len;
+	}
+	webapp_str_t(webapp_str_t* other) {
+		allocated = 1;
+		len = other->len;
+		data = new char[len];
+		memcpy(data, other->data, len);
+	}
+	webapp_str_t(const char* s) {
+		allocated = 1;
+		len = strlen(s);
+		data = new char[len];
+		memcpy(data, s, len);
+	}
+	webapp_str_t(const webapp_str_t& other) {
+		allocated = 1;
+		len = other.len;
+		data = new char[len];
+		memcpy(data, other.data, len);
+	}
+	~webapp_str_t() {
+		if(allocated) delete[] data;
+	}
+	operator std::string const () {
+		return std::string(data, len);
+	}
 };
 
-webapp_str_t* webapp_strdup(webapp_str_t*);
 bool endsWith(const std::string &a, const std::string &b);
 bool is_number(const std::string &a);
 std::string replaceAll(std::string const& original, std::string const& before, 
@@ -68,7 +103,7 @@ std::string url_decode(const std::string& src);
 template<class T, class X>
 bool contains(T& n, X& h) {
 	return std::find(n.begin(), n.end(), h) != n.end();
-};
+}
 
 /**
  * Tokenize a string into the provided container using the specified delimiter.
@@ -79,8 +114,7 @@ bool contains(T& n, X& h) {
 */
 template < class T >
 void tokenize(const std::string& str, T& tokens,
-	const std::string& delimiters = " ", bool trimEmpty = false)
-{
+	const std::string& delimiters = " ", bool trimEmpty = false) {
 	//Provide typedefs for GCC
 	typedef T Base; typedef typename Base::value_type VType; 
 	typedef typename VType::size_type SType;
@@ -101,6 +135,21 @@ void tokenize(const std::string& str, T& tokens,
 		}
 		lastPos = pos + 1;
 	}
-};
+}
 
+#ifdef _MSC_VER
+wchar_t* strtowide(const char* str) {
+	size_t requiredSize = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
+	wchar_t* tmpPath = new wchar_t[requiredSize+sizeof(wchar_t)];
+	MultiByteToWideChar(CP_UTF8, 0, str, -1, tmpPath, requiredSize);
+	return tmpPath;
+}
+
+char* widetostr(const wchar_t* str) {
+	size_t requiredSize = WideCharToMultiByte(CP_UTF8, 0, str, -1, NULL, 0, NULL, NULL);
+	char* tmpPath = new char[requiredSize+sizeof(char)];
+	WideCharToMultiByte(CP_UTF8, 0, str, -1, tmpPath, requiredSize, NULL, NULL);
+	return tmpPath;
+}
+#endif
 #endif //CPLATFORM_H

@@ -83,16 +83,3 @@ string url_decode(const string& src) {
 	}
 	return (ret);
 }
-
-/**
- * returns a new allocated copy of src. Must be cleaned up by caller.
- * @param src webapp_str_t to duplicate
- * @return a newly allocated duplicate of src.
-*/
-webapp_str_t* webapp_strdup(webapp_str_t* src) {
-	webapp_str_t* dest = new webapp_str_t();
-	dest->data = new char[src->len + 1];
-	memcpy((void*)dest->data, src->data, src->len);
-	dest->len = src->len;
-	return dest;
-}

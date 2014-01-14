@@ -30,7 +30,7 @@ private:
 	unsigned char* pixels = NULL;
 	unsigned char* _resize(unsigned char* image, int width, int height, 
 		int oldWidth, int oldHeight);
-	void changeType(const std::string& filename);
+	void changeType(const webapp_str_t& filename);
 	//PNG ONLY
 	int bitdepth = 0;
 	unsigned char** row_pointers = NULL; 
@@ -45,17 +45,17 @@ private:
 	void regenRowPointers();
 
 public:
-	Image(const std::string& filename);
+	Image(const webapp_str_t& filename);
 	~Image();
 	inline int getWidth() {
 		return width;
 	}
 	inline int getHeight() {
 		return height;
-	};
-	int load(const std::string& filename);
+	}
+	int load(const webapp_str_t& filename);
 	void resize(int width, int height);
-	int save(const std::string& filename);
+	int save(const webapp_str_t& filename);
 };
 
 #endif //IMAGE_H

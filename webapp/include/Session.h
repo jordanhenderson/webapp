@@ -55,7 +55,7 @@ public:
 	}
 	~Sessions();
 	//Create a new session based on the request.
-	SessionStore* get_session(webapp_str_t* sessionid);
+	SessionStore* get_session(const webapp_str_t& sessionid);
 	SessionStore* new_session(Request* request);
 	void SetMaxSessions(int value);
 	void CleanupSessions();

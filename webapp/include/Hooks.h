@@ -7,6 +7,7 @@
 #ifndef HOOKS_H
 #define HOOKS_H
 
+#define _TINYDIR_FUNC APIEXPORT
 #include "Platform.h"
 #include "Session.h"
 #include "Webapp.h"
@@ -14,6 +15,7 @@
 #include "Image.h"
 
 extern "C" {
+#include "tinydir.h"
 
 APIEXPORT int Template_ShowGlobalSection(ctemplate::TemplateDictionary*,
 										 webapp_str_t* section);
@@ -35,6 +37,7 @@ APIEXPORT void FinishRequest(Request*);
 APIEXPORT void QueueProcess(LockedQueue<Process*>*, webapp_str_t* funtion,
 							webapp_str_t* vars);
 APIEXPORT Process* GetNextProcess(LockedQueue<Process*>*);
+APIEXPORT void FinishProcess(Process*);
 APIEXPORT ctemplate::TemplateDictionary* GetTemplate(Webapp*, Request* request);
 APIEXPORT void RenderTemplate(ctemplate::TemplateCache*,
 							  ctemplate::TemplateDictionary* tmpl,
@@ -65,7 +68,7 @@ APIEXPORT void GetColumnName(Query* q, unsigned int column, webapp_str_t* out);
 //Image API
 APIEXPORT Image* LoadImage(webapp_str_t* filename);
 APIEXPORT void ResizeImage(Image* img, int width, int height);
-APIEXPORT void SaveImage(Image* img, webapp_str_t* out, int destroy);
+APIEXPORT void SaveImage(Image* img, webapp_str_t* filename, int destroy);
 APIEXPORT void DestroyImage(Image* img); 
 
 //File API

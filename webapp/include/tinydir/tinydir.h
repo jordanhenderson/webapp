@@ -55,10 +55,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define strncasecmp _strnicmp
 #endif
 
+#ifndef _TINYDIR_FUNC
 #ifdef _MSC_VER
 #define _TINYDIR_FUNC static __inline
 #else
 #define _TINYDIR_FUNC static __inline__
+#endif
 #endif
 
 typedef struct
@@ -68,8 +70,7 @@ typedef struct
 	int is_dir;
 	int is_reg;
 
-#ifdef _MSC_VER
-#else
+#ifndef _MSC_VER
 	struct stat _s;
 #endif
 } tinydir_file;
@@ -119,22 +120,6 @@ int _tinydir_file_cmp(const void *a, const void *b);
 #define mkdir(dir) _wmkdir (dir);
 #else
 #define mkdir(dir) mkdir (dir,0755);
-#endif
-
-#ifdef _MSC_VER
-_TINYDIR_FUNC wchar_t* strtowide(const char* str) {
-	size_t requiredSize = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
-	wchar_t* tmpPath = new wchar_t[requiredSize+sizeof(wchar_t)];
-	MultiByteToWideChar(CP_UTF8, 0, str, -1, tmpPath, requiredSize);
-	return tmpPath;
-}
-
-_TINYDIR_FUNC char* widetostr(const wchar_t* str) {
-	size_t requiredSize = WideCharToMultiByte(CP_UTF8, 0, str, -1, NULL, 0, NULL, NULL);
-	char* tmpPath = new char[requiredSize+sizeof(char)];
-	WideCharToMultiByte(CP_UTF8, 0, str, -1, tmpPath, requiredSize, NULL, NULL);
-	return tmpPath;
-}
 #endif
 
 _TINYDIR_FUNC

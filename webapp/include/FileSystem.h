@@ -10,43 +10,39 @@
 #include "Platform.h"
 #include "CPlatform.h"
 
-#ifdef _WIN32
-#define ENV_NEWLINE "\r\n"
-#else
-#define ENV_NEWLINE "\n"
+#ifndef _WIN32
 #include <unistd.h>
 #endif
 
 class File {
+	webapp_str_t _fileName;
+	webapp_str_t _flags;
 	FILE* pszFile = NULL;
-	std::string _fileName;
-	std::string _flags;
 	long long size = 0;
 	int refresh = 1;
-	std::vector<const char*> buffers;
+	std::vector<webapp_str_t*> buffers;
 public:
-	int Open(const std::string& fileName, const std::string& flags="rb");
-	File() {}
-	File(const std::string& fileName, const std::string& flags="rb") {
-		Open(fileName, flags); }
+	int Open(const webapp_str_t& fileName, const webapp_str_t& flags);
+	File() : _flags(2) {}
+	File(const webapp_str_t& fileName, const webapp_str_t& flags) : File() {
+		Open(fileName, flags);
+	}
 	~File();
 
-	const char* Read();
+	webapp_str_t* Read();
 	void Close();
 	void Cleanup();
 	long long Size();
 	void Refresh();
 	
-	void Write(const std::string& buffer);
-	void WriteLine(const std::string& buffer);
+	void Write(const webapp_str_t& buffer);
+	void WriteLine(const webapp_str_t& buffer);
 	FILE* GetPointer();
 	FILE* Detach();
 };
 
 namespace FileSystem {
-	int MakePath(const std::string& path);
-	void DeletePath(const std::string& path);
-	std::vector<std::string> GetFiles(const std::string& base,
-									  const std::string& path, int recurse);
+	int MakePath(const webapp_str_t& path);
+	void DeletePath(const webapp_str_t& path);
 };
 #endif

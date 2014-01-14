@@ -15,27 +15,22 @@ using namespace std;
  * @param flags the file mode used to open the file.
  * @return the success of the file.
 */
-int File::Open(const string& fileName, const string& flags) {
-	//ensure file is opened in binary mode
-	int flag_len = flags.length();
-	string actualFlag = flags;
-	if(flags[flag_len - 1] != 'b') actualFlag += 'b';
+int File::Open(const webapp_str_t& fileName, const webapp_str_t& flags) {
 	FILE* tmpFile;
 #ifdef _WIN32
 	wchar_t* wfileName, *wflags;
-	wfileName = strtowide(fileName.c_str());
-	wflags = strtowide(flags.c_str());
+	wfileName = strtowide(fileName.data);
+	wflags = strtowide(_flags.data);
 
 	tmpFile = _wfopen(wfileName, wflags);
 	delete[] wfileName;
 	delete[] wflags;
 #else
-	tmpFile = fopen(fileName.c_str(), flags.c_str());
+	tmpFile = fopen(fileName.data, flags.data);
 #endif
 	int success = (tmpFile != NULL);
 	if(success) {
-		_fileName = fileName;
-		_flags = actualFlag;
+		_fileName = webapp_str_t(fileName);
 		pszFile = tmpFile;
 	}
 	
@@ -50,6 +45,7 @@ int File::Open(const string& fileName, const string& flags) {
 */
 File::~File() {
 	if(pszFile != NULL) fclose(pszFile);
+	Cleanup();
 }
 
 /**
@@ -106,12 +102,12 @@ long long File::Size() {
 }
 
 /**
- * Read a file in full, storing the read data as a raw char pointer.
+ * Read a file in full, storing the read data in a webapp_str_t.
  * Data returned is cleaned up by calling File::Cleanup();
  * @param out the char* to store read data
  * @return the file size
 */
-const char* File::Read() {
+webapp_str_t* File::Read() {
 	//Get the file size.
 	long long size = Size();
 	char* buf = NULL;
@@ -121,11 +117,12 @@ const char* File::Read() {
 	rewind(pszFile);
 	
 	//Allocate room for the data.
-	buf = new char[size * sizeof(char)];
+	buf = new char[size];
 	//Read the entire file into memory. Not for large files.
 	size_t nRead = fread(buf, sizeof(char), size, tmpFile);
-	buffers.push_back(buf);
-	return buf;
+	webapp_str_t* web_buf = new webapp_str_t(buf, nRead);
+	buffers.push_back(web_buf);
+	return web_buf;
 }
 
 /**
@@ -144,19 +141,10 @@ void File::Cleanup() {
  * Writes according to filemode specified upon opening the file.
  * @param buffer the buffer to write
 */
-void File::Write(const string& buffer) {
+void File::Write(const webapp_str_t& buffer) {
 	if(pszFile == NULL) return;
-	fputs(buffer.c_str(), pszFile);
+	fwrite(buffer.data, sizeof(char), buffer.len, pszFile);
 	fflush(pszFile);
-}
-
-/**
- * Write the provided line to a file, appending an appropriate newline
- * @param buffer the buffer to write, followed by a NEWLINE character
- * @see Write
-*/
-void File::WriteLine(const string& buffer) {
-	Write(string(buffer).append(ENV_NEWLINE));
 }
 
 /**
@@ -164,21 +152,20 @@ void File::WriteLine(const string& buffer) {
  * @param path the directory tree which should be created.
  * @return whether the directory tree was created successfully.
 */
-int FileSystem::MakePath(const string& path) {
+int FileSystem::MakePath(const webapp_str_t& path) {
 	//Recurisvely make a path structure.
-	string tmpPath = string(path);
-	int nFilename = tinydir_todir((char*)tmpPath.c_str(), tmpPath.length());
+	int nFilename = tinydir_todir(path.data, path.len);
 	
-	for(int i = 0; i <= tmpPath.length() - nFilename; i++) {
-		if(tmpPath[i] == '/' || tmpPath[i] == 0) {
-			tmpPath[i] = 0;
+	for(int i = 0; i <= path.len - nFilename; i++) {
+		if(path.data[i] == '/' || path.data[i] == 0) {
+			path.data[i] = 0;
 			tinydir_dir dir;
-			if(tinydir_open(&dir, tmpPath.c_str()) == -1) {
+			if(tinydir_open(&dir, path.data) == -1) {
 				//make the directory
-				if(!tinydir_create(tmpPath.c_str())) return 0;
+				if(!tinydir_create(path.data)) return 0;
 			}
 			tinydir_close(&dir);
-			tmpPath[i] = '/';
+			path.data[i] = '/';
 		}
 	}
 	return 1;
@@ -188,9 +175,9 @@ int FileSystem::MakePath(const string& path) {
  * Delete a path recursively, including all files contained within.
  * @param path the directory to delete.
 */
-void FileSystem::DeletePath(const string& path) {
+void FileSystem::DeletePath(const webapp_str_t& path) {
 	tinydir_dir dir;
-	tinydir_open(&dir, path.c_str());
+	tinydir_open(&dir, path.data);
 
 	//Delete all files/directories.
 	while(dir.has_next) {
@@ -213,42 +200,10 @@ void FileSystem::DeletePath(const string& path) {
 	
 	tinydir_close(&dir);
 #ifdef _WIN32
-	wchar_t* wPath = strtowide(path.c_str());
+	wchar_t* wPath = strtowide(path.data);
 	_wrmdir(wPath);
 	delete[] wPath;
 #else
-	rmdir(path.c_str());
+	rmdir(path.data);
 #endif
-}
-
-/**
- * Get a vector containing a list of files within a directory.
- * @param base the base directory to begin searching.
- * @param path the path to prepend to each filename in the output.
- * @param recurse whether to recurse into subdirectories.
- * @return a vector containing a list of files within the directory path.
-*/
-vector<string> FileSystem::GetFiles(const string& base, const string& path, int recurse) {
-	vector<string> files;
-	tinydir_dir dir;
-	string start_dir = base + '/' + path;
-	tinydir_open(&dir, start_dir.c_str());
-	//Iterate over each item in the directory.
-	while(dir.has_next) {
-		tinydir_file file;
-		tinydir_readfile(&dir, &file);
-		//If path provided prepend it, otherwise just store the filename.
-		string dir_path = path.empty() ? file.name : path + '/' + file.name;
-		//Push the filename onto the resultant vector.
-		if(!file.is_dir) files.push_back(dir_path);
-		else if(recurse && file.name[0] != '.') {
-			//Retrieve and append files from subdirectory.
-			vector<string> subdir_files = GetFiles(base, dir_path, 1);
-			files.insert(files.end(), subdir_files.begin(), subdir_files.end());
-		}
-		tinydir_next(&dir);
-	}
-	
-	tinydir_close(&dir);
-	return files;
 }

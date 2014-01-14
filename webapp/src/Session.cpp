@@ -93,8 +93,8 @@ void Sessions::CleanupSessions() {
 	}
 }
 
-SessionStore* Sessions::get_session(webapp_str_t* sessionid) {
-	auto it = session_map.find(string(sessionid->data, sessionid->len));
+SessionStore* Sessions::get_session(const webapp_str_t& sessionid) {
+	auto it = session_map.find(string(sessionid.data, sessionid.len));
 	if(it != session_map.end())
 		return it->second;
 

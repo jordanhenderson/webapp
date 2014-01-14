@@ -33,14 +33,6 @@ struct LuaParam {
 };
 
 /**
- * @brief Iteratable containers accessible by lua.
- */
-struct LuaContainer {
-	void* container = NULL;
-	int type = 0;
-};
-
-/**
  * @brief Required information per request.
  */
 struct Request {
@@ -56,7 +48,6 @@ struct Request {
 	webapp_str_t cookies;
 	webapp_str_t request_body;
 	std::vector<std::string*> strings;
-	std::vector<LuaContainer*> containers;
 	std::vector<ctemplate::TemplateDictionary*> dicts;
 	webapp_str_t* input_chain[STRING_VARS];
 	std::vector<Query*> queries;
@@ -87,9 +78,18 @@ public:
 /**
  * @brief Process is used to pass requests to Background Queue.
  */
-struct Process {
+class Process {
 	webapp_str_t* func = NULL;
 	webapp_str_t* vars = NULL;
+public:
+	Process(webapp_str_t* f, webapp_str_t* v) {
+		func = new webapp_str_t(f);
+		v = new webapp_str_t(v);
+	}
+	~Process() {
+		if(func != NULL) delete func;
+		if(vars != NULL) delete vars;
+	}
 };
 
 /**

@@ -12,6 +12,7 @@
 	FinishRequest;
 	QueueProcess;
 	GetNextProcess;
+	FinishProcess;
 	GetTemplate;
 	RenderTemplate;
 	ReloadTemplates;
@@ -45,6 +46,11 @@
 	WriteFile;
 	FileSize;
 	CleanupFile;
+	tinydir_open;
+	tinydir_open_sorted;
+	tinydir_close;
+	tinydir_next;
+	tinydir_readfile;
 
 	SHA256_Init;
 	SHA256_Update;
