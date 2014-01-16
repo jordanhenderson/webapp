@@ -4,10 +4,16 @@
  * Written by Jordan Henderson <jordan.henderson@ioflame.com>, 2013
  */
 
+#include "Webapp.h"
+#include "Session.h"
+#include "Image.h"
 #include "Hooks.h"
+#include "Database.h"
+#include "FileSystem.h"
 
 using namespace ctemplate;
 using namespace std;
+using namespace asio::ip;
 
 int Template_ShowGlobalSection(TemplateDictionary* dict, webapp_str_t* section) {
 	if(dict == NULL || section == NULL) return 1;
@@ -29,18 +35,23 @@ int Template_SetGlobalValue(TemplateDictionary* dict, webapp_str_t* key,
 	return 0;
 }
 
-TemplateDictionary* GetTemplate(Webapp* app, Request* request) {
+TemplateDictionary* Template_Get(Webapp* app, Request* request) {
 	if(app == NULL) return NULL;
 	TemplateDictionary* dict = app->GetTemplate();
 	if(dict != NULL) request->dicts.push_back(dict);
 	return dict;
 }
 
-void ReloadTemplates() {
+void Template_ReloadAll() {
 	mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::IMMEDIATE_RELOAD);
 }
 
-void RenderTemplate(ctemplate::TemplateCache* cache,
+void Template_Load(ctemplate::TemplateCache* cache, webapp_str_t* page) {
+	if(cache == NULL || page == NULL) return;
+	cache->LoadTemplate(*page, STRIP_WHITESPACE);
+}
+
+void Template_Render(ctemplate::TemplateCache* cache,
 					ctemplate::TemplateDictionary* dict, webapp_str_t* page,
 					Request* request, webapp_str_t* out) {
 	if (cache == NULL || dict == NULL || page == NULL ||
@@ -147,7 +158,7 @@ void FinishRequest(Request* request) {
 	delete request;
 }
 
-void WriteData(asio::ip::tcp::socket* socket, webapp_str_t* data) {
+void WriteData(tcp::socket* socket, webapp_str_t* data) {
 	if (socket == NULL || data == NULL || data->data == NULL) return;
 	*(unsigned short*)data->data = htons((unsigned short)data->len - sizeof(unsigned short));
 	try {
@@ -168,7 +179,7 @@ void DestroyDatabase(Webapp* app, Database* db) {
 	return app->DestroyDatabase(db);
 }
 
-Database* GetDatabase(Webapp* app, size_t index) {
+Database* GetDatabase(Webapp* app, long long index) {
 	if(app == NULL) return NULL;
 	return app->GetDatabase(index);
 }

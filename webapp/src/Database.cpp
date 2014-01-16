@@ -4,7 +4,9 @@
  * Written by Jordan Henderson <jordan.henderson@ioflame.com>, 2013
  */
 
+#include "Webapp.h"
 #include "Database.h"
+#include "sqlite3.h"
 #include "my_global.h"
 #include "mysql.h"
 

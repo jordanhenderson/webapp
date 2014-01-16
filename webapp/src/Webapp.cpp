@@ -4,8 +4,18 @@
  * Written by Jordan Henderson <jordan.henderson@ioflame.com>, 2013
  */
 
+#include "Session.h"
 #include "Webapp.h"
+#include "Database.h"
 #include "Image.h"
+
+extern "C" {
+#include <lua.h>
+#include <lualib.h>
+#include <lauxlib.h>
+#include "lpeg.h"
+#include "cjson.h"
+}
 
 using namespace std;
 using namespace ctemplate;
@@ -16,6 +26,18 @@ using namespace std::placeholders;
 #ifdef _WIN32
 #pragma warning(disable:4316)
 #endif 
+
+/**
+ * Request destructor.
+*/
+Request::~Request() {
+	for(auto it: strings) delete it;
+	for(auto it: queries) delete it;
+	for(auto it: dicts) delete it;
+	if (socket != NULL) delete socket;
+	if (v != NULL) delete v;
+	if (headers != NULL) delete headers;
+}
 
 /**
  * Clean up a worker thread. Called as each task is signalled to finish.
@@ -53,6 +75,15 @@ void WebappTask::start() {
 	 });
 }
 
+RequestQueue::RequestQueue(Webapp *handler, unsigned int id)
+	: WebappTask(handler, &_rq) {
+	_sessions = new Sessions(id);
+}
+
+RequestQueue::~RequestQueue() {
+	delete _sessions;
+}
+
 void RequestQueue::Execute() {
 	LuaParam _v[] = { { "sessions", &_sessions },
 					  { "requests", _q },
@@ -62,7 +93,7 @@ void RequestQueue::Execute() {
 }
 
 void RequestQueue::Cleanup() {
-	_sessions.CleanupSessions();
+	_sessions->CleanupSessions();
 	if(_cache != NULL) delete _cache;
 	_cache = mutable_default_template_cache()->Clone();
 	_cache->Freeze();
@@ -362,6 +393,7 @@ void Webapp::process_request(Request* r, std::size_t amount) {
  * @param ec the asio error code, if any
  * @param bytes_transferred the amount bytes transferred
 */
+#define INT_INTERVAL(i) sizeof(int)*i
 void Webapp::process_header_async(Request* r, const asio::error_code& ec,
 	std::size_t bytes_transferred) {
 	if(r->uri.data == NULL && !r->method) {
@@ -396,7 +428,7 @@ void Webapp::process_header_async(Request* r, const asio::error_code& ec,
  * The next stage will be executed after async_read completes as necessary.
  * @param s the asio socket object of the accepted connection.
 */
-void Webapp::accept_conn_async(asio::ip::tcp::socket* s, const asio::error_code& error) {
+void Webapp::accept_conn_async(tcp::socket* s, const asio::error_code& error) {
 	Request* r = new Request();
 	r->socket = s;
 	r->headers = new std::vector<char>(PROTOCOL_LENGTH_SIZEINFO);
@@ -417,7 +449,7 @@ void Webapp::accept_conn_async(asio::ip::tcp::socket* s, const asio::error_code&
  * connections. Re-called after each async_accept callback is completed.
 */
 void Webapp::accept_conn() {
-	ip::tcp::socket* current_socket = new ip::tcp::socket(svc);
+	tcp::socket* current_socket = new tcp::socket(svc);
 	acceptor->async_accept(*current_socket, 
 		std::bind(&Webapp::accept_conn_async, this, 
 			current_socket, std::placeholders::_1));
@@ -511,7 +543,7 @@ Database* Webapp::CreateDatabase() {
  * @param index the Database object key. See db_count in CreateDatabase.
  * @return the newly created Database object.
 */
-Database* Webapp::GetDatabase(size_t index) {
+Database* Webapp::GetDatabase(long long index) {
 	try {
 		return databases.at(index);
 	} catch (...) {

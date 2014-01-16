@@ -8,8 +8,12 @@
 #define SESSION_H
 
 #include "Platform.h"
-#include "CPlatform.h"
-#include "Schema.h"
+
+#define WEBAPP_LEN_SESSIONID 1
+#define WEBAPP_DEFAULT_SESSION_LIMIT 10000
+
+class webapp_str_t;
+class Request;
 
 #define SESSION_STORE RamSession
 
@@ -37,8 +41,6 @@ public:
 	void destroy();
 	int count();
 };
-
-struct Request;
 
 typedef std::unordered_map<std::string, SessionStore*> SessionMap;
 class Sessions {

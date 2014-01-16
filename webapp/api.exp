@@ -1,8 +1,11 @@
 {
-	GetTemplate;
+	Template_Get;
 	Template_ShowGlobalSection;
 	Template_ShowSection;
 	Template_SetGlobalValue;
+	Template_Render;
+	Template_ReloadAll;
+	Template_Load;
 	GetSessionValue;
 	SetSessionValue;
 	GetSession;
@@ -13,9 +16,7 @@
 	QueueProcess;
 	GetNextProcess;
 	FinishProcess;
-	GetTemplate;
-	RenderTemplate;
-	ReloadTemplates;
+
 	WriteData;
 
 	SetParamInt;

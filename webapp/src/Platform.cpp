@@ -5,7 +5,6 @@
  */
 
 #include "Platform.h"
-#include "CPlatform.h"
 
 using namespace std;
 

@@ -8,11 +8,8 @@
 #define FILE_H
 
 #include "Platform.h"
-#include "CPlatform.h"
 
-#ifndef _WIN32
-#include <unistd.h>
-#endif
+class webapp_str_t;
 
 class File {
 	webapp_str_t _fileName;

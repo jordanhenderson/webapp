@@ -8,7 +8,6 @@
 #define IMAGE_H
 
 #include "Platform.h"
-#include "CPlatform.h"
 
 #define IMAGE_TYPE_JPEG 0
 #define IMAGE_TYPE_PNG 1
@@ -18,6 +17,8 @@
 #define ERROR_IMAGE_NOT_SUPPORTED 2
 #define ERROR_FILE_NOT_FOUND 3
 #define ERROR_IMAGE_PROCESSING_FAILED 4
+
+class webapp_str_t;
 
 struct GifFileType;
 

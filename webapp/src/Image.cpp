@@ -5,6 +5,7 @@
  */
 
 #include <opencv2/imgproc.hpp>
+#include "Webapp.h"
 #include "Image.h"
 #include "FileSystem.h"
 

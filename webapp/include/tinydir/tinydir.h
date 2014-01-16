@@ -34,12 +34,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 #include <windows.h>
 #pragma warning (disable : 4996)
+#define DIR void
 #else
 #include <dirent.h>
 #include <sys/stat.h>
+#define WIN32_FIND_DATA void
+#define HANDLE void
 #endif
 
-
+struct stat;
+struct dirent;
 /* types */
 
 #define _TINYDIR_PATH_MAX 4096
@@ -69,10 +73,7 @@ typedef struct
 	char name[_TINYDIR_FILENAME_MAX];
 	int is_dir;
 	int is_reg;
-
-#ifndef _MSC_VER
-	struct stat _s;
-#endif
+	struct stat* _s;
 } tinydir_file;
 
 typedef struct
@@ -80,15 +81,11 @@ typedef struct
 	char path[_TINYDIR_PATH_MAX];
 	int has_next;
 	int n_files;
-
 	tinydir_file *_files;
-#ifdef _MSC_VER
-	HANDLE _h;
-	WIN32_FIND_DATA _f;
-#else
-	DIR *_d;
+	HANDLE* _h;
+	WIN32_FIND_DATA* _f;
+	DIR* _d;
 	struct dirent *_e;
-#endif
 } tinydir_dir;
 
 
@@ -149,7 +146,8 @@ int tinydir_open(tinydir_dir *dir, const char *path)
 #ifdef _MSC_VER
 	strcat(dir->path, "\\*");
 	wchar_t* wpath = strtowide(dir->path);
-	dir->_h = FindFirstFile(wpath, &dir->_f);
+	dir->_f = malloc(sizeof(WIN32_FIND_DATA));
+	dir->_h = FindFirstFile(wpath, dir->_f);
 	delete[] wpath;
 	dir->path[strlen(dir->path) - 2] = '\0';
 	if (dir->_h == INVALID_HANDLE_VALUE)
@@ -165,7 +163,7 @@ int tinydir_open(tinydir_dir *dir, const char *path)
 	/* read first file */
 	dir->has_next = 1;
 #ifndef _MSC_VER
-	dir->_e = readdir(dir->_d);
+	dir->_e = readdir((DIR*)dir->_d);
 	if (dir->_e == NULL)
 	{
 		dir->has_next = 0;
@@ -242,6 +240,8 @@ void tinydir_close(tinydir_dir *dir)
 		FindClose(dir->_h);
 	}
 	dir->_h = INVALID_HANDLE_VALUE;
+	if(dir->f != NULL) free(dir->_f);
+	dir->f = NULL;
 #else
 	if (dir->_d)
 	{
@@ -267,9 +267,10 @@ int tinydir_next(tinydir_dir *dir)
 	}
 
 #ifdef _MSC_VER
+	if(dir->_f == NULL) return -1;
 	if (FindNextFile(dir->_h, &dir->_f) == 0)
 #else
-	dir->_e = readdir(dir->_d);
+	dir->_e = readdir((DIR*)dir->_d);
 	if (dir->_e == NULL)
 #endif
 	{
@@ -349,8 +350,10 @@ int tinydir_readfile(const tinydir_dir *dir, tinydir_file *file)
 #endif
 	strcat(file->path, file->name);
 #ifndef _MSC_VER
-	if (stat(file->path, &file->_s) == -1)
+	file->_s = (struct stat*)malloc(sizeof(struct stat));
+	if (stat(file->path, file->_s) == -1)
 	{
+		free(file->_s);
 		return -1;
 	}
 #endif
@@ -358,7 +361,7 @@ int tinydir_readfile(const tinydir_dir *dir, tinydir_file *file)
 #ifdef _MSC_VER
 		!!(dir->_f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
 #else
-		S_ISDIR(file->_s.st_mode);
+		S_ISDIR(file->_s->st_mode);
 #endif
 	file->is_reg =
 #ifdef _MSC_VER
@@ -376,9 +379,9 @@ int tinydir_readfile(const tinydir_dir *dir, tinydir_file *file)
 			!(dir->_f.dwFileAttributes & FILE_ATTRIBUTE_OFFLINE) &&
 			!(dir->_f.dwFileAttributes & FILE_ATTRIBUTE_TEMPORARY));
 #else
-		S_ISREG(file->_s.st_mode);
+		S_ISREG(file->_s->st_mode);
 #endif
-
+	free(file->_s);
 	return 0;
 }
 

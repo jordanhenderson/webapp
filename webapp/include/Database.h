@@ -7,19 +7,15 @@
 #ifndef DATABASE_H
 #define DATABASE_H
 
-#include "CPlatform.h"
 #include "Platform.h"
-#include "sqlite3.h"
 
 #define DATABASE_STATUS_PROCESS 0
 #define DATABASE_STATUS_FINISHED 1
 #define DATABASE_QUERY_INIT 0
 #define DATABASE_QUERY_STARTED 1
 #define DATABASE_QUERY_FINISHED 2
-
 #define DATABASE_TYPE_SQLITE 0
 #define DATABASE_TYPE_MYSQL 1
-
 #define DATABASE_SUCCESS 0
 #define DATABASE_FAILED 1
 
@@ -28,6 +24,9 @@ typedef struct st_mysql MYSQL;
 typedef struct st_mysql_res MYSQL_RES;
 typedef struct st_mysql_bind MYSQL_BIND;
 typedef struct st_mysql_stmt MYSQL_STMT;
+struct sqlite3_stmt;
+struct sqlite3;
+class webapp_str_t;
 
 typedef std::vector<std::string> QueryRow;
 class Database;

@@ -7,22 +7,21 @@
 #ifndef WEBAPP_H
 #define WEBAPP_H
 
-#include <asio.hpp>
 #include "Platform.h"
-#include "CPlatform.h"
-#include "Database.h"
-#include "Session.h"
 #include "Schema.h"
+#include <asio.hpp>
 #include <ctemplate/template.h>
-#include "readerwriterqueue.h"
+#include <readerwriterqueue.h>
 
-extern "C" {
-#include <lua.h>
-#include <lualib.h>
-#include <lauxlib.h>
-#include "lpeg.h"
-#include "cjson.h"
-}
+/**
+ * Forward definitions for classes referenced in this header.
+ * Related headers must be pulled into definitions that make use of
+ * this file.
+*/
+class Database;
+class Sessions;
+class Query;
+class Webapp;
 
 /**
  * @brief Provide name, pointer pairs to set as lua globals.
@@ -31,6 +30,51 @@ struct LuaParam {
 	const char* name;
 	void* ptr;
 };
+
+struct webapp_str_t {
+	char* data = NULL;
+	long long len = 0;
+	int allocated = 0;
+	webapp_str_t() {}
+	webapp_str_t(const char* s, long long len) {
+		allocated = 1;
+		data = new char[len];
+		memcpy(data, s, len);
+	}
+	webapp_str_t(long long _len) {
+		allocated = 1;
+		data = new char[len];
+		_len = len;
+	}
+	webapp_str_t(webapp_str_t* other) {
+		allocated = 1;
+		len = other->len;
+		data = new char[len];
+		memcpy(data, other->data, len);
+	}
+	webapp_str_t(const char* s) {
+		allocated = 1;
+		len = strlen(s);
+		data = new char[len];
+		memcpy(data, s, len);
+	}
+	webapp_str_t(const webapp_str_t& other) {
+		allocated = 1;
+		len = other.len;
+		data = new char[len];
+		memcpy(data, other.data, len);
+	}
+	~webapp_str_t() {
+		if(allocated) delete[] data;
+	}
+	operator std::string const () const {
+		return std::string(data, len);
+	}
+	operator ctemplate::TemplateString const () const {
+		return ctemplate::TemplateString(data, len);
+	}
+};
+
 
 /**
  * @brief Required information per request.
@@ -51,14 +95,7 @@ struct Request {
 	std::vector<ctemplate::TemplateDictionary*> dicts;
 	webapp_str_t* input_chain[STRING_VARS];
 	std::vector<Query*> queries;
-	~Request() {
-		for(auto it: strings) delete it;
-		for(auto it: queries) delete it;
-		for(auto it: dicts) delete it;
-		if (socket != NULL) delete socket;
-		if (v != NULL) delete v;
-		if (headers != NULL) delete headers;
-	}
+	~Request();
 };
 
 /**
@@ -117,7 +154,6 @@ public:
 	LockedQueue() : queue(WEBAPP_DEFAULT_QUEUESIZE) {}
 };
 
-class Webapp;
 /**
  * @brief WebappTask provides a worker thread wrapper for each Lua VM.
  */
@@ -155,14 +191,14 @@ public:
  * cache and queue for Requests.
  */
 class RequestQueue : public WebappTask {
-	Sessions _sessions;
+	Sessions* _sessions;
 	ctemplate::TemplateCache* _cache = NULL;
 	LockedQueue<Request*> _rq;
 public:
-	RequestQueue(Webapp* handler, unsigned int id) :
-		WebappTask(handler, &_rq), _sessions(id) {}
-	void Execute();
+	RequestQueue(Webapp* handler, unsigned int id);
+	~RequestQueue();
 	void Cleanup();
+	void Execute();
 	void enqueue(Request* r) { _rq.enqueue(r); }
 };
 
@@ -185,8 +221,8 @@ class Webapp {
 	std::mutex cleanupLock;
 	
 	//Keep track of dynamic databases
-	std::unordered_map<size_t, Database*> databases;
-	std::atomic<size_t> db_count{0};
+	std::unordered_map<long long, Database*> databases;
+	std::atomic<long long> db_count{0};
 
 	//IPC api
 	asio::ip::tcp::acceptor* acceptor;
@@ -209,7 +245,7 @@ public:
 	void Start() { svc.run(); }
 	ctemplate::TemplateDictionary* GetTemplate();
 	Database* CreateDatabase();
-	Database* GetDatabase(size_t index);
+	Database* GetDatabase(long long index);
 	void DestroyDatabase(Database*);
 	void CompileScript(const char* filename, webapp_str_t* output);
 	void SetParamInt(unsigned int key, int value);
