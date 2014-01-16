@@ -165,7 +165,7 @@ public:
 	void start();
 	void join() { _worker.join(); }
 	WebappTask(Webapp* handler, TaskQueue* q): _handler(handler),
-		_q(q) { start(); }
+		_q(q) {}
 	virtual void Execute() = 0;
 	virtual void Cleanup() = 0;
 
@@ -181,7 +181,7 @@ class BackgroundQueue : public WebappTask {
 	LockedQueue<Process*> _lq;
 public:
 	BackgroundQueue(Webapp* handler) :
-		WebappTask(handler, &_lq) {}
+		WebappTask(handler, &_lq) { start(); }
 	void Execute();
 	void Cleanup() {}
 };

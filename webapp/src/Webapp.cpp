@@ -78,6 +78,7 @@ void WebappTask::start() {
 RequestQueue::RequestQueue(Webapp *handler, unsigned int id)
 	: WebappTask(handler, &_rq) {
 	_sessions = new Sessions(id);
+	start();
 }
 
 RequestQueue::~RequestQueue() {
