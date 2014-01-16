@@ -4,6 +4,12 @@
  * Written by Jordan Henderson <jordan.henderson@ioflame.com>, 2013
  */
 
+#include "Platform.h"
+extern "C" {
+	#define _TINYDIR_FUNC APIEXPORT
+	#include <tinydir.h>
+}
+
 #include "Webapp.h"
 #include "Session.h"
 #include "Image.h"
@@ -17,21 +23,20 @@ using namespace asio::ip;
 
 int Template_ShowGlobalSection(TemplateDictionary* dict, webapp_str_t* section) {
 	if(dict == NULL || section == NULL) return 1;
-	dict->ShowTemplateGlobalSection(TemplateString(section->data, section->len));
+	dict->ShowTemplateGlobalSection(*section);
 	return 0;
 }
 
 int Template_ShowSection(TemplateDictionary* dict, webapp_str_t* section) {
 	if(dict == NULL || section == NULL) return 1;
-	dict->ShowSection(TemplateString(section->data, section->len));
+	dict->ShowSection(*section);
 	return 0;
 }
 
 int Template_SetGlobalValue(TemplateDictionary* dict, webapp_str_t* key,
 							webapp_str_t* value) {
 	if (dict == NULL || key == NULL || value == NULL) return 1;
-	dict->SetTemplateGlobalValue(TemplateString(key->data, key->len),
-								 TemplateString(value->data, value->len));
+	dict->SetTemplateGlobalValue(*key, *value);
 	return 0;
 }
 
@@ -46,9 +51,9 @@ void Template_ReloadAll() {
 	mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::IMMEDIATE_RELOAD);
 }
 
-void Template_Load(ctemplate::TemplateCache* cache, webapp_str_t* page) {
-	if(cache == NULL || page == NULL) return;
-	cache->LoadTemplate(*page, STRIP_WHITESPACE);
+void Template_Load(webapp_str_t* page) {
+	if(page == NULL) return;
+	LoadTemplate(*page, STRIP_WHITESPACE);
 }
 
 void Template_Render(ctemplate::TemplateCache* cache,
@@ -58,7 +63,7 @@ void Template_Render(ctemplate::TemplateCache* cache,
 		request == NULL || out == NULL) return;
 
 	string* output = new string;
-	string pagestr(page->data, page->len);
+	string pagestr = *page;
 	cache->ExpandNoLoad("content/" + pagestr, STRIP_WHITESPACE, dict, NULL,
 						  output);
 
@@ -69,12 +74,12 @@ void Template_Render(ctemplate::TemplateCache* cache,
 }
 
 //Cleaned up by backend.
-int GetSessionValue(SessionStore* session, webapp_str_t* key, 
+int GetSessionValue(SessionStore* session, webapp_str_t* key,
 	webapp_str_t* out) {
 	if(session == NULL || key == NULL) 
 		return 0;
 
-	const string* s = &session->get(string(key->data, key->len));
+	const string* s = &session->get(*key);
 	if (out != NULL) {
 		//Write to out
 		out->data = (char*)s->c_str();
@@ -88,13 +93,13 @@ int SetSessionValue(SessionStore* session, webapp_str_t* key,
 	webapp_str_t* val) {
 	if (session == NULL || key == NULL || val == NULL)
 		return 0;
-	session->store(string(key->data, key->len), string(val->data, val->len));
+	session->store(*key, *val);
 	return 1;
 }
 
 SessionStore* GetSession(Sessions* sessions, webapp_str_t* sessionid) {
 	if (sessions == NULL || sessionid == NULL) return NULL;
-	return sessions->get_session(sessionid);
+	return sessions->get_session(*sessionid);
 }
 
 SessionStore* NewSession(Sessions* sessions, Request* request) {
@@ -192,8 +197,8 @@ int ConnectDatabase(Database* db, int database_type, const char* host,
 }
 
 long long ExecString(Database* db, webapp_str_t* query) {
-	if (db == NULL || query == NULL || query->data == NULL) return -1;
-	return db->exec(string(query->data, query->len));
+	if (db == NULL || query == NULL) return -1;
+	return db->exec(*query);
 }
 
 int SelectQuery(Query* q) {
@@ -206,22 +211,22 @@ Query* CreateQuery(webapp_str_t* in, Request* r, Database* db, int desc) {
 	if (r == NULL) return NULL;
 	Query* q = NULL;
 	if (in == NULL) q = new Query(db, desc);
-	else q = new Query(db, string(in->data, in->len), desc);
+	else q = new Query(db, *in, desc);
 
 	r->queries.push_back(q);
 	return q;
 }
 
 void SetQuery(Query* q, webapp_str_t* in) {
-	if (in == NULL || in->data == NULL || q == NULL
+	if (in == NULL || q == NULL
 			|| q->status != DATABASE_QUERY_INIT) return;
 	if (q->dbq != NULL) delete q->dbq;
-	q->dbq = new string(in->data, in->len);
+	q->dbq = new string(*in);
 }
 
 void BindParameter(Query* q, webapp_str_t* param) {
-	if (q == NULL || param == NULL || param->data == NULL) return;
-	q->params->push_back(string(param->data, param->len));
+	if (q == NULL || param == NULL) return;
+	q->params->push_back(*param);
 }
 
 unsigned long long GetWebappTime() {
@@ -232,7 +237,7 @@ unsigned long long GetWebappTime() {
 //Image API 
 Image* LoadImage(webapp_str_t* filename) {
 	if(filename == NULL) return NULL;
-	return new Image(filename);
+	return new Image(*filename);
 }
 
 void ResizeImage(Image* img, int width, int height) {
@@ -242,7 +247,7 @@ void ResizeImage(Image* img, int width, int height) {
 
 void SaveImage(Image* img, webapp_str_t* filename, int destroy) {
 	if(img == NULL || filename == NULL) return;
-	img->save(filename);
+	img->save(*filename);
 	if(destroy) delete img;
 }
 
@@ -254,7 +259,7 @@ void DestroyImage(Image* img) {
 //File API
 File* OpenFile(webapp_str_t* filename, webapp_str_t* mode) {
 	if(filename == NULL || mode == NULL) return NULL;
-	File* f = new File(filename, mode);
+	File* f = new File(*filename, mode);
 	return f;
 }
 
@@ -271,7 +276,7 @@ void ReadFile(File* f, webapp_str_t* out) {
 
 void WriteFile(File* f, webapp_str_t* buf) {
 	if(f == NULL || buf == NULL) return;
-	f->Write(buf);
+	f->Write(*buf);
 }
 
 void CleanupFile(File* f) {

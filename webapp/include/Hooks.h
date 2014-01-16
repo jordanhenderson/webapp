@@ -33,7 +33,7 @@ APIEXPORT ctemplate::TemplateDictionary* Template_Get(Webapp*, Request* request)
 APIEXPORT void Template_Render(ctemplate::TemplateCache*,
 							  ctemplate::TemplateDictionary* tmpl,
 							  webapp_str_t* page, Request*, webapp_str_t* out);
-APIEXPORT void Template_Load(ctemplate::TemplateCache*, webapp_str_t* page);
+APIEXPORT void Template_Load(webapp_str_t* page);
 
 //Get a string stored in the session.
 APIEXPORT int GetSessionValue(SessionStore*, webapp_str_t*, webapp_str_t* out);

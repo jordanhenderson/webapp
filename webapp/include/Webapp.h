@@ -8,10 +8,24 @@
 #define WEBAPP_H
 
 #include "Platform.h"
-#include "Schema.h"
 #include <asio.hpp>
 #include <ctemplate/template.h>
 #include <readerwriterqueue.h>
+
+#define WEBAPP_NUM_THREADS 8
+#define WEBAPP_STATIC_STRINGS 10
+#define WEBAPP_SCRIPTS 4
+#define WEBAPP_PARAM_PORT 0
+#define WEBAPP_PARAM_ABORTED 1
+#define WEBAPP_PARAM_BGQUEUE 2
+#define WEBAPP_PORT_DEFAULT 5000
+#define WEBAPP_DEFAULT_QUEUESIZE 1023
+
+//APP specific definitions
+//PROTOCOL SCHEMA DEFINITIONS
+#define PROTOCOL_VARS 6
+#define STRING_VARS 5
+#define PROTOCOL_LENGTH_SIZEINFO sizeof(int) * PROTOCOL_VARS
 
 /**
  * Forward definitions for classes referenced in this header.
@@ -68,9 +82,11 @@ struct webapp_str_t {
 		if(allocated) delete[] data;
 	}
 	operator std::string const () const {
+		if(data == NULL) return std::string("");
 		return std::string(data, len);
 	}
 	operator ctemplate::TemplateString const () const {
+		if(data == NULL) return ctemplate::TemplateString("");
 		return ctemplate::TemplateString(data, len);
 	}
 };

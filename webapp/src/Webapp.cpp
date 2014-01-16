@@ -78,6 +78,7 @@ void WebappTask::start() {
 RequestQueue::RequestQueue(Webapp *handler, unsigned int id)
 	: WebappTask(handler, &_rq) {
 	_sessions = new Sessions(id);
+	Cleanup();
 	start();
 }
 
@@ -86,7 +87,7 @@ RequestQueue::~RequestQueue() {
 }
 
 void RequestQueue::Execute() {
-	LuaParam _v[] = { { "sessions", &_sessions },
+	LuaParam _v[] = { { "sessions", _sessions },
 					  { "requests", _q },
 					  { "templates", _cache},
 					  { "app", _handler } };
@@ -208,7 +209,7 @@ void Webapp::reload_all() {
 		delete (*it).second;
 		databases.erase(it++);
 	}
-	
+
 	//Reset db_count to ensure new databases are created from index 0.
 	db_count = 0;
 	
@@ -226,7 +227,8 @@ void Webapp::reload_all() {
 
 	//Cleanup workers.
 	for(WebappTask* worker: workers) {
-		worker->Cleanup();
+		RequestQueue* rq =  dynamic_cast<RequestQueue*>(worker);
+		if (rq != NULL) rq->Cleanup();
 	}
 }
 
