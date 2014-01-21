@@ -137,10 +137,8 @@ typedef __int64             int64_t;
 typedef unsigned __int64    uint64_t;
 
 #ifndef __WATCOMC__
-#ifndef _WIN64
 typedef int                 intptr_t;
 typedef u_int               uintptr_t;
-#endif
 #endif
 
 
