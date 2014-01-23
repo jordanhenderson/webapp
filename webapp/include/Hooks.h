@@ -48,7 +48,7 @@ APIEXPORT void QueueProcess(LockedQueue<Process*>*, webapp_str_t* funtion,
 							webapp_str_t* vars);
 APIEXPORT Process* GetNextProcess(LockedQueue<Process*>*);
 APIEXPORT void FinishProcess(Process*);
-APIEXPORT void WriteData(asio::ip::tcp::socket*, webapp_str_t* data);
+APIEXPORT void WriteData(Request*, webapp_str_t* data);
 
 //Webapp stuff
 APIEXPORT void SetParamInt(Webapp*, unsigned int key, int value);
@@ -80,10 +80,9 @@ APIEXPORT void DestroyImage(Image* img);
 //File API
 APIEXPORT File* OpenFile(webapp_str_t* filename, webapp_str_t* mode);
 APIEXPORT void CloseFile(File*);
-APIEXPORT void ReadFile(File*, webapp_str_t* out);
+APIEXPORT uint16_t ReadFile(File*, uint16_t n_bytes);
 APIEXPORT void WriteFile(File*, webapp_str_t* buf);
 APIEXPORT long long FileSize(File*);
-APIEXPORT void CleanupFile(File*);
 
 //Force SHA-function inclusion from openssl.
 FORCE_UNDEFINED_SYMBOL(SHA256_Init)

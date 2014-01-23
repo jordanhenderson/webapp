@@ -19,6 +19,8 @@ extern "C" {
 
 using namespace ctemplate;
 using namespace std;
+using namespace std::placeholders;
+using namespace asio;
 using namespace asio::ip;
 
 int Template_ShowGlobalSection(TemplateDictionary* dict, webapp_str_t* section) {
@@ -158,20 +160,42 @@ int GetSessionID(SessionStore* session, webapp_str_t* out) {
 	return 1;
 }
 
-void FinishRequest(Request* request) {
-	if(request == NULL) return;
-	delete request;
+void CleanupRequest(Request* r) {
+	if(r->waiting == 0) {
+		delete r;
+	} else {
+		r->socket->get_io_service().post(bind(CleanupRequest, r));
+	}
 }
 
-void WriteData(tcp::socket* socket, webapp_str_t* data) {
-	if (socket == NULL || data == NULL || data->data == NULL) return;
-	*(unsigned short*)data->data = htons((unsigned short)data->len - sizeof(unsigned short));
+void FinishRequest(Request* r) {
+	if(r == NULL) return;
+	r->shutdown = 1;
+	r->socket->get_io_service().post(bind(CleanupRequest, r));
+}
+
+void WriteComplete(Request* r, webapp_str_t* buf, 
+	const asio::error_code& error, size_t bytes_transferred) {
+		r->waiting--;
+		delete buf;
+}
+
+void WriteData(Request* request, webapp_str_t* data) {
+	if(request == NULL || data == NULL || data->data == NULL) return;
+	if(request->shutdown) return;
+	
+	uint16_t len = htons(data->len);
+	webapp_str_t* s = new webapp_str_t(*data);
+	request->waiting++;
+	
 	try {
-		asio::write(*socket, asio::buffer(data->data, data->len));
+		asio::async_write(*request->socket, asio::buffer(s->data, s->len),
+			bind(&WriteComplete, request, s, _1, _2));
 	}
 	catch (system_error ec) {
 		printf("Error writing to socket!");
 	}
+
 }
 
 Database* CreateDatabase(Webapp* app) {
@@ -269,19 +293,14 @@ void CloseFile(File* f) {
 	delete f;
 }
 
-void ReadFile(File* f, webapp_str_t* out) {
-	if(f == NULL || out == NULL) return;
-	*out = f->Read();
+uint16_t ReadFile(File* f, uint16_t n_bytes) {
+	if(f == NULL) return 0;
+	return f->Read(n_bytes);
 }
 
 void WriteFile(File* f, webapp_str_t* buf) {
 	if(f == NULL || buf == NULL) return;
 	f->Write(*buf);
-}
-
-void CleanupFile(File* f) {
-	if(f == NULL) return;
-	f->Cleanup();
 }
 
 long long FileSize(File* f) {

@@ -24,13 +24,16 @@ Sessions::~Sessions() {
 }
 
 SessionStore* Sessions::new_session(Request* request) {
-	if (request->host.len == 0 || request->user_agent.len == 0) return NULL;
+	if (request->host.len == 0 || request->user_agent.len == 0) 
+		return NULL;
 	unsigned char output[32];
 	char output_hex[32];
 	SHA256_CTX ctx;
 	SHA256_Init(&ctx);
-	SHA256_Update(&ctx, (unsigned char*)request->host.data, request->host.len);
-	SHA256_Update(&ctx, (unsigned char*)request->user_agent.data, request->user_agent.len);
+	SHA256_Update(&ctx, (unsigned char*)request->host.data, 
+		request->host.len);
+	SHA256_Update(&ctx, (unsigned char*)request->user_agent.data, 
+		request->user_agent.len);
 
 	//Calculate random number, add to hash.
 	uniform_int_distribution<int> dis;

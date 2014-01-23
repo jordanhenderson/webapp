@@ -18,10 +18,11 @@ using namespace std;
 */
 int File::Open(const webapp_str_t& fileName, const webapp_str_t& flags) {
 	FILE* tmpFile;
+	
 #ifdef _WIN32
 	wchar_t* wfileName, *wflags;
 	wfileName = strtowide(fileName.data);
-	wflags = strtowide(_flags.data);
+	wflags = strtowide(flags.data);
 
 	tmpFile = _wfopen(wfileName, wflags);
 	delete[] wfileName;
@@ -32,6 +33,7 @@ int File::Open(const webapp_str_t& fileName, const webapp_str_t& flags) {
 	int success = (tmpFile != NULL);
 	if(success) {
 		_fileName = webapp_str_t(fileName);
+		_flags = webapp_str_t(flags);
 		pszFile = tmpFile;
 	}
 	
@@ -46,7 +48,6 @@ int File::Open(const webapp_str_t& fileName, const webapp_str_t& flags) {
 */
 File::~File() {
 	if(pszFile != NULL) fclose(pszFile);
-	Cleanup();
 }
 
 /**
@@ -103,38 +104,31 @@ long long File::Size() {
 }
 
 /**
- * Read a file in full, storing the read data in a webapp_str_t.
+ * Reads a file, storing data in buffer.
  * Data returned is cleaned up by calling File::Cleanup();
  * @param out the char* to store read data
  * @return the file size
 */
-webapp_str_t* File::Read() {
+uint16_t File::Read(uint16_t n_bytes) {
 	//Get the file size.
 	long long size = Size();
 	char* buf = NULL;
 
+	uint16_t to_read = size < n_bytes ? size : n_bytes;
 	//Seek to the beginning.
 	FILE* tmpFile = pszFile;
 	rewind(pszFile);
 	
 	//Allocate room for the data.
-	buf = new char[size];
-	//Read the entire file into memory. Not for large files.
-	size_t nRead = fread(buf, sizeof(char), size, tmpFile);
-	webapp_str_t* web_buf = new webapp_str_t(buf, nRead);
-	buffers.push_back(web_buf);
-	return web_buf;
-}
-
-/**
- * Clear all buffers returned from File::Read().
- * Use to allow reading file multiple times without destroying the object.
-*/
-void File::Cleanup() {
-	for(auto buf: buffers) {
-		delete buf;
-	}
-	buffers.clear();
+	buf = new char[to_read];
+	size_t nRead = fread(buf, sizeof(char), to_read, tmpFile);
+	
+	if(buffer.data != NULL) delete[] buffer.data;
+	buffer.data = buf;
+	buffer.len = nRead; 
+	buffer.allocated = 1;
+	
+	return (uint16_t)nRead;
 }
 
 /**

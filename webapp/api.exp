@@ -46,7 +46,6 @@
 	ReadFile;
 	WriteFile;
 	FileSize;
-	CleanupFile;
 	tinydir_open;
 	tinydir_open_sorted;
 	tinydir_close;

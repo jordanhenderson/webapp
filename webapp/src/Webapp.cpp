@@ -27,6 +27,7 @@ using namespace std::placeholders;
 #pragma warning(disable:4316)
 #endif 
 
+static const char* script_t_names[] = {SCRIPT_NAMES};
 /**
  * Request destructor.
 */
@@ -350,13 +351,12 @@ void Webapp::process_request_async(
 		if(r->input_chain[i]->data == NULL) {
 			char* h = (char*) r->v->data() + read;
 			r->input_chain[i]->data = h;
-			h[r->input_chain[i]->len] = '\0';
-			read += r->input_chain[i]->len + 1;
+			read += r->input_chain[i]->len;
 		}
 	}
 	//Choose a node, queue the request.
 	int selected_node = -1;
-	if (r->cookies.len > 0) {
+	if (r->cookies.len > strlen("sessionid=") - 1 + WEBAPP_LEN_SESSIONID) {
 		const char* sessionid = strstr(r->cookies.data, "sessionid=");
 		int node = -1;
 		if (sessionid && sscanf(sessionid + 10, "%" XSTR(WEBAPP_LEN_SESSIONID) "d",
@@ -375,20 +375,6 @@ void Webapp::process_request_async(
 }
 
 /**
- * Signal ASIO to wait for the rest of the request.
- * At this stage, the initial request header has been recieved. 
- * The protocol header has provided the amount of variable length data still
- * to be transferred. Use this value as the async_read CompletionCondition.
- * @param r Request object
- * @param amount the amount of bytes still to recieve
-*/
-void Webapp::process_request(Request* r, std::size_t amount) {
-	r->v = new std::vector<char>(amount);
-	asio::async_read(*r->socket, asio::buffer(*r->v), transfer_exactly(amount),
-		std::bind(&Webapp::process_request_async, this, r, _1, _2));
-}
-
-/**
  * Begin to process the request header. At this stage, exactly
  * PROTOCOL_LENGTH_SIZEINFO bytes have been recieved, providing all 
  * variable length data for further stages.
@@ -396,20 +382,18 @@ void Webapp::process_request(Request* r, std::size_t amount) {
  * @param ec the asio error code, if any
  * @param bytes_transferred the amount bytes transferred
 */
-#define INT_INTERVAL(i) sizeof(int)*i
 void Webapp::process_header_async(Request* r, const asio::error_code& ec,
 	std::size_t bytes_transferred) {
 	if(r->uri.data == NULL && !r->method) {
-		const char* headers = r->headers->data();
+		uint16_t* headers = (uint16_t*)r->headers->data();
 		//At this stage, at least PROTOCOL_SIZELENGTH_INFO has been read into the buffer.
 		//STATE: Read protocol.
-		r->uri.len = ntohs(*(int*)(headers));
-		r->host.len = ntohs(*(int*)(headers + INT_INTERVAL(1)));
-		r->user_agent.len = ntohs(*(int*)(headers + INT_INTERVAL(2)));
-		r->cookies.len = ntohs(*(int*)(headers + INT_INTERVAL(3)));
-		r->method = ntohs(*(int*)(headers + INT_INTERVAL(4)));
-		r->request_body.len = ntohs(*(int*)(headers + INT_INTERVAL(5)));
-
+		r->uri.len =          ntohs(*headers++);
+		r->host.len =         ntohs(*headers++);
+		r->user_agent.len =   ntohs(*headers++);
+		r->cookies.len =      ntohs(*headers++);
+		r->request_body.len = ntohs(*headers++);
+		r->method =           ntohs(*headers++);
 		//Update the input chain.
 		r->input_chain[0] = &r->uri;
 		r->input_chain[1] = &r->host;
@@ -419,9 +403,12 @@ void Webapp::process_header_async(Request* r, const asio::error_code& ec,
 
 		size_t len = 0;
 		for(int i = 0; i < STRING_VARS; i++) {
-			len += r->input_chain[i]->len + 1;
+			len += r->input_chain[i]->len;
 		}
-		process_request(r, len);
+		
+		r->v = new std::vector<char>(len);
+		asio::async_read(*r->socket, asio::buffer(*r->v), transfer_exactly(len),
+			std::bind(&Webapp::process_request_async, this, r, _1, _2));
 	}
 }
 
@@ -513,7 +500,7 @@ void Webapp::refresh_templates() {
 		LoadTemplate("content/" + s, STRIP_WHITESPACE);
 		contentList.push_back(s);
 	}
-
+	//TODO: FINISH THIS!!!
 	//Load sub (include) templates.
 	files = Filesystem::GetFiles("templates/", "", 0);
 	for(string& s: files) {

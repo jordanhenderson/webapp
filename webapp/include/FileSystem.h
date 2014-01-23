@@ -14,10 +14,10 @@ class webapp_str_t;
 class File {
 	webapp_str_t _fileName;
 	webapp_str_t _flags;
+	webapp_str_t buffer;
 	FILE* pszFile = NULL;
 	long long size = 0;
 	int refresh = 1;
-	std::vector<webapp_str_t*> buffers;
 public:
 	int Open(const webapp_str_t& fileName, const webapp_str_t& flags);
 	File() : _flags(2) {}
@@ -26,7 +26,7 @@ public:
 	}
 	~File();
 
-	webapp_str_t* Read();
+	uint16_t Read(uint16_t n_bytes);
 	void Close();
 	void Cleanup();
 	long long Size();

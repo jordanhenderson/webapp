@@ -25,7 +25,7 @@
 //PROTOCOL SCHEMA DEFINITIONS
 #define PROTOCOL_VARS 6
 #define STRING_VARS 5
-#define PROTOCOL_LENGTH_SIZEINFO sizeof(int) * PROTOCOL_VARS
+#define PROTOCOL_LENGTH_SIZEINFO sizeof(uint16_t) * PROTOCOL_VARS
 
 /**
  * Forward definitions for classes referenced in this header.
@@ -50,27 +50,26 @@ struct webapp_str_t {
 	long long len = 0;
 	int allocated = 0;
 	webapp_str_t() {}
-	webapp_str_t(const char* s, long long len) {
+	webapp_str_t(const char* s, long long _len) {
 		allocated = 1;
-		data = new char[len];
-		memcpy(data, s, len);
+		len = _len;
+		data = new char[_len];
+		memcpy(data, s, _len);
 	}
 	webapp_str_t(long long _len) {
 		allocated = 1;
-		data = new char[len];
-		_len = len;
-	}
-	webapp_str_t(webapp_str_t* other) {
-		allocated = 1;
-		len = other->len;
-		data = new char[len];
-		memcpy(data, other->data, len);
+		len = _len;
+		data = new char[_len];
 	}
 	webapp_str_t(const char* s) {
 		allocated = 1;
 		len = strlen(s);
 		data = new char[len];
 		memcpy(data, s, len);
+	}
+	webapp_str_t(webapp_str_t* other) {
+		len = other->len;
+		data = other->data;
 	}
 	webapp_str_t(const webapp_str_t& other) {
 		allocated = 1;
@@ -88,6 +87,17 @@ struct webapp_str_t {
 	operator ctemplate::TemplateString const () const {
 		if(data == NULL) return ctemplate::TemplateString("");
 		return ctemplate::TemplateString(data, len);
+	}
+	webapp_str_t operator+(const webapp_str_t &other) {
+			webapp_str_t ret;
+			long long newlen = len + other.len;
+			char* r = new char[newlen];
+			ret.data = r;
+			ret.len = newlen;
+			ret.allocated = 1;
+			memcpy(r, data, len);
+			memcpy(r + len, other.data, other.len);
+			return ret;
 	}
 };
 
@@ -111,6 +121,8 @@ struct Request {
 	std::vector<ctemplate::TemplateDictionary*> dicts;
 	webapp_str_t* input_chain[STRING_VARS];
 	std::vector<Query*> queries;
+	int shutdown = 0;
+	int waiting = 0; //Waiting events using this request object.
 	~Request();
 };
 
@@ -219,8 +231,7 @@ public:
 };
 
 typedef enum {SCRIPT_INIT, SCRIPT_QUEUE, SCRIPT_REQUEST, SCRIPT_HANDLERS} script_t;
-static const char* script_t_names[] = {"SCRIPT_INIT", "SCRIPT_QUEUE",
-	"SCRIPT_REQUEST", "SCRIPT_HANDLERS"};
+#define SCRIPT_NAMES "SCRIPT_INIT", "SCRIPT_QUEUE","SCRIPT_REQUEST", "SCRIPT_HANDLERS"
 
 class Webapp {
 	std::array<webapp_str_t, WEBAPP_SCRIPTS> scripts;
@@ -245,7 +256,6 @@ class Webapp {
 	void accept_conn();
 	void accept_conn_async(asio::ip::tcp::socket*, const asio::error_code&);
 	void process_header_async(Request *r, const asio::error_code&, std::size_t);
-	void process_request(Request* r, size_t len);
 	void process_request_async(Request* r, const asio::error_code&, std::size_t);
 	asio::io_service& svc;
 	asio::io_service::work wrk;
