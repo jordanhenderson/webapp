@@ -1,4 +1,3 @@
-
 /* Copyright (C) Jordan Henderson - All Rights Reserved
  * Unauthorized copying of this file, via any medium is strictly prohibited
  * Proprietary and confidential
@@ -7,7 +6,16 @@
 
 #define PROTOCOL_VARS 6
 #define STRING_VARS 5
-#define INT_INTERVAL(i) sizeof(int)*i
+#define RESPONSE_VARS 2
+
+#define ADD_PROTOCOL_N(num) *last_p++ = htons(num);
+#define ADD_PROTOCOL_(str, total) \
+	*last_p++ = htons(str.len); *last_p_str++ = &str; total += str.len;
+#define ADD_PROTOCOL(chk, str, total) \
+	if(chk != NULL) { \
+		ADD_PROTOCOL_(str, total)} \
+	else {*last_p++ = 0; *last_p_str++ = NULL; }
+#define ADD_RESPONSE_STR(num, total) num = ntohl(*last_p++); total += num;
 
 typedef struct {
 	ngx_http_upstream_conf_t upstream;
@@ -15,6 +23,10 @@ typedef struct {
 
 typedef struct {
 	ngx_http_request_t* request;
+	uint16_t remaining_header_len;
+	uint32_t total_len;
+	uint32_t content_type_len;
+	uint32_t cookies_len;
 } ngx_http_webapp_ctx_t;
 
 

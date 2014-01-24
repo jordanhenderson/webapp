@@ -49,21 +49,23 @@ APIEXPORT void QueueProcess(LockedQueue<Process*>*, webapp_str_t* funtion,
 APIEXPORT Process* GetNextProcess(LockedQueue<Process*>*);
 APIEXPORT void FinishProcess(Process*);
 APIEXPORT void WriteData(Request*, webapp_str_t* data);
+APIEXPORT void WriteHeader(Request*, uint32_t n_bytes, 
+	webapp_str_t* content_type, webapp_str_t* cookies);
 
 //Webapp stuff
 APIEXPORT void SetParamInt(Webapp*, unsigned int key, int value);
 APIEXPORT int GetParamInt(Webapp*, unsigned int key);
 APIEXPORT Request* GetNextRequest(LockedQueue<Request*>*);
 APIEXPORT void ClearCache(Webapp*, LockedQueue<Request*>*);
-APIEXPORT unsigned long long GetWebappTime();
+APIEXPORT uint64_t GetWebappTime();
 
 //Database
 APIEXPORT Database* CreateDatabase(Webapp*);
 APIEXPORT void DestroyDatabase(Webapp*, Database*);
-APIEXPORT Database* GetDatabase(Webapp*, long long index);
+APIEXPORT Database* GetDatabase(Webapp*, uint64_t index);
 APIEXPORT int ConnectDatabase(Database*, int database_type, const char* host, 
 	const char* username, const char* password, const char* database);
-APIEXPORT long long ExecString(Database*, webapp_str_t* in);
+APIEXPORT uint64_t ExecString(Database*, webapp_str_t* in);
 APIEXPORT int SelectQuery(Query*);
 APIEXPORT Query* CreateQuery(webapp_str_t*, Request*, Database*, int desc);
 APIEXPORT void SetQuery(Query*, webapp_str_t*);
@@ -82,7 +84,7 @@ APIEXPORT File* OpenFile(webapp_str_t* filename, webapp_str_t* mode);
 APIEXPORT void CloseFile(File*);
 APIEXPORT uint16_t ReadFile(File*, uint16_t n_bytes);
 APIEXPORT void WriteFile(File*, webapp_str_t* buf);
-APIEXPORT long long FileSize(File*);
+APIEXPORT uint64_t FileSize(File*);
 
 //Force SHA-function inclusion from openssl.
 FORCE_UNDEFINED_SYMBOL(SHA256_Init)

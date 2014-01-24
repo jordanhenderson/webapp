@@ -16,7 +16,7 @@ class File {
 	webapp_str_t _flags;
 	webapp_str_t buffer;
 	FILE* pszFile = NULL;
-	long long size = 0;
+	uint64_t size = 0;
 	int refresh = 1;
 public:
 	int Open(const webapp_str_t& fileName, const webapp_str_t& flags);
@@ -29,7 +29,7 @@ public:
 	uint16_t Read(uint16_t n_bytes);
 	void Close();
 	void Cleanup();
-	long long Size();
+	uint64_t Size();
 	void Refresh();
 	
 	void Write(const webapp_str_t& buffer);

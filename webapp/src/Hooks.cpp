@@ -174,28 +174,47 @@ void FinishRequest(Request* r) {
 	r->socket->get_io_service().post(bind(CleanupRequest, r));
 }
 
-void WriteComplete(Request* r, webapp_str_t* buf, 
+void WriteComplete(std::atomic<int>* wt, webapp_str_t* buf, 
 	const asio::error_code& error, size_t bytes_transferred) {
-		r->waiting--;
+		*wt--;
 		delete buf;
 }
 
-void WriteData(Request* request, webapp_str_t* data) {
-	if(request == NULL || data == NULL || data->data == NULL) return;
-	if(request->shutdown) return;
-	
-	uint16_t len = htons(data->len);
-	webapp_str_t* s = new webapp_str_t(*data);
-	request->waiting++;
+/**
+ * WriteSocket must own _data (handles garbage collection).
+*/
+void WriteSocket(Request* r, webapp_str_t* s) {
+	auto wt = &r->waiting;
+	*wt++;
 	
 	try {
-		asio::async_write(*request->socket, asio::buffer(s->data, s->len),
-			bind(&WriteComplete, request, s, _1, _2));
+		asio::async_write(*r->socket, asio::buffer(s->data, s->len),
+			bind(&WriteComplete, wt, s, _1, _2));
 	}
 	catch (system_error ec) {
 		printf("Error writing to socket!");
 	}
+}
 
+void WriteData(Request* r, webapp_str_t* data) {
+	if(r == NULL || data == NULL) return;
+	if(r->shutdown) return;
+	
+	webapp_str_t* s = new webapp_str_t(*data);
+	WriteSocket(r, s);
+}
+
+void WriteHeader(Request* r, uint32_t n_bytes, 
+	webapp_str_t* content_type, webapp_str_t* cookies) {
+	if(r == NULL || content_type == NULL || cookies == NULL) return;
+	if(r->shutdown) return;
+	webapp_data_t<uint32_t> len(htonl(n_bytes));
+	webapp_data_t<uint32_t> content_type_len = htonl(content_type->len);
+	webapp_data_t<uint32_t> cookies_len = htonl(cookies->len);
+	
+	webapp_str_t* s = new webapp_str_t(
+		len + content_type_len + cookies_len + content_type + cookies);
+	WriteSocket(r, s);
 }
 
 Database* CreateDatabase(Webapp* app) {
@@ -208,7 +227,7 @@ void DestroyDatabase(Webapp* app, Database* db) {
 	return app->DestroyDatabase(db);
 }
 
-Database* GetDatabase(Webapp* app, long long index) {
+Database* GetDatabase(Webapp* app, uint64_t index) {
 	if(app == NULL) return NULL;
 	return app->GetDatabase(index);
 }
@@ -220,7 +239,7 @@ int ConnectDatabase(Database* db, int database_type, const char* host,
 	return db->connect(database_type, host, username, password, database);
 }
 
-long long ExecString(Database* db, webapp_str_t* query) {
+uint64_t ExecString(Database* db, webapp_str_t* query) {
 	if (db == NULL || query == NULL) return -1;
 	return db->exec(*query);
 }
@@ -253,7 +272,7 @@ void BindParameter(Query* q, webapp_str_t* param) {
 	q->params->push_back(*param);
 }
 
-unsigned long long GetWebappTime() {
+uint64_t GetWebappTime() {
 	time_t current_time = time(0);
 	return current_time * 1000000;
 }
@@ -303,7 +322,7 @@ void WriteFile(File* f, webapp_str_t* buf) {
 	f->Write(*buf);
 }
 
-long long FileSize(File* f) {
+uint64_t FileSize(File* f) {
 	if(f == NULL) return 0;
 	return f->Size();
 }

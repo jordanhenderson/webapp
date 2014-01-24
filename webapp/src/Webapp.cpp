@@ -533,7 +533,7 @@ Database* Webapp::CreateDatabase() {
  * @param index the Database object key. See db_count in CreateDatabase.
  * @return the newly created Database object.
 */
-Database* Webapp::GetDatabase(long long index) {
+Database* Webapp::GetDatabase(uint64_t index) {
 	try {
 		return databases.at(index);
 	} catch (...) {

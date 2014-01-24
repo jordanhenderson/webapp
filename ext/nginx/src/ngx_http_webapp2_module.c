@@ -106,9 +106,6 @@ static ngx_int_t ngx_http_webapp_handler(ngx_http_request_t *r) {
 		return NGX_HTTP_NOT_ALLOWED;
 	}
 
-	if(ngx_http_set_content_type(r) != NGX_OK)
-		return NGX_HTTP_INTERNAL_SERVER_ERROR;
-
 	if(ngx_http_upstream_create(r) != NGX_OK)
 		return NGX_HTTP_INTERNAL_SERVER_ERROR;
 
@@ -126,7 +123,7 @@ static ngx_int_t ngx_http_webapp_handler(ngx_http_request_t *r) {
 	u->abort_request = ngx_http_webapp_abort_request;
 	u->finalize_request = ngx_http_webapp_finalize_request;
 
-	ctx = ngx_palloc(r->pool, sizeof(ngx_http_webapp_ctx_t));
+	ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_webapp_ctx_t));
 	if (ctx == NULL) {
 		return NGX_HTTP_INTERNAL_SERVER_ERROR;
 	}
@@ -158,14 +155,17 @@ static ngx_int_t ngx_http_webapp_create_request(ngx_http_request_t *r) {
 	ngx_chain_t* cl;
 	ngx_chain_t* body;
 	ngx_http_upstream_t* u;
-	//Protocol buffer variables
 	ngx_buf_t* b;
-	uint16_t* last_p;
+
 	ngx_str_t* output_chain[STRING_VARS] = {0};
-	//Temporary strings to append to buffer.
+	int chain_ctr = 0;
 	ngx_str_t request_body = {0};
-	int chain_ctr; //used to iterate over output_chain
-	size_t string_buffer_len = 0;
+
+	//PROTOCOL variables (required for protocol macros)
+	uint16_t* last_p;
+	ngx_str_t** last_p_str = output_chain;
+	size_t total = 0;
+
 
 	u = r->upstream;
 	wlcf = ngx_http_get_module_loc_conf(r, ngx_http_webapp_module);
@@ -188,36 +188,21 @@ static ngx_int_t ngx_http_webapp_create_request(ngx_http_request_t *r) {
 	//Make the upstream connection use the created chain link.
 	u->request_bufs = cl;
 
-	output_chain[0] = &r->unparsed_uri;
-	if(r->headers_in.host != NULL) {
-		output_chain[1] = &r->headers_in.host->value;
-	}
-	if (r->headers_in.user_agent != NULL) {
-		output_chain[2] = &r->headers_in.user_agent->value;
-	}
-	if(r->headers_in.cookies.elts != NULL) {
-		output_chain[3] = &(*((ngx_table_elt_t**)r->headers_in.cookies.elts))->value;
-	}
-
-	output_chain[4] = &request_body;
+	//Calculate request body length if provided and needed.
 	if(r->method == NGX_HTTP_POST && r->headers_in.content_length != NULL &&
 		r->request_body != NULL && r->request_body->bufs != NULL) {
-		output_chain[4]->len =
-				atoi((const char*)r->headers_in.content_length->value.data);
+		request_body.len
+				= atoi((const char*)r->headers_in.content_length->value.data);
 	}
 
-	//Populate protocol information.
 	last_p = (uint16_t*)b->start;
-	for(chain_ctr = 0; chain_ctr < STRING_VARS; chain_ctr++) {
-		if(output_chain[chain_ctr] != NULL) {
-			size_t len = output_chain[chain_ctr]->len;
-			*last_p++ = htons(len);
-			string_buffer_len += len;
-		} else {
-			*last_p++ = 0;
-		}
-	}
-	*last_p++ = htons(r->method);
+	ADD_PROTOCOL_(r->unparsed_uri, total);
+	ADD_PROTOCOL(r->headers_in.host, r->headers_in.host->value, total);
+	ADD_PROTOCOL(r->headers_in.user_agent, r->headers_in.user_agent->value, total)
+	ADD_PROTOCOL(r->headers_in.cookies.elts,
+				 (*((ngx_table_elt_t**)r->headers_in.cookies.elts))->value, total)
+	ADD_PROTOCOL_(request_body, total)
+	ADD_PROTOCOL_N(r->method)
 	b->last = (u_char*)last_p;
 
 	//Now populate the string buffer.
@@ -227,9 +212,8 @@ static ngx_int_t ngx_http_webapp_create_request(ngx_http_request_t *r) {
 	}
 	cl = cl->next;
 
-	b = ngx_create_temp_buf(r->pool, string_buffer_len);
+	b = ngx_create_temp_buf(r->pool, total);
 	cl->buf = b;
-
 
 	for(chain_ctr = 0; chain_ctr < STRING_VARS; chain_ctr++) {
 		ngx_str_t* s = output_chain[chain_ctr];
@@ -270,12 +254,62 @@ static ngx_int_t ngx_http_webapp_reinit_request(ngx_http_request_t *r) {
 
 static ngx_int_t ngx_http_webapp_process_header(ngx_http_request_t *r) {
 	ngx_http_upstream_t* u;
+	uint32_t* last_p;
+	ngx_http_webapp_ctx_t* ctx =
+			ngx_http_get_module_ctx(r, ngx_http_webapp_module);
+
 	u = r->upstream;
 
-	u->headers_in.status_n = 200;
-	u->state->status = 200;
-	u->headers_in.content_length_n = -1;
-	return NGX_OK;
+	//Stage 1
+	if(u->buffer.pos == u->buffer.start) {
+		if(u->buffer.last - u->buffer.start <
+				sizeof(uint32_t) * (1 + RESPONSE_VARS)) {
+			return NGX_AGAIN;
+		} else {
+			last_p = (uint32_t*)u->buffer.start;
+			ctx->total_len = ntohl(*last_p++);
+			ADD_RESPONSE_STR(ctx->content_type_len, ctx->remaining_header_len)
+			ADD_RESPONSE_STR(ctx->cookies_len, ctx->remaining_header_len)
+			u->buffer.pos = (u_char*)last_p;
+		}
+	}
+
+	//Stage 2
+	if(u->buffer.pos - u->buffer.start ==
+			sizeof(uint32_t) * (1 + RESPONSE_VARS)) {
+		if(u->buffer.last - u->buffer.pos >= ctx->remaining_header_len) {
+			//Remaining header read successfully.
+			u->headers_in.status_n = 200;
+			u->state->status = 200;
+			u->headers_in.content_length_n = ctx->total_len;
+
+			if(ctx->content_type_len > 0) {
+				r->headers_out.content_type_len = ctx->content_type_len;
+				r->headers_out.content_type.len = ctx->content_type_len;
+				r->headers_out.content_type.data = u->buffer.pos;
+				u->buffer.pos += ctx->content_type_len;
+			}
+
+			//Send set-cookie header.
+			if(ctx->cookies_len > 0) {
+				ngx_table_elt_t* set_cookie;
+				set_cookie = ngx_list_push(&r->headers_out.headers);
+				if (set_cookie == NULL) {
+					return NGX_ERROR;
+				}
+
+				set_cookie->hash = 1;
+				ngx_str_set(&set_cookie->key, "Set-Cookie");
+				set_cookie->value.len = ctx->cookies_len;
+				set_cookie->value.data = u->buffer.pos;
+				u->buffer.pos += ctx->cookies_len;
+			}
+
+			return NGX_OK; //Ready to read body content.
+		}
+	}
+
+	return NGX_AGAIN;
 }
 
 static ngx_int_t ngx_http_webapp_filter_init(void *data) {

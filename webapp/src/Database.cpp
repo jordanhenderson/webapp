@@ -296,7 +296,7 @@ Database::~Database() {
  * @param query the string to execute
  * @return the last inserted row ID
 */
-long long Database::exec(const string& query) {
+uint64_t Database::exec(const string& query) {
 	Query q(this, query);
 	q.process();
 	return q.lastrowid;

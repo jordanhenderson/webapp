@@ -47,16 +47,16 @@ struct LuaParam {
 
 struct webapp_str_t {
 	char* data = NULL;
-	long long len = 0;
+	uint32_t len = 0;
 	int allocated = 0;
 	webapp_str_t() {}
-	webapp_str_t(const char* s, long long _len) {
+	webapp_str_t(const char* s, uint64_t _len) {
 		allocated = 1;
 		len = _len;
 		data = new char[_len];
 		memcpy(data, s, _len);
 	}
-	webapp_str_t(long long _len) {
+	webapp_str_t(uint64_t _len) {
 		allocated = 1;
 		len = _len;
 		data = new char[_len];
@@ -90,7 +90,7 @@ struct webapp_str_t {
 	}
 	webapp_str_t operator+(const webapp_str_t &other) {
 			webapp_str_t ret;
-			long long newlen = len + other.len;
+			uint32_t newlen = len + other.len;
 			char* r = new char[newlen];
 			ret.data = r;
 			ret.len = newlen;
@@ -98,6 +98,13 @@ struct webapp_str_t {
 			memcpy(r, data, len);
 			memcpy(r + len, other.data, other.len);
 			return ret;
+	}
+};
+
+template <class T>
+struct webapp_data_t : webapp_str_t {
+	webapp_data_t(T _data) : webapp_str_t(sizeof(T)) {
+		*(T*)(data) = _data;
 	}
 };
 
@@ -122,7 +129,7 @@ struct Request {
 	webapp_str_t* input_chain[STRING_VARS];
 	std::vector<Query*> queries;
 	int shutdown = 0;
-	int waiting = 0; //Waiting events using this request object.
+	std::atomic<int> waiting{0};
 	~Request();
 };
 
@@ -248,8 +255,8 @@ class Webapp {
 	std::mutex cleanupLock;
 	
 	//Keep track of dynamic databases
-	std::unordered_map<long long, Database*> databases;
-	std::atomic<long long> db_count{0};
+	std::unordered_map<uint64_t, Database*> databases;
+	std::atomic<uint64_t> db_count{0};
 
 	//IPC api
 	asio::ip::tcp::acceptor* acceptor;
@@ -271,7 +278,7 @@ public:
 	void Start() { svc.run(); }
 	ctemplate::TemplateDictionary* GetTemplate();
 	Database* CreateDatabase();
-	Database* GetDatabase(long long index);
+	Database* GetDatabase(uint64_t index);
 	void DestroyDatabase(Database*);
 	void CompileScript(const char* filename, webapp_str_t* output);
 	void SetParamInt(unsigned int key, int value);

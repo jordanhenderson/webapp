@@ -90,7 +90,7 @@ void File::Close() {
  * position.
  * @return file size
 */
-long long File::Size() {
+uint64_t File::Size() {
 	if(refresh == 1) {
 		//Seek the file to the end, retrieve
 		int old = ftell64(pszFile);
@@ -111,7 +111,7 @@ long long File::Size() {
 */
 uint16_t File::Read(uint16_t n_bytes) {
 	//Get the file size.
-	long long size = Size();
+	uint64_t size = Size();
 	char* buf = NULL;
 
 	uint16_t to_read = size < n_bytes ? size : n_bytes;
