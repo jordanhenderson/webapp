@@ -199,11 +199,12 @@ void Webapp::CompileScript(const char* filename, webapp_str_t* output) {
 */
 void Webapp::reload_all() {
 	//Delete cached preprocessed scripts.
-	for(int i = 0; i < WEBAPP_SCRIPTS; i++) 
+	for(int i = 0; i < WEBAPP_SCRIPTS; i++) {
 		if(scripts[i].data != NULL) {
 			delete[] scripts[i].data;
 			scripts[i].data = NULL;
 		}
+	}
 
 	//Clear any databases.
 	for(auto it = databases.cbegin(); it != databases.cend(); ) {
@@ -346,6 +347,7 @@ Webapp::Webapp(asio::io_service& io_svc) :
 void Webapp::process_request_async(
 	Request* r, const asio::error_code& ec, std::size_t bytes_transferred) {
 	size_t read = 0;
+	
 	//Read each input chain variable recieved from nginx appropriately.
 	for(int i = 0; i < STRING_VARS; i++) {
 		if(r->input_chain[i]->data == NULL) {
@@ -422,7 +424,6 @@ void Webapp::accept_conn_async(tcp::socket* s, const asio::error_code& error) {
 	Request* r = new Request();
 	r->socket = s;
 	r->headers = new std::vector<char>(PROTOCOL_LENGTH_SIZEINFO);
-
 	try {
 		asio::async_read(*r->socket, asio::buffer(*r->headers), 
 			transfer_exactly(PROTOCOL_LENGTH_SIZEINFO), bind(

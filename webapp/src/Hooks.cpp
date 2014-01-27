@@ -53,6 +53,12 @@ void Template_ReloadAll() {
 	mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::IMMEDIATE_RELOAD);
 }
 
+void Template_Include(Webapp* app, webapp_str_t* name, webapp_str_t* file) {
+	if(name == NULL || file == NULL) return;
+	app->cleanTemplate.AddIncludeDictionary(*name)->SetFilename(*file);
+	LoadTemplate(*file, STRIP_WHITESPACE);
+}
+
 void Template_Load(webapp_str_t* page) {
 	if(page == NULL) return;
 	LoadTemplate(*page, STRIP_WHITESPACE);
@@ -66,6 +72,7 @@ void Template_Render(ctemplate::TemplateCache* cache,
 
 	string* output = new string;
 	string pagestr = *page;
+
 	cache->ExpandNoLoad("content/" + pagestr, STRIP_WHITESPACE, dict, NULL,
 						  output);
 

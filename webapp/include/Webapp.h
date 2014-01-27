@@ -243,9 +243,6 @@ typedef enum {SCRIPT_INIT, SCRIPT_QUEUE, SCRIPT_REQUEST, SCRIPT_HANDLERS} script
 class Webapp {
 	std::array<webapp_str_t, WEBAPP_SCRIPTS> scripts;
 	std::vector<WebappTask*> workers;
-
-	//Keep a clean template for later duplication.
-	ctemplate::TemplateDictionary cleanTemplate;
 	
 	//Parameters
 	unsigned int aborted = 0;
@@ -271,6 +268,9 @@ class Webapp {
 	unsigned int nWorkers = WEBAPP_NUM_THREADS - 1;
 	unsigned int node_counter = 0;
 public:
+	//Keep a clean template for later duplication.
+	ctemplate::TemplateDictionary cleanTemplate;
+	
 	Webapp(asio::io_service& io_svc);
 	~Webapp();
 	

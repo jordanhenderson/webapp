@@ -6,6 +6,7 @@
 	Template_Render;
 	Template_ReloadAll;
 	Template_Load;
+	Template_Include;
 	GetSessionValue;
 	SetSessionValue;
 	GetSession;
