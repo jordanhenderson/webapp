@@ -1224,9 +1224,7 @@ static void EmitMissingInclude(const char* const filename,
     TemplateAnnotator* annotator = per_expand_data->annotator();
     annotator->EmitFileIsMissing(output_buffer, filename);
   }
-  /*
   LOG(ERROR) << "Failed to load included template: \"" << filename << "\"\n";
-  */
 }
 
 bool TemplateTemplateNode::ExpandOnce(
@@ -2620,17 +2618,13 @@ bool Template::ReloadIfChangedLocked()
     if (!template_cache_->ResolveTemplateFilename(original_filename_,
                                                   &resolved_filename_,
                                                   &statbuf)) {
-        /*
       LOG(WARNING) << "Unable to locate file " << original_filename_ << endl;
-        */
       set_state(TS_ERROR);
       return false;
     }
   } else {
     if (!File::Stat(resolved_filename_, &statbuf)) {
-      /*
       LOG(WARNING) << "Unable to stat file " << resolved_filename_ << endl;
-      */
       // We keep the old tree if there is one, otherwise we're in error
       set_state(TS_ERROR);
       return false;
