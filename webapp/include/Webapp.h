@@ -68,8 +68,13 @@ struct webapp_str_t {
 		memcpy(data, s, len);
 	}
 	webapp_str_t(webapp_str_t* other) {
-		len = other->len;
-		data = other->data;
+		if(other == NULL) {
+			len = 0;
+			data = NULL;
+		} else {
+			len = other->len;
+			data = other->data;
+		}
 	}
 	webapp_str_t(const webapp_str_t& other) {
 		allocated = 1;
@@ -88,17 +93,33 @@ struct webapp_str_t {
 		if(data == NULL) return ctemplate::TemplateString("");
 		return ctemplate::TemplateString(data, len);
 	}
-	webapp_str_t operator+(const webapp_str_t &other) {
-			webapp_str_t ret;
-			uint32_t newlen = len + other.len;
-			char* r = new char[newlen];
-			ret.data = r;
-			ret.len = newlen;
-			ret.allocated = 1;
-			memcpy(r, data, len);
-			memcpy(r + len, other.data, other.len);
-			return ret;
+	webapp_str_t& operator +=(const webapp_str_t& other) {
+		uint32_t newlen = len + other.len;
+		char* r = new char[newlen];
+		memcpy(r, data, len);
+		memcpy(r + len, other.data, other.len);
+		len = newlen;
+		allocated = 1;
+		if(allocated) delete[] data;
+		data = r;
 	}
+	webapp_str_t& operator=(const webapp_str_t& other) {
+		if(this != &other) {
+			char* r = new char[other.len];
+			memcpy(r, other.data, other.len);
+			delete[] data;
+			data = r;
+			allocated = 1;
+			len = other.len;
+		}
+		return *this;
+	}
+	webapp_str_t operator+(const webapp_str_t &other) {
+		webapp_str_t s = *this;
+		s += other;
+		return s;
+	}
+	
 };
 
 template <class T>
@@ -125,7 +146,6 @@ struct Request {
 	webapp_str_t cookies;
 	webapp_str_t request_body;
 	std::vector<std::string*> strings;
-	std::vector<ctemplate::TemplateDictionary*> dicts;
 	webapp_str_t* input_chain[STRING_VARS];
 	std::vector<Query*> queries;
 	int shutdown = 0;
@@ -171,8 +191,8 @@ public:
  */
 template<typename T>
 class LockedQueue : public TaskQueue {
-	moodycamel::ReaderWriterQueue<T> queue;
 public:
+	moodycamel::ReaderWriterQueue<T> queue;
 	//Each operation (enqueue, dequeue) must be done single threaded.
 	//We need MP (Multi-Producer), so lock production.
 	void enqueue(T i) {cv_mutex.lock(); queue.enqueue(i);
@@ -199,12 +219,9 @@ class WebappTask {
 public:
 	void start();
 	void join() { _worker.join(); }
-	WebappTask(Webapp* handler, TaskQueue* q): _handler(handler),
-		_q(q) {}
+	WebappTask(Webapp* handler, TaskQueue* q): _handler(handler), _q(q) {}
 	virtual void Execute() = 0;
 	virtual void Cleanup() = 0;
-
-protected:
 	Webapp* _handler;
 	TaskQueue* _q;
 };
@@ -212,29 +229,29 @@ protected:
 /**
  * @brief BackgroundQueue provides a Lua VM with a Process queue
  */
-class BackgroundQueue : public WebappTask {
-	LockedQueue<Process*> _lq;
+class BackgroundQueue : public WebappTask, public LockedQueue<Process*> {
 public:
 	BackgroundQueue(Webapp* handler) :
-		WebappTask(handler, &_lq) { start(); }
+		WebappTask(handler, this) { start(); }
 	void Execute();
 	void Cleanup() {}
+
 };
 
 /**
  * @brief RequestQueue provides a Lua VM with a session container, template
  * cache and queue for Requests.
  */
-class RequestQueue : public WebappTask {
+class RequestQueue : public WebappTask, public LockedQueue<Request*> {
+public:
 	Sessions* _sessions;
 	ctemplate::TemplateCache* _cache = NULL;
-	LockedQueue<Request*> _rq;
-public:
+	ctemplate::TemplateDictionary* baseTemplate = NULL;
+	std::unordered_map<std::string, ctemplate::TemplateDictionary*> templates;
 	RequestQueue(Webapp* handler, unsigned int id);
 	~RequestQueue();
 	void Cleanup();
 	void Execute();
-	void enqueue(Request* r) { _rq.enqueue(r); }
 };
 
 typedef enum {SCRIPT_INIT, SCRIPT_QUEUE, SCRIPT_REQUEST, SCRIPT_HANDLERS} script_t;
@@ -268,15 +285,13 @@ class Webapp {
 	unsigned int nWorkers = WEBAPP_NUM_THREADS - 1;
 	unsigned int node_counter = 0;
 public:
-	//Keep a clean template for later duplication.
-	ctemplate::TemplateDictionary cleanTemplate;
+	std::unordered_map<std::string, std::string> templates;
 	
 	Webapp(asio::io_service& io_svc);
 	~Webapp();
 	
 	//Public webapp methods
 	void Start() { svc.run(); }
-	ctemplate::TemplateDictionary* GetTemplate();
 	Database* CreateDatabase();
 	Database* GetDatabase(uint64_t index);
 	void DestroyDatabase(Database*);

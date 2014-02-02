@@ -23,39 +23,41 @@ using namespace std::placeholders;
 using namespace asio;
 using namespace asio::ip;
 
-int Template_ShowGlobalSection(TemplateDictionary* dict, webapp_str_t* section) {
-	if(dict == NULL || section == NULL) return 1;
+void Template_ShowGlobalSection(TemplateDictionary* dict, webapp_str_t* section) {
+	if(dict == NULL || section == NULL) return;
 	dict->ShowTemplateGlobalSection(*section);
-	return 0;
 }
 
-int Template_ShowSection(TemplateDictionary* dict, webapp_str_t* section) {
-	if(dict == NULL || section == NULL) return 1;
+void Template_ShowSection(TemplateDictionary* dict, webapp_str_t* section) {
+	if(dict == NULL || section == NULL) return;
 	dict->ShowSection(*section);
-	return 0;
 }
 
-int Template_SetGlobalValue(TemplateDictionary* dict, webapp_str_t* key,
+void Template_SetGlobalValue(TemplateDictionary* dict, webapp_str_t* key,
 							webapp_str_t* value) {
-	if (dict == NULL || key == NULL || value == NULL) return 1;
+	if (dict == NULL || key == NULL || value == NULL) return;
 	dict->SetTemplateGlobalValue(*key, *value);
-	return 0;
 }
 
-TemplateDictionary* Template_Get(Webapp* app, Request* request) {
-	if(app == NULL) return NULL;
-	TemplateDictionary* dict = app->GetTemplate();
-	if(dict != NULL) request->dicts.push_back(dict);
-	return dict;
+void Template_SetValue(TemplateDictionary* dict, webapp_str_t* key,
+							webapp_str_t* value) {
+	if (dict == NULL || key == NULL || value == NULL) return;
+	dict->SetValue(*key, *value);
 }
 
-void Template_ReloadAll() {
-	mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::IMMEDIATE_RELOAD);
+TemplateDictionary* Template_Get(RequestQueue* worker, webapp_str_t* name) {
+	if(worker == NULL) return NULL;
+	TemplateDictionary* base = worker->baseTemplate;
+	if(name == NULL) return base;
+	auto tmpl = &worker->templates;
+	auto dict = tmpl->find(*name);
+	if(dict == tmpl->end()) return base;
+	return (*dict).second;
+
 }
 
 void Template_Include(Webapp* app, webapp_str_t* name, webapp_str_t* file) {
-	if(name == NULL || file == NULL) return;
-	app->cleanTemplate.AddIncludeDictionary(*name)->SetFilename(*file);
+	app->templates.insert(make_pair(*name, *file));
 	LoadTemplate(*file, STRIP_WHITESPACE);
 }
 
@@ -64,16 +66,15 @@ void Template_Load(webapp_str_t* page) {
 	LoadTemplate(*page, STRIP_WHITESPACE);
 }
 
-void Template_Render(ctemplate::TemplateCache* cache,
-					ctemplate::TemplateDictionary* dict, webapp_str_t* page,
+void Template_Render(RequestQueue* worker, webapp_str_t* page,
 					Request* request, webapp_str_t* out) {
-	if (cache == NULL || dict == NULL || page == NULL ||
-		request == NULL || out == NULL) return;
+	if (out == NULL || page == NULL) return;
 
 	string* output = new string;
-	string pagestr = *page;
+	webapp_str_t dir = "content/";
+	auto dict = worker->baseTemplate;
 
-	cache->ExpandNoLoad("content/" + pagestr, STRIP_WHITESPACE, dict, NULL,
+	worker->_cache->ExpandNoLoad(dir + page, STRIP_WHITESPACE, dict, NULL,
 						  output);
 
 	out->data = (char*)output->c_str();
@@ -82,7 +83,6 @@ void Template_Render(ctemplate::TemplateCache* cache,
 	request->strings.push_back(output);
 }
 
-//Cleaned up by backend.
 int GetSessionValue(SessionStore* session, webapp_str_t* key,
 	webapp_str_t* out) {
 	if(session == NULL || key == NULL) 
@@ -106,13 +106,15 @@ int SetSessionValue(SessionStore* session, webapp_str_t* key,
 	return 1;
 }
 
-SessionStore* GetSession(Sessions* sessions, webapp_str_t* sessionid) {
-	if (sessions == NULL || sessionid == NULL) return NULL;
+SessionStore* GetSession(RequestQueue* worker, webapp_str_t* sessionid) {
+	if (sessionid == NULL) return NULL;
+	auto sessions = worker->_sessions;
 	return sessions->get_session(*sessionid);
 }
 
-SessionStore* NewSession(Sessions* sessions, Request* request) {
-	if (sessions == NULL || request == NULL) return NULL;
+SessionStore* NewSession(RequestQueue* worker, Request* request) {
+	if (request == NULL) return NULL;
+	auto sessions = worker->_sessions;
 	return sessions->new_session(request);
 }
 
@@ -130,30 +132,26 @@ int GetParamInt(Webapp* app, unsigned int key) {
 	return app->GetParamInt(key);
 }
 
-Request* GetNextRequest(LockedQueue<Request*>* requests) {
-	if (requests == NULL) return NULL;
-	return requests->dequeue();
+Request* GetNextRequest(RequestQueue* worker) {
+	return worker->dequeue();
 }
 
-void ClearCache(Webapp* app, LockedQueue<Request*>* requests) {
-	if (app == NULL || requests == NULL) return;
+void ClearCache(RequestQueue* worker) {
 	//Abort this lua vm.
-	requests->aborted = 1;
+	worker->aborted = 1;
 	//Cleanup when this task completes.
-	requests->cleanupTask = 1;
+	worker->cleanupTask = 1;
 }
 
-void QueueProcess(LockedQueue<Process*>* background_queue, webapp_str_t* func,
+void QueueProcess(BackgroundQueue* worker, webapp_str_t* func,
 				  webapp_str_t* vars) {
-	if (func == NULL || vars == NULL || background_queue == NULL 
-		|| background_queue->aborted) return;
+	if (func == NULL || vars == NULL || worker->aborted) return;
 	Process* p = new Process(func, vars);
-	background_queue->enqueue(p);
+	worker->enqueue(p);
 }
 
-Process* GetNextProcess(LockedQueue<Process*>* background_queue) {
-	if (background_queue == NULL) return NULL;
-	return background_queue->dequeue();
+Process* GetNextProcess(BackgroundQueue* worker) {
+	return worker->dequeue();
 }
 
 void FinishProcess(Process* process) {

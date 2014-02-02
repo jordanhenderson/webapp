@@ -22,32 +22,32 @@ class File;
 template<typename T> class LockedQueue;
 
 extern "C" {
-APIEXPORT int Template_ShowGlobalSection(ctemplate::TemplateDictionary*,
+APIEXPORT void Template_ShowGlobalSection(ctemplate::TemplateDictionary*,
 										 webapp_str_t* section);
-APIEXPORT int Template_ShowSection(ctemplate::TemplateDictionary*,
+APIEXPORT void Template_ShowSection(ctemplate::TemplateDictionary*,
 								   webapp_str_t* section);
-APIEXPORT int Template_SetGlobalValue(ctemplate::TemplateDictionary* dict,
+APIEXPORT void Template_SetGlobalValue(ctemplate::TemplateDictionary* dict,
 									  webapp_str_t* key, webapp_str_t* value);
-APIEXPORT void Template_ReloadAll();
-APIEXPORT ctemplate::TemplateDictionary* Template_Get(Webapp*, Request* request);
-APIEXPORT void Template_Render(ctemplate::TemplateCache*,
-							  ctemplate::TemplateDictionary* tmpl,
-							  webapp_str_t* page, Request*, webapp_str_t* out);
+APIEXPORT void Template_SetValue(ctemplate::TemplateDictionary* dict,
+									  webapp_str_t* key, webapp_str_t* value);
+APIEXPORT ctemplate::TemplateDictionary* Template_Get(RequestQueue*, webapp_str_t* name);
+APIEXPORT void Template_Render(RequestQueue* worker, webapp_str_t* page,
+					Request* request, webapp_str_t* out);
 APIEXPORT void Template_Load(webapp_str_t* page);
 APIEXPORT void Template_Include(Webapp* app, webapp_str_t* name, webapp_str_t* file);
 
 //Get a string stored in the session.
 APIEXPORT int GetSessionValue(SessionStore*, webapp_str_t*, webapp_str_t* out);
 APIEXPORT int SetSessionValue(SessionStore*, webapp_str_t* key, webapp_str_t* val);
-APIEXPORT SessionStore* GetSession(Sessions*, webapp_str_t* sessionid);
-APIEXPORT SessionStore* NewSession(Sessions*, Request*);
-APIEXPORT void DestroySession(SessionStore*);
+APIEXPORT SessionStore* GetSession(RequestQueue*, webapp_str_t* sessionid);
+APIEXPORT SessionStore* NewSession(RequestQueue*, Request*);
+APIEXPORT void DestroySession(RequestQueue*);
 
 APIEXPORT int GetSessionID(SessionStore*, webapp_str_t* out);
 APIEXPORT void FinishRequest(Request*);
-APIEXPORT void QueueProcess(LockedQueue<Process*>*, webapp_str_t* funtion,
+APIEXPORT void QueueProcess(BackgroundQueue*, webapp_str_t* funtion,
 							webapp_str_t* vars);
-APIEXPORT Process* GetNextProcess(LockedQueue<Process*>*);
+APIEXPORT Process* GetNextProcess(BackgroundQueue*);
 APIEXPORT void FinishProcess(Process*);
 APIEXPORT void WriteData(Request*, webapp_str_t* data);
 APIEXPORT void WriteHeader(Request*, uint32_t n_bytes, 
@@ -56,8 +56,8 @@ APIEXPORT void WriteHeader(Request*, uint32_t n_bytes,
 //Webapp stuff
 APIEXPORT void SetParamInt(Webapp*, unsigned int key, int value);
 APIEXPORT int GetParamInt(Webapp*, unsigned int key);
-APIEXPORT Request* GetNextRequest(LockedQueue<Request*>*);
-APIEXPORT void ClearCache(Webapp*, LockedQueue<Request*>*);
+APIEXPORT Request* GetNextRequest(RequestQueue*);
+APIEXPORT void ClearCache(RequestQueue*);
 APIEXPORT uint64_t GetWebappTime();
 
 //Database

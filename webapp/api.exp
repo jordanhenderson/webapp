@@ -3,8 +3,8 @@
 	Template_ShowGlobalSection;
 	Template_ShowSection;
 	Template_SetGlobalValue;
+	Template_SetValue;
 	Template_Render;
-	Template_ReloadAll;
 	Template_Load;
 	Template_Include;
 	GetSessionValue;

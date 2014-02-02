@@ -70,6 +70,7 @@
 #include <random>
 #include <functional>
 #include <atomic>
+#include <utility>
 #ifndef _WIN32
 #include <unistd.h>
 #endif

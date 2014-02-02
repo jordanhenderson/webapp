@@ -34,7 +34,6 @@ static const char* script_t_names[] = {SCRIPT_NAMES};
 Request::~Request() {
 	for(auto it: strings) delete it;
 	for(auto it: queries) delete it;
-	for(auto it: dicts) delete it;
 	if (socket != NULL) delete socket;
 	if (v != NULL) delete v;
 	if (headers != NULL) delete headers;
@@ -76,8 +75,8 @@ void WebappTask::start() {
 	 });
 }
 
-RequestQueue::RequestQueue(Webapp *handler, unsigned int id)
-	: WebappTask(handler, &_rq) {
+RequestQueue::RequestQueue(Webapp *handler, unsigned int id) 
+	: WebappTask(handler, this) {
 	_sessions = new Sessions(id);
 	Cleanup();
 	start();
@@ -88,9 +87,7 @@ RequestQueue::~RequestQueue() {
 }
 
 void RequestQueue::Execute() {
-	LuaParam _v[] = { { "sessions", _sessions },
-					  { "requests", _q },
-					  { "templates", _cache},
+	LuaParam _v[] = { { "worker", this },
 					  { "app", _handler } };
 	_handler->RunScript(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_REQUEST);
 }
@@ -98,12 +95,24 @@ void RequestQueue::Execute() {
 void RequestQueue::Cleanup() {
 	_sessions->CleanupSessions();
 	if(_cache != NULL) delete _cache;
+	
+	if(baseTemplate != NULL) delete baseTemplate;
+	baseTemplate = new TemplateDictionary("");
+	
+	templates.clear();
+	
+	for(auto tmpl: _handler->templates) {
+		TemplateDictionary* dict = baseTemplate->AddIncludeDictionary(tmpl.first);
+		dict->SetFilename(tmpl.second);
+		templates.insert(make_pair(tmpl.first, dict));
+	}
+
 	_cache = mutable_default_template_cache()->Clone();
 	_cache->Freeze();
 }
 
 void BackgroundQueue::Execute() {
-	LuaParam _v[] = { { "queue", _q },
+	LuaParam _v[] = { { "bgworker", this },
 					  { "app", _handler } };
 	_handler->RunScript(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_QUEUE);
 }
@@ -198,6 +207,10 @@ void Webapp::CompileScript(const char* filename, webapp_str_t* output) {
  * Reload all cached data as necessary.
 */
 void Webapp::reload_all() {
+	//Clear templates
+	mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::IMMEDIATE_RELOAD);
+
+	templates.clear();
 	//Delete cached preprocessed scripts.
 	for(int i = 0; i < WEBAPP_SCRIPTS; i++) {
 		if(scripts[i].data != NULL) {
@@ -253,28 +266,9 @@ void Webapp::RunScript(LuaParam* params, int nArgs, script_t script) {
 	//Allocate memory for temporary string operations.
 	webapp_str_t* static_strings = new webapp_str_t[WEBAPP_STATIC_STRINGS];
 	
-	//Preload handlers.
-	if(luaL_loadbuffer(L, scripts[SCRIPT_HANDLERS].data,
-		scripts[SCRIPT_HANDLERS].len, "core/process"))
-		goto lua_error;
-
-	if(lua_pcall (L, 0, 1, 0)) 
-		goto lua_error;
-	
-	//Store loaded script buffer in 'load_handlers' global.
-	lua_setfield (L, LUA_GLOBALSINDEX, "load_handlers");
-	
 	//Provide and set temporary string memory global.
 	lua_pushlightuserdata(L, static_strings);
 	lua_setglobal(L, "static_strings");
-	
-	//If script is SCRIPT_INIT, provide a temporary Request object
-	//to operate on (Request needed when calling handlers)
-	if(script == SCRIPT_INIT) {
-		r = new Request();
-		lua_pushlightuserdata(L, r);
-		lua_setglobal(L, "tmp_request");
-	}
 	
 	//Pass each param into the Lua state.
 	if(params != NULL) {
@@ -283,6 +277,25 @@ void Webapp::RunScript(LuaParam* params, int nArgs, script_t script) {
 			lua_pushlightuserdata(L, p->ptr);
 			lua_setglobal(L, p->name);
 		}
+	}
+	
+	//Preload handlers.
+	if(luaL_loadbuffer(L, scripts[SCRIPT_HANDLERS].data,
+		scripts[SCRIPT_HANDLERS].len, "core/handlers"))
+		goto lua_error;
+
+	if(lua_pcall (L, 0, 1, 0)) 
+		goto lua_error;
+	
+	//Store loaded script buffer in 'load_handlers' global.
+	lua_setfield (L, LUA_GLOBALSINDEX, "load_handlers");
+	
+	//If script is SCRIPT_INIT, provide a temporary Request object
+	//to operate on (Request needed when calling handlers)
+	if(script == SCRIPT_INIT) {
+		r = new Request();
+		lua_pushlightuserdata(L, r);
+		lua_setglobal(L, "tmp_request");
 	}
 	
 	//Load the lua buffer.
@@ -310,8 +323,7 @@ finish:
 */
 Webapp::Webapp(asio::io_service& io_svc) : 
 										svc(io_svc), 
-										wrk(svc),
-										cleanTemplate("")
+										wrk(svc)
 									{
 	//Reload all cached data.
 	reload_all();
@@ -372,7 +384,8 @@ void Webapp::process_request_async(
 	}
 
 	if(background_queue_enabled) selected_node++;
-	RequestQueue* worker =  dynamic_cast<RequestQueue*>(workers.at(selected_node));
+	
+	RequestQueue* worker = dynamic_cast<RequestQueue*>(workers[selected_node]);
 	if(worker != NULL) worker->enqueue(r);
 }
 
@@ -452,19 +465,18 @@ void Webapp::accept_conn() {
 Webapp::~Webapp() {
 	//Abort each worker request queue and session.
 	for (unsigned int i = background_queue_enabled; i < nWorkers; i++) {
-		RequestQueue* worker = dynamic_cast<RequestQueue*>(workers.at(i));
+		RequestQueue* worker = dynamic_cast<RequestQueue*>(workers[i]);
 		if(worker != NULL) delete worker;
 	}
 
 	if(background_queue_enabled) {
-		BackgroundQueue* bg = dynamic_cast<BackgroundQueue*>(workers.at(0));
+		BackgroundQueue* bg = dynamic_cast<BackgroundQueue*>(workers[0]);
 		if(bg != NULL) delete bg;
 	}
 
 	//Delete databases
 	for(auto db_entry : databases) {
-		auto db = db_entry.second;
-		if (db != NULL) delete db;
+		delete db_entry.second;
 	}
 
 	//Delete loaded scripts
@@ -473,46 +485,6 @@ Webapp::~Webapp() {
 			delete[] scripts[i].data;
 		}
 	}
-}
-
-/**
- * Return a clean TemplateDictionary. Reponsibility of caller to clean up.
- * @return a clean TemplateDictionary pointer.
-*/
-TemplateDictionary* Webapp::GetTemplate() {
-	return cleanTemplate.MakeCopy("base");
-}
-
-/**
- * Refresh loaded templates.
-*/
-void Webapp::refresh_templates() {
-	/*//Force reload templates
-	mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::IMMEDIATE_RELOAD);
-
-	//Load content files (applicable templates)
-	contentList.clear();
-
-	//Load all main content templates from the content directory.
-	vector<string> files = Filesystem::GetFiles("content/", "", 0);
-	contentList.reserve(files.size());
-	for(string& s : files) {
-		//Preload templates.
-		LoadTemplate("content/" + s, STRIP_WHITESPACE);
-		contentList.push_back(s);
-	}
-	//TODO: FINISH THIS!!!
-	//Load sub (include) templates.
-	files = Filesystem::GetFiles("templates/", "", 0);
-	for(string& s: files) {
-		if(!contains(serverTemplateList, s)) {
-			//Template name should be T_FILENAME (without extension)
-			string t = "T_" + s.substr(0, s.find_last_of("."));
-			std::transform(t.begin()+2, t.end(), t.begin()+2, ::toupper);
-			cleanTemplate.AddIncludeDictionary(t)->SetFilename("templates/" + s);
-			serverTemplateList.push_back(s);
-		}
-	}*/
 }
 
 /**
