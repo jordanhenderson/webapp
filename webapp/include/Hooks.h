@@ -28,11 +28,14 @@ APIEXPORT void Template_ShowSection(ctemplate::TemplateDictionary*,
 								   webapp_str_t* section);
 APIEXPORT void Template_SetGlobalValue(ctemplate::TemplateDictionary* dict,
 									  webapp_str_t* key, webapp_str_t* value);
+APIEXPORT void Template_SetIntValue(ctemplate::TemplateDictionary* dict,
+									  webapp_str_t* key, long value);
 APIEXPORT void Template_SetValue(ctemplate::TemplateDictionary* dict,
 									  webapp_str_t* key, webapp_str_t* value);
 APIEXPORT ctemplate::TemplateDictionary* Template_Get(RequestQueue*, webapp_str_t* name);
 APIEXPORT void Template_Render(RequestQueue* worker, webapp_str_t* page,
 					Request* request, webapp_str_t* out);
+APIEXPORT void Template_Clear(ctemplate::TemplateDictionary* dict);
 APIEXPORT void Template_Load(webapp_str_t* page);
 APIEXPORT void Template_Include(Webapp* app, webapp_str_t* name, webapp_str_t* file);
 

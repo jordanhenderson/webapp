@@ -4,9 +4,11 @@
 	Template_ShowSection;
 	Template_SetGlobalValue;
 	Template_SetValue;
+	Template_SetIntValue;
 	Template_Render;
 	Template_Load;
 	Template_Include;
+	Template_Clear;
 	GetSessionValue;
 	SetSessionValue;
 	GetSession;

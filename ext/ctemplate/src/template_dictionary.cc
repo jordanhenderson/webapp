@@ -1029,4 +1029,28 @@ TemplateDictionary::CreateSectionIterator(
   abort();
 }
 
+void TemplateDictionary::Clear() {
+	if(template_global_dict_owner_ == this) {
+		TemplateDictionary* tpl = 
+			template_global_dict_owner_->template_global_dict_;
+		if (tpl) {
+			tpl->Clear();
+			return;
+		}
+	}
+	if(section_dict_) {
+		section_dict_->clear();
+	}
+	if(include_dict_) {
+    for (IncludeDict::iterator it = include_dict_->begin();
+         it != include_dict_->end();  ++it) {
+			for (DictVector::iterator it2 = it->second->begin();
+				it2 != it->second->end(); ++it2) {
+					TemplateDictionary* subdict = *it2;
+					subdict->Clear();
+			}
+		}
+	}
+}
+
 _END_GOOGLE_NAMESPACE_

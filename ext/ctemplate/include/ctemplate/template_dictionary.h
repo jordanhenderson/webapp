@@ -232,6 +232,8 @@ class  TemplateDictionary : public TemplateDictionaryInterface {
 #endif
      ;  // starts at 4 because of implicit 1st arg 'this'
 
+  // Extra functionality for webapp.
+  void Clear();
 
  private:
   friend class SectionTemplateNode;   // for access to GetSectionValue(), etc.

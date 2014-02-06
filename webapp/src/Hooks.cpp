@@ -45,6 +45,12 @@ void Template_SetValue(TemplateDictionary* dict, webapp_str_t* key,
 	dict->SetValue(*key, *value);
 }
 
+void Template_SetIntValue(TemplateDictionary* dict, webapp_str_t* key,
+							long value) {
+	if (dict == NULL || key == NULL) return;
+	dict->SetIntValue(*key, value);
+}
+
 TemplateDictionary* Template_Get(RequestQueue* worker, webapp_str_t* name) {
 	if(worker == NULL) return NULL;
 	TemplateDictionary* base = worker->baseTemplate;
@@ -53,7 +59,10 @@ TemplateDictionary* Template_Get(RequestQueue* worker, webapp_str_t* name) {
 	auto dict = tmpl->find(*name);
 	if(dict == tmpl->end()) return base;
 	return (*dict).second;
+}
 
+void Template_Clear(TemplateDictionary* dict) {
+	dict->Clear();
 }
 
 void Template_Include(Webapp* app, webapp_str_t* name, webapp_str_t* file) {
