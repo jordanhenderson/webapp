@@ -53,14 +53,22 @@ Query::~Query() {
 
 	unsigned int db_type = _db->GetDBType();
 	
-	if (size_arr != NULL) delete[] size_arr;
-	if (bind_params != NULL) delete[] bind_params;
-	if (out_size_arr != NULL) delete[] out_size_arr;
-	if (prepare_meta_result != NULL) mysql_free_result(prepare_meta_result);
-	if (db_type == DATABASE_TYPE_MYSQL) 
-		if (mysql_stmt != NULL) mysql_stmt_close(mysql_stmt);
-	else if (db_type == DATABASE_TYPE_SQLITE)
-		if (sqlite_stmt != NULL) sqlite3_finalize(sqlite_stmt);
+	//Clean up mysql.
+	if (db_type == DATABASE_TYPE_MYSQL) {
+		if (prepare_meta_result != NULL) mysql_free_result(prepare_meta_result);
+		if (size_arr != NULL) delete[] size_arr;
+		if (bind_params != NULL) delete[] bind_params;
+		if (out_size_arr != NULL) delete[] out_size_arr;
+		prepare_meta_result = NULL;
+		size_arr = NULL;
+		bind_params = NULL;
+		out_size_arr = NULL;
+	}
+	
+	//Clean up stmt objects.
+	if (mysql_stmt != NULL) mysql_stmt_close(mysql_stmt);
+	if (sqlite_stmt != NULL) sqlite3_finalize(sqlite_stmt);
+	mysql_stmt = NULL; sqlite_stmt = NULL;
 
 }
 
