@@ -54,7 +54,7 @@ APIEXPORT Process* GetNextProcess(BackgroundQueue*);
 APIEXPORT void FinishProcess(Process*);
 APIEXPORT void WriteData(Request*, webapp_str_t* data);
 APIEXPORT void WriteHeader(Request*, uint32_t n_bytes, 
-	webapp_str_t* content_type, webapp_str_t* cookies);
+	webapp_str_t* content_type, webapp_str_t* cookies, int8_t cache);
 
 //Webapp stuff
 APIEXPORT void SetParamInt(Webapp*, unsigned int key, int value);

@@ -1,6 +1,7 @@
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_http.h>
+
 #include "ngx_http_webapp_module.h"
 
 static ngx_conf_bitmask_t  ngx_http_webapp_next_upstream_masks[] = {
@@ -252,63 +253,79 @@ static ngx_int_t ngx_http_webapp_reinit_request(ngx_http_request_t *r) {
 	return NGX_OK;
 }
 
+//Perform appropriate host order conversion on response variables.
+//Return the remaining header length required to read before handling body.
+static uint16_t ngx_http_webapp_read_response(ngx_http_webapp_response_t* resp) {
+	resp->total_len = ntohl(resp->total_len);
+	resp->content_type_len = ntohl(resp->content_type_len);
+	resp->cookies_len = ntohl(resp->cookies_len);
+	return resp->content_type_len + resp->cookies_len;
+}
+
 static ngx_int_t ngx_http_webapp_process_header(ngx_http_request_t *r) {
 	ngx_http_upstream_t* u;
-	uint32_t* last_p;
+    ngx_http_headers_conf_t  *hcf;
 	ngx_http_webapp_ctx_t* ctx =
 			ngx_http_get_module_ctx(r, ngx_http_webapp_module);
-
+	ngx_http_webapp_response_t* resp = &ctx->resp;
 	u = r->upstream;
 
 	//Stage 1
 	if(u->buffer.pos == u->buffer.start) {
 		if(u->buffer.last - u->buffer.start <
-				sizeof(uint32_t) * (1 + RESPONSE_VARS)) {
+				sizeof(ngx_http_webapp_response_t)) {
 			return NGX_AGAIN;
 		} else {
-			last_p = (uint32_t*)u->buffer.start;
-			ctx->total_len = ntohl(*last_p++);
-			ADD_RESPONSE_STR(ctx->content_type_len, ctx->remaining_header_len)
-			ADD_RESPONSE_STR(ctx->cookies_len, ctx->remaining_header_len)
-			u->buffer.pos = (u_char*)last_p;
+			ngx_memcpy(resp, u->buffer.pos, 
+				sizeof(ngx_http_webapp_response_t));
+			ctx->remaining_header_len = 
+				ngx_http_webapp_read_response(resp);
+			
+			u->buffer.pos = u->buffer.start + 
+				sizeof(ngx_http_webapp_response_t);
 		}
 	}
 
 	//Stage 2
-	if(u->buffer.pos - u->buffer.start ==
-			sizeof(uint32_t) * (1 + RESPONSE_VARS)) {
-		if(u->buffer.last - u->buffer.pos >= ctx->remaining_header_len) {
-			//Remaining header read successfully.
-			u->headers_in.status_n = 200;
-			u->state->status = 200;
-			u->headers_in.content_length_n = ctx->total_len;
+	if(u->buffer.last - u->buffer.pos >= ctx->remaining_header_len) {
+		//Remaining header read successfully.
+		u->headers_in.status_n = 200;
+		u->state->status = 200;
+		u->headers_in.content_length_n = resp->total_len;
 
-			if(ctx->content_type_len > 0) {
-				r->headers_out.content_type_len = ctx->content_type_len;
-				r->headers_out.content_type.len = ctx->content_type_len;
-				r->headers_out.content_type.data = u->buffer.pos;
-				u->buffer.pos += ctx->content_type_len;
-			}
-
-			//Send set-cookie header.
-			if(ctx->cookies_len > 0) {
-				ngx_table_elt_t* set_cookie;
-				set_cookie = ngx_list_push(&r->headers_out.headers);
-				if (set_cookie == NULL) {
-					return NGX_ERROR;
-				}
-
-				set_cookie->hash = 1;
-				ngx_str_set(&set_cookie->key, "Set-Cookie");
-				set_cookie->value.len = ctx->cookies_len;
-				set_cookie->value.data = u->buffer.pos;
-				u->buffer.pos += ctx->cookies_len;
-			}
-
-			return NGX_OK; //Ready to read body content.
+		if(resp->content_type_len > 0) {
+			r->headers_out.content_type_len = 
+				r->headers_out.content_type.len = resp->content_type_len;
+			r->headers_out.content_type.data = u->buffer.pos;
+			u->buffer.pos += resp->content_type_len;
 		}
-	}
 
+		//Send set-cookie header.
+		if(resp->cookies_len > 0) {
+			ngx_table_elt_t* set_cookie;
+			set_cookie = ngx_list_push(&r->headers_out.headers);
+			if (set_cookie == NULL) {
+				return NGX_ERROR;
+			}
+
+			set_cookie->hash = 1;
+			ngx_str_set(&set_cookie->key, "Set-Cookie");
+			set_cookie->value.len = resp->cookies_len;
+			set_cookie->value.data = u->buffer.pos;
+			u->buffer.pos += resp->cookies_len;
+		}
+
+        //Set caching mode
+        hcf = ngx_http_get_module_loc_conf(r, ngx_http_headers_filter_module);
+		if(resp->cache == 0) {
+            hcf->expires_time = -1;
+            hcf->expires = NGX_HTTP_EXPIRES_ACCESS;
+        } else {
+            hcf->expires = NGX_HTTP_EXPIRES_OFF;
+        }
+		return NGX_OK; //Ready to read body content.
+	}
+	
 	return NGX_AGAIN;
 }
 

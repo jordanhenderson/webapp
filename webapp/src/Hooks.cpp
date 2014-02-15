@@ -219,15 +219,16 @@ void WriteData(Request* r, webapp_str_t* data) {
 }
 
 void WriteHeader(Request* r, uint32_t n_bytes, 
-	webapp_str_t* content_type, webapp_str_t* cookies) {
+	webapp_str_t* content_type, webapp_str_t* cookies, int8_t cache) {
 	if(r == NULL || content_type == NULL || cookies == NULL) return;
 	if(r->shutdown) return;
 	webapp_data_t<uint32_t> len(htonl(n_bytes));
 	webapp_data_t<uint32_t> content_type_len = htonl(content_type->len);
 	webapp_data_t<uint32_t> cookies_len = htonl(cookies->len);
+	webapp_data_t<int8_t> cache_s = cache;
 	
 	webapp_str_t* s = new webapp_str_t(
-		len + content_type_len + cookies_len + content_type + cookies);
+		len + content_type_len + cookies_len + cache_s + content_type + cookies);
 	WriteSocket(r, s);
 }
 
