@@ -278,8 +278,7 @@ Query* CreateQuery(webapp_str_t* in, Request* r, Database* db, int desc) {
 void SetQuery(Query* q, webapp_str_t* in) {
 	if (in == NULL || q == NULL
 			|| q->status != DATABASE_QUERY_INIT) return;
-	if (q->dbq != NULL) delete q->dbq;
-	q->dbq = new string(*in);
+	q->dbq = webapp_str_t(*in);
 }
 
 void BindParameter(Query* q, webapp_str_t* param) {

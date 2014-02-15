@@ -40,7 +40,7 @@ public:
 	int desc = 0;
 	int havedesc = 0;
 	int rows_affected = 0;
-	std::string* dbq = NULL;
+	webapp_str_t dbq;
 	QueryRow* params = NULL; 
 //Database instance parameters
 	Database* _db;
@@ -53,7 +53,7 @@ public:
 	MYSQL_BIND* bind_output = NULL;
 	void process();
 	Query(Database* db, int desc=0);
-	Query(Database* db, const std::string& dbq, int desc=0);
+	Query(Database* db, const webapp_str_t& dbq, int desc=0);
 	~Query();
 };
 
@@ -70,7 +70,7 @@ public:
 
 	int connect(int database_type, const char* host, const char* username, 
 		const char* password, const char* database);
-	uint64_t exec(const std::string& query);
+	uint64_t exec(const webapp_str_t& query);
 };
 
 #endif //DATABASE_H

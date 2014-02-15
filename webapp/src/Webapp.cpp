@@ -343,8 +343,23 @@ Webapp::Webapp(asio::io_service& io_svc) :
 	}
 
 	//Create the TCP endpoint and acceptor.
-	tcp::endpoint endpoint(tcp::v4(), port);
-	acceptor = new tcp::acceptor(svc, endpoint, true);
+	int bound = 0;
+	int failed = 0;
+	
+	while(!bound) {
+		try {
+			tcp::endpoint endpoint(tcp::v4(), port);
+			acceptor = new tcp::acceptor(svc, endpoint, true);
+			bound = 1;
+		} catch (const system_error& ec) {
+			failed++;
+			printf("Error: bind to %d failed: (%s)\n", port, ec.what());
+			this_thread::sleep_for(chrono::milliseconds(1000));
+			if(failed == 5) {
+				exit(1);
+			}
+		}
+	}
 	accept_conn();
 }
 

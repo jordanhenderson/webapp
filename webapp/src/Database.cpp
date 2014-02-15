@@ -19,7 +19,6 @@ using namespace std;
 */
 Query::Query(Database* db, int desc) : _db(db) {
 	params = new QueryRow();
-	this->dbq = new string();
 	this->desc = desc;
 }
 
@@ -28,9 +27,9 @@ Query::Query(Database* db, int desc) : _db(db) {
  * @see Query
  * @param dbq The initial query string
 */
-Query::Query(Database* db, const string& dbq, int desc) : _db(db) {
+Query::Query(Database* db, const webapp_str_t& _dbq, int desc) 
+	: _db(db), dbq(_dbq) {
 	params = new QueryRow();
-	this->dbq = new string(dbq);
 	this->desc = desc;
 }
 
@@ -63,7 +62,6 @@ Query::~Query() {
 	else if (db_type == DATABASE_TYPE_SQLITE)
 		if (sqlite_stmt != NULL) sqlite3_finalize(sqlite_stmt);
 
-	delete dbq;
 }
 
 /**
@@ -80,8 +78,8 @@ void Query::process() {
 	//Initialize database depending on type.
 	if (db_type == DATABASE_TYPE_SQLITE) {
 		if(sqlite_stmt == NULL) {
-			if (sqlite3_prepare_v2(_db->sqlite_db, dbq->c_str(), 
-				dbq->length(), &sqlite_stmt, 0))
+			if (sqlite3_prepare_v2(_db->sqlite_db, dbq.data, 
+				dbq.len, &sqlite_stmt, 0))
 				goto cleanup;
 		}
 	}
@@ -90,7 +88,7 @@ void Query::process() {
 			mysql_stmt = mysql_stmt_init(_db->mysql_db);
 			if (mysql_stmt == NULL)
 				goto cleanup;
-			err = mysql_stmt_prepare(mysql_stmt, dbq->c_str(), dbq->length());
+			err = mysql_stmt_prepare(mysql_stmt, dbq.data, dbq.len);
 		}
 	}
 	
@@ -296,7 +294,7 @@ Database::~Database() {
  * @param query the string to execute
  * @return the last inserted row ID
 */
-uint64_t Database::exec(const string& query) {
+uint64_t Database::exec(const webapp_str_t& query) {
 	Query q(this, query);
 	q.process();
 	return q.lastrowid;
