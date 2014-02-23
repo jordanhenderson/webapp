@@ -67,7 +67,7 @@ APIEXPORT uint64_t GetWebappTime();
 //Database
 APIEXPORT Database* CreateDatabase(Webapp*);
 APIEXPORT void DestroyDatabase(Webapp*, Database*);
-APIEXPORT Database* GetDatabase(Webapp*, uint64_t index);
+APIEXPORT Database* GetDatabase(Webapp*, size_t index);
 APIEXPORT int ConnectDatabase(Database*, int database_type, const char* host, 
 	const char* username, const char* password, const char* database);
 APIEXPORT uint64_t ExecString(Database*, webapp_str_t* in);

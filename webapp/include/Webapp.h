@@ -273,8 +273,8 @@ class Webapp {
 	std::mutex cleanupLock;
 	
 	//Keep track of dynamic databases
-	std::unordered_map<uint64_t, Database*> databases;
-	std::atomic<uint64_t> db_count{0};
+	std::unordered_map<size_t, Database*> databases;
+	std::atomic<size_t> db_count{0};
 
 	//IPC api
 	asio::ip::tcp::acceptor* acceptor;
@@ -297,7 +297,7 @@ public:
 	//Public webapp methods
 	void Start() { svc.run(); }
 	Database* CreateDatabase();
-	Database* GetDatabase(uint64_t index);
+	Database* GetDatabase(size_t index);
 	void DestroyDatabase(Database*);
 	void CompileScript(const char* filename, webapp_str_t* output);
 	void SetParamInt(unsigned int key, int value);

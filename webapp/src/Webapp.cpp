@@ -557,7 +557,7 @@ Database* Webapp::CreateDatabase() {
  * @param index the Database object key. See db_count in CreateDatabase.
  * @return the newly created Database object.
 */
-Database* Webapp::GetDatabase(uint64_t index) {
+Database* Webapp::GetDatabase(size_t index) {
 	try {
 		return databases.at(index);
 	} catch (...) {
@@ -570,7 +570,7 @@ Database* Webapp::GetDatabase(uint64_t index) {
  * @param db the Database object to destroy
 */
 void Webapp::DestroyDatabase(Database* db) {
-	unsigned int id = db->GetID();
+	size_t id = db->GetID();
 	databases.erase(id);
 	delete db;
 }
