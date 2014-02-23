@@ -27,6 +27,7 @@
 	GetParamInt;
 	GetNextRequest;
 	ClearCache;
+	Shutdown;
 
 	CreateDatabase;
 	DestroyDatabase;

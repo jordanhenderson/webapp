@@ -18,7 +18,6 @@ Sessions::~Sessions() {
 	//Delete maps within session_map
 	for(SessionMap::iterator it = session_map.begin();
 		it != session_map.end(); ++it) {
-			it->second->destroy();
 			delete it->second;
 	}
 }
@@ -65,7 +64,7 @@ SessionStore* Sessions::new_session(Request* request) {
 
 	SessionStore* session_store = new SESSION_STORE();
 	session_store->create(str_hex);
-	session_map.insert(make_pair(str_hex, session_store));
+	session_map.insert({str_hex, session_store});
 	
 	return session_store;
 }

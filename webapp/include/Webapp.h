@@ -18,6 +18,7 @@
 #define WEBAPP_PARAM_PORT 0
 #define WEBAPP_PARAM_ABORTED 1
 #define WEBAPP_PARAM_BGQUEUE 2
+#define WEBAPP_PARAM_TPLCACHE 3
 #define WEBAPP_PORT_DEFAULT 5000
 #define WEBAPP_DEFAULT_QUEUESIZE 1023
 
@@ -160,6 +161,7 @@ struct Request {
 class TaskQueue {
 public:
 	unsigned int cleanupTask = 0;
+	unsigned int shutdown = 0;
 	std::atomic<unsigned int> aborted{0};
 	unsigned int finished = 0;
 	std::condition_variable cv;
@@ -252,6 +254,7 @@ public:
 	~RequestQueue();
 	void Cleanup();
 	void Execute();
+	std::string* RenderTemplate(const webapp_str_t& tpl);
 };
 
 typedef enum {SCRIPT_INIT, SCRIPT_QUEUE, SCRIPT_REQUEST, SCRIPT_HANDLERS} script_t;
@@ -264,6 +267,7 @@ class Webapp {
 	//Parameters
 	unsigned int aborted = 0;
 	unsigned int background_queue_enabled = 1;
+	unsigned int template_cache_enabled = 1;
 	unsigned int port = WEBAPP_PORT_DEFAULT;
 	
 	std::mutex cleanupLock;

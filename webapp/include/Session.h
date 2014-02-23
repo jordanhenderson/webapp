@@ -25,7 +25,7 @@ public:
 	virtual void store(const std::string& key, const std::string& value) = 0;
 	virtual const std::string& get(const std::string& key) = 0;
 	virtual int count() = 0;
-	virtual void destroy() = 0;
+	virtual ~SessionStore() {};
 	SessionStore() : empty("") {}
 };
 
@@ -38,7 +38,6 @@ public:
 	void create(const std::string& sessionid);
 	void store(const std::string& key, const std::string& value);
 	const std::string& get(const std::string& key);
-	void destroy();
 	int count();
 };
 

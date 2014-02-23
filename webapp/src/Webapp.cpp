@@ -27,6 +27,15 @@ using namespace std::placeholders;
 #pragma warning(disable:4316)
 #endif 
 
+int strntol(const char* src, size_t n) {
+	int x = 0;
+    while(isdigit(*src) && n--) {
+    	x = x * 10 + (*src - '0');		
+    	src++;
+    }
+    return x;
+}
+
 static const char* script_t_names[] = {SCRIPT_NAMES};
 /**
  * Request destructor.
@@ -51,6 +60,7 @@ void WebappTask::handleCleanup() {
 	int cleaning = _handler->start_cleanup(_q);
 	//Actual cleaning stage, performed after all workers terminated.
 	if(cleaning) {
+		if(shutdown) _handler->SetParamInt(WEBAPP_PARAM_ABORTED, 1);
 		_handler->perform_cleanup();
 	} else {
 		//Just (attempt to) grab own lock. 
@@ -104,11 +114,35 @@ void RequestQueue::Cleanup() {
 	for(auto tmpl: _handler->templates) {
 		TemplateDictionary* dict = baseTemplate->AddIncludeDictionary(tmpl.first);
 		dict->SetFilename(tmpl.second);
-		templates.insert(make_pair(tmpl.first, dict));
+		templates.insert({tmpl.first, dict});
 	}
 
-	_cache = mutable_default_template_cache()->Clone();
-	_cache->Freeze();
+	if(_handler->GetParamInt(WEBAPP_PARAM_TPLCACHE)) {
+		_cache = mutable_default_template_cache()->Clone();
+		_cache->Freeze();
+	} else {
+		_cache = NULL;
+	}
+}
+
+string* RequestQueue::RenderTemplate(const webapp_str_t& page) {
+	string* output = new string();
+	if(_cache)
+	_cache->ExpandNoLoad(page, STRIP_WHITESPACE, baseTemplate, NULL,
+						  output);
+	else {
+		templates.clear();
+		
+		for(auto tmpl: _handler->templates) {
+			TemplateDictionary* dict = baseTemplate->AddIncludeDictionary(tmpl.first);
+			dict->SetFilename(tmpl.second);
+			templates.insert({tmpl.first, dict});
+		}
+
+		mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::LAZY_RELOAD);
+		ExpandTemplate(page, STRIP_WHITESPACE, baseTemplate, output);
+	}
+	return output;
 }
 
 void BackgroundQueue::Execute() {
@@ -228,18 +262,21 @@ void Webapp::reload_all() {
 	//Reset db_count to ensure new databases are created from index 0.
 	db_count = 0;
 	
-	//Recompile scripts.
-	CompileScript("plugins/core/init.lua", &scripts[SCRIPT_INIT]);
-	CompileScript("plugins/core/process.lua", &scripts[SCRIPT_REQUEST]);
-	CompileScript("plugins/core/handlers.lua", &scripts[SCRIPT_HANDLERS]);
+	if(!aborted) {
+		//Recompile scripts.
+		CompileScript("plugins/core/init.lua", &scripts[SCRIPT_INIT]);
+		CompileScript("plugins/core/process.lua", &scripts[SCRIPT_REQUEST]);
+		CompileScript("plugins/core/handlers.lua", &scripts[SCRIPT_HANDLERS]);
 
-	//Run init script.
-	LuaParam _v[] = { { "app", this } };
-	RunScript(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_INIT);
+		//Run init script.
+		LuaParam _v[] = { { "app", this } };
+		RunScript(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_INIT);
 
-	if (background_queue_enabled)
-		CompileScript("plugins/core/process_queue.lua", &scripts[SCRIPT_QUEUE]);
-
+		if (background_queue_enabled)
+			CompileScript("plugins/core/process_queue.lua", &scripts[SCRIPT_QUEUE]);
+	} else {
+		svc.stop();
+	}
 	//Cleanup workers.
 	for(WebappTask* worker: workers) {
 		RequestQueue* rq =  dynamic_cast<RequestQueue*>(worker);
@@ -385,12 +422,10 @@ void Webapp::process_request_async(
 	}
 	//Choose a node, queue the request.
 	int selected_node = -1;
-	if (r->cookies.len > strlen("sessionid=") - 1 + WEBAPP_LEN_SESSIONID) {
+	if (r->cookies.len > strlen("sessionid=") + WEBAPP_LEN_SESSIONID) {
 		const char* sessionid = strstr(r->cookies.data, "sessionid=");
-		int node = -1;
-		if (sessionid && sscanf(sessionid + 10, "%" XSTR(WEBAPP_LEN_SESSIONID) "d",
-								&node) == 1) {
-			selected_node = node % nWorkers;
+		if (sessionid) {
+			selected_node = strntol(sessionid + 10, 1) % nWorkers;
 		}
 	}
 	if (selected_node == -1) {
@@ -481,11 +516,13 @@ Webapp::~Webapp() {
 	//Abort each worker request queue and session.
 	for (unsigned int i = background_queue_enabled; i < nWorkers; i++) {
 		RequestQueue* worker = dynamic_cast<RequestQueue*>(workers[i]);
+		worker->join();
 		if(worker != NULL) delete worker;
 	}
 
 	if(background_queue_enabled) {
 		BackgroundQueue* bg = dynamic_cast<BackgroundQueue*>(workers[0]);
+		bg->join();
 		if(bg != NULL) delete bg;
 	}
 
@@ -510,8 +547,7 @@ Webapp::~Webapp() {
 Database* Webapp::CreateDatabase() {
 	size_t id = db_count++;
 	Database* db = new Database(id);
-	auto db_entry = make_pair(id, db);
-	databases.insert(db_entry);
+	databases.insert({id, db});
 	return db;
 }
 
@@ -549,6 +585,7 @@ void Webapp::SetParamInt(unsigned int key, int value) {
 		case WEBAPP_PARAM_PORT: port = value; break;
 		case WEBAPP_PARAM_BGQUEUE: background_queue_enabled = value; break;
 		case WEBAPP_PARAM_ABORTED: aborted = value; break;
+		case WEBAPP_PARAM_TPLCACHE: template_cache_enabled = value; break;
 		default: return; break;
 	}
 }
@@ -563,6 +600,7 @@ int Webapp::GetParamInt(unsigned int key) {
 		case WEBAPP_PARAM_PORT: return port; break;
 		case WEBAPP_PARAM_BGQUEUE: return background_queue_enabled; break;
 		case WEBAPP_PARAM_ABORTED: return aborted; break;
+		case WEBAPP_PARAM_TPLCACHE: return template_cache_enabled; break;
 		default: return 0; break;
 	}
 }

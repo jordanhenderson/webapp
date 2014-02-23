@@ -66,7 +66,7 @@ void Template_Clear(TemplateDictionary* dict) {
 }
 
 void Template_Include(Webapp* app, webapp_str_t* name, webapp_str_t* file) {
-	app->templates.insert(make_pair(*name, *file));
+	app->templates.insert({*name, *file});
 	LoadTemplate(*file, STRIP_WHITESPACE);
 }
 
@@ -78,13 +78,9 @@ void Template_Load(webapp_str_t* page) {
 void Template_Render(RequestQueue* worker, webapp_str_t* page,
 					Request* request, webapp_str_t* out) {
 	if (out == NULL || page == NULL) return;
-
-	string* output = new string;
+	
 	webapp_str_t dir = "content/";
-	auto dict = worker->baseTemplate;
-
-	worker->_cache->ExpandNoLoad(dir + page, STRIP_WHITESPACE, dict, NULL,
-						  output);
+	string* output = worker->RenderTemplate(dir + page);
 
 	out->data = (char*)output->c_str();
 	out->len = output->length();
@@ -128,7 +124,7 @@ SessionStore* NewSession(RequestQueue* worker, Request* request) {
 }
 
 void DestroySession(SessionStore* session) {
-	session->destroy();
+	delete session;
 }
 
 void SetParamInt(Webapp* app, unsigned int key, int value) {
@@ -150,6 +146,15 @@ void ClearCache(RequestQueue* worker) {
 	worker->aborted = 1;
 	//Cleanup when this task completes.
 	worker->cleanupTask = 1;
+}
+
+//Shuts the entire server down.
+void Shutdown(RequestQueue* worker) {
+	//Abort this lua vm.
+	worker->aborted = 1;
+	worker->cleanupTask = 1;
+	//Shutdown when this task completes.
+	worker->shutdown = 1;
 }
 
 void QueueProcess(BackgroundQueue* worker, webapp_str_t* func,
@@ -266,7 +271,7 @@ int SelectQuery(Query* q) {
 }
 
 Query* CreateQuery(webapp_str_t* in, Request* r, Database* db, int desc) {
-	if (r == NULL) return NULL;
+	if (r == NULL || db == NULL) return NULL;
 	Query* q = NULL;
 	if (in == NULL) q = new Query(db, desc);
 	else q = new Query(db, *in, desc);
@@ -288,7 +293,7 @@ void BindParameter(Query* q, webapp_str_t* param) {
 
 uint64_t GetWebappTime() {
 	time_t current_time = time(0);
-	return current_time * 1000000;
+	return (uint64_t)current_time * (uint64_t)1000000;
 }
 
 //Image API 

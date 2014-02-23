@@ -84,7 +84,7 @@
 // A very simple logging system
 #undef LOG   // a non-working version is provided in base/util.h; redefine it
 static int kVerbosity = 0;   // you can change this by hand to get vlogs
-#define LOG(level)   std::cerr << #level ": "
+#define LOG(level)   if(0) std::cerr << #level ": "
 #define VLOG(level)  if (kVerbosity >= level)  LOG(level)
 
 // TODO(csilvers): use our own tables for these?

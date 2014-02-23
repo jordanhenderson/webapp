@@ -13,12 +13,8 @@ void RamSession::create(const string& sessionid) {
 	this->sessionid = string(sessionid);
 }
 
-void RamSession::destroy() {
-	_store.clear();
-}
-
 void RamSession::store(const string& key, const string& value) {
-	_store.insert(make_pair(key, value));
+	_store.insert({key, value});
 }
 
 const string& RamSession::get(const string& key) {
