@@ -9,6 +9,7 @@
 	<depends link="true">../ext/openssl</depends>
 	<depends link="true">../ext/zlib</depends>
 	<depends link="true">../ext/sqlite</depends>
+	<depends link="true">../ext/leveldb</depends>
 	<depends>../ext/nginx</depends>
 	<output type="app">webapp</output>
 	<flags compiler="msvc">MT;W3;wd4996;EHsc</flags>

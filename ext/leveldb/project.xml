@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<project>
+	<output type="static">leveldb</output>
+	<flags compiler="msvc">MT;W3;EHsc</flags>
+	<flags compiler="gcc" ext="cc">std=c++11</flags>
+	<flags os="linux" type="pp">LEVELDB_PLATFORM_POSIX</flags>
+	<flags>O2</flags>
+	<include>include;.</include>
+	<source f="db/db_impl.cc"/>
+	<source f="db/builder.cc"/>
+	<source f="db/c.cc"/>
+	<source f="db/db_impl.cc"/>
+	<source f="db/db_iter.cc"/>
+	<source f="db/dbformat.cc"/>
+	<source f="db/filename.cc"/>
+	<source f="db/log_reader.cc"/>
+	<source f="db/log_writer.cc"/>
+	<source f="db/memtable.cc"/>
+	<source f="db/repair.cc"/>
+	<source f="db/table_cache.cc"/>
+	<source f="db/version_edit.cc"/>
+	<source f="db/version_set.cc"/>
+	<source f="db/write_batch.cc"/>
+	<source f="helpers/memenv/memenv.cc"/>
+	<source f="port/port_posix.cc" os="linux"/>
+	<source f="port/port_win.cc" os="win32"/>
+	<source f="table/block.cc"/>
+	<source f="table/block_builder.cc"/>
+	<source f="table/filter_block.cc"/>
+	<source f="table/format.cc"/>
+	<source f="table/iterator.cc"/>
+	<source f="table/merger.cc"/>
+	<source f="table/table.cc"/>
+	<source f="table/table_builder.cc"/>
+	<source f="table/two_level_iterator.cc"/>
+	<source f="util/arena.cc"/>
+	<source f="util/bloom.cc"/>
+	<source f="util/cache.cc"/>
+	<source f="util/coding.cc"/>
+	<source f="util/comparator.cc"/>
+	<source f="util/crc32c.cc"/>
+	<source f="util/env.cc"/>
+	<source f="util/env_posix.cc"/>
+	<source f="util/filter_policy.cc"/>
+	<source f="util/hash.cc"/>
+	<source f="util/histogram.cc"/>
+	<source f="util/logging.cc"/>
+	<source f="util/options.cc"/>
+	<source f="util/status.cc"/>
+	<source f="util/testharness.cc"/>
+	<source f="util/testutil.cc"/>
+
+	
+</project>
