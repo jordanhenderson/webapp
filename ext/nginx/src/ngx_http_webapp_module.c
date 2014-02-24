@@ -1,7 +1,7 @@
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_http.h>
-
+#include <stdint.h>
 #include "ngx_http_webapp_module.h"
 
 static ngx_conf_bitmask_t  ngx_http_webapp_next_upstream_masks[] = {

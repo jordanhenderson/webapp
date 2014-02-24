@@ -12,13 +12,12 @@
 #define WEBAPP_LEN_SESSIONID 1
 #define WEBAPP_DEFAULT_SESSION_LIMIT 10000
 
-class webapp_str_t;
-class Request;
+struct webapp_str_t;
+struct Request;
 
 #define SESSION_STORE RamSession
 
-class SessionStore {
-public:
+struct SessionStore {
 	std::string empty;
 	std::string sessionid;
 	virtual void create(const std::string& sessionid) = 0;
@@ -32,7 +31,6 @@ public:
 //Default ram storage of session data.
 typedef std::unordered_map<std::string, std::string> RamStorage;
 class RamSession : public SessionStore {
-private:
 	RamStorage _store;
 public:
 	void create(const std::string& sessionid);
@@ -45,7 +43,6 @@ typedef std::unordered_map<std::string, SessionStore*> SessionMap;
 class Sessions {
 	std::random_device rd;
 	std::mt19937_64 rng;
-private:
 	SessionMap session_map;
 	std::string _node;
 	int max_sessions = WEBAPP_DEFAULT_SESSION_LIMIT;

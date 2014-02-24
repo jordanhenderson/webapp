@@ -121,7 +121,7 @@ int Image::load(const webapp_str_t& filename) {
 
 	File file;
 	if(!file.Open(filename, "rb")) {
-		return ERROR_FILE_NOT_FOUND;
+		return ERROR_IMAGE_NOT_FOUND;
 	}
 	FILE* file_ptr = file.GetPointer();
 	

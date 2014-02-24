@@ -26,7 +26,7 @@ typedef struct st_mysql_bind MYSQL_BIND;
 typedef struct st_mysql_stmt MYSQL_STMT;
 struct sqlite3_stmt;
 struct sqlite3;
-class webapp_str_t;
+struct webapp_str_t;
 
 typedef std::vector<std::string> QueryRow;
 class Database;

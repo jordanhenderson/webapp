@@ -9,10 +9,10 @@
 
 #include "Platform.h"
 
-class webapp_str_t;
-class SessionStore;
+struct webapp_str_t;
+struct SessionStore;
+struct Request;
 class Sessions;
-class Request;
 class Webapp;
 class Process;
 class Database;
@@ -79,17 +79,17 @@ APIEXPORT void GetCell(Query* q, unsigned int column, webapp_str_t* out);
 APIEXPORT void GetColumnName(Query* q, unsigned int column, webapp_str_t* out);
 
 //Image API
-APIEXPORT Image* LoadImage(webapp_str_t* filename);
-APIEXPORT void ResizeImage(Image* img, int width, int height);
-APIEXPORT void SaveImage(Image* img, webapp_str_t* filename, int destroy);
-APIEXPORT void DestroyImage(Image* img); 
+APIEXPORT Image* Image_Load(webapp_str_t* filename);
+APIEXPORT void Image_Resize(Image* img, int width, int height);
+APIEXPORT void Image_Save(Image* img, webapp_str_t* filename, int destroy);
+APIEXPORT void Image_Destroy(Image* img); 
 
 //File API
-APIEXPORT File* OpenFile(webapp_str_t* filename, webapp_str_t* mode);
-APIEXPORT void CloseFile(File*);
-APIEXPORT uint16_t ReadFile(File*, uint16_t n_bytes);
-APIEXPORT void WriteFile(File*, webapp_str_t* buf);
-APIEXPORT uint64_t FileSize(File*);
+APIEXPORT File* File_Open(webapp_str_t* filename, webapp_str_t* mode);
+APIEXPORT void File_Close(File*);
+APIEXPORT uint16_t File_Read(File*, uint16_t n_bytes);
+APIEXPORT void File_Write(File*, webapp_str_t* buf);
+APIEXPORT uint64_t File_Size(File*);
 
 //Force SHA-function inclusion from openssl.
 FORCE_UNDEFINED_SYMBOL(SHA256_Init)

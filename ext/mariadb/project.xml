@@ -4,7 +4,8 @@
 	<flags compiler="msvc">MT;W3</flags>
 	<flags type="pp">THREAD;ENABLED_LOCAL_INFILE;HAVE_COMPRESS;HAVE_OPENSSL;DNDEBUG;DBUG_OFF;LIBMARIADB;libmariadb_EXPORTS</flags>
 	<flags>O2</flags>
-	<include>include</include>
+	<include>include;../openssl/include;../zlib/include</include>
+	<include os="win32">win-iconv</include>
 	<source f="libmariadb/array.c"/>
 	<source f="libmariadb/bchange.c"/>
 	<source f="libmariadb/bmove.c"/>
@@ -76,8 +77,8 @@
 	<source f="libmariadb/strmov.c"/>
 	<source f="libmariadb/strnlen.c"/>
 	<source f="libmariadb/strnmov.c"/>
-	<source f="libmariadb/strto.c"/>
-	<source f="libmariadb/strtoll.c"/>
+	<source f="libmariadb/strto.c" os="linux"/>
+	<source f="libmariadb/strtoll.c" os="linux"/>
 	<source f="libmariadb/strtoull.c"/>
 	<source f="libmariadb/strxmov.c"/>
 	<source f="libmariadb/strxnmov.c"/>
@@ -87,4 +88,5 @@
 	<source f="libmariadb/hash.c"/>
 	<source f="libmariadb/ma_secure.c"/>
 	<source f="libmariadb/ma_dyncol.c"/>
+	<source f="win-iconv/win_iconv.c" os="win32"/>
 </project>

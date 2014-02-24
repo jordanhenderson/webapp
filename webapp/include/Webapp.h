@@ -7,8 +7,8 @@
 #ifndef WEBAPP_H
 #define WEBAPP_H
 
-#include "Platform.h"
 #include <asio.hpp>
+#include "Platform.h"
 #include <ctemplate/template.h>
 #include <readerwriterqueue.h>
 
@@ -51,13 +51,13 @@ struct webapp_str_t {
 	uint32_t len = 0;
 	int allocated = 0;
 	webapp_str_t() {}
-	webapp_str_t(const char* s, uint64_t _len) {
+	webapp_str_t(const char* s, uint32_t _len) {
 		allocated = 1;
 		len = _len;
 		data = new char[_len];
 		memcpy(data, s, _len);
 	}
-	webapp_str_t(uint64_t _len) {
+	webapp_str_t(uint32_t _len) {
 		allocated = 1;
 		len = _len;
 		data = new char[_len];
@@ -103,6 +103,7 @@ struct webapp_str_t {
 		allocated = 1;
 		if(allocated) delete[] data;
 		data = r;
+		return *this;
 	}
 	webapp_str_t& operator=(const webapp_str_t& other) {
 		if(this != &other) {
@@ -120,7 +121,6 @@ struct webapp_str_t {
 		s += other;
 		return s;
 	}
-	
 };
 
 template <class T>

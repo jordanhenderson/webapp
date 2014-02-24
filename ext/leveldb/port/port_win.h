@@ -36,8 +36,10 @@
 #define fread_unlocked _fread_nolock
 
 #include <string>
-
 #include <stdint.h>
+#ifdef SNAPPY
+#include <snappy.h>
+#endif
 
 namespace leveldb {
 namespace port {
@@ -90,6 +92,10 @@ class CondVar {
   
   
 };
+
+typedef void* OnceType;
+#define LEVELDB_ONCE_INIT 0
+extern void InitOnce(port::OnceType*, void (*initializer)());
 
 // Storage for a lock-free pointer
 class AtomicPointer {

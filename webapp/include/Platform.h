@@ -39,7 +39,6 @@
 # define FORCE_UNDEFINED_SYMBOL(x) void x(void); void (*__ ## x ## _fp)(void)=&x;
 #endif
 
-
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -131,22 +130,6 @@ void tokenize(const std::string& str, T& tokens,
 		lastPos = pos + 1;
 	}
 }
-
-#ifdef _MSC_VER
-wchar_t* strtowide(const char* str) {
-	size_t requiredSize = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
-	wchar_t* tmpPath = new wchar_t[requiredSize+sizeof(wchar_t)];
-	MultiByteToWideChar(CP_UTF8, 0, str, -1, tmpPath, requiredSize);
-	return tmpPath;
-}
-
-char* widetostr(const wchar_t* str) {
-	size_t requiredSize = WideCharToMultiByte(CP_UTF8, 0, str, -1, NULL, 0, NULL, NULL);
-	char* tmpPath = new char[requiredSize+sizeof(char)];
-	WideCharToMultiByte(CP_UTF8, 0, str, -1, tmpPath, requiredSize, NULL, NULL);
-	return tmpPath;
-}
-#endif
 
 #endif //PLATFORM_H
 

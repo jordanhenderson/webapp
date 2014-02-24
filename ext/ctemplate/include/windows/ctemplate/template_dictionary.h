@@ -241,6 +241,8 @@ class CTEMPLATE_DLL_DECL TemplateDictionary : public TemplateDictionaryInterface
                                      const TemplateModifier& escfn,
                                      const TemplateString section_name);
 
+  // Extra functionality for webapp.
+  void Clear();
 
  private:
   friend class SectionTemplateNode;   // for access to GetSectionValue(), etc.

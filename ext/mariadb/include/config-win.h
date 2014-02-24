@@ -268,5 +268,5 @@ inline double ulonglong2double(ulonglong value)
 #define fdopen(A,B) _fdopen((A),(B))
 #define sopen(A,B,C,D) _sopen((A),(B),(C),(D))
 
-
+#define HAVE_DLOPEN 1
 #endif

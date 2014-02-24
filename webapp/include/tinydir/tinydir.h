@@ -39,7 +39,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <dirent.h>
 #include <sys/stat.h>
 #define WIN32_FIND_DATA void
-#define HANDLE void
+#define HANDLE void*
+#endif
+
+#ifdef _MSC_VER
+wchar_t* strtowide(const char* str) {
+	size_t requiredSize = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
+	wchar_t* tmpPath = new wchar_t[requiredSize+sizeof(wchar_t)];
+	MultiByteToWideChar(CP_UTF8, 0, str, -1, tmpPath, requiredSize);
+	return tmpPath;
+}
+
+char* widetostr(const wchar_t* str) {
+	size_t requiredSize = WideCharToMultiByte(CP_UTF8, 0, str, -1, NULL, 0, NULL, NULL);
+	char* tmpPath = new char[requiredSize+sizeof(char)];
+	WideCharToMultiByte(CP_UTF8, 0, str, -1, tmpPath, requiredSize, NULL, NULL);
+	return tmpPath;
+}
 #endif
 
 struct stat;
@@ -82,7 +98,7 @@ typedef struct
 	int has_next;
 	int n_files;
 	tinydir_file *_files;
-	HANDLE* _h;
+	HANDLE _h;
 	WIN32_FIND_DATA* _f;
 	DIR* _d;
 	struct dirent *_e;
@@ -146,7 +162,7 @@ int tinydir_open(tinydir_dir *dir, const char *path)
 #ifdef _MSC_VER
 	strcat(dir->path, "\\*");
 	wchar_t* wpath = strtowide(dir->path);
-	dir->_f = malloc(sizeof(WIN32_FIND_DATA));
+	dir->_f = (WIN32_FIND_DATA*)malloc(sizeof(WIN32_FIND_DATA));
 	dir->_h = FindFirstFile(wpath, dir->_f);
 	delete[] wpath;
 	dir->path[strlen(dir->path) - 2] = '\0';
@@ -240,8 +256,8 @@ void tinydir_close(tinydir_dir *dir)
 		FindClose(dir->_h);
 	}
 	dir->_h = INVALID_HANDLE_VALUE;
-	if(dir->f != NULL) free(dir->_f);
-	dir->f = NULL;
+	if(dir->_f != NULL) free(dir->_f);
+	dir->_f = NULL;
 #else
 	if (dir->_d)
 	{
@@ -268,7 +284,7 @@ int tinydir_next(tinydir_dir *dir)
 
 #ifdef _MSC_VER
 	if(dir->_f == NULL) return -1;
-	if (FindNextFile(dir->_h, &dir->_f) == 0)
+	if (FindNextFile(dir->_h, dir->_f) == 0)
 #else
 	dir->_e = readdir((DIR*)dir->_d);
 	if (dir->_e == NULL)
@@ -310,7 +326,7 @@ int tinydir_readfile(const tinydir_dir *dir, tinydir_file *file)
 		
 #ifdef _MSC_VER
 		wcslen(
-			dir->_f.cFileName
+			dir->_f->cFileName
 #else
 		strlen(
 			dir->_e->d_name
@@ -325,7 +341,7 @@ int tinydir_readfile(const tinydir_dir *dir, tinydir_file *file)
 	if (
 #ifdef _MSC_VER
 		wcslen(
-			dir->_f.cFileName
+			dir->_f->cFileName
 #else
 		strlen(
 			dir->_e->d_name
@@ -340,7 +356,7 @@ int tinydir_readfile(const tinydir_dir *dir, tinydir_file *file)
 	strcat(file->path, "/");
 	
 #ifdef _MSC_VER
-	char* filename = widetostr(dir->_f.cFileName);
+	char* filename = widetostr(dir->_f->cFileName);
 	strcpy(file->name,
 		filename);
 	delete[] filename;
@@ -359,25 +375,25 @@ int tinydir_readfile(const tinydir_dir *dir, tinydir_file *file)
 #endif
 	file->is_dir =
 #ifdef _MSC_VER
-		!!(dir->_f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+		!!(dir->_f->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
 #else
 		S_ISDIR(file->_s->st_mode);
 #endif
 	file->is_reg =
 #ifdef _MSC_VER
-		!!(dir->_f.dwFileAttributes & FILE_ATTRIBUTE_NORMAL) ||
+		!!(dir->_f->dwFileAttributes & FILE_ATTRIBUTE_NORMAL) ||
 		(
-			!(dir->_f.dwFileAttributes & FILE_ATTRIBUTE_DEVICE) &&
-			!(dir->_f.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) &&
-			!(dir->_f.dwFileAttributes & FILE_ATTRIBUTE_ENCRYPTED) &&
+			!(dir->_f->dwFileAttributes & FILE_ATTRIBUTE_DEVICE) &&
+			!(dir->_f->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) &&
+			!(dir->_f->dwFileAttributes & FILE_ATTRIBUTE_ENCRYPTED) &&
 #ifdef FILE_ATTRIBUTE_INTEGRITY_STREAM
-			!(dir->_f.dwFileAttributes & FILE_ATTRIBUTE_INTEGRITY_STREAM) &&
+			!(dir->_f->dwFileAttributes & FILE_ATTRIBUTE_INTEGRITY_STREAM) &&
 #endif
 #ifdef FILE_ATTRIBUTE_NO_SCRUB_DATA
-			!(dir->_f.dwFileAttributes & FILE_ATTRIBUTE_NO_SCRUB_DATA) &&
+			!(dir->_f->dwFileAttributes & FILE_ATTRIBUTE_NO_SCRUB_DATA) &&
 #endif
-			!(dir->_f.dwFileAttributes & FILE_ATTRIBUTE_OFFLINE) &&
-			!(dir->_f.dwFileAttributes & FILE_ATTRIBUTE_TEMPORARY));
+			!(dir->_f->dwFileAttributes & FILE_ATTRIBUTE_OFFLINE) &&
+			!(dir->_f->dwFileAttributes & FILE_ATTRIBUTE_TEMPORARY));
 #else
 		S_ISREG(file->_s->st_mode);
 #endif

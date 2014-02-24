@@ -4,6 +4,7 @@
 	<flags compiler="msvc">MT;W3;EHsc</flags>
 	<flags>O2</flags>
 	<flags type="pp">__OPENCV_BUILD</flags>
+	<flags os="win32" type="pp">WIN32</flags>
 	<include>modules/imgproc/src;modules/imgproc/include;modules/core/include;./;../zlib/include</include>
 	<source f="modules/core/src/algorithm.cpp"/>
     <source f="modules/core/src/alloc.cpp"/>

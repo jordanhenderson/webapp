@@ -15,15 +15,14 @@
 #define THUMB_EXTENSIONS_JPEG_D {".jpg", ".jpeg", NULL}
 #define ERROR_INVALID_IMAGE 1
 #define ERROR_IMAGE_NOT_SUPPORTED 2
-#define ERROR_FILE_NOT_FOUND 3
+#define ERROR_IMAGE_NOT_FOUND 3
 #define ERROR_IMAGE_PROCESSING_FAILED 4
 
-class webapp_str_t;
+struct webapp_str_t;
 
 struct GifFileType;
 
 class Image {
-private:
 	int imageType = 0;
 	int width = 0;
 	int height = 0;

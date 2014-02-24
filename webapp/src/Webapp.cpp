@@ -60,7 +60,7 @@ void WebappTask::handleCleanup() {
 	int cleaning = _handler->start_cleanup(_q);
 	//Actual cleaning stage, performed after all workers terminated.
 	if(cleaning) {
-		if(shutdown) _handler->SetParamInt(WEBAPP_PARAM_ABORTED, 1);
+		if(_q->shutdown) _handler->SetParamInt(WEBAPP_PARAM_ABORTED, 1);
 		_handler->perform_cleanup();
 	} else {
 		//Just (attempt to) grab own lock. 
@@ -380,7 +380,7 @@ Webapp::Webapp(asio::io_service& io_svc) :
 			tcp::endpoint endpoint(tcp::v4(), port);
 			acceptor = new tcp::acceptor(svc, endpoint, true);
 			bound = 1;
-		} catch (const system_error& ec) {
+		} catch (const asio::system_error& ec) {
 			failed++;
 			printf("Error: bind to %d failed: (%s)\n", port, ec.what());
 			this_thread::sleep_for(chrono::milliseconds(1000));

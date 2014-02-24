@@ -13,9 +13,9 @@ extern "C" {
 #include "Webapp.h"
 #include "Session.h"
 #include "Image.h"
-#include "Hooks.h"
 #include "Database.h"
 #include "FileSystem.h"
+#include "Hooks.h"
 
 using namespace ctemplate;
 using namespace std;
@@ -210,7 +210,7 @@ void WriteSocket(Request* r, webapp_str_t* s) {
 		asio::async_write(*r->socket, asio::buffer(s->data, s->len),
 			bind(&WriteComplete, wt, s, _1, _2));
 	}
-	catch (system_error ec) {
+	catch (asio::system_error ec) {
 		printf("Error writing to socket!");
 	}
 }
@@ -297,51 +297,51 @@ uint64_t GetWebappTime() {
 }
 
 //Image API 
-Image* LoadImage(webapp_str_t* filename) {
+Image* Image_Load(webapp_str_t* filename) {
 	if(filename == NULL) return NULL;
 	return new Image(*filename);
 }
 
-void ResizeImage(Image* img, int width, int height) {
+void Image_Resize(Image* img, int width, int height) {
 	if(img == NULL) return;
 	img->resize(width, height);
 }
 
-void SaveImage(Image* img, webapp_str_t* filename, int destroy) {
+void Image_Save(Image* img, webapp_str_t* filename, int destroy) {
 	if(img == NULL || filename == NULL) return;
 	img->save(*filename);
 	if(destroy) delete img;
 }
 
-void DestroyImage(Image* img) {
+void Image_Destroy(Image* img) {
 	if(img == NULL) return;
 	delete img;
 }
 
 //File API
-File* OpenFile(webapp_str_t* filename, webapp_str_t* mode) {
+File* File_Open(webapp_str_t* filename, webapp_str_t* mode) {
 	if(filename == NULL || mode == NULL) return NULL;
 	File* f = new File(*filename, mode);
 	return f;
 }
 
-void CloseFile(File* f) {
+void File_Close(File* f) {
 	if(f == NULL) return;
 	f->Close();
 	delete f;
 }
 
-uint16_t ReadFile(File* f, uint16_t n_bytes) {
+uint16_t File_Read(File* f, uint16_t n_bytes) {
 	if(f == NULL) return 0;
 	return f->Read(n_bytes);
 }
 
-void WriteFile(File* f, webapp_str_t* buf) {
+void FileWrite(File* f, webapp_str_t* buf) {
 	if(f == NULL || buf == NULL) return;
 	f->Write(*buf);
 }
 
-uint64_t FileSize(File* f) {
+uint64_t File_Size(File* f) {
 	if(f == NULL) return 0;
 	return f->Size();
 }

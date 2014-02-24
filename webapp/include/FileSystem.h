@@ -9,7 +9,7 @@
 
 #include "Platform.h"
 
-class webapp_str_t;
+struct webapp_str_t;
 
 class File {
 	webapp_str_t _fileName;
