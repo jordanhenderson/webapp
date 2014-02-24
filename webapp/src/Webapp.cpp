@@ -131,14 +131,6 @@ string* RequestQueue::RenderTemplate(const webapp_str_t& page) {
 	_cache->ExpandNoLoad(page, STRIP_WHITESPACE, baseTemplate, NULL,
 						  output);
 	else {
-		templates.clear();
-		
-		for(auto tmpl: _handler->templates) {
-			TemplateDictionary* dict = baseTemplate->AddIncludeDictionary(tmpl.first);
-			dict->SetFilename(tmpl.second);
-			templates.insert({tmpl.first, dict});
-		}
-
 		mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::LAZY_RELOAD);
 		ExpandTemplate(page, STRIP_WHITESPACE, baseTemplate, output);
 	}
