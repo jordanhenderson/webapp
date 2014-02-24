@@ -3,8 +3,8 @@
 	<output type="static">opencv</output>
 	<flags compiler="msvc">MT;W3;EHsc</flags>
 	<flags>O2</flags>
-	<flags type="pp">__TBB_NO_IMPLICIT_LINKAGE;__OPENCV_BUILD</flags>
-	<include>modules/imgproc/src;modules/imgproc/include;modules/core/include;./;../tbb/include;../zlib/include</include>
+	<flags type="pp">__OPENCV_BUILD</flags>
+	<include>modules/imgproc/src;modules/imgproc/include;modules/core/include;./;../zlib/include</include>
 	<source f="modules/core/src/algorithm.cpp"/>
     <source f="modules/core/src/alloc.cpp"/>
     <source f="modules/core/src/arithm.cpp"/>

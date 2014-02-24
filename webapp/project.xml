@@ -3,11 +3,10 @@
 	<depends link="true">../ext/ctemplate</depends>
 	<depends link="true">../ext/libjpeg</depends>
 	<depends link="true">../ext/lpng</depends>
-	<depends link="true">../ext/mysql</depends>
+	<depends link="true">../ext/mariadb</depends>
 	<depends link="true">../ext/luajit</depends>
 	<depends link="true">../ext/opencv</depends>
 	<depends link="true">../ext/openssl</depends>
-	<depends link="true">../ext/tbb</depends>
 	<depends link="true">../ext/zlib</depends>
 	<depends link="true">../ext/sqlite</depends>
 	<depends>../ext/nginx</depends>
@@ -19,8 +18,8 @@
 	<flags compiler="gcc">fvisibility=hidden</flags>
 	<flags step="link" compiler="gcc">pthread;lstdc++;lm;ldl;fvisibility=hidden;Wl,--dynamic-list=api.exp</flags>
 	<flags type="pp" compiler="msvc">UNICODE;_UNICODE;_WIN32_WINNT=0x0502;ASIO_MSVC;ASIO_WINDOWS;_CONSOLE;_WIN32;_VISUALC_</flags>
-	<flags type="pp">CTEMPLATE_DLL_DECL=;__TBB_NO_IMPLICIT_LINKAGE;ASIO_STANDALONE</flags>
-	<include>include;../ext/nginx/include;../ext/nginx/src/core/;../ext/nginx/src/http/modules;../ext/nginx/src/event/modules;../ext/nginx/src/event;../ext/nginx/src/http;../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/tbb/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;../ext/openssl/include;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;include/lpeg;include/cjson;include/readerwriterqueue;../ext/mysql/include;../ext/sqlite/include</include>
+	<flags type="pp">CTEMPLATE_DLL_DECL=;ASIO_STANDALONE</flags>
+	<include>include;../ext/nginx/include;../ext/nginx/src/core/;../ext/nginx/src/http/modules;../ext/nginx/src/event/modules;../ext/nginx/src/event;../ext/nginx/src/http;../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/tbb/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;../ext/openssl/include;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;include/lpeg;include/cjson;include/readerwriterqueue;../ext/mariadb/include;../ext/sqlite/include;../ext/leveldb/include</include>
 	<include os="win32">../ext/ctemplate/include/windows</include>
 	<include os="linux">../ext/ctemplate/include</include>
 	<link compiler="msvc">ws2_32.lib;kernel32.lib;user32.lib;Advapi32.lib;crypt32.lib;Gdi32.lib</link>

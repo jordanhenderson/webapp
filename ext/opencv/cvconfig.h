@@ -59,8 +59,9 @@
 /* #undef HAVE_DC1394_2 */
 
 /* DirectShow Video Capture library */
+#ifdef _MSC_VER
 #define HAVE_DSHOW
-
+#endif
 /* Eigen Matrix & Linear Algebra Library */
 /* #undef HAVE_EIGEN */
 
@@ -134,7 +135,7 @@
 /* #undef HAVE_QTKIT */
 
 /* Intel Threading Building Blocks */
-#define HAVE_TBB
+//#define HAVE_TBB
 
 /* TIFF codec */
 #define HAVE_TIFF
@@ -143,7 +144,9 @@
 /* #undef HAVE_UNICAP */
 
 /* Video for Windows support */
+#ifdef _MSC_VER
 #define HAVE_VFW
+#endif
 
 /* V4L2 capturing support in videoio.h */
 /* #undef HAVE_VIDEOIO */
