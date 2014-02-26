@@ -14,15 +14,13 @@
 #include "leveldb/slice.h"
 #include "util/logging.h"
 
-#include <Shlwapi.h>
+#include <shlwapi.h>
 #include <process.h>
 #include <cstring>
 #include <stdio.h>
 #include <errno.h>
 #include <io.h>
-#include <DbgHelp.h>
 #include <algorithm>
-#pragma comment(lib,"DbgHelp.lib")
 
 #ifdef max
 #undef max
@@ -422,7 +420,7 @@ BOOL Win32RandomAccessFile::_Init( LPCWSTR path )
 {
     BOOL bRet = FALSE;
     if(!_hFile)
-        _hFile = ::CreateFileW(path,GENERIC_READ,0,NULL,OPEN_EXISTING,
+        _hFile = ::CreateFileW(path,GENERIC_READ,FILE_SHARE_READ,NULL,OPEN_EXISTING,
         FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS,NULL);
     if(!_hFile || _hFile == INVALID_HANDLE_VALUE )
         _hFile = NULL;
@@ -464,8 +462,8 @@ bool Win32MapFile::_UnmapCurrentRegion()
             // Defer syncing this data until next Sync() call, if any
             _pending_sync = true;
         }
-        UnmapViewOfFile(_base);
-        CloseHandle(_base_handle);
+        if (!UnmapViewOfFile(_base) || !CloseHandle(_base_handle))
+            result = false;
         _file_offset += _limit - _base;
         _base = NULL;
         _base_handle = NULL;
@@ -908,18 +906,34 @@ uint64_t Win32Env::NowMicros()
     return (uint64_t)(GetTickCount64()*1000);
 }
 
-Status Win32Env::CreateDir( const std::string& dirname )
+static Status CreateDirInner( const std::string& dirname )
 {
     Status sRet;
+    DWORD attr = ::GetFileAttributes(dirname.c_str());
+    if (attr == INVALID_FILE_ATTRIBUTES) { // doesn't exist:
+      std::size_t slash = dirname.find_last_of("\\");
+      if (slash != std::string::npos){
+	sRet = CreateDirInner(dirname.substr(0, slash));
+	if (!sRet.ok()) return sRet;
+      }
+      BOOL result = ::CreateDirectory(dirname.c_str(), NULL);
+      if (result == FALSE) {
+	sRet = Status::IOError(dirname, "Could not create directory.");
+	return sRet;
+      }
+    }
+    return sRet;
+}
+
+Status Win32Env::CreateDir( const std::string& dirname )
+{
     std::string path = dirname;
     if(path[path.length() - 1] != '\\'){
         path += '\\';
     }
     ModifyPath(path);
-    if(!::MakeSureDirectoryPathExists( path.c_str() ) ){
-        sRet = Status::IOError(dirname, "Could not create directory.");
-    }
-    return sRet;
+
+    return CreateDirInner(path);
 }
 
 Status Win32Env::DeleteDir( const std::string& dirname )
@@ -957,7 +971,7 @@ Status Win32Env::NewRandomAccessFile( const std::string& fname, RandomAccessFile
     if(!pFile->isEnable()){
         delete pFile;
         *result = NULL;
-        sRet = Status::IOError(path,"Could not create random access file.");
+        sRet = Status::IOError(path, Win32::GetLastErrSz());
     }else
         *result = pFile;
     return sRet;
