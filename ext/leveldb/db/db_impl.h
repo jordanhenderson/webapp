@@ -6,16 +6,28 @@
 #define STORAGE_LEVELDB_DB_DB_IMPL_H_
 
 #include <deque>
+#include <list>
 #include <set>
+#ifdef _LIBCPP_VERSION
+#include <memory>
+#else
+#include <tr1/memory>
+#endif
 #include "db/dbformat.h"
 #include "db/log_writer.h"
+#include "db/replay_iterator.h"
 #include "db/snapshot.h"
-#include "leveldb/db.h"
-#include "leveldb/env.h"
+#include "hyperleveldb/db.h"
+#include "hyperleveldb/env.h"
 #include "port/port.h"
 #include "port/thread_annotations.h"
 
 namespace leveldb {
+#ifdef _LIBCPP_VERSION
+#define SHARED_PTR std::shared_ptr
+#else
+#define SHARED_PTR std::tr1::shared_ptr
+#endif
 
 class MemTable;
 class TableCache;
@@ -36,11 +48,19 @@ class DBImpl : public DB {
                      const Slice& key,
                      std::string* value);
   virtual Iterator* NewIterator(const ReadOptions&);
+  virtual void GetReplayTimestamp(std::string* timestamp);
+  virtual void AllowGarbageCollectBeforeTimestamp(const std::string& timestamp);
+  virtual bool ValidateTimestamp(const std::string& timestamp);
+  virtual int CompareTimestamps(const std::string& lhs, const std::string& rhs);
+  virtual Status GetReplayIterator(const std::string& timestamp,
+                                   ReplayIterator** iter);
+  virtual void ReleaseReplayIterator(ReplayIterator* iter);
   virtual const Snapshot* GetSnapshot();
   virtual void ReleaseSnapshot(const Snapshot* snapshot);
   virtual bool GetProperty(const Slice& property, std::string* value);
   virtual void GetApproximateSizes(const Range* range, int n, uint64_t* sizes);
   virtual void CompactRange(const Slice* begin, const Slice* end);
+  virtual Status LiveBackup(const Slice& name);
 
   // Extra methods (for testing) that are not in the public DB interface
 
@@ -64,14 +84,18 @@ class DBImpl : public DB {
   // bytes.
   void RecordReadSample(Slice key);
 
+  // Peek at the last sequence;
+  // REQURES: mutex_ not held
+  SequenceNumber LastSequence();
+
  private:
   friend class DB;
   struct CompactionState;
   struct Writer;
 
-  Iterator* NewInternalIterator(const ReadOptions&,
+  Iterator* NewInternalIterator(const ReadOptions&, uint64_t number,
                                 SequenceNumber* latest_snapshot,
-                                uint32_t* seed);
+                                uint32_t* seed, bool external_sync);
 
   Status NewDB();
 
@@ -85,34 +109,40 @@ class DBImpl : public DB {
   // Delete any unneeded files and stale in-memory entries.
   void DeleteObsoleteFiles();
 
-  // Compact the in-memory write buffer to disk.  Switches to a new
-  // log-file/memtable and writes a new descriptor iff successful.
-  // Errors are recorded in bg_error_.
-  void CompactMemTable() EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+  // A background thread to compact the in-memory write buffer to disk.
+  // Switches to a new log-file/memtable and writes a new descriptor iff
+  // successful.
+  static void CompactMemTableWrapper(void* db)
+  { reinterpret_cast<DBImpl*>(db)->CompactMemTableThread(); }
+  void CompactMemTableThread();
 
   Status RecoverLogFile(uint64_t log_number,
                         VersionEdit* edit,
                         SequenceNumber* max_sequence)
       EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
-  Status WriteLevel0Table(MemTable* mem, VersionEdit* edit, Version* base)
+  Status WriteLevel0Table(MemTable* mem, VersionEdit* edit, Version* base, uint64_t* number)
       EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
-  Status MakeRoomForWrite(bool force /* compact even if there is room? */)
+  Status SequenceWriteBegin(Writer* w, WriteBatch* updates)
       EXCLUSIVE_LOCKS_REQUIRED(mutex_);
-  WriteBatch* BuildBatchGroup(Writer** last_writer);
+  void SequenceWriteEnd(Writer* w)
+      EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
-  void RecordBackgroundError(const Status& s);
+  static void CompactLevelWrapper(void* db)
+  { reinterpret_cast<DBImpl*>(db)->CompactLevelThread(); }
+  void CompactLevelThread();
+  Status BackgroundCompaction() EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
-  void MaybeScheduleCompaction() EXCLUSIVE_LOCKS_REQUIRED(mutex_);
-  static void BGWork(void* db);
-  void BackgroundCall();
-  void  BackgroundCompaction() EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+  static void CompactOptimisticWrapper(void* db)
+  { reinterpret_cast<DBImpl*>(db)->CompactOptimisticThread(); }
+  void CompactOptimisticThread();
+  Status OptimisticCompaction() EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+
   void CleanupCompaction(CompactionState* compact)
       EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   Status DoCompactionWork(CompactionState* compact)
       EXCLUSIVE_LOCKS_REQUIRED(mutex_);
-
   Status OpenCompactionOutputFile(CompactionState* compact);
   Status FinishCompactionOutputFile(CompactionState* compact, Iterator* input);
   Status InstallCompactionResults(CompactionState* compact)
@@ -136,18 +166,17 @@ class DBImpl : public DB {
   // State below is protected by mutex_
   port::Mutex mutex_;
   port::AtomicPointer shutting_down_;
-  port::CondVar bg_cv_;          // Signalled when background work finishes
   MemTable* mem_;
   MemTable* imm_;                // Memtable being compacted
   port::AtomicPointer has_imm_;  // So bg thread can detect non-NULL imm_
-  WritableFile* logfile_;
+  SHARED_PTR<WritableFile> logfile_;
   uint64_t logfile_number_;
-  log::Writer* log_;
+  SHARED_PTR<log::Writer> log_;
   uint32_t seed_;                // For sampling.
 
-  // Queue of writers.
-  std::deque<Writer*> writers_;
-  WriteBatch* tmp_batch_;
+  // Synchronize writers
+  uint64_t __attribute__ ((aligned (8))) writers_lower_;
+  uint64_t __attribute__ ((aligned (8))) writers_upper_;
 
   SnapshotList snapshots_;
 
@@ -155,8 +184,21 @@ class DBImpl : public DB {
   // part of ongoing compactions.
   std::set<uint64_t> pending_outputs_;
 
-  // Has a background compaction been scheduled or is running?
-  bool bg_compaction_scheduled_;
+  bool allow_background_activity_;
+  bool levels_locked_[leveldb::config::kNumLevels];
+  int num_bg_threads_;
+  // Tell the foreground that background has done something of note
+  port::CondVar bg_fg_cv_;
+  // Communicate with compaction background thread
+  port::CondVar bg_compaction_cv_;
+  // Communicate with memtable->L0 background thread
+  port::CondVar bg_memtable_cv_;
+  // Communicate with the optimistic background thread
+  bool bg_optimistic_trip_;
+  port::CondVar bg_optimistic_cv_;
+  // Mutual exlusion protecting the LogAndApply func
+  port::CondVar bg_log_cv_;
+  bool bg_log_occupied_;
 
   // Information for a manual compaction
   struct ManualCompaction {
@@ -168,10 +210,25 @@ class DBImpl : public DB {
   };
   ManualCompaction* manual_compaction_;
 
+  // Where have we pinned tombstones?
+  SequenceNumber manual_garbage_cutoff_;
+
+  // replay iterators
+  std::list<ReplayIteratorImpl*> replay_iters_;
+
+  // how many reads have we done in a row, uninterrupted by writes
+  uint64_t straight_reads_;
+
   VersionSet* versions_;
+
+  // Information for ongoing backup processes
+  port::CondVar backup_cv_;
+  port::AtomicPointer backup_in_progress_; // non-NULL in progress
+  bool backup_deferred_delete_; // DeleteObsoleteFiles delayed by backup; protect with mutex_
 
   // Have we encountered a background error in paranoid mode?
   Status bg_error_;
+  int consecutive_compaction_errors_;
 
   // Per level compaction stats.  stats_[level] stores the stats for
   // compactions that produced data for the specified "level".

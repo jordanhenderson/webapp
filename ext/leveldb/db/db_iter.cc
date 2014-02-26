@@ -7,16 +7,12 @@
 #include "db/filename.h"
 #include "db/db_impl.h"
 #include "db/dbformat.h"
-#include "leveldb/env.h"
-#include "leveldb/iterator.h"
+#include "hyperleveldb/env.h"
+#include "hyperleveldb/iterator.h"
 #include "port/port.h"
 #include "util/logging.h"
 #include "util/mutexlock.h"
 #include "util/random.h"
-#ifdef _MSC_VER
-#include <BaseTsd.h>
-typedef SSIZE_T ssize_t;
-#endif 
 
 namespace leveldb {
 
@@ -149,6 +145,9 @@ inline bool DBIter::ParseKey(ParsedInternalKey* ikey) {
 
 void DBIter::Next() {
   assert(valid_);
+
+  // Temporarily use saved_key_ as storage for key to skip.
+  std::string* skip = &saved_key_;
 
   if (direction_ == kReverse) {  // Switch directions?
     direction_ = kForward;

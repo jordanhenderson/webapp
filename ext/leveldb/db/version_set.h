@@ -28,6 +28,7 @@ namespace leveldb {
 namespace log { class Writer; }
 
 class Compaction;
+class CompactionBoundary;
 class Iterator;
 class MemTable;
 class TableBuilder;
@@ -62,6 +63,12 @@ class Version {
   // yield the contents of this Version when merged together.
   // REQUIRES: This version has been saved (see VersionSet::SaveTo)
   void AddIterators(const ReadOptions&, std::vector<Iterator*>* iters);
+
+  // Append to *iters a sequence of iterators that will
+  // yield a subset of the contents of this Version when merged together.
+  // Yields only files with number greater or equal to num
+  // REQUIRES: This version has been saved (see VersionSet::SaveTo)
+  void AddSomeIterators(const ReadOptions&, uint64_t num, std::vector<Iterator*>* iters);
 
   // Lookup the value for key.  If found, store it in *val and
   // return OK.  Else return a non-OK status.  Fills *stats.
@@ -118,7 +125,7 @@ class Version {
   friend class VersionSet;
 
   class LevelFileNumIterator;
-  Iterator* NewConcatenatingIterator(const ReadOptions&, int level) const;
+  Iterator* NewConcatenatingIterator(const ReadOptions&, int level, uint64_t num) const;
 
   // Call func(arg, level, f) for every file that overlaps user_key in
   // order from newest to oldest.  If an invocation of func returns
@@ -144,15 +151,15 @@ class Version {
   // Level that should be compacted next and its compaction score.
   // Score < 1 means compaction is not strictly needed.  These fields
   // are initialized by Finalize().
-  double compaction_score_;
-  int compaction_level_;
+  double compaction_scores_[config::kNumLevels];
 
   explicit Version(VersionSet* vset)
       : vset_(vset), next_(this), prev_(this), refs_(0),
         file_to_compact_(NULL),
-        file_to_compact_level_(-1),
-        compaction_score_(-1),
-        compaction_level_(-1) {
+        file_to_compact_level_(-1) {
+    for (int i = 0; i < config::kNumLevels; ++i) {
+      compaction_scores_[i] = -1;
+    }
   }
 
   ~Version();
@@ -175,7 +182,7 @@ class VersionSet {
   // current version.  Will release *mu while actually writing to the file.
   // REQUIRES: *mu is held on entry.
   // REQUIRES: no other thread concurrently calls LogAndApply()
-  Status LogAndApply(VersionEdit* edit, port::Mutex* mu)
+  Status LogAndApply(VersionEdit* edit, port::Mutex* mu, port::CondVar* cv, bool* wt)
       EXCLUSIVE_LOCKS_REQUIRED(mu);
 
   // Recover the last saved descriptor from persistent storage.
@@ -224,11 +231,16 @@ class VersionSet {
   // being compacted, or zero if there is no such log file.
   uint64_t PrevLogNumber() const { return prev_log_number_; }
 
-  // Pick level and inputs for a new compaction.
+  // Pick level for a new compaction.
+  // Returns kNumLevels if there is no compaction to be done.
+  // Otherwise returns the lowest unlocked level that may compact upwards.
+  int PickCompactionLevel(bool* locked, bool seek_driven) const;
+
+  // Pick inputs for a new compaction at the specified level.
   // Returns NULL if there is no compaction to be done.
   // Otherwise returns a pointer to a heap-allocated object that
   // describes the compaction.  Caller should delete the result.
-  Compaction* PickCompaction();
+  Compaction* PickCompaction(Version* v, int level);
 
   // Return a compaction object for compacting the range [begin,end] in
   // the specified level.  Returns NULL if there is nothing in that
@@ -248,9 +260,8 @@ class VersionSet {
   Iterator* MakeInputIterator(Compaction* c);
 
   // Returns true iff some level needs a compaction.
-  bool NeedsCompaction() const {
-    Version* v = current_;
-    return (v->compaction_score_ >= 1) || (v->file_to_compact_ != NULL);
+  bool NeedsCompaction(bool* levels, bool seek_driven) const {
+    return PickCompactionLevel(levels, seek_driven) != config::kNumLevels;
   }
 
   // Add all files listed in any live version to *live.
@@ -285,12 +296,22 @@ class VersionSet {
                  InternalKey* smallest,
                  InternalKey* largest);
 
+  void GetCompactionBoundaries(Version* version,
+                               int level,
+                               std::vector<FileMetaData*>* LA,
+                               std::vector<FileMetaData*>* LB,
+                               std::vector<uint64_t>* LA_sizes,
+                               std::vector<uint64_t>* LB_sizes,
+                               std::vector<class CompactionBoundary>* boundaries);
+
   void SetupOtherInputs(Compaction* c);
 
   // Save current contents to *log
   Status WriteSnapshot(log::Writer* log);
 
   void AppendVersion(Version* v);
+
+  bool ManifestContains(const std::string& record) const;
 
   Env* const env_;
   const std::string dbname_;
@@ -352,13 +373,16 @@ class Compaction {
   // in levels greater than "level+1".
   bool IsBaseLevelForKey(const Slice& user_key);
 
-  // Returns true iff we should stop building the current output
-  // before processing "internal_key".
-  bool ShouldStopBefore(const Slice& internal_key);
-
   // Release the input version for the compaction, once the compaction
   // is successful.
   void ReleaseInputs();
+
+  // Set and get the ratio of inputs to outputs.
+  // If nonzero, this is the ratio of inputs to outputs.  If zero, it indicates
+  // that the compaction was chosen without concern for the ratio of inputs to
+  // outputs.
+  void SetRatio(double ratio) { ratio_ = ratio; }
+  double ratio() { return ratio_; }
 
  private:
   friend class Version;
@@ -371,16 +395,10 @@ class Compaction {
   Version* input_version_;
   VersionEdit edit_;
 
+  double ratio_;
+
   // Each compaction reads inputs from "level_" and "level_+1"
   std::vector<FileMetaData*> inputs_[2];      // The two sets of inputs
-
-  // State used to check for number of of overlapping grandparent files
-  // (parent == level_ + 1, grandparent == level_ + 2)
-  std::vector<FileMetaData*> grandparents_;
-  size_t grandparent_index_;  // Index in grandparent_starts_
-  bool seen_key_;             // Some output key has been seen
-  int64_t overlapped_bytes_;  // Bytes of overlap between current output
-                              // and grandparent files
 
   // State for implementing IsBaseLevelForKey
 

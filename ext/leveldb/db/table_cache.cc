@@ -5,8 +5,8 @@
 #include "db/table_cache.h"
 
 #include "db/filename.h"
-#include "leveldb/env.h"
-#include "leveldb/table.h"
+#include "hyperleveldb/env.h"
+#include "hyperleveldb/table.h"
 #include "util/coding.h"
 
 namespace leveldb {
@@ -50,12 +50,12 @@ Status TableCache::FindTable(uint64_t file_number, uint64_t file_size,
   Slice key(buf, sizeof(buf));
   *handle = cache_->Lookup(key);
   if (*handle == NULL) {
-    std::string fname = TableFileName(dbname_, file_number);
+    std::string fname = SSTTableFileName(dbname_, file_number);
     RandomAccessFile* file = NULL;
     Table* table = NULL;
     s = env_->NewRandomAccessFile(fname, &file);
     if (!s.ok()) {
-      std::string old_fname = SSTTableFileName(dbname_, file_number);
+      std::string old_fname = TableFileName(dbname_, file_number);
       if (env_->NewRandomAccessFile(old_fname, &file).ok()) {
         s = Status::OK();
       }

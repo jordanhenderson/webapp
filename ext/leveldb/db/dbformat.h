@@ -6,11 +6,11 @@
 #define STORAGE_LEVELDB_DB_FORMAT_H_
 
 #include <stdio.h>
-#include "leveldb/comparator.h"
-#include "leveldb/db.h"
-#include "leveldb/filter_policy.h"
-#include "leveldb/slice.h"
-#include "leveldb/table_builder.h"
+#include "hyperleveldb/comparator.h"
+#include "hyperleveldb/db.h"
+#include "hyperleveldb/filter_policy.h"
+#include "hyperleveldb/slice.h"
+#include "hyperleveldb/table_builder.h"
 #include "util/coding.h"
 #include "util/logging.h"
 
@@ -24,10 +24,12 @@ static const int kNumLevels = 7;
 // Level-0 compaction is started when we hit this many files.
 static const int kL0_CompactionTrigger = 4;
 
-// Soft limit on number of level-0 files.  We slow down writes at this point.
+// Soft limit on number of level-0 files.  We could slow down writes at this
+// point, but don't.
 static const int kL0_SlowdownWritesTrigger = 8;
 
-// Maximum number of level-0 files.  We stop writes at this point.
+// Maximum number of level-0 files.  We could stop writes at this point, but
+// don't.
 static const int kL0_StopWritesTrigger = 12;
 
 // Maximum level to which a new compacted memtable is pushed if it

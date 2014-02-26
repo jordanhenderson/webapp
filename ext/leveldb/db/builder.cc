@@ -8,9 +8,9 @@
 #include "db/dbformat.h"
 #include "db/table_cache.h"
 #include "db/version_edit.h"
-#include "leveldb/db.h"
-#include "leveldb/env.h"
-#include "leveldb/iterator.h"
+#include "hyperleveldb/db.h"
+#include "hyperleveldb/env.h"
+#include "hyperleveldb/iterator.h"
 
 namespace leveldb {
 
@@ -24,7 +24,7 @@ Status BuildTable(const std::string& dbname,
   meta->file_size = 0;
   iter->SeekToFirst();
 
-  std::string fname = TableFileName(dbname, meta->number);
+  std::string fname = SSTTableFileName(dbname, meta->number);
   if (iter->Valid()) {
     WritableFile* file;
     s = env->NewWritableFile(fname, &file);

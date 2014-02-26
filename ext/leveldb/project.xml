@@ -1,12 +1,14 @@
 <?xml version="1.0"?>
 <project>
+	<depends link="true">../snappy</depends>
 	<output type="static">leveldb</output>
 	<flags compiler="msvc">MT;W3;EHsc</flags>
 	<flags compiler="gcc" ext="cc">std=c++11</flags>
 	<flags os="linux" type="pp">LEVELDB_PLATFORM_POSIX</flags>
 	<flags os="win32" type="pp">LEVELDB_PLATFORM_WINDOWS</flags>
+	<flags type="pp">SNAPPY</flags>
 	<flags>O2</flags>
-	<include>include;.</include>
+	<include>include;.;../snappy/</include>
 	<include os="win32">win</include>
 	<source f="db/db_impl.cc"/>
 	<source f="db/builder.cc"/>
@@ -16,13 +18,13 @@
 	<source f="db/filename.cc"/>
 	<source f="db/log_reader.cc"/>
 	<source f="db/log_writer.cc"/>
+	<source f="db/replay_iterator.cc"/>
 	<source f="db/memtable.cc"/>
 	<source f="db/repair.cc"/>
 	<source f="db/table_cache.cc"/>
 	<source f="db/version_edit.cc"/>
 	<source f="db/version_set.cc"/>
 	<source f="db/write_batch.cc"/>
-	<source f="helpers/memenv/memenv.cc"/>
 	<source f="port/port_posix.cc" os="linux"/>
 	<source f="port/port_win.cc" os="win32"/>
 	<source f="table/block.cc"/>
@@ -49,8 +51,4 @@
 	<source f="util/logging.cc"/>
 	<source f="util/options.cc"/>
 	<source f="util/status.cc"/>
-	<source f="util/testharness.cc"/>
-	<source f="util/testutil.cc"/>
-
-	
 </project>

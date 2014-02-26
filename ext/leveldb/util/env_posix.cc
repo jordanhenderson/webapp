@@ -20,8 +20,8 @@
 #if defined(LEVELDB_PLATFORM_ANDROID)
 #include <sys/stat.h>
 #endif
-#include "leveldb/env.h"
-#include "leveldb/slice.h"
+#include "hyperleveldb/env.h"
+#include "hyperleveldb/slice.h"
 #include "port/port.h"
 #include "util/logging.h"
 #include "util/mutexlock.h"
@@ -175,44 +175,153 @@ class PosixMmapReadableFile: public RandomAccessFile {
   }
 };
 
-class PosixWritableFile : public WritableFile {
+// We preallocate up to an extra megabyte and use memcpy to append new
+// data to the file.  This is safe since we either properly close the
+// file before reading from it, or for log files, the reading code
+// knows enough to skip zero suffixes.
+// TODO:  I use GCC intrinsics here.  I don't feel bad about this, but it
+// hinders portability.
+class PosixMmapFile : public WritableFile {
  private:
-  std::string filename_;
-  FILE* file_;
+  struct MmapSegment {
+    MmapSegment* next_;     // the next-lowest Map segment in the file
+    uint64_t file_offset_;  // Offset of base_ in file
+    uint64_t written_;      // The amount of data written to this segment
+    uint64_t size_;         // The size of the mapped region
+    char* base_;            // The mapped region
+  };
+
+  std::string filename_;    // Path to the file
+  int fd_;                  // The open file
+  size_t page_size_;        // System page size
+  uint64_t sync_offset_;    // Offset of the last sync call
+  uint64_t end_offset_;     // Where does the file end?
+  MmapSegment* segments_;   // mmap'ed regions of memory
+  port::Mutex mtx_;         // Synchronize and shit
+
+  // Roundup x to a multiple of y
+  static size_t Roundup(size_t x, size_t y) {
+    return ((x + y - 1) / y) * y;
+  }
+
+  MmapSegment* GetSegment(uint64_t offset) {
+    MutexLock l(&mtx_);
+    while (true) {
+      MmapSegment* seg = segments_;
+      while (seg && seg->file_offset_ > offset) {
+        seg = seg->next_;
+      }
+      if (!seg || seg->file_offset_ + seg->size_ <= offset) {
+        assert(seg == segments_);
+        MmapSegment* new_seg = new MmapSegment();
+        new_seg->next_ = seg;
+        new_seg->file_offset_ = seg ? seg->file_offset_ + seg-> size_ : 0;
+        new_seg->written_ = 0;
+        new_seg->size_ = seg ? seg->size_ : Roundup(1 << 20, page_size_);
+        if (ftruncate(fd_, new_seg->file_offset_ + new_seg->size_) < 0) {
+          delete new_seg;
+          return NULL;
+        }
+        void* ptr = mmap(NULL, new_seg->size_, PROT_READ | PROT_WRITE, MAP_SHARED,
+                         fd_, new_seg->file_offset_);
+        if (ptr == MAP_FAILED) {
+          delete new_seg;
+          return NULL;
+        }
+        new_seg->base_ = reinterpret_cast<char*>(ptr);
+        segments_ = new_seg;
+        continue;
+      }
+      assert(seg &&
+             seg->file_offset_ <= offset &&
+             seg->file_offset_ + seg->size_ > offset);
+      return seg;
+    }
+  }
+
+  bool ReleaseSegment(MmapSegment* seg, bool full) {
+    return true;
+  }
 
  public:
-  PosixWritableFile(const std::string& fname, FILE* f)
-      : filename_(fname), file_(f) { }
+  PosixMmapFile(const std::string& fname, int fd, size_t page_size)
+      : filename_(fname),
+        fd_(fd),
+        page_size_(page_size),
+        sync_offset_(0),
+        end_offset_(0),
+        segments_(NULL),
+        mtx_() {
+    assert((page_size & (page_size - 1)) == 0);
+  }
 
-  ~PosixWritableFile() {
-    if (file_ != NULL) {
-      // Ignoring any potential errors
-      fclose(file_);
+  ~PosixMmapFile() {
+    if (fd_ >= 0) {
+      PosixMmapFile::Close();
     }
+  }
+
+  virtual Status WriteAt(uint64_t offset, const Slice& data) {
+    uint64_t end = offset + data.size();
+    const char* src = data.data();
+    uint64_t left = data.size();
+    while (left > 0) {
+      MmapSegment* seg = GetSegment(offset);
+      if (!seg) {
+        return IOError(filename_, errno);
+      }
+
+      assert(offset >= seg->file_offset_);
+      assert(offset < seg->file_offset_ + seg->size_);
+      uint64_t local_offset = offset  - seg->file_offset_;
+      uint64_t avail = seg->size_ - local_offset;
+      uint64_t n = (left <= avail) ? left : avail;
+      memcpy(seg->base_ + local_offset, src, n);
+      src += n;
+      left -= n;
+      offset += n;
+      uint64_t written = __sync_add_and_fetch(&seg->written_, n);
+
+      if (!ReleaseSegment(seg, written == seg->size_)) {
+        return IOError(filename_, errno);
+      }
+    }
+    uint64_t old_end = end;
+    do {
+      old_end = __sync_val_compare_and_swap(&end_offset_, old_end, end);
+    } while (old_end < end);
+    return Status::OK();
   }
 
   virtual Status Append(const Slice& data) {
-    size_t r = fwrite_unlocked(data.data(), 1, data.size(), file_);
-    if (r != data.size()) {
-      return IOError(filename_, errno);
-    }
-    return Status::OK();
+    uint64_t offset = __sync_val_compare_and_swap(&end_offset_, 0, 0);
+    return WriteAt(offset, data);
   }
 
   virtual Status Close() {
-    Status result;
-    if (fclose(file_) != 0) {
-      result = IOError(filename_, errno);
+    Status s;
+    while (segments_) {
+      MmapSegment* seg = segments_;
+      segments_ = seg->next_;
+      if (munmap(seg->base_, seg->size_) < 0) {
+        s = IOError(filename_, errno);
+      }
+      seg->base_ = NULL;
+      delete seg;
     }
-    file_ = NULL;
-    return result;
-  }
 
-  virtual Status Flush() {
-    if (fflush_unlocked(file_) != 0) {
-      return IOError(filename_, errno);
+    if (ftruncate(fd_, end_offset_) < 0) {
+      s = IOError(filename_, errno);
     }
-    return Status::OK();
+
+    if (close(fd_) < 0) {
+      if (s.ok()) {
+        s = IOError(filename_, errno);
+      }
+    }
+
+    fd_ = -1;
+    return s;
   }
 
   Status SyncDirIfManifest() {
@@ -245,13 +354,25 @@ class PosixWritableFile : public WritableFile {
   virtual Status Sync() {
     // Ensure new files referred to by the manifest are in the filesystem.
     Status s = SyncDirIfManifest();
+    bool need_sync = false;
+
     if (!s.ok()) {
       return s;
     }
-    if (fflush_unlocked(file_) != 0 ||
-        fdatasync(fileno(file_)) != 0) {
-      s = Status::IOError(filename_, strerror(errno));
+
+    {
+      MutexLock l(&mtx_);
+      need_sync = sync_offset_ != end_offset_;
+      sync_offset_ = end_offset_;
     }
+
+    if (need_sync) {
+      // Some unmapped data was not synced
+      if (fdatasync(fd_) < 0) {
+        s = IOError(filename_, errno);
+      }
+    }
+
     return s;
   }
 };
@@ -342,12 +463,12 @@ class PosixEnv : public Env {
   virtual Status NewWritableFile(const std::string& fname,
                                  WritableFile** result) {
     Status s;
-    FILE* f = fopen(fname.c_str(), "w");
-    if (f == NULL) {
+    const int fd = open(fname.c_str(), O_CREAT | O_RDWR | O_TRUNC, 0644);
+    if (fd < 0) {
       *result = NULL;
       s = IOError(fname, errno);
     } else {
-      *result = new PosixWritableFile(fname, f);
+      *result = new PosixMmapFile(fname, fd, page_size_);
     }
     return s;
   }
@@ -410,6 +531,54 @@ class PosixEnv : public Env {
   virtual Status RenameFile(const std::string& src, const std::string& target) {
     Status result;
     if (rename(src.c_str(), target.c_str()) != 0) {
+      result = IOError(src, errno);
+    }
+    return result;
+  }
+
+  virtual Status CopyFile(const std::string& src, const std::string& target) {
+    Status result;
+    int fd1;
+    int fd2;
+
+    if (result.ok() && (fd1 = open(src.c_str(), O_RDONLY)) < 0) {
+      result = IOError(src, errno);
+    }
+    if (result.ok() && (fd2 = open(target.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0) {
+      result = IOError(target, errno);
+    }
+
+    ssize_t amt = 0;
+    char buf[512];
+
+    while (result.ok() && (amt = read(fd1, buf, 512)) > 0) {
+      if (write(fd2, buf, amt) != amt) {
+        result = IOError(src, errno);
+      }
+    }
+
+    if (result.ok() && amt < 0) {
+      result = IOError(src, errno);
+    }
+
+    if (fd1 >= 0 && close(fd1) < 0) {
+      if (result.ok()) {
+        result = IOError(src, errno);
+      }
+    }
+
+    if (fd2 >= 0 && close(fd2) < 0) {
+      if (result.ok()) {
+        result = IOError(target, errno);
+      }
+    }
+
+    return result;
+  }
+
+  virtual Status LinkFile(const std::string& src, const std::string& target) {
+    Status result;
+    if (link(src.c_str(), target.c_str()) != 0) {
       result = IOError(src, errno);
     }
     return result;
@@ -510,6 +679,7 @@ class PosixEnv : public Env {
     return NULL;
   }
 
+  size_t page_size_;
   pthread_mutex_t mu_;
   pthread_cond_t bgsignal_;
   pthread_t bgthread_;
@@ -524,7 +694,8 @@ class PosixEnv : public Env {
   MmapLimiter mmap_limit_;
 };
 
-PosixEnv::PosixEnv() : started_bgthread_(false) {
+PosixEnv::PosixEnv() : page_size_(getpagesize()),
+                       started_bgthread_(false) {
   PthreadCall("mutex_init", pthread_mutex_init(&mu_, NULL));
   PthreadCall("cvar_init", pthread_cond_init(&bgsignal_, NULL));
 }
