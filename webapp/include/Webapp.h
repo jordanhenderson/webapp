@@ -11,6 +11,7 @@
 #include "Platform.h"
 #include <ctemplate/template.h>
 #include <readerwriterqueue.h>
+#include <leveldb/db.h>
 
 #define WEBAPP_NUM_THREADS 8
 #define WEBAPP_STATIC_STRINGS 10
@@ -34,6 +35,7 @@
  * this file.
 */
 class Database;
+class Session;
 class Sessions;
 class Query;
 class Webapp;
@@ -46,11 +48,21 @@ struct LuaParam {
 	void* ptr;
 };
 
+struct _webapp_str_t {
+    char* data = NULL;
+    uint32_t len = 0;
+    int allocated = 0;
+};
+
 struct webapp_str_t {
-	char* data = NULL;
-	uint32_t len = 0;
-	int allocated = 0;
-	webapp_str_t() {}
+    char* data = NULL;
+    uint32_t len = 0;
+    int allocated = 0;
+    webapp_str_t() {
+        data = new char[1];
+        len = 0;
+        allocated = 1;
+    }
 	webapp_str_t(const char* s, uint32_t _len) {
 		allocated = 1;
 		len = _len;
@@ -87,21 +99,22 @@ struct webapp_str_t {
 		if(allocated) delete[] data;
 	}
 	operator std::string const () const {
-		if(data == NULL) return std::string("");
 		return std::string(data, len);
 	}
 	operator ctemplate::TemplateString const () const {
-		if(data == NULL) return ctemplate::TemplateString("");
 		return ctemplate::TemplateString(data, len);
 	}
+    operator leveldb::Slice const () const {
+        return leveldb::Slice(data, len);
+    }
 	webapp_str_t& operator +=(const webapp_str_t& other) {
 		uint32_t newlen = len + other.len;
 		char* r = new char[newlen];
-		memcpy(r, data, len);
-		memcpy(r + len, other.data, other.len);
+        memcpy(r, data, len);
+        memcpy(r + len, other.data, other.len);
+        if(allocated) delete[] data;
 		len = newlen;
 		allocated = 1;
-		if(allocated) delete[] data;
 		data = r;
 		return *this;
 	}
@@ -109,18 +122,22 @@ struct webapp_str_t {
 		if(this != &other) {
 			char* r = new char[other.len];
 			memcpy(r, other.data, other.len);
-			delete[] data;
+            if(allocated) delete[] data;
 			data = r;
 			allocated = 1;
 			len = other.len;
 		}
 		return *this;
 	}
-	webapp_str_t operator+(const webapp_str_t &other) {
-		webapp_str_t s = *this;
-		s += other;
-		return s;
-	}
+    friend webapp_str_t operator+(const webapp_str_t& w1, const webapp_str_t& w2);
+    friend webapp_str_t operator+(const char* lhs, const webapp_str_t& rhs);
+    friend webapp_str_t operator+(const webapp_str_t& lhs, const char* rhs);
+    void from_number(int num) {
+        if(allocated) delete[] data;
+        data = new char[21];
+        allocated = 1;
+        len = snprintf(data, 21, "%d", num);
+    }
 };
 
 template <class T>
@@ -149,6 +166,7 @@ struct Request {
 	std::vector<std::string*> strings;
 	webapp_str_t* input_chain[STRING_VARS];
 	std::vector<Query*> queries;
+    std::vector<Session*> sessions;
 	int shutdown = 0;
 	std::atomic<int> waiting{0};
 	~Request();
@@ -244,8 +262,7 @@ public:
  * @brief RequestQueue provides a Lua VM with a session container, template
  * cache and queue for Requests.
  */
-class RequestQueue : public WebappTask, public LockedQueue<Request*> {
-public:
+struct RequestQueue : public WebappTask, public LockedQueue<Request*> {
 	Sessions* _sessions;
 	ctemplate::TemplateCache* _cache = NULL;
 	ctemplate::TemplateDictionary* baseTemplate = NULL;

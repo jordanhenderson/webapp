@@ -41,5 +41,5 @@ public:
 namespace FileSystem {
 	int MakePath(const webapp_str_t& path);
 	void DeletePath(const webapp_str_t& path);
-};
+}
 #endif

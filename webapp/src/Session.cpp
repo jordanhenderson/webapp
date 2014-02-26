@@ -8,21 +8,50 @@
  * information.
  */
 
+#include <leveldb/db.h>
+#include <leveldb/filter_policy.h>
 #include "Webapp.h"
 #include "Session.h"
 #include <openssl/sha.h>
 
+
 using namespace std;
 
-Sessions::~Sessions() {
-	//Delete maps within session_map
-	for(SessionMap::iterator it = session_map.begin();
-		it != session_map.end(); ++it) {
-			delete it->second;
-	}
+Session::Session(leveldb::DB* _db, const webapp_str_t &sid)
+    : db(_db), session_id(sid) {
 }
 
-SessionStore* Sessions::new_session(Request* request) {
+webapp_str_t* Session::get(const webapp_str_t &key) {
+    webapp_str_t actual_key = session_id + key;
+    leveldb::Iterator* it = db->NewIterator(leveldb::ReadOptions());
+    for(it->Seek(actual_key); it->Valid(); it->Next()) {
+        leveldb::Slice value = it->value();
+        vals.emplace_back(value.data(), value.size());
+        break;
+    }
+}
+
+void Session::store(const webapp_str_t &key, const webapp_str_t &value) {
+    webapp_str_t actual_key = session_id + key;
+    db->Put(leveldb::WriteOptions(), actual_key, value);
+}
+
+Sessions::Sessions(Webapp* _handler, unsigned int node_id) :
+    handler(_handler), rng(rd()) {
+    leveldb::Options options;
+    _node.from_number(node_id);
+    options.filter_policy = leveldb::NewBloomFilterPolicy(10);
+    options.create_if_missing = true;
+    webapp_str_t path = "./sessions/" + _node;
+    leveldb::Status s = leveldb::DB::Open(options, path, &db);
+    status = s.ok();
+}
+
+Sessions::~Sessions() {
+    if(db != NULL) delete db;
+}
+
+Session* Sessions::new_session(Request* request) {
 	if (request->host.len == 0 || request->user_agent.len == 0) 
 		return NULL;
 	unsigned char output[32];
@@ -47,63 +76,61 @@ SessionStore* Sessions::new_session(Request* request) {
 		*p++ = hex_lookup[output[i] & 0x0F];
 	}
 
-	string str_hex = _node + string((char*)output_hex, 32);
-	
-	SessionMap::iterator it = session_map.find(str_hex);
-	//If session map already exists, try to generate a new one.
-	if (it != session_map.end()) return new_session(request);
+    webapp_str_t session_id = _node + webapp_str_t((char*)output_hex, SESSIONID_SIZE);
+    //Clean up empty sessions.
+    CleanupSessions();
 
-	if(session_map.size() >= max_sessions) {
-		//Sessions have filled up completely.
-		//Ram needs to be increased, sessions moved to different storage (disk)
-		//or server is being DOS'ed.
-		//TODO: Alert server operators.
-		//Try cleaning up empty sessions.
-		CleanupSessions();
-	}
-
-	SessionStore* session_store = new SESSION_STORE();
-	session_store->create(str_hex);
-	session_map.insert({str_hex, session_store});
-	
-	return session_store;
+    Session* session = new Session(db, session_id);
+    request->sessions.push_back(session);
+    return session;
 }
 
 /**
- * @brief Cleanup sessions removes empty sessions or (as a last resort)
- * removes the first session. This *should* never happen, as max_sessions
- * and available RAM should be appropriately adjusted to allow more sessions.
- * This function is also used to cull empty sessions.
+ * @brief Cleanup sessions removes empty and/or exired sessions.
  */
 void Sessions::CleanupSessions() {
-	auto it = session_map.begin();
-	while(it != session_map.end()) {
-		SessionStore* session = it->second;
-		if(session->count() == 0) {
-			delete session;
-			session_map.erase(it++);
-		} else {
-			++it;
-		}
-	}
-	//If still a problem - we have no other option than to destroy a session.
-	if(session_map.size() >= max_sessions) {
-		auto it = session_map.begin();
-		SessionStore* session = it->second;
-		delete session;
-		session_map.erase(it);
-	}
+
 }
 
-SessionStore* Sessions::get_session(const webapp_str_t& sessionid) {
-	auto it = session_map.find(sessionid);
-	if(it != session_map.end())
-		return it->second;
+Session* Sessions::get_session(Request* request) {
+    webapp_str_t* cookies = &request->cookies;
+    if(cookies->len <
+            sizeof(SESSIONID_STR) + SESSION_NODE_SIZE + SESSIONID_SIZE) {
+        return NULL;
+    }
 
+    webapp_str_t session_id;
+    char* cookie_str = cookies->data;
+    char* cookie_end = cookie_str + cookies->len;
+    for(;cookie_str < cookie_end; cookie_str++) {
+        size_t cookie_left = cookie_end - cookie_str;
+        if(strncmp(cookie_str, SESSIONID_STR "=", cookie_left)) {
+            if(cookie_left >= SESSION_NODE_SIZE + SESSIONID_SIZE) {
+                //Found a session ID!
+                session_id = webapp_str_t(cookie_str,
+                                          SESSION_NODE_SIZE + SESSIONID_SIZE);
+
+            } else {
+                //Session ID not long enough.
+                return NULL;
+            }
+        }
+    }
+
+    leveldb::Iterator* it = db->NewIterator(leveldb::ReadOptions());
+    for(it->Seek(session_id); it->Valid(); it->Next()) {
+        leveldb::Slice key = it->key();
+        leveldb::Slice value = it->value();
+        if(key.compare(session_id) > 0) break;
+        time_t current_time = time(0);
+        int64_t session_time = strntol(value.data(), value.size());
+        if(session_time > current_time) return NULL; //Session in the past?
+        if(current_time - session_time > 7000) {
+            Session* session = new Session(db, session_id);
+            request->sessions.push_back(session);
+            return session;
+        }
+    }
 	return NULL;
 }
 
-void Sessions::SetMaxSessions(int value) {
-	max_sessions = value;
-	session_map.reserve(value);
-}

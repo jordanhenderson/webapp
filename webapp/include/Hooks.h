@@ -40,13 +40,13 @@ APIEXPORT void Template_Load(webapp_str_t* page);
 APIEXPORT void Template_Include(Webapp* app, webapp_str_t* name, webapp_str_t* file);
 
 //Get a string stored in the session.
-APIEXPORT int GetSessionValue(SessionStore*, webapp_str_t*, webapp_str_t* out);
-APIEXPORT int SetSessionValue(SessionStore*, webapp_str_t* key, webapp_str_t* val);
-APIEXPORT SessionStore* GetSession(RequestQueue*, webapp_str_t* sessionid);
-APIEXPORT SessionStore* NewSession(RequestQueue*, Request*);
-APIEXPORT void DestroySession(SessionStore*);
+APIEXPORT int GetSessionValue(Session*, webapp_str_t*, webapp_str_t* out);
+APIEXPORT int SetSessionValue(Session*, webapp_str_t* key, webapp_str_t* val);
+APIEXPORT Session* GetSession(RequestQueue*, Request*);
+APIEXPORT Session* NewSession(RequestQueue*, Request*);
+APIEXPORT void DestroySession(Session*);
+APIEXPORT int GetSessionID(Session*, webapp_str_t* out);
 
-APIEXPORT int GetSessionID(SessionStore*, webapp_str_t* out);
 APIEXPORT void FinishRequest(Request*);
 APIEXPORT void QueueProcess(BackgroundQueue*, webapp_str_t* funtion,
 							webapp_str_t* vars);

@@ -4,8 +4,9 @@
  * Written by Jordan Henderson <jordan.henderson@ioflame.com>, 2013
  */
 
-#include "Session.h"
+
 #include "Webapp.h"
+#include "Session.h"
 #include "Database.h"
 #include "Image.h"
 
@@ -36,6 +37,20 @@ int strntol(const char* src, size_t n) {
     return x;
 }
 
+webapp_str_t operator+(const webapp_str_t& w1, const webapp_str_t& w2) {
+    webapp_str_t n = w1;
+    n += w2;
+    return n;
+}
+
+webapp_str_t operator+(const char* lhs, const webapp_str_t& rhs) {
+    return webapp_str_t(lhs) + rhs;
+}
+
+webapp_str_t operator+(const webapp_str_t& lhs, const char* rhs) {
+    return lhs + webapp_str_t(rhs);
+}
+
 static const char* script_t_names[] = {SCRIPT_NAMES};
 /**
  * Request destructor.
@@ -43,6 +58,7 @@ static const char* script_t_names[] = {SCRIPT_NAMES};
 Request::~Request() {
 	for(auto it: strings) delete it;
 	for(auto it: queries) delete it;
+    for(auto it: sessions) delete it;
 	if (socket != NULL) delete socket;
 	if (v != NULL) delete v;
 	if (headers != NULL) delete headers;
@@ -87,7 +103,7 @@ void WebappTask::start() {
 
 RequestQueue::RequestQueue(Webapp *handler, unsigned int id) 
 	: WebappTask(handler, this) {
-	_sessions = new Sessions(id);
+    _sessions = new Sessions(handler, id);
 	Cleanup();
 	start();
 }
@@ -293,7 +309,7 @@ void Webapp::RunScript(LuaParam* params, int nArgs, script_t script) {
 	luaopen_cjson(L);
 	
 	//Allocate memory for temporary string operations.
-	webapp_str_t* static_strings = new webapp_str_t[WEBAPP_STATIC_STRINGS];
+    _webapp_str_t* static_strings = new _webapp_str_t[WEBAPP_STATIC_STRINGS];
 	
 	//Provide and set temporary string memory global.
 	lua_pushlightuserdata(L, static_strings);
@@ -396,30 +412,40 @@ Webapp::Webapp(asio::io_service& io_svc) :
  * Process a recieved request. 
  * By this stage, the entire request has been recieved. This stage reads
  * in/sets each variable and passes the request to lua workers.
- * @param r the Request object
+ * @param request the Request object
  * @param ec the asio error code, if any.
  * @param bytes_transferred the amount of bytes transferred.
 */
 void Webapp::process_request_async(
-	Request* r, const asio::error_code& ec, std::size_t bytes_transferred) {
+    Request* request, const asio::error_code& ec, std::size_t bytes_transferred) {
 	size_t read = 0;
 	
 	//Read each input chain variable recieved from nginx appropriately.
 	for(int i = 0; i < STRING_VARS; i++) {
-		if(r->input_chain[i]->data == NULL) {
-			char* h = (char*) r->v->data() + read;
-			r->input_chain[i]->data = h;
-			read += r->input_chain[i]->len;
+        if(request->input_chain[i]->data == NULL) {
+            char* h = (char*) request->v->data() + read;
+            request->input_chain[i]->data = h;
+            read += request->input_chain[i]->len;
 		}
 	}
 	//Choose a node, queue the request.
 	int selected_node = -1;
-	if (r->cookies.len > strlen("sessionid=") + WEBAPP_LEN_SESSIONID) {
-		const char* sessionid = strstr(r->cookies.data, "sessionid=");
-		if (sessionid) {
-			selected_node = strntol(sessionid + 10, 1) % nWorkers;
-		}
+    webapp_str_t* cookies = &request->cookies;
+    if (cookies->len >= sizeof(SESSIONID_STR) + SESSION_NODE_SIZE + SESSIONID_SIZE) {
+        char* cookie_str = cookies->data;
+        char* cookie_end = cookie_str + cookies->len;
+        for(;cookie_str < cookie_end; cookie_str++) {
+            size_t cookie_left = cookie_end - cookie_str;
+            if(strncmp(cookie_str, SESSIONID_STR "=", cookie_left)) {
+                if(cookie_left >= SESSIONID_SIZE + SESSION_NODE_SIZE) {
+                    //Found a session ID!
+                    selected_node = strntol(cookie_str + sizeof(SESSIONID_STR),
+                                            SESSION_NODE_SIZE) % nWorkers;
+                }
+            }
+        }
 	}
+
 	if (selected_node == -1) {
 		//Something went wrong - node not found, maybe session id missing. 
 		selected_node = node_counter++ % nWorkers;
@@ -428,7 +454,7 @@ void Webapp::process_request_async(
 	if(background_queue_enabled) selected_node++;
 	
 	RequestQueue* worker = dynamic_cast<RequestQueue*>(workers[selected_node]);
-	if(worker != NULL) worker->enqueue(r);
+    if(worker != NULL) worker->enqueue(request);
 }
 
 /**

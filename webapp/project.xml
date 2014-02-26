@@ -10,6 +10,7 @@
 	<depends link="true">../ext/zlib</depends>
 	<depends link="true">../ext/sqlite</depends>
 	<depends link="true">../ext/leveldb</depends>
+	<depends link="true">../ext/snappy</depends>
 	<depends>../ext/nginx</depends>
 	<output type="app">webapp</output>
 	<flags compiler="msvc">MT;W3;wd4996;EHsc</flags>
@@ -20,7 +21,7 @@
 	<flags step="link" compiler="gcc">pthread;lstdc++;lm;ldl;fvisibility=hidden;Wl,--dynamic-list=api.exp</flags>
 	<flags type="pp" compiler="msvc">UNICODE;_UNICODE;_WIN32_WINNT=0x0502;ASIO_MSVC;ASIO_WINDOWS;_CONSOLE;_WIN32;_VISUALC_</flags>
 	<flags type="pp">CTEMPLATE_DLL_DECL=;ASIO_STANDALONE</flags>
-	<include>include;../ext/nginx/include;../ext/nginx/src/core/;../ext/nginx/src/http/modules;../ext/nginx/src/event/modules;../ext/nginx/src/event;../ext/nginx/src/http;../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/tbb/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;../ext/openssl/include;include/sqlite;include/rapidjson;include/gif;include/pngnq;include/tinydir;include/lpeg;include/cjson;include/readerwriterqueue;../ext/mariadb/include;../ext/sqlite/include;../ext/leveldb/include</include>
+	<include>include;../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;../ext/openssl/include;include/gif;include/pngnq;include/tinydir;include/lpeg;include/cjson;include/readerwriterqueue;../ext/mariadb/include;../ext/sqlite/include;../ext/leveldb/include</include>
 	<include os="win32">../ext/ctemplate/include/windows</include>
 	<include os="linux">../ext/ctemplate/include</include>
 	<link compiler="msvc">ws2_32.lib;kernel32.lib;user32.lib;Advapi32.lib;crypt32.lib;Gdi32.lib</link>
@@ -48,6 +49,5 @@
     <source f="src/main.cpp"/>
     <source f="src/Hooks.cpp"/>
     <source f="src/pngnq/neuquant32.c"/>
-	<source f="src/RamSession.cpp"/>
 	<source f="src/Webapp.cpp"/>
 </project>

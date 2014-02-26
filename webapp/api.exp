@@ -41,16 +41,16 @@
 	GetCell;
 	GetColumnName;
 	
-	LoadImage;
-	ResizeImage;
-	SaveImage;
-	DestroyImage;
+	Image_Load;
+	Image_Resize;
+	Image_Save;
+	Image_Destroy;
 
-	OpenFile;
-	CloseFile;
-	ReadFile;
-	WriteFile;
-	FileSize;
+	File_Open;
+	File_Close;
+	File_Read;
+	File_Write;
+	File_Size;
 	tinydir_open;
 	tinydir_open_sorted;
 	tinydir_close;

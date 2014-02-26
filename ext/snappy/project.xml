@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<project>
+	<output type="static">libsnappy</output>
+	<flags compiler="msvc">MT;W3</flags>
+	<flags>O2</flags>
+	<flags type="pp">HAVE_CONFIG_H</flags>
+	<source f="snappy-c.cc"/>
+	<source f="snappy-sinksource.cc"/>
+	<source f="snappy-stubs-internal.cc"/>
+	<source f="snappy.cc"/>
+</project>

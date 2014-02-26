@@ -88,22 +88,21 @@ void Template_Render(RequestQueue* worker, webapp_str_t* page,
 	request->strings.push_back(output);
 }
 
-int GetSessionValue(SessionStore* session, webapp_str_t* key,
-	webapp_str_t* out) {
+int GetSessionValue(Session* session, webapp_str_t* key, webapp_str_t* out) {
 	if(session == NULL || key == NULL) 
 		return 0;
 
-	const string* s = &session->get(*key);
+    webapp_str_t* val = session->get(*key);
 	if (out != NULL) {
 		//Write to out
-		out->data = (char*)s->c_str();
-		out->len = s->length();
+        out->data = val->data;
+        out->len = val->len;
 	}
 
-	return !s->empty();
+    return !(val->len == 0);
 }
 
-int SetSessionValue(SessionStore* session, webapp_str_t* key,
+int SetSessionValue(Session* session, webapp_str_t* key,
 	webapp_str_t* val) {
 	if (session == NULL || key == NULL || val == NULL)
 		return 0;
@@ -111,19 +110,24 @@ int SetSessionValue(SessionStore* session, webapp_str_t* key,
 	return 1;
 }
 
-SessionStore* GetSession(RequestQueue* worker, webapp_str_t* sessionid) {
-	if (sessionid == NULL) return NULL;
-	auto sessions = worker->_sessions;
-	return sessions->get_session(*sessionid);
+int GetSessionID(Session* session, webapp_str_t* out) {
+    if(session == NULL || out == NULL) return 0;
+    out->data = session->session_id.data;
+    out->len = session->session_id.len;
+    return 1;
 }
 
-SessionStore* NewSession(RequestQueue* worker, Request* request) {
-	if (request == NULL) return NULL;
-	auto sessions = worker->_sessions;
-	return sessions->new_session(request);
+Session* GetSession(RequestQueue* worker, Request* request) {
+    if (worker == NULL || request == NULL) return NULL;
+    return worker->_sessions->get_session(request);
 }
 
-void DestroySession(SessionStore* session) {
+Session* NewSession(RequestQueue* worker, Request* request) {
+    if (worker == NULL || request == NULL) return NULL;
+    worker->_sessions->new_session(request);
+}
+
+void DestroySession(Session* session) {
 	delete session;
 }
 
@@ -170,13 +174,6 @@ Process* GetNextProcess(BackgroundQueue* worker) {
 
 void FinishProcess(Process* process) {
 	delete process;
-}
-
-int GetSessionID(SessionStore* session, webapp_str_t* out) {
-	if(session == NULL || out == NULL) return 0;
-	out->data = (char*)session->sessionid.c_str();
-	out->len = session->sessionid.length();
-	return 1;
 }
 
 void CleanupRequest(Request* r) {
@@ -336,7 +333,7 @@ uint16_t File_Read(File* f, uint16_t n_bytes) {
 	return f->Read(n_bytes);
 }
 
-void FileWrite(File* f, webapp_str_t* buf) {
+void File_Write(File* f, webapp_str_t* buf) {
 	if(f == NULL || buf == NULL) return;
 	f->Write(*buf);
 }
