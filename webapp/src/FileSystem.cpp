@@ -151,7 +151,7 @@ int FileSystem::MakePath(const webapp_str_t& path) {
 	//Recurisvely make a path structure.
 	int nFilename = tinydir_todir(path.data, path.len);
 	
-	for(int i = 0; i <= path.len - nFilename; i++) {
+	for(int i = 0; i <= (int)path.len - nFilename; i++) {
 		if(path.data[i] == '/' || path.data[i] == 0) {
 			path.data[i] = 0;
 			tinydir_dir dir;

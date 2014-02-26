@@ -218,7 +218,7 @@ public:
 	void enqueue(T i) {cv_mutex.lock(); queue.enqueue(i);
 					   cv_mutex.unlock(); cv.notify_one();}
 	T dequeue() { 
-		T r;
+		T r = NULL;
 		{
 			std::unique_lock<std::mutex> lk(cv_mutex);
 			while (!queue.try_dequeue(r) && !aborted) cv.wait(lk);
@@ -233,16 +233,18 @@ public:
  * @brief WebappTask provides a worker thread wrapper for each Lua VM.
  */
 class WebappTask {
-	friend class Webapp;
+protected:
+	Webapp* _handler;
+private:
 	std::thread _worker;
 	void handleCleanup();
 public:
 	void start();
 	void join() { _worker.join(); }
 	WebappTask(Webapp* handler, TaskQueue* q): _handler(handler), _q(q) {}
+	virtual ~WebappTask() {};
 	virtual void Execute() = 0;
 	virtual void Cleanup() = 0;
-	Webapp* _handler;
 	TaskQueue* _q;
 };
 

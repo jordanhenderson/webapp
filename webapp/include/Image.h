@@ -35,7 +35,7 @@ class Image {
 	int bitdepth = 0;
 	unsigned char** row_pointers = NULL; 
 	//GIF ONLY
-	int imagecount = 0;
+	unsigned int imagecount = 0;
 	GifFileType* gif = NULL;
 	unsigned char** frames = NULL;
 	void gifInsertFrame(unsigned int frame);

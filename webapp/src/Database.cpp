@@ -28,7 +28,7 @@ Query::Query(Database* db, int desc) : _db(db) {
  * @param dbq The initial query string
 */
 Query::Query(Database* db, const webapp_str_t& _dbq, int desc) 
-	: _db(db), dbq(_dbq) {
+	: dbq(_dbq), _db(db) {
 	params = new QueryRow();
 	this->desc = desc;
 }
@@ -125,7 +125,7 @@ void Query::process() {
 			}
 		}
 		if(db_type == DATABASE_TYPE_MYSQL) {
-			if(err = mysql_stmt_bind_param(mysql_stmt, bind_params)) {
+			if((err = mysql_stmt_bind_param(mysql_stmt, bind_params))) {
 				goto cleanup;
 			}
 		}

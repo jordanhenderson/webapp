@@ -21,14 +21,24 @@ Session::Session(leveldb::DB* _db, const webapp_str_t &sid)
     : db(_db), session_id(sid) {
 }
 
+Session::~Session() {
+	for(auto it: vals) delete it;
+}
+
 webapp_str_t* Session::get(const webapp_str_t &key) {
     webapp_str_t actual_key = session_id + key;
     leveldb::Iterator* it = db->NewIterator(leveldb::ReadOptions());
     for(it->Seek(actual_key); it->Valid(); it->Next()) {
+        leveldb::Slice key = it->key();
         leveldb::Slice value = it->value();
-        vals.emplace_back(value.data(), value.size());
-        break;
+        if(key.compare(actual_key) > 0) break;
+        webapp_str_t* val = new webapp_str_t(value.data(), value.size());
+        vals.push_back(val);
+        return val;
     }
+    webapp_str_t* empty = new webapp_str_t();
+    vals.push_back(empty);
+    return empty;
 }
 
 void Session::store(const webapp_str_t &key, const webapp_str_t &value) {

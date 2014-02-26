@@ -24,18 +24,19 @@ class Session {
     leveldb::DB* db;
 public:
     webapp_str_t session_id;
-    std::vector<webapp_str_t> vals;
+    std::vector<webapp_str_t*> vals;
     Session(leveldb::DB*, const webapp_str_t&);
+    ~Session();
     webapp_str_t* get(const webapp_str_t& key);
     void store(const webapp_str_t& key, const webapp_str_t& value);
 };
 
 class Sessions {
+	Webapp* handler;
+	webapp_str_t _node;
 	std::random_device rd;
 	std::mt19937_64 rng;
-    webapp_str_t _node;
     leveldb::DB* db;
-    Webapp* handler;
 public:
     int status = 0;
     Sessions(Webapp* _handler, unsigned int node_id);

@@ -68,7 +68,7 @@ void Image::gifInsertFrame(unsigned int frame) {
 			int source_x = i * img->Width;
 			while (dest_x < dlim) {
 				int indexInColourTable = (int) gif->SavedImages[frame].RasterBits[source_x++];
-				GifColorType c;
+				GifColorType c = {};
 				unsigned char a = 255;
 				//dispose of transparent colours.
 				if(gcb.TransparentColor > 0 && indexInColourTable == alpha) {

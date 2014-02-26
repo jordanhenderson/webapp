@@ -124,7 +124,7 @@ Session* GetSession(RequestQueue* worker, Request* request) {
 
 Session* NewSession(RequestQueue* worker, Request* request) {
     if (worker == NULL || request == NULL) return NULL;
-    worker->_sessions->new_session(request);
+    return worker->_sessions->new_session(request);
 }
 
 void DestroySession(Session* session) {
@@ -192,7 +192,7 @@ void FinishRequest(Request* r) {
 
 void WriteComplete(std::atomic<int>* wt, webapp_str_t* buf, 
 	const asio::error_code& error, size_t bytes_transferred) {
-		*wt--;
+		(*wt)--;
 		delete buf;
 }
 
@@ -201,7 +201,7 @@ void WriteComplete(std::atomic<int>* wt, webapp_str_t* buf,
 */
 void WriteSocket(Request* r, webapp_str_t* s) {
 	auto wt = &r->waiting;
-	*wt++;
+	(*wt)++;
 	
 	try {
 		asio::async_write(*r->socket, asio::buffer(s->data, s->len),

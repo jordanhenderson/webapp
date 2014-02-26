@@ -48,7 +48,7 @@ void Image::cleanup() {
 	case IMAGE_TYPE_GIF:
 			//Dealloc the frames
 		if(frames != NULL) {
-			for(int i = 0; i < imagecount; i++) {
+			for(unsigned int i = 0; i < imagecount; i++) {
 				free(frames[i]);
 			}
 			delete[] frames;
@@ -270,7 +270,7 @@ int Image::load(const webapp_str_t& filename) {
 			imagecount = gif->ImageCount;
 			//Allocate our frame array.
 			frames = new unsigned char*[imagecount];
-			for(int i = 0; i < imagecount; i++) {
+			for(unsigned int i = 0; i < imagecount; i++) {
 				gifInsertFrame(i);
 			}
 			pixels = frames[0];
@@ -376,7 +376,7 @@ int Image::save(const webapp_str_t& filename) {
 			saved_images = output->SavedImages = 
 				(SavedImage*)malloc(sizeof(SavedImage) * imagecount);
 
-			for (int i = 0; i < imagecount; i++) {
+			for (unsigned int i = 0; i < imagecount; i++) {
 				memset(&saved_images[i], '\0', sizeof(SavedImage));
 				//Remove optimisation on savedimages.
 				saved_images[i].ImageDesc.Width = width;
@@ -398,7 +398,7 @@ int Image::save(const webapp_str_t& filename) {
 			}
 
 			//Clean up generated maps.
-			for(int i = 0; i < imagecount; i++) {
+			for(unsigned int i = 0; i < imagecount; i++) {
 				if (saved_images[i].ImageDesc.ColorMap != NULL) {
 					GifFreeMapObject(saved_images[i].ImageDesc.ColorMap);
 					saved_images[i].ImageDesc.ColorMap = NULL;
@@ -428,7 +428,7 @@ void Image::resize(int width, int height) {
 	}
 	else {
 		//Resize each frame.
-		for (int i = 0; i < imagecount; i++) {
+		for (unsigned int i = 0; i < imagecount; i++) {
 
 			unsigned char* newFrame = _resize(frames[i], width, height, this->width,
 				this->height);
