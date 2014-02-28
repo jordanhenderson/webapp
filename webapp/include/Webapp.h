@@ -9,11 +9,11 @@
 
 #include <asio.hpp>
 #include "Platform.h"
-#include <ctemplate/template.h>
+#include "WebappString.h"
+#include "Session.h"
 #include <readerwriterqueue.h>
-#include <leveldb/db.h>
 
-#define WEBAPP_NUM_THREADS 8
+#define WEBAPP_NUM_THREADS 2
 #define WEBAPP_STATIC_STRINGS 10
 #define WEBAPP_SCRIPTS 4
 #define WEBAPP_PARAM_PORT 0
@@ -48,106 +48,6 @@ struct LuaParam {
 	void* ptr;
 };
 
-struct _webapp_str_t {
-    char* data = NULL;
-    uint32_t len = 0;
-    int allocated = 0;
-};
-
-struct webapp_str_t {
-    char* data = NULL;
-    uint32_t len = 0;
-    int allocated = 0;
-    webapp_str_t() {
-        data = new char[1];
-        len = 0;
-        allocated = 1;
-    }
-	webapp_str_t(const char* s, uint32_t _len) {
-		allocated = 1;
-		len = _len;
-		data = new char[_len];
-		memcpy(data, s, _len);
-	}
-	webapp_str_t(uint32_t _len) {
-		allocated = 1;
-		len = _len;
-		data = new char[_len];
-	}
-	webapp_str_t(const char* s) {
-		allocated = 1;
-		len = strlen(s);
-		data = new char[len];
-		memcpy(data, s, len);
-	}
-	webapp_str_t(webapp_str_t* other) {
-		if(other == NULL) {
-			len = 0;
-			data = NULL;
-		} else {
-			len = other->len;
-			data = other->data;
-		}
-	}
-	webapp_str_t(const webapp_str_t& other) {
-		allocated = 1;
-		len = other.len;
-		data = new char[len];
-		memcpy(data, other.data, len);
-	}
-	~webapp_str_t() {
-		if(allocated) delete[] data;
-	}
-	operator std::string const () const {
-		return std::string(data, len);
-	}
-	operator ctemplate::TemplateString const () const {
-		return ctemplate::TemplateString(data, len);
-	}
-    operator leveldb::Slice const () const {
-        return leveldb::Slice(data, len);
-    }
-	webapp_str_t& operator +=(const webapp_str_t& other) {
-		uint32_t newlen = len + other.len;
-		char* r = new char[newlen];
-        memcpy(r, data, len);
-        memcpy(r + len, other.data, other.len);
-        if(allocated) delete[] data;
-		len = newlen;
-		allocated = 1;
-		data = r;
-		return *this;
-	}
-	webapp_str_t& operator=(const webapp_str_t& other) {
-		if(this != &other) {
-			char* r = new char[other.len];
-			memcpy(r, other.data, other.len);
-            if(allocated) delete[] data;
-			data = r;
-			allocated = 1;
-			len = other.len;
-		}
-		return *this;
-	}
-    friend webapp_str_t operator+(const webapp_str_t& w1, const webapp_str_t& w2);
-    friend webapp_str_t operator+(const char* lhs, const webapp_str_t& rhs);
-    friend webapp_str_t operator+(const webapp_str_t& lhs, const char* rhs);
-    void from_number(int num) {
-        if(allocated) delete[] data;
-        data = new char[21];
-        allocated = 1;
-        len = snprintf(data, 21, "%d", num);
-    }
-};
-
-template <class T>
-struct webapp_data_t : webapp_str_t {
-	webapp_data_t(T _data) : webapp_str_t(sizeof(T)) {
-		*(T*)(data) = _data;
-	}
-};
-
-
 /**
  * @brief Required information per request.
  */
@@ -158,13 +58,13 @@ struct Request {
 	int amount_to_recieve = 0;
 	int length = 0;
 	int method = 0;
-	webapp_str_t uri;
-	webapp_str_t host;
-	webapp_str_t user_agent;
-	webapp_str_t cookies;
-	webapp_str_t request_body;
+    _webapp_str_t uri;
+    _webapp_str_t host;
+    _webapp_str_t user_agent;
+    _webapp_str_t cookies;
+    _webapp_str_t request_body;
 	std::vector<std::string*> strings;
-	webapp_str_t* input_chain[STRING_VARS];
+    _webapp_str_t* input_chain[STRING_VARS];
 	std::vector<Query*> queries;
     std::vector<Session*> sessions;
 	int shutdown = 0;
@@ -176,15 +76,17 @@ struct Request {
  * @brief TaskQueue provides the base locking mechanisms for queues, and support
  * for required webapp functionality.
  */
-class TaskQueue {
-public:
+struct TaskQueue {
 	unsigned int cleanupTask = 0;
 	unsigned int shutdown = 0;
-	std::atomic<unsigned int> aborted{0};
+    std::atomic<unsigned int> aborted;
 	unsigned int finished = 0;
 	std::condition_variable cv;
 	std::mutex cv_mutex;
 	void notify() {cv.notify_one();}
+    TaskQueue() : aborted(0) {}
+    TaskQueue(TaskQueue&& other) :
+        aborted(other.aborted.load()) {}
 };
 
 /**
@@ -210,8 +112,7 @@ public:
  * Uses moodycamel's ReaderWriterQueue (lock free queue)
  */
 template<typename T>
-class LockedQueue : public TaskQueue {
-public:
+struct LockedQueue : public TaskQueue {
 	moodycamel::ReaderWriterQueue<T> queue;
 	//Each operation (enqueue, dequeue) must be done single threaded.
 	//We need MP (Multi-Producer), so lock production.
@@ -238,11 +139,18 @@ protected:
 private:
 	std::thread _worker;
 	void handleCleanup();
+
 public:
 	void start();
 	void join() { _worker.join(); }
-	WebappTask(Webapp* handler, TaskQueue* q): _handler(handler), _q(q) {}
-	virtual ~WebappTask() {};
+    WebappTask(Webapp* handler, TaskQueue* q):
+        _handler(handler), _worker(), _q(q) {}
+    WebappTask(WebappTask&& other) :
+        _worker(std::move(other._worker)),
+        _handler(other._handler),
+        _q(other._q) {}
+
+    virtual ~WebappTask() {}
 	virtual void Execute() = 0;
 	virtual void Cleanup() = 0;
 	TaskQueue* _q;
@@ -251,10 +159,10 @@ public:
 /**
  * @brief BackgroundQueue provides a Lua VM with a Process queue
  */
-class BackgroundQueue : public WebappTask, public LockedQueue<Process*> {
-public:
-	BackgroundQueue(Webapp* handler) :
-		WebappTask(handler, this) { start(); }
+struct BackgroundQueue : public WebappTask, public LockedQueue<Process*> {
+    BackgroundQueue(Webapp* handler) :
+        WebappTask(handler, this) {}
+    BackgroundQueue(BackgroundQueue&& q) : WebappTask(std::move(q)) {}
 	void Execute();
 	void Cleanup() {}
 
@@ -265,23 +173,74 @@ public:
  * cache and queue for Requests.
  */
 struct RequestQueue : public WebappTask, public LockedQueue<Request*> {
-	Sessions* _sessions;
+    Sessions _sessions;
 	ctemplate::TemplateCache* _cache = NULL;
 	ctemplate::TemplateDictionary* baseTemplate = NULL;
 	std::unordered_map<std::string, ctemplate::TemplateDictionary*> templates;
-	RequestQueue(Webapp* handler, unsigned int id);
+    RequestQueue(Webapp *handler)
+        : WebappTask(handler, this), _sessions(handler) { Cleanup(); }
+    RequestQueue(RequestQueue&& q) :
+        WebappTask(std::move(q)),
+        _sessions(std::move(q._sessions)),
+        _cache(q._cache),
+        baseTemplate(q.baseTemplate),
+        templates(std::move(q.templates)) {}
 	~RequestQueue();
 	void Cleanup();
 	void Execute();
-	std::string* RenderTemplate(const webapp_str_t& tpl);
+	std::string* RenderTemplate(const webapp_str_t& tpl);  
 };
 
 typedef enum {SCRIPT_INIT, SCRIPT_QUEUE, SCRIPT_REQUEST, SCRIPT_HANDLERS} script_t;
 #define SCRIPT_NAMES "SCRIPT_INIT", "SCRIPT_QUEUE","SCRIPT_REQUEST", "SCRIPT_HANDLERS"
 
+template<class T>
+struct WorkerArray {
+    std::vector<T> workers;
+    WorkerArray(){}
+    void Cleanup() {
+        for(auto& it: workers) {
+            it.Cleanup();
+        }
+    }
+    void Clean() {
+        //Ensure each worker is aborted, waiting to be restarted.
+        for (auto& it: workers) {
+            TaskQueue* q = it._q;
+            //Ensure no other thread is cleaning.
+            q->cleanupTask = 0;
+
+            //Abort the worker (aborts any new requests).
+            q->aborted = 1;
+
+            //Notify any blocked threads to process the next request.
+            while(!q->finished) {
+                q->cv.notify_one();
+                //Sleep to allow thread to finish, then check again.
+                std::this_thread::
+                        sleep_for(std::chrono::milliseconds(100));
+            }
+            //Prevent any new requests from being queued.
+            q->cv_mutex.lock();
+        }
+    }
+    void Restart() {
+        for (auto& it: workers) {
+            it._q->aborted = 0;
+            it._q->cv_mutex.unlock();
+        }
+    }
+    void Start(Webapp* handler, int nWorkers) {
+        for(unsigned int i = 0; i < nWorkers; i++)
+            workers.emplace_back(handler);
+        for(auto& it: workers) it.start();
+    }
+};
+
 class Webapp {
 	std::array<webapp_str_t, WEBAPP_SCRIPTS> scripts;
-	std::vector<WebappTask*> workers;
+    WorkerArray<RequestQueue> workers;
+    WorkerArray<BackgroundQueue> bg_workers;
 	
 	//Parameters
 	unsigned int aborted = 0;
@@ -305,10 +264,14 @@ class Webapp {
 	asio::io_service::work wrk;
 
 	//Worker/node variables
-	unsigned int nWorkers = WEBAPP_NUM_THREADS - 1;
+    unsigned int nWorkers = WEBAPP_NUM_THREADS;
 	unsigned int node_counter = 0;
+
 public:
-	std::unordered_map<std::string, std::string> templates;
+    //LevelDB databases
+    leveldb::DB* db;
+
+    std::unordered_map<std::string, std::string> templates;
 	
 	Webapp(asio::io_service& io_svc);
 	~Webapp();
@@ -330,7 +293,7 @@ public:
 	void refresh_templates();
 	void reload_all();
 	int start_cleanup(TaskQueue*);
-	void perform_cleanup();
+    void perform_cleanup();
 };
 
 #endif //WEBAPP_H

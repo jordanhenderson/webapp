@@ -33,13 +33,10 @@ public:
 
 class Sessions {
 	Webapp* handler;
-	webapp_str_t _node;
-	std::random_device rd;
 	std::mt19937_64 rng;
     leveldb::DB* db;
 public:
-    int status = 0;
-    Sessions(Webapp* _handler, unsigned int node_id);
+    Sessions(Webapp* _handler);
 	~Sessions();
 	//Create a new session based on the request.
 	void CleanupSessions();

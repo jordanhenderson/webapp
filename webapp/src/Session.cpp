@@ -9,9 +9,9 @@
  */
 
 #include <leveldb/db.h>
-#include <leveldb/filter_policy.h>
-#include "Webapp.h"
+#include "WebappString.h"
 #include "Session.h"
+#include "Webapp.h"
 #include <openssl/sha.h>
 
 
@@ -46,19 +46,11 @@ void Session::store(const webapp_str_t &key, const webapp_str_t &value) {
     db->Put(leveldb::WriteOptions(), actual_key, value);
 }
 
-Sessions::Sessions(Webapp* _handler, unsigned int node_id) :
-    handler(_handler), rng(rd()) {
-    leveldb::Options options;
-    _node.from_number(node_id);
-    options.filter_policy = leveldb::NewBloomFilterPolicy(10);
-    options.create_if_missing = true;
-    webapp_str_t path = "./sessions/" + _node;
-    leveldb::Status s = leveldb::DB::Open(options, path, &db);
-    status = s.ok();
+Sessions::Sessions(Webapp* _handler) :
+    handler(_handler), rng(std::random_device{}()), db(_handler->db) {
 }
 
 Sessions::~Sessions() {
-    if(db != NULL) delete db;
 }
 
 Session* Sessions::new_session(Request* request) {
@@ -86,7 +78,7 @@ Session* Sessions::new_session(Request* request) {
 		*p++ = hex_lookup[output[i] & 0x0F];
 	}
 
-    webapp_str_t session_id = _node + webapp_str_t((char*)output_hex, SESSIONID_SIZE);
+    webapp_str_t session_id = webapp_str_t((char*)output_hex, SESSIONID_SIZE);
     //Clean up empty sessions.
     CleanupSessions();
 
@@ -103,7 +95,7 @@ void Sessions::CleanupSessions() {
 }
 
 Session* Sessions::get_session(Request* request) {
-    webapp_str_t* cookies = &request->cookies;
+    _webapp_str_t* cookies = &request->cookies;
     if(cookies->len <
             sizeof(SESSIONID_STR) + SESSION_NODE_SIZE + SESSIONID_SIZE) {
         return NULL;

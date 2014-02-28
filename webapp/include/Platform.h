@@ -131,6 +131,7 @@ void tokenize(const std::string& str, T& tokens,
 	}
 }
 
+
 int strntol(const char* src, size_t n);
 
 #endif //PLATFORM_H

@@ -119,12 +119,12 @@ int GetSessionID(Session* session, webapp_str_t* out) {
 
 Session* GetSession(RequestQueue* worker, Request* request) {
     if (worker == NULL || request == NULL) return NULL;
-    return worker->_sessions->get_session(request);
+    return worker->_sessions.get_session(request);
 }
 
 Session* NewSession(RequestQueue* worker, Request* request) {
     if (worker == NULL || request == NULL) return NULL;
-    return worker->_sessions->new_session(request);
+    return worker->_sessions.new_session(request);
 }
 
 void DestroySession(Session* session) {

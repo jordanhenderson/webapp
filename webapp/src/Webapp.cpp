@@ -4,7 +4,7 @@
  * Written by Jordan Henderson <jordan.henderson@ioflame.com>, 2013
  */
 
-
+#include <leveldb/filter_policy.h>
 #include "Webapp.h"
 #include "Session.h"
 #include "Database.h"
@@ -101,15 +101,7 @@ void WebappTask::start() {
 	 });
 }
 
-RequestQueue::RequestQueue(Webapp *handler, unsigned int id) 
-	: WebappTask(handler, this) {
-    _sessions = new Sessions(handler, id);
-	Cleanup();
-	start();
-}
-
 RequestQueue::~RequestQueue() {
-	delete _sessions;
 }
 
 void RequestQueue::Execute() {
@@ -119,7 +111,7 @@ void RequestQueue::Execute() {
 }
 
 void RequestQueue::Cleanup() {
-	_sessions->CleanupSessions();
+    _sessions.CleanupSessions();
 	if(_cache != NULL) delete _cache;
 	
 	if(baseTemplate != NULL) delete baseTemplate;
@@ -171,25 +163,8 @@ int Webapp::start_cleanup(TaskQueue* _q) {
 	unique_lock<mutex> lk(cleanupLock); 
 	if (_q->cleanupTask == 1) {
 		cleaning = 1;
-		
-		//Ensure each worker is aborted, waiting to be restarted.
-		for (WebappTask* task: workers) {
-			TaskQueue* q = task->_q;
-			//Ensure no other thread is cleaning.
-			q->cleanupTask = 0;
-			
-			//Abort the worker (aborts any new requests).
-			q->aborted = 1;
-			
-			//Notify any blocked threads to process the next request.
-			while(!q->finished) {
-				q->cv.notify_one();
-				//Sleep to allow thread to finish, then check again.
-				this_thread::sleep_for(chrono::milliseconds(100));
-			}
-			//Prevent any new requests from being queued.
-			q->cv_mutex.lock();
-		}
+        workers.Clean();
+        bg_workers.Clean();
 	}
 	return cleaning;
 }
@@ -200,13 +175,10 @@ int Webapp::start_cleanup(TaskQueue* _q) {
 */
 void Webapp::perform_cleanup() {
 	//Reload the webapp.
-	reload_all();
-	
-	//Restart all workers.
-	for (WebappTask* task: workers) {
-		task->_q->aborted = 0;
-		task->_q->cv_mutex.unlock();
-	}
+    reload_all();
+    workers.Restart();
+    bg_workers.Restart();
+
 }
 
 /**
@@ -285,11 +257,9 @@ void Webapp::reload_all() {
 	} else {
 		svc.stop();
 	}
-	//Cleanup workers.
-	for(WebappTask* worker: workers) {
-		RequestQueue* rq =  dynamic_cast<RequestQueue*>(worker);
-		if (rq != NULL) rq->Cleanup();
-	}
+
+    workers.Cleanup();
+    bg_workers.Cleanup();
 }
 
 /**
@@ -370,22 +340,23 @@ Webapp::Webapp(asio::io_service& io_svc) :
 										svc(io_svc), 
 										wrk(svc)
 									{
-	//Reload all cached data.
-	reload_all();
+    leveldb::Options options;
+    options.filter_policy = leveldb::NewBloomFilterPolicy(10);
+    options.create_if_missing = true;
+    webapp_str_t path = "./session/";
+    leveldb::DB::Open(options, path, &db);
 
-	//Probably a good idea to reserve vector size. Not necessarily needed.
-	workers.reserve(nWorkers);
+    reload_all();
 
-	//Create/allocate initial worker tasks.
-	if (background_queue_enabled) {
-		workers.push_back(new BackgroundQueue(this));
-		nWorkers--;
-	}
-
-	//Create session objects and request queues for each worker.
-	for (unsigned int i = 0; i < nWorkers; i++) {
-		workers.push_back(new RequestQueue(this, i));
-	}
+    if(!background_queue_enabled) {
+        workers.Start(this, WEBAPP_NUM_THREADS > 1
+                      ? WEBAPP_NUM_THREADS * 2 :
+                        WEBAPP_NUM_THREADS);
+    }
+    else {
+        workers.Start(this, WEBAPP_NUM_THREADS);
+        bg_workers.Start(this, WEBAPP_NUM_THREADS);
+    }
 
 	//Create the TCP endpoint and acceptor.
 	int bound = 0;
@@ -422,39 +393,13 @@ void Webapp::process_request_async(
 	
 	//Read each input chain variable recieved from nginx appropriately.
 	for(int i = 0; i < STRING_VARS; i++) {
-        if(request->input_chain[i]->data == NULL) {
-            char* h = (char*) request->v->data() + read;
-            request->input_chain[i]->data = h;
-            read += request->input_chain[i]->len;
-		}
-	}
-	//Choose a node, queue the request.
-	int selected_node = -1;
-    webapp_str_t* cookies = &request->cookies;
-    if (cookies->len >= sizeof(SESSIONID_STR) + SESSION_NODE_SIZE + SESSIONID_SIZE) {
-        char* cookie_str = cookies->data;
-        char* cookie_end = cookie_str + cookies->len;
-        for(;cookie_str < cookie_end; cookie_str++) {
-            size_t cookie_left = cookie_end - cookie_str;
-            if(strncmp(cookie_str, SESSIONID_STR "=", cookie_left)) {
-                if(cookie_left >= SESSIONID_SIZE + SESSION_NODE_SIZE) {
-                    //Found a session ID!
-                    selected_node = strntol(cookie_str + sizeof(SESSIONID_STR),
-                                            SESSION_NODE_SIZE) % nWorkers;
-                }
-            }
-        }
+        char* h = (char*) request->v->data() + read;
+        request->input_chain[i]->data = h;
+        read += request->input_chain[i]->len;
 	}
 
-	if (selected_node == -1) {
-		//Something went wrong - node not found, maybe session id missing. 
-		selected_node = node_counter++ % nWorkers;
-	}
-
-	if(background_queue_enabled) selected_node++;
-	
-	RequestQueue* worker = dynamic_cast<RequestQueue*>(workers[selected_node]);
-    if(worker != NULL) worker->enqueue(request);
+    unsigned int selected_node = node_counter++ % WEBAPP_NUM_THREADS;
+    workers.workers[selected_node].enqueue(request);
 }
 
 /**
@@ -467,7 +412,7 @@ void Webapp::process_request_async(
 */
 void Webapp::process_header_async(Request* r, const asio::error_code& ec,
 	std::size_t bytes_transferred) {
-	if(r->uri.data == NULL && !r->method) {
+    if(!ec) {
 		uint16_t* headers = (uint16_t*)r->headers->data();
 		//At this stage, at least PROTOCOL_SIZELENGTH_INFO has been read into the buffer.
 		//STATE: Read protocol.
@@ -531,20 +476,10 @@ void Webapp::accept_conn() {
  * Deconstruct Webapp object.
 */
 Webapp::~Webapp() {
+    delete db;
 	//Abort each worker request queue and session.
-	for (unsigned int i = background_queue_enabled; i < nWorkers; i++) {
-		RequestQueue* worker = dynamic_cast<RequestQueue*>(workers[i]);
-		worker->join();
-		if(worker != NULL) delete worker;
-	}
 
-	if(background_queue_enabled) {
-		BackgroundQueue* bg = dynamic_cast<BackgroundQueue*>(workers[0]);
-		bg->join();
-		if(bg != NULL) delete bg;
-	}
-
-	//Delete databases
+    //Delete databases
 	for(auto db_entry : databases) {
 		delete db_entry.second;
 	}

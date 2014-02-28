@@ -35,8 +35,8 @@ public:
 	int status = DATABASE_QUERY_INIT;
 	uint64_t lastrowid = 0;
 	int column_count = 0;
-	webapp_str_t* row = NULL;
-	webapp_str_t* description = NULL;
+    webapp_str_t* row = NULL;
+    webapp_str_t* description = NULL;
 	int desc = 0;
 	int havedesc = 0;
 	int rows_affected = 0;
