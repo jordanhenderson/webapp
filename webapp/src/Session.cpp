@@ -127,7 +127,7 @@ void Sessions::CleanupSessions() {
 Session* Sessions::get_session(Request* request) {
     _webapp_str_t* cookies = &request->cookies;
     if(cookies->len <
-            sizeof(SESSIONID_STR) + SESSION_NODE_SIZE + SESSIONID_SIZE) {
+            sizeof(SESSIONID_STR) + SESSIONID_SIZE) {
         return NULL;
     }
 
@@ -136,7 +136,7 @@ Session* Sessions::get_session(Request* request) {
     char* cookie_end = cookie_str + cookies->len;
     for(;cookie_str < cookie_end; cookie_str++) {
         if(cookie_end - cookie_str < sizeof(SESSIONID_STR) +
-                SESSION_NODE_SIZE + SESSIONID_SIZE) break;
+               SESSIONID_SIZE) break;
         if(*cookie_str == ' ' || cookie_str == cookies->data) {
             if(*cookie_str == ' ') cookie_str++;
             if(strncmp(cookie_str, SESSIONID_STR "=", sizeof(SESSIONID_STR)))
@@ -145,7 +145,7 @@ Session* Sessions::get_session(Request* request) {
             //Session ID starts at sessionid=X12345.... where X is node ID.
             session_id =
                     webapp_str_t(cookie_str + sizeof(SESSIONID_STR)
-                                 + SESSION_NODE_SIZE, SESSIONID_SIZE);
+                                 , SESSIONID_SIZE);
             break;
         }
     }

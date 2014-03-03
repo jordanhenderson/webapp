@@ -336,8 +336,10 @@ finish:
  * Webapp constructor.
  * @param io_svc the asio service object to listen upon
 */
-Webapp::Webapp(const char* session_dir, asio::io_service& io_svc) :
+Webapp::Webapp(const char* session_dir,
+               unsigned int port, asio::io_service& io_svc) :
                                         session_dir(session_dir),
+                                        port(port),
 										svc(io_svc), 
 										wrk(svc)
 									{

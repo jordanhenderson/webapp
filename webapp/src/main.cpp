@@ -18,6 +18,7 @@ time_t epoch = mktime(&epoch_tm);
 
 CSimpleOpt::SOption webapp_options[] = {
     {WEBAPP_OPT_SESSION, "--session", SO_REQ_CMB},
+    {WEBAPP_OPT_PORT, "--port", SO_REQ_CMB},
     SO_END_OF_OPTIONS
 };
 
@@ -29,6 +30,7 @@ int main(int argc, char* argv[]) {
 
     CSimpleOptA args(argc, argv, webapp_options);
     const char* session = WEBAPP_OPT_SESSION_DEFAULT;
+    unsigned int port = WEBAPP_PORT_DEFAULT;
     while(args.Next()) {
         ESOError err = args.LastError();
         if(err == SO_SUCCESS) {
@@ -36,6 +38,8 @@ int main(int argc, char* argv[]) {
                 case WEBAPP_OPT_SESSION:
                 session = args.OptionArg();
                 break;
+                case WEBAPP_OPT_PORT:
+                port = atoi(args.OptionArg());
             }
         }
         else if(err == SO_ARG_MISSING || err == SO_ARG_INVALID_DATA) {
@@ -45,7 +49,7 @@ int main(int argc, char* argv[]) {
     }
 
 	asio::io_service svc;
-    Webapp app(session, svc);
+    Webapp app(session, port, svc);
 
 	app.Start();
 	return 0;

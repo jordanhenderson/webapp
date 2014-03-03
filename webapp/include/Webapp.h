@@ -24,6 +24,7 @@
 #define WEBAPP_DEFAULT_QUEUESIZE 1023
 #define WEBAPP_OPT_SESSION 0
 #define WEBAPP_OPT_SESSION_DEFAULT "session"
+#define WEBAPP_OPT_PORT 1
 
 //APP specific definitions
 //PROTOCOL SCHEMA DEFINITIONS
@@ -275,7 +276,7 @@ public:
 
     std::unordered_map<std::string, std::string> templates;
 	
-    Webapp(const char* session_dir, asio::io_service& io_svc);
+    Webapp(const char* session_dir, unsigned int port, asio::io_service& io_svc);
 	~Webapp();
 	
 	//Public webapp methods

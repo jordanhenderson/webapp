@@ -9,7 +9,6 @@
 
 #include "Platform.h"
 
-#define SESSION_NODE_SIZE 1
 #define SESSIONID_STR "sessionid"
 #define SESSIONID_SIZE 32
 #define SESSION_TIME_DEFAULT 60*60*24*7
