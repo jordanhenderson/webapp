@@ -62,7 +62,7 @@ APIEXPORT int GetParamInt(Webapp*, unsigned int key);
 APIEXPORT Request* GetNextRequest(RequestQueue*);
 APIEXPORT void ClearCache(RequestQueue*);
 APIEXPORT void Shutdown(RequestQueue*);
-APIEXPORT uint64_t GetWebappTime();
+APIEXPORT void GetWebappTime(struct tm*);
 
 //Database
 APIEXPORT Database* CreateDatabase(Webapp*);

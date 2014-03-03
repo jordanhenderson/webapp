@@ -28,8 +28,8 @@ using namespace std::placeholders;
 #pragma warning(disable:4316)
 #endif 
 
-int strntol(const char* src, size_t n) {
-	int x = 0;
+uint32_t strntoul(const char* src, size_t n) {
+    uint32_t x = 0;
     while(isdigit(*src) && n--) {
     	x = x * 10 + (*src - '0');		
     	src++;
@@ -336,16 +336,15 @@ finish:
  * Webapp constructor.
  * @param io_svc the asio service object to listen upon
 */
-Webapp::Webapp(asio::io_service& io_svc) : 
+Webapp::Webapp(const char* session_dir, asio::io_service& io_svc) :
+                                        session_dir(session_dir),
 										svc(io_svc), 
 										wrk(svc)
 									{
     leveldb::Options options;
     options.filter_policy = leveldb::NewBloomFilterPolicy(10);
     options.create_if_missing = true;
-    webapp_str_t path = "./session/";
-    leveldb::DB::Open(options, path, &db);
-
+    leveldb::DB::Open(options, session_dir, &db);
     reload_all();
 
     if(!background_queue_enabled) {

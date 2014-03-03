@@ -22,6 +22,8 @@
 #define WEBAPP_PARAM_TPLCACHE 3
 #define WEBAPP_PORT_DEFAULT 5000
 #define WEBAPP_DEFAULT_QUEUESIZE 1023
+#define WEBAPP_OPT_SESSION 0
+#define WEBAPP_OPT_SESSION_DEFAULT "session"
 
 //APP specific definitions
 //PROTOCOL SCHEMA DEFINITIONS
@@ -268,12 +270,12 @@ class Webapp {
 	unsigned int node_counter = 0;
 
 public:
-    //LevelDB databases
     leveldb::DB* db;
+    const char* session_dir = WEBAPP_OPT_SESSION_DEFAULT;
 
     std::unordered_map<std::string, std::string> templates;
 	
-	Webapp(asio::io_service& io_svc);
+    Webapp(const char* session_dir, asio::io_service& io_svc);
 	~Webapp();
 	
 	//Public webapp methods

@@ -17,22 +17,14 @@
 
 using namespace std;
 
-Session::Session(leveldb::DB* _db, const webapp_str_t &sid)
-    : db(_db), session_id(sid) {
-}
-
-Session::~Session() {
-	for(auto it: vals) delete it;
-}
-
-webapp_str_t* Session::get(const webapp_str_t &key) {
-    webapp_str_t actual_key = session_id + key;
+webapp_str_t* DataStore::get(const webapp_str_t &key) {
     leveldb::Iterator* it = db->NewIterator(leveldb::ReadOptions());
-    for(it->Seek(actual_key); it->Valid(); it->Next()) {
-        leveldb::Slice key = it->key();
-        leveldb::Slice value = it->value();
-        if(key.compare(actual_key) > 0) break;
-        webapp_str_t* val = new webapp_str_t(value.data(), value.size());
+    for(it->Seek(key); it->Valid(); it->Next()) {
+        leveldb::Slice it_key = it->key();
+        leveldb::Slice it_value = it->value();
+        if(it_key.compare(key) > 0) break;
+        webapp_str_t* val =
+                new webapp_str_t(it_value.data(), it_value.size());
         vals.push_back(val);
         return val;
     }
@@ -41,9 +33,32 @@ webapp_str_t* Session::get(const webapp_str_t &key) {
     return empty;
 }
 
-void Session::store(const webapp_str_t &key, const webapp_str_t &value) {
+void DataStore::put(const webapp_str_t &key, const webapp_str_t &value) {
+    db->Put(leveldb::WriteOptions(), key, value);
+}
+
+DataStore::~DataStore() {
+    for(auto it: vals) delete it;
+}
+
+Session::Session(leveldb::DB* db, const webapp_str_t &sid)
+    : DataStore(db), session_id(sid) {
+    //Update/write the stored session time.
+    time_t current_time = time(0);
+    uint32_t diff = difftime(current_time, epoch);
+    webapp_str_t str_diff;
+    str_diff.from_number(diff);
+    db->Put(leveldb::WriteOptions(), sid, str_diff);
+}
+
+webapp_str_t* Session::get(const webapp_str_t &key) {
     webapp_str_t actual_key = session_id + key;
-    db->Put(leveldb::WriteOptions(), actual_key, value);
+    return DataStore::get(actual_key);
+}
+
+void Session::put(const webapp_str_t &key, const webapp_str_t &value) {
+    webapp_str_t actual_key = session_id + key;
+    DataStore::put(actual_key, value);
 }
 
 Sessions::Sessions(Webapp* _handler) :
@@ -51,6 +66,21 @@ Sessions::Sessions(Webapp* _handler) :
 }
 
 Sessions::~Sessions() {
+}
+
+uint32_t Sessions::session_expiry() {
+    DataStore s(db);
+    webapp_str_t session_exp = s.get("session_exp");
+    uint32_t n_session_exp = 0;
+    if(session_exp.len == 0) {
+        n_session_exp = SESSION_TIME_DEFAULT;
+        session_exp.from_number(SESSION_TIME_DEFAULT);
+        s.put("session_exp", session_exp);
+    } else {
+        n_session_exp =
+                strntoul(session_exp.data, session_exp.len);
+    }
+    return n_session_exp;
 }
 
 Session* Sessions::new_session(Request* request) {
@@ -105,32 +135,46 @@ Session* Sessions::get_session(Request* request) {
     char* cookie_str = cookies->data;
     char* cookie_end = cookie_str + cookies->len;
     for(;cookie_str < cookie_end; cookie_str++) {
-        size_t cookie_left = cookie_end - cookie_str;
-        if(strncmp(cookie_str, SESSIONID_STR "=", cookie_left)) {
-            if(cookie_left >= SESSION_NODE_SIZE + SESSIONID_SIZE) {
-                //Found a session ID!
-                session_id = webapp_str_t(cookie_str,
-                                          SESSION_NODE_SIZE + SESSIONID_SIZE);
-
-            } else {
-                //Session ID not long enough.
-                return NULL;
-            }
+        if(cookie_end - cookie_str < sizeof(SESSIONID_STR) +
+                SESSION_NODE_SIZE + SESSIONID_SIZE) break;
+        if(*cookie_str == ' ' || cookie_str == cookies->data) {
+            if(*cookie_str == ' ') cookie_str++;
+            if(strncmp(cookie_str, SESSIONID_STR "=", sizeof(SESSIONID_STR)))
+                continue;
+            //Found a session ID!
+            //Session ID starts at sessionid=X12345.... where X is node ID.
+            session_id =
+                    webapp_str_t(cookie_str + sizeof(SESSIONID_STR)
+                                 + SESSION_NODE_SIZE, SESSIONID_SIZE);
+            break;
         }
     }
+
+    if(session_id.len < SESSIONID_SIZE) return NULL;
 
     leveldb::Iterator* it = db->NewIterator(leveldb::ReadOptions());
     for(it->Seek(session_id); it->Valid(); it->Next()) {
         leveldb::Slice key = it->key();
         leveldb::Slice value = it->value();
         if(key.compare(session_id) > 0) break;
+
+        //Get the current time
         time_t current_time = time(0);
-        int64_t session_time = strntol(value.data(), value.size());
-        if(session_time > current_time) return NULL; //Session in the past?
-        if(current_time - session_time > 7000) {
+        //Convert stored seconds to time_t
+        uint32_t n_session_time = strntoul(value.data(), value.size());
+        struct tm tmp = epoch_tm;
+        tmp.tm_sec += n_session_time;
+        time_t session_time = mktime(&tmp);
+
+        double time_difference = difftime(current_time, session_time);
+
+        if(time_difference < 0) return NULL; //Session in the past?
+        if(time_difference < session_expiry()) {
             Session* session = new Session(db, session_id);
             request->sessions.push_back(session);
             return session;
+        } else {
+            db->Delete(leveldb::WriteOptions(), key);
         }
     }
 	return NULL;

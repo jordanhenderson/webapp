@@ -106,7 +106,7 @@ int SetSessionValue(Session* session, webapp_str_t* key,
 	webapp_str_t* val) {
 	if (session == NULL || key == NULL || val == NULL)
 		return 0;
-	session->store(*key, *val);
+    session->put(*key, *val);
 	return 1;
 }
 
@@ -288,9 +288,13 @@ void BindParameter(Query* q, webapp_str_t* param) {
 	q->params->push_back(*param);
 }
 
-uint64_t GetWebappTime() {
+void GetWebappTime(struct tm* output) {
 	time_t current_time = time(0);
-	return (uint64_t)current_time * (uint64_t)1000000;
+#ifdef _MSC_VER
+    gmtime_s(output, &current_time);
+#else
+    gmtime_r(&current_time, output);
+#endif
 }
 
 //Image API 

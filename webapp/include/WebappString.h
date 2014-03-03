@@ -37,7 +37,7 @@ struct webapp_str_t {
         } else {
             len = other->len;
             data = other->data;
-            allocated = other->allocated;
+            allocated = 0; //Don't deallocate unmanaged memory.
         }
     }
     webapp_str_t(const webapp_str_t& other) {

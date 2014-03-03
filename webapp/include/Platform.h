@@ -132,7 +132,10 @@ void tokenize(const std::string& str, T& tokens,
 }
 
 
-int strntol(const char* src, size_t n);
+uint32_t strntoul(const char* src, size_t n);
+extern struct tm epoch_tm;
+extern time_t epoch;
+
 
 #endif //PLATFORM_H
 

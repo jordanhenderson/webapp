@@ -12,6 +12,7 @@
 #define SESSION_NODE_SIZE 1
 #define SESSIONID_STR "sessionid"
 #define SESSIONID_SIZE 32
+#define SESSION_TIME_DEFAULT 60*60*24*7
 
 struct webapp_str_t;
 struct Request;
@@ -20,21 +21,31 @@ namespace leveldb {
     class DB;
 }
 
-class Session {
+class DataStore {
     leveldb::DB* db;
-public:
-    webapp_str_t session_id;
+
     std::vector<webapp_str_t*> vals;
+public:
+    DataStore(leveldb::DB* db) : db(db) {}
+    virtual ~DataStore();
+    virtual webapp_str_t* get(const webapp_str_t& key);
+    virtual void put(const webapp_str_t& key, const webapp_str_t& value);
+};
+
+struct Session : public DataStore {
+    webapp_str_t session_id;
     Session(leveldb::DB*, const webapp_str_t&);
-    ~Session();
+    ~Session() {}
     webapp_str_t* get(const webapp_str_t& key);
-    void store(const webapp_str_t& key, const webapp_str_t& value);
+    void put(const webapp_str_t& key, const webapp_str_t& value);
+
 };
 
 class Sessions {
 	Webapp* handler;
 	std::mt19937_64 rng;
     leveldb::DB* db;
+    uint32_t session_expiry();
 public:
     Sessions(Webapp* _handler);
 	~Sessions();
