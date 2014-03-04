@@ -67,5 +67,6 @@
 	SHA384_Update;
 	SHA384_Final;
 	
-	GetWebappTime;
+	GetTime;
+	UpdateTime;
 };

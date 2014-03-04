@@ -288,13 +288,49 @@ void BindParameter(Query* q, webapp_str_t* param) {
 	q->params->push_back(*param);
 }
 
-void GetWebappTime(struct tm* output) {
+void tm_to_webapp(struct tm* src, struct webapp_tm* output) {
+    output->tm_sec = src->tm_sec;
+    output->tm_min = src->tm_min;
+    output->tm_hour = src->tm_hour;
+    output->tm_mday = src->tm_mday;
+    output->tm_mon = src->tm_mon;
+    output->tm_year = src->tm_year;
+    output->tm_wday = src->tm_wday;
+    output->tm_yday = src->tm_yday;
+    output->tm_isdst = src->tm_isdst;
+}
+
+void webapp_to_tm(struct webapp_tm* src, struct tm* output) {
+    output->tm_sec = src->tm_sec;
+    output->tm_min = src->tm_min;
+    output->tm_hour = src->tm_hour;
+    output->tm_mday = src->tm_mday;
+    output->tm_mon = src->tm_mon;
+    output->tm_year = src->tm_year;
+    output->tm_wday = src->tm_wday;
+    output->tm_yday = src->tm_yday;
+    output->tm_isdst = src->tm_isdst;
+}
+
+void GetTime(struct webapp_tm* output) {
+    if(output == NULL) return;
 	time_t current_time = time(0);
+    struct tm tmp_tm;
 #ifdef _MSC_VER
-    gmtime_s(output, &current_time);
+    gmtime_s(&tmp_tm, &current_time);
 #else
-    gmtime_r(&current_time, output);
+    gmtime_r(&current_time, &tmp_tm);
 #endif
+    tm_to_webapp(&tmp_tm, output);
+
+}
+
+void UpdateTime(struct webapp_tm* output) {
+    if(output == NULL) return;
+    struct tm tmp_tm;
+    webapp_to_tm(output, &tmp_tm);
+    mktime(&tmp_tm);
+    tm_to_webapp(&tmp_tm, output);
 }
 
 //Image API 
