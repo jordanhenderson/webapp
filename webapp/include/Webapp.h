@@ -30,7 +30,7 @@
 //PROTOCOL SCHEMA DEFINITIONS
 #define PROTOCOL_VARS 6
 #define STRING_VARS 5
-#define PROTOCOL_LENGTH_SIZEINFO sizeof(uint16_t) * PROTOCOL_VARS
+#define PROTOCOL_LENGTH_SIZEINFO sizeof(int16_t) * PROTOCOL_VARS
 
 /**
  * Forward definitions for classes referenced in this header.

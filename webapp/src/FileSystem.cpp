@@ -90,7 +90,7 @@ void File::Close() {
  * position.
  * @return file size
 */
-uint64_t File::Size() {
+int64_t File::Size() {
 	if(refresh == 1) {
 		//Seek the file to the end, retrieve
 		int old = ftell64(pszFile);
@@ -109,12 +109,12 @@ uint64_t File::Size() {
  * @param out the char* to store read data
  * @return the file size
 */
-uint16_t File::Read(uint16_t n_bytes) {
+int16_t File::Read(int16_t n_bytes) {
 	//Get the file size.
-	uint64_t size = Size();
+    int64_t size = Size();
 	char* buf = NULL;
 
-	uint16_t to_read = size < n_bytes ? size : n_bytes;
+    int16_t to_read = size < n_bytes ? size : n_bytes;
 	//Seek to the beginning.
 	FILE* tmpFile = pszFile;
 	rewind(pszFile);
@@ -128,7 +128,7 @@ uint16_t File::Read(uint16_t n_bytes) {
 	buffer.len = nRead; 
 	buffer.allocated = 1;
 	
-	return (uint16_t)nRead;
+    return (int16_t)nRead;
 }
 
 /**

@@ -45,7 +45,7 @@ Session::Session(leveldb::DB* db, const webapp_str_t &sid)
     : DataStore(db), session_id(sid) {
     //Update/write the stored session time.
     time_t current_time = time(0);
-    uint32_t diff = difftime(current_time, epoch);
+    int32_t diff = difftime(current_time, epoch);
     webapp_str_t str_diff;
     str_diff.from_number(diff);
     db->Put(leveldb::WriteOptions(), sid, str_diff);
@@ -68,17 +68,17 @@ Sessions::Sessions(Webapp* _handler) :
 Sessions::~Sessions() {
 }
 
-uint32_t Sessions::session_expiry() {
+int32_t Sessions::session_expiry() {
     DataStore s(db);
     webapp_str_t session_exp = s.get("session_exp");
-    uint32_t n_session_exp = 0;
+    int32_t n_session_exp = 0;
     if(session_exp.len == 0) {
         n_session_exp = SESSION_TIME_DEFAULT;
         session_exp.from_number(SESSION_TIME_DEFAULT);
         s.put("session_exp", session_exp);
     } else {
         n_session_exp =
-                strntoul(session_exp.data, session_exp.len);
+                strntol(session_exp.data, session_exp.len);
     }
     return n_session_exp;
 }
@@ -161,7 +161,7 @@ Session* Sessions::get_session(Request* request) {
         //Get the current time
         time_t current_time = time(0);
         //Convert stored seconds to time_t
-        uint32_t n_session_time = strntoul(value.data(), value.size());
+        int32_t n_session_time = strntol(value.data(), value.size());
         struct tm tmp = epoch_tm;
         tmp.tm_sec += n_session_time;
         time_t session_time = mktime(&tmp);

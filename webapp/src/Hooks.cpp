@@ -220,13 +220,13 @@ void WriteData(Request* r, webapp_str_t* data) {
 	WriteSocket(r, s);
 }
 
-void WriteHeader(Request* r, uint32_t n_bytes, 
+void WriteHeader(Request* r, int32_t n_bytes,
 	webapp_str_t* content_type, webapp_str_t* cookies, int8_t cache) {
 	if(r == NULL || content_type == NULL || cookies == NULL) return;
 	if(r->shutdown) return;
-	webapp_data_t<uint32_t> len(htonl(n_bytes));
-	webapp_data_t<uint32_t> content_type_len = htonl(content_type->len);
-	webapp_data_t<uint32_t> cookies_len = htonl(cookies->len);
+    webapp_data_t<int32_t> len(htonl(n_bytes));
+    webapp_data_t<int32_t> content_type_len = htonl(content_type->len);
+    webapp_data_t<int32_t> cookies_len = htonl(cookies->len);
 	webapp_data_t<int8_t> cache_s = cache;
 	
 	webapp_str_t* s = new webapp_str_t(
@@ -256,7 +256,7 @@ int ConnectDatabase(Database* db, int database_type, const char* host,
 	return db->connect(database_type, host, username, password, database);
 }
 
-uint64_t ExecString(Database* db, webapp_str_t* query) {
+int64_t ExecString(Database* db, webapp_str_t* query) {
 	if (db == NULL || query == NULL) return -1;
 	return db->exec(*query);
 }
@@ -368,7 +368,7 @@ void File_Close(File* f) {
 	delete f;
 }
 
-uint16_t File_Read(File* f, uint16_t n_bytes) {
+int16_t File_Read(File* f, int16_t n_bytes) {
 	if(f == NULL) return 0;
 	return f->Read(n_bytes);
 }
@@ -378,7 +378,7 @@ void File_Write(File* f, webapp_str_t* buf) {
 	f->Write(*buf);
 }
 
-uint64_t File_Size(File* f) {
+int64_t File_Size(File* f) {
 	if(f == NULL) return 0;
 	return f->Size();
 }

@@ -5,23 +5,23 @@
 
 struct _webapp_str_t {
     char* data = NULL;
-    uint32_t len = 0;
+    int32_t len = 0;
     int allocated = 0;
 };
 
 struct webapp_str_t {
     char* data = NULL;
-    uint32_t len = 0;
+    int32_t len = 0;
     int allocated = 1;
     webapp_str_t() {
         allocated = 0;
     }
-    webapp_str_t(const char* s, uint32_t _len) {
+    webapp_str_t(const char* s, int32_t _len) {
         len = _len;
         data = new char[_len];
         memcpy(data, s, _len);
     }
-    webapp_str_t(uint32_t _len) {
+    webapp_str_t(int32_t _len) {
         len = _len;
         data = new char[_len];
     }
@@ -58,7 +58,7 @@ struct webapp_str_t {
         return leveldb::Slice(data, len);
     }
     webapp_str_t& operator +=(const webapp_str_t& other) {
-        uint32_t newlen = len + other.len;
+        int32_t newlen = len + other.len;
         char* r = new char[newlen];
         memcpy(r, data, len);
         memcpy(r + len, other.data, other.len);

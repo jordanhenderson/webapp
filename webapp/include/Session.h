@@ -44,7 +44,7 @@ class Sessions {
 	Webapp* handler;
 	std::mt19937_64 rng;
     leveldb::DB* db;
-    uint32_t session_expiry();
+    int32_t session_expiry();
 public:
     Sessions(Webapp* _handler);
 	~Sessions();

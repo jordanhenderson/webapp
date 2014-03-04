@@ -33,7 +33,7 @@ class Database;
 class Query {
 public:
 	int status = DATABASE_QUERY_INIT;
-	uint64_t lastrowid = 0;
+    int64_t lastrowid = 0;
 	int column_count = 0;
     webapp_str_t* row = NULL;
     webapp_str_t* description = NULL;
@@ -70,7 +70,7 @@ public:
 
 	int connect(int database_type, const char* host, const char* username, 
 		const char* password, const char* database);
-	uint64_t exec(const webapp_str_t& query);
+    int64_t exec(const webapp_str_t& query);
 };
 
 #endif //DATABASE_H

@@ -28,8 +28,8 @@ using namespace std::placeholders;
 #pragma warning(disable:4316)
 #endif 
 
-uint32_t strntoul(const char* src, size_t n) {
-    uint32_t x = 0;
+int32_t strntol(const char* src, size_t n) {
+    int32_t x = 0;
     while(isdigit(*src) && n--) {
     	x = x * 10 + (*src - '0');		
     	src++;
@@ -414,7 +414,7 @@ void Webapp::process_request_async(
 void Webapp::process_header_async(Request* r, const asio::error_code& ec,
 	std::size_t bytes_transferred) {
     if(!ec) {
-		uint16_t* headers = (uint16_t*)r->headers->data();
+        int16_t* headers = (int16_t*)r->headers->data();
 		//At this stage, at least PROTOCOL_SIZELENGTH_INFO has been read into the buffer.
 		//STATE: Read protocol.
 		r->uri.len =          ntohs(*headers++);

@@ -53,7 +53,7 @@ APIEXPORT void QueueProcess(BackgroundQueue*, webapp_str_t* funtion,
 APIEXPORT Process* GetNextProcess(BackgroundQueue*);
 APIEXPORT void FinishProcess(Process*);
 APIEXPORT void WriteData(Request*, webapp_str_t* data);
-APIEXPORT void WriteHeader(Request*, uint32_t n_bytes, 
+APIEXPORT void WriteHeader(Request*, int32_t n_bytes,
 	webapp_str_t* content_type, webapp_str_t* cookies, int8_t cache);
 
 //Webapp stuff
@@ -84,7 +84,7 @@ APIEXPORT void DestroyDatabase(Webapp*, Database*);
 APIEXPORT Database* GetDatabase(Webapp*, size_t index);
 APIEXPORT int ConnectDatabase(Database*, int database_type, const char* host, 
 	const char* username, const char* password, const char* database);
-APIEXPORT uint64_t ExecString(Database*, webapp_str_t* in);
+APIEXPORT int64_t ExecString(Database*, webapp_str_t* in);
 APIEXPORT int SelectQuery(Query*);
 APIEXPORT Query* CreateQuery(webapp_str_t*, Request*, Database*, int desc);
 APIEXPORT void SetQuery(Query*, webapp_str_t*);
@@ -101,9 +101,9 @@ APIEXPORT void Image_Destroy(Image* img);
 //File API
 APIEXPORT File* File_Open(webapp_str_t* filename, webapp_str_t* mode);
 APIEXPORT void File_Close(File*);
-APIEXPORT uint16_t File_Read(File*, uint16_t n_bytes);
+APIEXPORT int16_t File_Read(File*, int16_t n_bytes);
 APIEXPORT void File_Write(File*, webapp_str_t* buf);
-APIEXPORT uint64_t File_Size(File*);
+APIEXPORT int64_t File_Size(File*);
 
 //Force SHA-function inclusion from openssl.
 FORCE_UNDEFINED_SYMBOL(SHA256_Init)
