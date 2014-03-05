@@ -5,7 +5,7 @@
 	<flags compiler="msvc">MT;W3;EHsc</flags>
 	<flags compiler="gcc" ext="cc">std=c++11</flags>
 	<flags os="linux" type="pp">LEVELDB_PLATFORM_POSIX</flags>
-	<flags os="win32" type="pp">LEVELDB_PLATFORM_WINDOWS</flags>
+	<flags os="win32" type="pp">LEVELDB_PLATFORM_WINDOWS;_LIBCPP_VERSION</flags>
 	<flags type="pp">SNAPPY</flags>
 	<flags>O2</flags>
 	<include>include;.;../snappy/</include>

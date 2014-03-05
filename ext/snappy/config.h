@@ -1,5 +1,3 @@
-#define HAVE_BUILTIN_CTZ 1
-#define HAVE_BUILTIN_EXPECT 1
 #define HAVE_BYTESWAP_H 1
 #define HAVE_DLFCN_H 1
 #define HAVE_INTTYPES_H 1
@@ -11,7 +9,6 @@
 #define HAVE_STRING_H 1
 #define HAVE_SYS_BYTESWAP_H 1
 #define HAVE_SYS_ENDIAN_H 1
-#define HAVE_SYS_MMAN_H 1
 #define HAVE_SYS_RESOURCE_H 1
 #define HAVE_SYS_STAT_H 1
 #define HAVE_SYS_TIME_H 1
@@ -20,6 +17,12 @@
 
 #ifdef _MSC_VER
 #define HAVE_WINDOWS_H 1
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#else
+#define HAVE_SYS_MMAN_H 1
+#define HAVE_BUILTIN_CTZ 1
+#define HAVE_BUILTIN_EXPECT 1
 #endif
 
 #define STDC_HEADERS 1
