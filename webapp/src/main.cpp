@@ -16,7 +16,7 @@ struct tm epoch_tm = {
 //Calculate epoch for portability purposes.
 time_t epoch = mktime(&epoch_tm);
 
-CSimpleOpt::SOption webapp_options[] = {
+CSimpleOptA::SOption webapp_options[] = {
     {WEBAPP_OPT_SESSION, "--session", SO_REQ_CMB},
     {WEBAPP_OPT_PORT, "--port", SO_REQ_CMB},
     SO_END_OF_OPTIONS

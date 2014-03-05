@@ -9,6 +9,7 @@
  */
 
 #include <leveldb/db.h>
+#include "Platform.h"
 #include "WebappString.h"
 #include "Session.h"
 #include "Webapp.h"

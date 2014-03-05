@@ -45,6 +45,7 @@
 	<source f="util/env.cc"/>
 	<source f="util/env_posix.cc" os="linux"/>
 	<source f="util/env_win.cc" os="win32"/>
+	<source f="win/mman.c" os="win32"/>
 	<source f="util/filter_policy.cc"/>
 	<source f="util/hash.cc"/>
 	<source f="util/histogram.cc"/>

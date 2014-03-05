@@ -8,10 +8,10 @@
 #include <map>
 
 
-#include "leveldb/env.h"
-
+#include "hyperleveldb/env.h"
 #include "port/port.h"
-#include "leveldb/slice.h"
+#include "hyperleveldb/slice.h"
+#include "util/mutexlock.h"
 #include "util/logging.h"
 
 #include <shlwapi.h>
@@ -21,6 +21,8 @@
 #include <errno.h>
 #include <io.h>
 #include <algorithm>
+#include <atomic>
+#include <mman.h>
 
 #ifdef max
 #undef max
@@ -34,12 +36,20 @@
 #undef DeleteFile
 #endif
 
+#if defined CopyFile
+#undef CopyFile
+#endif
+
 //Declarations
 namespace leveldb
 {
 
 namespace Win32
 {
+
+static Status IOError(const std::string& context, int err_number) {
+  return Status::IOError(context, strerror(err_number));
+}
 
 #define DISALLOW_COPY_AND_ASSIGN(TypeName) \
   TypeName(const TypeName&);               \
@@ -103,39 +113,243 @@ private:
     DISALLOW_COPY_AND_ASSIGN(Win32RandomAccessFile);
 };
 
-class Win32MapFile : public WritableFile
-{
-public:
-    Win32MapFile(const std::string& fname);
+// Helper class to limit mmap file usage so that we do not end up
+// running out virtual memory or running into kernel performance
+// problems for very large databases.
+class MmapLimiter {
+ public:
+  // Up to 1000 mmaps for 64-bit binaries; none for smaller pointer sizes.
+  MmapLimiter() {
+    SetAllowed(sizeof(void*) >= 8 ? 1000 : 0);
+  }
 
-    ~Win32MapFile();
-    virtual Status Append(const Slice& data);
-    virtual Status Close();
-    virtual Status Flush();
-    virtual Status Sync();
-    BOOL isEnable();
-private:
-    std::string _filename;
-    HANDLE _hFile;
-    size_t _page_size;
-    size_t _map_size;       // How much extra memory to map at a time
-    char* _base;            // The mapped region
-    HANDLE _base_handle;	
-    char* _limit;           // Limit of the mapped region
-    char* _dst;             // Where to write next  (in range [base_,limit_])
-    char* _last_sync;       // Where have we synced up to
-    uint64_t _file_offset;  // Offset of base_ in file
-    //LARGE_INTEGER file_offset_;
-    // Have we done an munmap of unsynced data?
-    bool _pending_sync;
+  // If another mmap slot is available, acquire it and return true.
+  // Else return false.
+  bool Acquire() {
+    if (GetAllowed() <= 0) {
+      return false;
+    }
+    MutexLock l(&mu_);
+    intptr_t x = GetAllowed();
+    if (x <= 0) {
+      return false;
+    } else {
+      SetAllowed(x - 1);
+      return true;
+    }
+  }
 
-    // Roundup x to a multiple of y
-    static size_t _Roundup(size_t x, size_t y);
-    size_t _TruncateToPageBoundary(size_t s);
-    bool _UnmapCurrentRegion();
-    bool _MapNewRegion();
-    DISALLOW_COPY_AND_ASSIGN(Win32MapFile);
-    BOOL _Init(LPCWSTR Path);
+  // Release a slot acquired by a previous call to Acquire() that returned true.
+  void Release() {
+    MutexLock l(&mu_);
+    SetAllowed(GetAllowed() + 1);
+  }
+
+ private:
+  port::Mutex mu_;
+  port::AtomicPointer allowed_;
+
+  intptr_t GetAllowed() const {
+    return reinterpret_cast<intptr_t>(allowed_.Acquire_Load());
+  }
+
+  // REQUIRES: mu_ must be held
+  void SetAllowed(intptr_t v) {
+    allowed_.Release_Store(reinterpret_cast<void*>(v));
+  }
+
+  MmapLimiter(const MmapLimiter&);
+  void operator=(const MmapLimiter&);
+};
+
+class Win32MapFile : public WritableFile {
+ private:
+  struct MmapSegment {
+    MmapSegment* next_;     // the next-lowest Map segment in the file
+    uint64_t file_offset_;  // Offset of base_ in file
+    std::atomic<uint64_t> written_;      // The amount of data written to this segment
+    uint64_t size_;         // The size of the mapped region
+    char* base_;            // The mapped region
+  };
+
+  std::string filename_;    // Path to the file
+  HANDLE hFile_; 			// Handle to the open file
+  size_t page_size_;        // System page size
+  uint64_t sync_offset_;    // Offset of the last sync call
+  std::atomic<uint64_t> end_offset_;     // Where does the file end?
+  MmapSegment* segments_;   // mmap'ed regions of memory
+  port::Mutex mtx_;         // Synchronize and shit
+
+  // Roundup x to a multiple of y
+  static size_t Roundup(size_t x, size_t y) {
+    return ((x + y - 1) / y) * y;
+  }
+
+  MmapSegment* GetSegment(uint64_t offset) {
+    MutexLock l(&mtx_);
+    while (true) {
+      MmapSegment* seg = segments_;
+      while (seg && seg->file_offset_ > offset) {
+        seg = seg->next_;
+      }
+      if (!seg || seg->file_offset_ + seg->size_ <= offset) {
+        assert(seg == segments_);
+        MmapSegment* new_seg = new MmapSegment();
+        new_seg->next_ = seg;
+        new_seg->file_offset_ = seg ? seg->file_offset_ + seg-> size_ : 0;
+        new_seg->written_ = 0;
+        new_seg->size_ = seg ? seg->size_ : Roundup(1 << 20, page_size_);
+		
+        if (SetFilePointer(hFile_, new_seg->file_offset_ + new_seg->size_,
+			NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER || !SetEndOfFile(hFile_)) {
+          delete new_seg;
+          return NULL;
+        }
+        void* ptr = mmap(NULL, new_seg->size_, PROT_READ | PROT_WRITE, MAP_SHARED,
+                         hFile_, new_seg->file_offset_);
+        if (ptr == MAP_FAILED) {
+          delete new_seg;
+          return NULL;
+        }
+        new_seg->base_ = reinterpret_cast<char*>(ptr);
+        segments_ = new_seg;
+        continue;
+      }
+      assert(seg &&
+             seg->file_offset_ <= offset &&
+             seg->file_offset_ + seg->size_ > offset);
+      return seg;
+    }
+  }
+
+  bool ReleaseSegment(MmapSegment* seg, bool full) {
+    return true;
+  }
+
+ public:
+  Win32MapFile(const std::string& fname, HANDLE hFile);
+
+  ~Win32MapFile() {
+    if (hFile_ != INVALID_HANDLE_VALUE) {
+      Win32MapFile::Close();
+    }
+  }
+
+  virtual Status WriteAt(uint64_t offset, const Slice& data) {
+    uint64_t end = offset + data.size();
+    const char* src = data.data();
+    uint64_t left = data.size();
+    while (left > 0) {
+      MmapSegment* seg = GetSegment(offset);
+      if (!seg) {
+        return IOError(filename_, errno);
+      }
+
+      assert(offset >= seg->file_offset_);
+      assert(offset < seg->file_offset_ + seg->size_);
+      uint64_t local_offset = offset  - seg->file_offset_;
+      uint64_t avail = seg->size_ - local_offset;
+      uint64_t n = (left <= avail) ? left : avail;
+      memcpy(seg->base_ + local_offset, src, n);
+      src += n;
+      left -= n;
+      offset += n;
+      uint64_t written = seg->written_ += n;
+
+      if (!ReleaseSegment(seg, written == seg->size_)) {
+        return IOError(filename_, errno);
+      }
+    }
+    uint64_t old_end = end;
+    do {
+		end_offset_.compare_exchange_strong(old_end, end);
+    } while (old_end < end);
+    return Status::OK();
+  }
+
+  virtual Status Append(const Slice& data) {
+    uint64_t offset = end_offset_.load();
+    return WriteAt(offset, data);
+  }
+
+  virtual Status Close() {
+    Status s;
+    while (segments_) {
+      MmapSegment* seg = segments_;
+      segments_ = seg->next_;
+      if (munmap(seg->base_, seg->size_) < 0) {
+        s = IOError(filename_, errno);
+      }
+      seg->base_ = NULL;
+      delete seg;
+    }
+
+    if(SetFilePointer(hFile_, end_offset_,
+			NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER || !SetEndOfFile(hFile_)) {
+      s = IOError(filename_, errno);
+    }
+
+    if (!CloseHandle(hFile_)) {
+      if (s.ok()) {
+        s = IOError(filename_, errno);
+      }
+    }
+
+    hFile_ = INVALID_HANDLE_VALUE;
+    return s;
+  }
+
+  Status SyncDirIfManifest() {
+    const char* f = filename_.c_str();
+    const char* sep = strrchr(f, '/');
+    Slice basename;
+    std::string dir;
+    if (sep == NULL) {
+      dir = ".";
+      basename = f;
+    } else {
+      dir = std::string(f, sep - f);
+      basename = sep + 1;
+    }
+    Status s;
+    if (basename.starts_with("MANIFEST")) {
+      /*int fd = _open(dir.c_str(), _O_RDONLY);
+      if (fd < 0) {
+        s = IOError(dir, errno);
+      } else {
+        if (!FlushFileBuffers(_get_osfhandle(fd))) {
+          s = IOError(dir, errno);
+        }
+        _close(fd);
+      }*/
+    }
+    return s;
+  }
+
+  virtual Status Sync() {
+    // Ensure new files referred to by the manifest are in the filesystem.
+    Status s = SyncDirIfManifest();
+    bool need_sync = false;
+
+    if (!s.ok()) {
+      return s;
+    }
+
+    {
+      MutexLock l(&mtx_);
+      need_sync = sync_offset_ != end_offset_;
+      sync_offset_ = end_offset_;
+    }
+
+    if (need_sync) {
+      // Some unmapped data was not synced
+      if (!FlushFileBuffers(hFile_)) {
+        s = IOError(filename_, errno);
+      }
+    }
+
+    return s;
+  }
 };
 
 class Win32FileLock : public FileLock
@@ -213,6 +427,12 @@ public:
     virtual uint64_t NowMicros();
 
     virtual void SleepForMicroseconds(int micros);
+
+	virtual Status CopyFile(const std::string& src,
+                          const std::string& target);
+						  
+	virtual Status LinkFile(const std::string& src,
+                          const std::string& target);
 };
 
 void ToWidePath(const std::string& value, std::wstring& target) {
@@ -326,7 +546,16 @@ size_t GetPageSize()
 
 const size_t g_PageSize = GetPageSize();
 
-
+Win32MapFile::Win32MapFile(const std::string& fname, HANDLE hFile) : filename_(fname),
+		hFile_(hFile),
+        page_size_(Win32::g_PageSize),
+        sync_offset_(0),
+        end_offset_(0),
+        segments_(NULL),
+        mtx_() {
+    assert((page_size_ & (page_size_ - 1)) == 0);
+}
+  
 Win32SequentialFile::Win32SequentialFile( const std::string& fname ) :
     _filename(fname),_hFile(NULL)
 {
@@ -442,204 +671,6 @@ void Win32RandomAccessFile::_CleanUp()
     }
 }
 
-size_t Win32MapFile::_Roundup( size_t x, size_t y )
-{
-    return ((x + y - 1) / y) * y;
-}
-
-size_t Win32MapFile::_TruncateToPageBoundary( size_t s )
-{
-    s -= (s & (_page_size - 1));
-    assert((s % _page_size) == 0);
-    return s;
-}
-
-bool Win32MapFile::_UnmapCurrentRegion()
-{
-    bool result = true;
-    if (_base != NULL) {
-        if (_last_sync < _limit) {
-            // Defer syncing this data until next Sync() call, if any
-            _pending_sync = true;
-        }
-        if (!UnmapViewOfFile(_base) || !CloseHandle(_base_handle))
-            result = false;
-        _file_offset += _limit - _base;
-        _base = NULL;
-        _base_handle = NULL;
-        _limit = NULL;
-        _last_sync = NULL;
-        _dst = NULL;
-        // Increase the amount we map the next time, but capped at 1MB
-        if (_map_size < (1<<20)) {
-            _map_size *= 2;
-        }
-    }
-    return result;
-}
-
-bool Win32MapFile::_MapNewRegion()
-{
-    assert(_base == NULL);
-    //LONG newSizeHigh = (LONG)((file_offset_ + map_size_) >> 32);
-    //LONG newSizeLow = (LONG)((file_offset_ + map_size_) & 0xFFFFFFFF);
-    DWORD off_hi = (DWORD)(_file_offset >> 32);
-    DWORD off_lo = (DWORD)(_file_offset & 0xFFFFFFFF);
-    LARGE_INTEGER newSize;
-    newSize.QuadPart = _file_offset + _map_size;
-    SetFilePointerEx(_hFile, newSize, NULL, FILE_BEGIN);
-    SetEndOfFile(_hFile);
-
-    _base_handle = CreateFileMappingA(
-        _hFile,
-        NULL,
-        PAGE_READWRITE,
-        0,
-        0,
-        0);
-    if (_base_handle != NULL) {
-        _base = (char*) MapViewOfFile(_base_handle,
-            FILE_MAP_ALL_ACCESS,
-            off_hi,
-            off_lo,
-            _map_size);
-        if (_base != NULL) {
-            _limit = _base + _map_size;
-            _dst = _base;
-            _last_sync = _base;
-            return true;
-        }
-    }
-    return false;
-}
-
-Win32MapFile::Win32MapFile( const std::string& fname) :
-    _filename(fname),
-    _hFile(NULL),
-    _page_size(Win32::g_PageSize),
-    _map_size(_Roundup(65536, Win32::g_PageSize)),
-    _base(NULL),
-    _base_handle(NULL),
-    _limit(NULL),
-    _dst(NULL),
-    _last_sync(NULL),
-    _file_offset(0),
-    _pending_sync(false)
-{
-	std::wstring path;
-	ToWidePath(fname, path);
-    _Init(path.c_str());
-    assert((Win32::g_PageSize & (Win32::g_PageSize - 1)) == 0);
-}
-
-Status Win32MapFile::Append( const Slice& data )
-{
-    const char* src = data.data();
-    size_t left = data.size();
-    Status s;
-    while (left > 0) {
-        assert(_base <= _dst);
-        assert(_dst <= _limit);
-        size_t avail = _limit - _dst;
-        if (avail == 0) {
-            if (!_UnmapCurrentRegion() ||
-                !_MapNewRegion()) {
-                    return Status::IOError("WinMmapFile.Append::UnmapCurrentRegion or MapNewRegion: ", Win32::GetLastErrSz());
-            }
-        }
-        size_t n = (left <= avail) ? left : avail;
-        memcpy(_dst, src, n);
-        _dst += n;
-        src += n;
-        left -= n;
-    }
-    return s;
-}
-
-Status Win32MapFile::Close()
-{
-    Status s;
-    size_t unused = _limit - _dst;
-    if (!_UnmapCurrentRegion()) {
-        s = Status::IOError("WinMmapFile.Close::UnmapCurrentRegion: ",Win32::GetLastErrSz());
-    } else if (unused > 0) {
-        // Trim the extra space at the end of the file
-        LARGE_INTEGER newSize;
-        newSize.QuadPart = _file_offset - unused;
-        if (!SetFilePointerEx(_hFile, newSize, NULL, FILE_BEGIN)) {
-            s = Status::IOError("WinMmapFile.Close::SetFilePointer: ",Win32::GetLastErrSz());
-        } else 
-            SetEndOfFile(_hFile);
-    }
-    if (!CloseHandle(_hFile)) {
-        if (s.ok()) {
-            s = Status::IOError("WinMmapFile.Close::CloseHandle: ", Win32::GetLastErrSz());
-        }
-    }
-    _hFile = INVALID_HANDLE_VALUE;
-    _base = NULL;
-    _base_handle = NULL;
-    _limit = NULL;
-
-    return s;
-}
-
-Status Win32MapFile::Sync()
-{
-    Status s;
-    if (_pending_sync) {
-        // Some unmapped data was not synced
-        _pending_sync = false;
-        if (!FlushFileBuffers(_hFile)) {
-            s = Status::IOError("WinMmapFile.Sync::FlushFileBuffers: ",Win32::GetLastErrSz());
-        }
-    }
-    if (_dst > _last_sync) {
-        // Find the beginnings of the pages that contain the first and last
-        // bytes to be synced.
-        size_t p1 = _TruncateToPageBoundary(_last_sync - _base);
-        size_t p2 = _TruncateToPageBoundary(_dst - _base - 1);
-        _last_sync = _dst;
-        if (!FlushViewOfFile(_base + p1, p2 - p1 + _page_size)) {
-            s = Status::IOError("WinMmapFile.Sync::FlushViewOfFile: ",Win32::GetLastErrSz());
-        }
-    }
-    return s;
-}
-
-Status Win32MapFile::Flush()
-{
-    return Status::OK();
-}
-
-Win32MapFile::~Win32MapFile()
-{
-    if (_hFile != INVALID_HANDLE_VALUE) { 
-        Win32MapFile::Close();
-    }
-}
-
-BOOL Win32MapFile::_Init( LPCWSTR Path )
-{
-    DWORD Flag = PathFileExistsW(Path) ? OPEN_EXISTING : CREATE_ALWAYS;
-    _hFile = CreateFileW(Path,
-                         GENERIC_READ | GENERIC_WRITE,
-                         FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE,
-                         NULL,
-                         Flag,
-                         FILE_ATTRIBUTE_NORMAL,
-                         NULL);
-    if(!_hFile || _hFile == INVALID_HANDLE_VALUE)
-        return FALSE;
-    else
-        return TRUE;
-}
-
-BOOL Win32MapFile::isEnable()
-{
-    return _hFile ? TRUE : FALSE;
-}
-
 Win32FileLock::Win32FileLock( const std::string& fname ) :
     _hFile(NULL),_filename(fname)
 {
@@ -747,7 +778,6 @@ void Win32Logger::Logv( const char* format, va_list ap )
         DWORD hasWritten = 0;
         if(_pFileProxy){
             _pFileProxy->Append(Slice(base, p - base));
-            _pFileProxy->Flush();
         }
         if (base != buffer) {
             delete[] base;
@@ -797,6 +827,40 @@ void Win32Env::SleepForMicroseconds( int micros )
     ::Sleep((micros + 999) /1000);
 }
 
+Status Win32Env::LinkFile(const std::string& src,
+                          const std::string& target)
+{
+	Status s;
+    std::string s_path = src;
+    std::wstring s_wpath;
+	ToWidePath(ModifyPath(s_path), s_wpath);
+	
+	std::string t_path = target;
+    std::wstring t_wpath;
+	ToWidePath(ModifyPath(t_path), t_wpath);
+	if(!::CreateHardLinkW(s_wpath.c_str(), t_wpath.c_str(), NULL)) {
+		s = Status::IOError(s_path, "Could not link file.");
+	}
+	return s;
+}
+
+Status Win32Env::CopyFile(const std::string& src,
+                          const std::string& target)
+{
+	Status s;
+    std::string s_path = src;
+    std::wstring s_wpath;
+	ToWidePath(ModifyPath(s_path), s_wpath);
+	
+	std::string t_path = target;
+    std::wstring t_wpath;
+	ToWidePath(ModifyPath(t_path), t_wpath);
+	if(!::CopyFileW(s_wpath.c_str(), t_wpath.c_str(), false)) {
+		s = Status::IOError(s_path, "Could not copy file.");
+	}
+	
+	return s;
+}		  
 
 Status Win32Env::DeleteFile( const std::string& fname )
 {
@@ -980,12 +1044,21 @@ Status Win32Env::NewRandomAccessFile( const std::string& fname, RandomAccessFile
 Status Win32Env::NewLogger( const std::string& fname, Logger** result )
 {
     Status sRet;
-    std::string path = fname;
-    Win32MapFile* pMapFile = new Win32MapFile(ModifyPath(path));
-    if(!pMapFile->isEnable()){
+	std::string s_path = fname;
+	std::wstring path;
+	ToWidePath(fname, path);
+    HANDLE _hFile = CreateFileW(path.c_str(),
+                         GENERIC_READ | GENERIC_WRITE,
+                         FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE,
+                         NULL,
+                         PathFileExistsW(path.c_str()) ? OPEN_EXISTING : CREATE_ALWAYS,
+                         FILE_ATTRIBUTE_NORMAL,
+                         NULL);
+    Win32MapFile* pMapFile = new Win32MapFile(ModifyPath(s_path), _hFile);
+    if(_hFile == INVALID_HANDLE_VALUE){
         delete pMapFile;
         *result = NULL;
-        sRet = Status::IOError(path,"could not create a logger.");
+        sRet = Status::IOError(s_path,"could not create a logger.");
     }else
         *result = new Win32Logger(pMapFile);
     return sRet;
@@ -994,9 +1067,18 @@ Status Win32Env::NewLogger( const std::string& fname, Logger** result )
 Status Win32Env::NewWritableFile( const std::string& fname, WritableFile** result )
 {
     Status sRet;
-    std::string path = fname;
-    Win32MapFile* pFile = new Win32MapFile(ModifyPath(path));
-    if(!pFile->isEnable()){
+	std::string s_path = fname;
+	std::wstring path;
+	ToWidePath(fname, path);
+    HANDLE _hFile = CreateFileW(path.c_str(),
+                         GENERIC_READ | GENERIC_WRITE,
+                         FILE_SHARE_READ|FILE_SHARE_DELETE|FILE_SHARE_WRITE,
+                         NULL,
+                         PathFileExistsW(path.c_str()) ? OPEN_EXISTING : CREATE_ALWAYS,
+                         FILE_ATTRIBUTE_NORMAL,
+                         NULL);
+    Win32MapFile* pFile = new Win32MapFile(ModifyPath(s_path), _hFile);
+    if(_hFile == INVALID_HANDLE_VALUE){
         *result = NULL;
         sRet = Status::IOError(fname,Win32::GetLastErrSz());
     }else

@@ -38,7 +38,7 @@
  * this file.
 */
 class Database;
-class Session;
+struct Session;
 class Sessions;
 class Query;
 class Webapp;
@@ -88,8 +88,6 @@ struct TaskQueue {
 	std::mutex cv_mutex;
 	void notify() {cv.notify_one();}
     TaskQueue() : aborted(0) {}
-    TaskQueue(TaskQueue&& other) :
-        aborted(other.aborted.load()) {}
 };
 
 /**
@@ -148,10 +146,6 @@ public:
 	void join() { _worker.join(); }
     WebappTask(Webapp* handler, TaskQueue* q):
         _handler(handler), _worker(), _q(q) {}
-    WebappTask(WebappTask&& other) :
-        _worker(std::move(other._worker)),
-        _handler(other._handler),
-        _q(other._q) {}
 
     virtual ~WebappTask() {}
 	virtual void Execute() = 0;
@@ -165,10 +159,8 @@ public:
 struct BackgroundQueue : public WebappTask, public LockedQueue<Process*> {
     BackgroundQueue(Webapp* handler) :
         WebappTask(handler, this) {}
-    BackgroundQueue(BackgroundQueue&& q) : WebappTask(std::move(q)) {}
 	void Execute();
 	void Cleanup() {}
-
 };
 
 /**
@@ -182,12 +174,6 @@ struct RequestQueue : public WebappTask, public LockedQueue<Request*> {
 	std::unordered_map<std::string, ctemplate::TemplateDictionary*> templates;
     RequestQueue(Webapp *handler)
         : WebappTask(handler, this), _sessions(handler) { Cleanup(); }
-    RequestQueue(RequestQueue&& q) :
-        WebappTask(std::move(q)),
-        _sessions(std::move(q._sessions)),
-        _cache(q._cache),
-        baseTemplate(q.baseTemplate),
-        templates(std::move(q.templates)) {}
 	~RequestQueue();
 	void Cleanup();
 	void Execute();
@@ -199,17 +185,23 @@ typedef enum {SCRIPT_INIT, SCRIPT_QUEUE, SCRIPT_REQUEST, SCRIPT_HANDLERS} script
 
 template<class T>
 struct WorkerArray {
-    std::vector<T> workers;
+    std::vector<T*> workers;
     WorkerArray(){}
+	~WorkerArray() {
+		for (auto it : workers) {
+			delete it;
+		}
+	}
     void Cleanup() {
-        for(auto& it: workers) {
-            it.Cleanup();
+        for(auto it: workers) {
+            it->Cleanup();
         }
     }
+	
     void Clean() {
         //Ensure each worker is aborted, waiting to be restarted.
-        for (auto& it: workers) {
-            TaskQueue* q = it._q;
+        for (auto it: workers) {
+            TaskQueue* q = it->_q;
             //Ensure no other thread is cleaning.
             q->cleanupTask = 0;
 
@@ -227,16 +219,20 @@ struct WorkerArray {
             q->cv_mutex.lock();
         }
     }
+	
     void Restart() {
-        for (auto& it: workers) {
-            it._q->aborted = 0;
-            it._q->cv_mutex.unlock();
+        for (auto it: workers) {
+            it->_q->aborted = 0;
+            it->_q->cv_mutex.unlock();
         }
     }
-    void Start(Webapp* handler, int nWorkers) {
-        for(unsigned int i = 0; i < nWorkers; i++)
-            workers.emplace_back(handler);
-        for(auto& it: workers) it.start();
+	
+    void Start(Webapp* handler, unsigned int nWorkers) {
+		for (unsigned int i = 0; i < nWorkers; i++) {
+			T* worker = new T(handler);
+			workers.emplace_back(worker);
+			worker->start();
+		}
     }
 };
 

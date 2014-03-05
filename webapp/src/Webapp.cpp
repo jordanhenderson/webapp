@@ -400,7 +400,7 @@ void Webapp::process_request_async(
 	}
 
     unsigned int selected_node = node_counter++ % WEBAPP_NUM_THREADS;
-    workers.workers[selected_node].enqueue(request);
+    workers.workers[selected_node]->enqueue(request);
 }
 
 /**

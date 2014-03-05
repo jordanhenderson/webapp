@@ -24,7 +24,7 @@
 	<include>include;../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;../ext/openssl/include;include/gif;include/pngnq;include/tinydir;include/lpeg;include/cjson;include/readerwriterqueue;../ext/mariadb/include;../ext/sqlite/include;../ext/leveldb/include;include/simpleopt;./</include>
 	<include os="win32">../ext/ctemplate/include/windows</include>
 	<include os="linux">../ext/ctemplate/include</include>
-	<link compiler="msvc">ws2_32.lib;kernel32.lib;user32.lib;Advapi32.lib;crypt32.lib;Gdi32.lib</link>
+	<link compiler="msvc">ws2_32.lib;kernel32.lib;user32.lib;Advapi32.lib;crypt32.lib;Gdi32.lib;Shlwapi.lib</link>
     <source f="src/Session.cpp"/>
 	<source f="src/cjson/dtoa.c"/>
     <source f="src/cjson/g_fmt.c"/>
