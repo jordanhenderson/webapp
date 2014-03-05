@@ -1592,7 +1592,7 @@ Status DBImpl::SequenceWriteBegin(Writer* w, WriteBatch* updates) {
     w->linked = true;
     w->next = NULL;
     uint64_t diff = updates ? WriteBatchInternal::Count(updates) : 0;
-    uint64_t ticket = __sync_add_and_fetch(&writers_upper_, 1 + diff);
+    uint64_t ticket = writers_upper_ += 1 + diff;
     w->start_sequence = ticket - diff;
     w->end_sequence = ticket;
     w->logfile = logfile_;
@@ -1617,7 +1617,7 @@ void DBImpl::SequenceWriteEnd(Writer* w) {
   }
 
   // wait until we are next
-  while (__sync_fetch_and_add(&writers_lower_, 0) < w->start_sequence)
+  while (writers_lower_ < w->start_sequence)
     ;
 
   // swizzle state to make ours visible
@@ -1627,7 +1627,7 @@ void DBImpl::SequenceWriteEnd(Writer* w) {
   }
 
   // signal the next writer
-  __sync_fetch_and_add(&writers_lower_, 1 + w->end_sequence - w->start_sequence);
+  writers_lower_ += 1 + w->end_sequence - w->start_sequence;
 
   // must do in order: log, logfile
   if (w->old_log) {
@@ -1732,9 +1732,9 @@ Status DBImpl::LiveBackup(const Slice& _name) {
 
   name = Slice(name.data(), name_sz);
   std::set<uint64_t> live;
-  uint64_t ticket = __sync_add_and_fetch(&writers_upper_, 1);
+  uint64_t ticket = ++writers_upper_;
 
-  while (__sync_fetch_and_add(&writers_lower_, 0) < ticket)
+  while (writers_lower_ < ticket)
     ;
 
   {
@@ -1754,7 +1754,7 @@ Status DBImpl::LiveBackup(const Slice& _name) {
     // release mutex_, you'll need to add some sort of synchronization in place
     // of this text block.
     versions_->AddLiveFiles(&live);
-    __sync_fetch_and_add(&writers_lower_, 1);
+    writers_lower_++;
   }
 
   Status s;

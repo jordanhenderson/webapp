@@ -6,6 +6,7 @@
 #define STORAGE_LEVELDB_DB_MEMTABLE_H_
 
 #include <string>
+#include <atomic>
 #include "hyperleveldb/db.h"
 #include "db/dbformat.h"
 #include "db/skiplist.h"
@@ -25,12 +26,12 @@ class MemTable {
 
   // Increase reference count.
   // XXX use a release increment if not using GCC intrinsics
-  void Ref() { __sync_add_and_fetch(&refs_, 1); }
+  void Ref() { ++refs_; }
 
   // Drop reference count.  Delete if no more references exist.
   // XXX use an acquire decrement if not using GCC intrinsics
   void Unref() {
-    int refs = __sync_sub_and_fetch(&refs_, 1);
+	int refs = --refs_;
     assert(refs >= 0);
     if (refs <= 0) {
       delete this;
@@ -80,7 +81,7 @@ class MemTable {
   typedef SkipList<TableKey, KeyComparator> Table;
 
   KeyComparator comparator_;
-  int refs_;
+  std::atomic<int> refs_;
   port::Mutex mtx_;
   Arena arena_;
   Table table_;

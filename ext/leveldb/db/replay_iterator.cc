@@ -171,7 +171,7 @@ void ReplayIteratorImpl::Prime() {
     }
     // we're done with rs_.iter_
     has_current_user_key_ = false;
-    current_user_key_.assign("", 0);
+    current_user_key_.resize(0);
     current_user_sequence_ = kMaxSequenceNumber;
     delete rs_.iter_;
     rs_.iter_ = NULL;

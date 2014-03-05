@@ -175,8 +175,8 @@ class DBImpl : public DB {
   uint32_t seed_;                // For sampling.
 
   // Synchronize writers
-  uint64_t __attribute__ ((aligned (8))) writers_lower_;
-  uint64_t __attribute__ ((aligned (8))) writers_upper_;
+  std::atomic<uint64_t> writers_lower_;
+  std::atomic<uint64_t> writers_upper_;
 
   SnapshotList snapshots_;
 

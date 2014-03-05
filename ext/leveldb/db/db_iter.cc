@@ -13,6 +13,11 @@
 #include "util/logging.h"
 #include "util/mutexlock.h"
 #include "util/random.h"
+#ifdef _MSC_VER
+#define HAVE_WINDOWS_H 1
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#endif
 
 namespace leveldb {
 
