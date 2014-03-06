@@ -113,55 +113,6 @@ private:
     DISALLOW_COPY_AND_ASSIGN(Win32RandomAccessFile);
 };
 
-// Helper class to limit mmap file usage so that we do not end up
-// running out virtual memory or running into kernel performance
-// problems for very large databases.
-class MmapLimiter {
- public:
-  // Up to 1000 mmaps for 64-bit binaries; none for smaller pointer sizes.
-  MmapLimiter() {
-    SetAllowed(sizeof(void*) >= 8 ? 1000 : 0);
-  }
-
-  // If another mmap slot is available, acquire it and return true.
-  // Else return false.
-  bool Acquire() {
-    if (GetAllowed() <= 0) {
-      return false;
-    }
-    MutexLock l(&mu_);
-    intptr_t x = GetAllowed();
-    if (x <= 0) {
-      return false;
-    } else {
-      SetAllowed(x - 1);
-      return true;
-    }
-  }
-
-  // Release a slot acquired by a previous call to Acquire() that returned true.
-  void Release() {
-    MutexLock l(&mu_);
-    SetAllowed(GetAllowed() + 1);
-  }
-
- private:
-  port::Mutex mu_;
-  port::AtomicPointer allowed_;
-
-  intptr_t GetAllowed() const {
-    return reinterpret_cast<intptr_t>(allowed_.Acquire_Load());
-  }
-
-  // REQUIRES: mu_ must be held
-  void SetAllowed(intptr_t v) {
-    allowed_.Release_Store(reinterpret_cast<void*>(v));
-  }
-
-  MmapLimiter(const MmapLimiter&);
-  void operator=(const MmapLimiter&);
-};
-
 class Win32MapFile : public WritableFile {
  private:
   struct MmapSegment {
