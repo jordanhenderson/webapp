@@ -206,10 +206,7 @@ void Webapp::CompileScript(const char* filename, webapp_str_t* output) {
 	else {
 		size_t len;
 		const char* chunk = lua_tolstring(L, -1, &len);
-		if(output->data != NULL) delete[] output->data;
-		output->data = new char[len];
-		output->len = len;
-		memcpy((char*)output->data, chunk, len);
+		*output = webapp_str_t(chunk, len);
 	}
 	lua_close(L);
 }
@@ -276,7 +273,7 @@ void Webapp::RunScript(LuaParam* params, int nArgs, script_t script) {
 	luaopen_cjson(L);
 	
 	//Allocate memory for temporary string operations.
-    _webapp_str_t* static_strings = new _webapp_str_t[WEBAPP_STATIC_STRINGS];
+    _webapp_str_t* static_strings[WEBAPP_STATIC_STRINGS];
 	
 	//Provide and set temporary string memory global.
 	lua_pushlightuserdata(L, static_strings);
@@ -324,7 +321,6 @@ lua_error:
 	printf("Error: %s\n", lua_tostring(L, -1));
 
 finish:
-	delete[] static_strings;
     if(r != NULL) request_pool.deleteElement(r);
 	lua_close(L);
 }
