@@ -15,7 +15,7 @@ extern "C" {
 #include <lualib.h>
 #include <lauxlib.h>
 #include "lpeg.h"
-#include "cjson.h"
+#include <cjson.h>
 }
 
 using namespace std;
@@ -99,6 +99,8 @@ void WebappTask::start() {
 }
 
 RequestQueue::~RequestQueue() {
+    if(_cache != NULL) delete _cache;
+    if(baseTemplate != NULL) delete baseTemplate;
 }
 
 void RequestQueue::Execute() {
@@ -175,7 +177,6 @@ void Webapp::perform_cleanup() {
     reload_all();
     workers.Restart();
     bg_workers.Restart();
-
 }
 
 /**
@@ -248,12 +249,12 @@ void Webapp::reload_all() {
 
 		if (background_queue_enabled)
 			CompileScript("plugins/core/process_queue.lua", &scripts[SCRIPT_QUEUE]);
-	} else {
-		svc.stop();
-	}
 
-    workers.Cleanup();
-    bg_workers.Cleanup();
+        workers.Cleanup();
+        bg_workers.Cleanup();
+    } else {
+       svc.stop();
+    }
 }
 
 /**
@@ -340,6 +341,7 @@ Webapp::Webapp(const char* session_dir,
     options.filter_policy = leveldb::NewBloomFilterPolicy(10);
     options.create_if_missing = true;
     leveldb::DB::Open(options, session_dir, &db);
+
     reload_all();
 
     if(!background_queue_enabled) {
@@ -488,8 +490,10 @@ void Webapp::accept_conn() {
  * Deconstruct Webapp object.
 */
 Webapp::~Webapp() {
+    workers.Stop();
+    bg_workers.Stop();
+
     delete db;
-	//Abort each worker request queue and session.
 
     //Delete databases
 	for(auto db_entry : databases) {

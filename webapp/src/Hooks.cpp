@@ -113,7 +113,8 @@ Session* NewSession(RequestQueue* worker, Request* request) {
 }
 
 void DestroySession(Session* session) {
-	delete session;
+    if(session != NULL)
+        session->destroy();
 }
 
 void SetParamInt(Webapp* app, unsigned int key, int value) {

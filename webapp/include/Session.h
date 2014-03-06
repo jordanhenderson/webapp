@@ -22,8 +22,9 @@ namespace leveldb {
 }
 
 class DataStore {
-    leveldb::DB* db;
     std::vector<webapp_str_t*> vals;
+protected:
+    leveldb::DB* db;
 public:
     DataStore(leveldb::DB* db) : db(db) {}
     virtual ~DataStore();
@@ -33,6 +34,7 @@ public:
 
 struct Session : public DataStore {
     webapp_str_t session_id;
+    void destroy();
     Session(leveldb::DB*, const webapp_str_t&);
     ~Session() {}
     webapp_str_t* get(const webapp_str_t& key);

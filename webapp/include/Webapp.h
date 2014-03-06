@@ -138,11 +138,11 @@ private:
 
 public:
 	void start();
-	void join() { _worker.join(); }
+    void stop() { if(_worker.joinable()) _worker.join(); }
     WebappTask(Webapp* handler, TaskQueue* q):
         _handler(handler), _worker(), _q(q) {}
 
-    virtual ~WebappTask() {}
+    virtual ~WebappTask() { stop(); }
 	virtual void Execute() = 0;
 	virtual void Cleanup() = 0;
 	TaskQueue* _q;
@@ -228,6 +228,12 @@ struct WorkerArray {
 			workers.emplace_back(worker);
 			worker->start();
 		}
+    }
+
+    void Stop() {
+        for(auto it: workers) {
+            it->stop();
+        }
     }
 };
 

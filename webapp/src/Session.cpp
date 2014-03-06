@@ -20,18 +20,20 @@ using namespace std;
 
 webapp_str_t* DataStore::get(const webapp_str_t &key) {
     leveldb::Iterator* it = db->NewIterator(leveldb::ReadOptions());
+    webapp_str_t* val = NULL;
     for(it->Seek(key); it->Valid(); it->Next()) {
         leveldb::Slice it_key = it->key();
         leveldb::Slice it_value = it->value();
         if(it_key.compare(key) > 0) break;
-        webapp_str_t* val =
+        val =
                 new webapp_str_t(it_value.data(), it_value.size());
-        vals.push_back(val);
-        return val;
     }
-    webapp_str_t* empty = new webapp_str_t();
-    vals.push_back(empty);
-    return empty;
+    delete it;
+
+    if(val == NULL) val = new webapp_str_t();
+    vals.push_back(val);
+
+    return val;
 }
 
 void DataStore::put(const webapp_str_t &key, const webapp_str_t &value) {
@@ -49,12 +51,25 @@ Session::Session(leveldb::DB* db, const webapp_str_t &sid)
     int32_t diff = difftime(current_time, epoch);
     webapp_str_t str_diff;
     str_diff.from_number(diff);
-    db->Put(leveldb::WriteOptions(), sid, str_diff);
+    DataStore::put(sid, str_diff);
 }
 
 webapp_str_t* Session::get(const webapp_str_t &key) {
     webapp_str_t actual_key = session_id + key;
     return DataStore::get(actual_key);
+}
+
+void Session::destroy() {
+    leveldb::Iterator* it = db->NewIterator(leveldb::ReadOptions());
+    for(it->Seek(session_id); it->Valid(); it->Next()) {
+        leveldb::Slice it_key = it->key();
+        if(it_key.starts_with(session_id)) {
+            db->Delete(leveldb::WriteOptions(), it_key);
+        } else {
+            break;
+        }
+    }
+    delete it;
 }
 
 void Session::put(const webapp_str_t &key, const webapp_str_t &value) {
@@ -87,8 +102,8 @@ int32_t Sessions::session_expiry() {
 Session* Sessions::new_session(Request* request) {
 	if (request->host.len == 0 || request->user_agent.len == 0) 
 		return NULL;
-	unsigned char output[32];
-	char output_hex[32];
+    unsigned char output[SHA256_DIGEST_LENGTH];
+    char output_hex[32];
 	SHA256_CTX ctx;
 	SHA256_Init(&ctx);
 	SHA256_Update(&ctx, (unsigned char*)request->host.data, 
@@ -104,7 +119,7 @@ Session* Sessions::new_session(Request* request) {
 	SHA256_Final(output, &ctx);
 	const char* hex_lookup = "0123456789ABCDEF";
 	char* p = output_hex;
-	for (int i = 0; i != 16; i++) {
+    for (int i = 0; i <= 16; i++) {
 		*p++ = hex_lookup[output[i] >> 4];
 		*p++ = hex_lookup[output[i] & 0x0F];
 	}
@@ -154,6 +169,7 @@ Session* Sessions::get_session(Request* request) {
     if(session_id.len < SESSIONID_SIZE) return NULL;
 
     leveldb::Iterator* it = db->NewIterator(leveldb::ReadOptions());
+    Session* session = NULL;
     for(it->Seek(session_id); it->Valid(); it->Next()) {
         leveldb::Slice key = it->key();
         leveldb::Slice value = it->value();
@@ -171,13 +187,13 @@ Session* Sessions::get_session(Request* request) {
 
         if(time_difference < 0) return NULL; //Session in the past?
         if(time_difference < session_expiry()) {
-            Session* session = new Session(db, session_id);
+            session = new Session(db, session_id);
             request->sessions.push_back(session);
-            return session;
         } else {
             db->Delete(leveldb::WriteOptions(), key);
         }
     }
-	return NULL;
+    delete it;
+    return session;
 }
 
