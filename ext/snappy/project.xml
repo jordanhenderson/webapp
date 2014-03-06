@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <project>
 	<output type="static">libsnappy</output>
-	<flags compiler="msvc">MT;W3</flags>
-	<flags>O2</flags>
+	<flags compiler="msvc">MT;W3;Ox</flags>
+	<flags compiler="gcc">O3</flags>
 	<flags compiler="msvc">MT;W3;wd4996;EHsc</flags>
 	<flags type="pp">HAVE_CONFIG_H</flags>
 	<source f="snappy-c.cc"/>

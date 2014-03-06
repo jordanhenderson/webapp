@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <project>
 	<output type="static">sqlite</output>
-	<flags compiler="msvc">MT;W3</flags>
+	<flags compiler="msvc">MT;W3;Ox</flags>
 	<flags type="pp">SQLITE_THREADSAFE=1;SQLITE_ENABLE_COLUMN_METADATA</flags>
-	<flags>O2</flags>
+	<flags compiler="gcc">O3</flags>
 	<include>include</include>
 	<source f="src/sqlite3.c"/>
 </project>

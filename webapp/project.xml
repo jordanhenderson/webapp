@@ -13,15 +13,14 @@
 	<depends link="true">../ext/snappy</depends>
 	<depends>../ext/nginx</depends>
 	<output type="app">webapp</output>
-	<flags compiler="msvc">MT;W3;wd4996;EHsc</flags>
-	<flags>O2</flags>
+	<flags compiler="msvc">MT;W3;wd4996;EHsc;Ox</flags>
 	<flags compiler="gcc" ext="cpp">std=c++11</flags>
 	<flags compiler="gcc" ext="c">std=gnu99</flags>
-	<flags compiler="gcc">fvisibility=hidden;g</flags>
+	<flags compiler="gcc">fvisibility=hidden;O3</flags>
 	<flags step="link" compiler="gcc">pthread;lstdc++;lm;ldl;fvisibility=hidden;Wl,--dynamic-list=api.exp</flags>
 	<flags type="pp" compiler="msvc">UNICODE;_UNICODE;_WIN32_WINNT=0x0502;ASIO_MSVC;ASIO_WINDOWS;_CONSOLE;_WIN32;_VISUALC_</flags>
-	<flags type="pp">CTEMPLATE_DLL_DECL=;ASIO_STANDALONE;NDEBUG</flags>
-	<include>include;../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;../ext/openssl/include;include/gif;include/pngnq;include/tinydir;include/lpeg;include/cjson;include/readerwriterqueue;../ext/mariadb/include;../ext/sqlite/include;../ext/leveldb/include;include/simpleopt;./</include>
+	<flags type="pp">ASIO_STANDALONE;NDEBUG</flags>
+	<include>include;../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;../ext/openssl/include;include/gif;include/pngnq;include/tinydir;include/lpeg;include/cjson;include/readerwriterqueue;../ext/mariadb/include;../ext/sqlite/include;../ext/leveldb/include;include/simpleopt;include/MemoryPool;./</include>
 	<include os="win32">../ext/ctemplate/include/windows</include>
 	<include os="linux">../ext/ctemplate/include</include>
 	<link compiler="msvc">ws2_32.lib;kernel32.lib;user32.lib;Advapi32.lib;crypt32.lib;Gdi32.lib;Shlwapi.lib</link>

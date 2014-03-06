@@ -17,9 +17,7 @@ using namespace std;
  * @param db The associated database connection
  * @param desc Whether to populate column description fields
 */
-Query::Query(Database* db, int desc) : _db(db) {
-	params = new QueryRow();
-	this->desc = desc;
+Query::Query(Database* db, int desc) : _db(db), desc(desc) {
 }
 
 /**
@@ -28,20 +26,14 @@ Query::Query(Database* db, int desc) : _db(db) {
  * @param dbq The initial query string
 */
 Query::Query(Database* db, const webapp_str_t& _dbq, int desc) 
-	: dbq(_dbq), _db(db) {
-	params = new QueryRow();
-	this->desc = desc;
+    : dbq(_dbq), _db(db), desc(desc) {
 }
 
 /**
  * Destroy a Query instance.
 */
 Query::~Query() {
-	//Clean up parameters
-	if(params != NULL)
-		delete params;
-
-	//Clean up description fields.
+    //Clean up description fields.
 	if (description != NULL) {
 		delete[] description;
 	}
@@ -101,8 +93,8 @@ void Query::process() {
 	}
 	
 	//Check for (and apply) parameters for parameterized queries.
-	if((size_arr == NULL || bind_params == NULL) && params != NULL) {
-		int m = params->size();
+    if(size_arr == NULL || bind_params == NULL) {
+        int m = params.size();
 		//Set up MYSQL_BIND and size array for MYSQL parameters.
 		if(db_type == DATABASE_TYPE_MYSQL) {
 			size_arr = new unsigned long[m];
@@ -112,16 +104,16 @@ void Query::process() {
 		
 		//Iterate over each parameter, binding as appropriate.
 		for(int i = 0; i < m; i++) {
-			string* p_str = &(*params)[i];
+            webapp_str_t& p_str = params[i];
 			if(db_type == DATABASE_TYPE_SQLITE)
-				sqlite3_bind_text(sqlite_stmt, i+1, p_str->c_str(), 
-					p_str->length(), SQLITE_STATIC);
+                sqlite3_bind_text(sqlite_stmt, i+1, p_str.data,
+                    p_str.len, SQLITE_STATIC);
 			else if(db_type == DATABASE_TYPE_MYSQL) {
 				bind_params[i].buffer_type = MYSQL_TYPE_STRING;
-				bind_params[i].buffer = (char*) p_str->c_str();
+                bind_params[i].buffer = (char*) p_str.data;
 				bind_params[i].is_null = 0;
 				bind_params[i].length = &size_arr[i];
-				size_arr[i] = p_str->length();
+                size_arr[i] = p_str.len;
 			}
 		}
 		if(db_type == DATABASE_TYPE_MYSQL) {

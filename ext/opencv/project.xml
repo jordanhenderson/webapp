@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <project>
 	<output type="static">opencv</output>
-	<flags compiler="msvc">MT;W3;EHsc</flags>
-	<flags>O2</flags>
+	<flags compiler="msvc">MT;W3;EHsc;Ox</flags>
+	<flags compiler="gcc">O3</flags>
 	<flags type="pp">__OPENCV_BUILD</flags>
 	<flags os="win32" type="pp">WIN32</flags>
 	<include>modules/imgproc/src;modules/imgproc/include;modules/core/include;./;../zlib/include</include>

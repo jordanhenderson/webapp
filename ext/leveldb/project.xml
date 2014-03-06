@@ -2,12 +2,12 @@
 <project>
 	<depends link="true">../snappy</depends>
 	<output type="static">leveldb</output>
-	<flags compiler="msvc">MT;W3;EHsc</flags>
+	<flags compiler="msvc">MT;W3;EHsc;Ox</flags>
+	<flags compiler="gcc">O3</flags>
 	<flags compiler="gcc" ext="cc">std=c++11</flags>
 	<flags os="linux" type="pp">LEVELDB_PLATFORM_POSIX</flags>
 	<flags os="win32" type="pp">LEVELDB_PLATFORM_WINDOWS;_LIBCPP_VERSION</flags>
 	<flags type="pp">SNAPPY</flags>
-	<flags>O2</flags>
 	<include>include;.;../snappy/</include>
 	<include os="win32">win</include>
 	<source f="db/db_impl.cc"/>

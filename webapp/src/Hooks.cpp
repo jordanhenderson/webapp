@@ -75,31 +75,18 @@ void Template_Load(webapp_str_t* page) {
 	LoadTemplate(*page, STRIP_WHITESPACE);
 }
 
-void Template_Render(RequestQueue* worker, webapp_str_t* page,
-					Request* request, webapp_str_t* out) {
-	if (out == NULL || page == NULL) return;
-	
+webapp_str_t* Template_Render(RequestQueue* worker, webapp_str_t* page,
+                    Request* request) {
+    if (page == NULL) return NULL;
 	webapp_str_t dir = "content/";
-	string* output = worker->RenderTemplate(dir + page);
-
-	out->data = (char*)output->c_str();
-	out->len = output->length();
-
+    webapp_str_t* output = worker->RenderTemplate(dir + page);
 	request->strings.push_back(output);
+    return output;
 }
 
-int GetSessionValue(Session* session, webapp_str_t* key, webapp_str_t* out) {
-	if(session == NULL || key == NULL) 
-		return 0;
-
-    webapp_str_t* val = session->get(*key);
-	if (out != NULL) {
-		//Write to out
-        out->data = val->data;
-        out->len = val->len;
-	}
-
-    return !(val->len == 0);
+webapp_str_t* GetSessionValue(Session* session, webapp_str_t* key) {
+    if(session == NULL || key == NULL) return NULL;
+    return session->get(*key);
 }
 
 int SetSessionValue(Session* session, webapp_str_t* key,
@@ -110,11 +97,9 @@ int SetSessionValue(Session* session, webapp_str_t* key,
 	return 1;
 }
 
-int GetSessionID(Session* session, webapp_str_t* out) {
-    if(session == NULL || out == NULL) return 0;
-    out->data = session->session_id.data;
-    out->len = session->session_id.len;
-    return 1;
+webapp_str_t* GetSessionID(Session* session) {
+    if(session == NULL) return NULL;
+    return &session->session_id;
 }
 
 Session* GetSession(RequestQueue* worker, Request* request) {
@@ -176,18 +161,18 @@ void FinishProcess(Process* process) {
 	delete process;
 }
 
-void CleanupRequest(Request* r) {
+void CleanupRequest(Webapp* app, Request* r) {
 	if(r->waiting == 0) {
-		delete r;
+        app->request_pool.deleteElement(r);
 	} else {
-		r->socket->get_io_service().post(bind(CleanupRequest, r));
+        r->socket.get_io_service().post(bind(CleanupRequest, app, r));
 	}
 }
 
-void FinishRequest(Request* r) {
+void FinishRequest(Webapp* app, Request* r) {
 	if(r == NULL) return;
 	r->shutdown = 1;
-	r->socket->get_io_service().post(bind(CleanupRequest, r));
+    r->socket.get_io_service().post(bind(CleanupRequest, app, r));
 }
 
 void WriteComplete(std::atomic<int>* wt, webapp_str_t* buf, 
@@ -204,7 +189,7 @@ void WriteSocket(Request* r, webapp_str_t* s) {
 	(*wt)++;
 	
 	try {
-		asio::async_write(*r->socket, asio::buffer(s->data, s->len),
+        asio::async_write(r->socket, asio::buffer(s->data, s->len),
 			bind(&WriteComplete, wt, s, _1, _2));
 	}
 	catch (asio::system_error ec) {
@@ -269,11 +254,11 @@ int SelectQuery(Query* q) {
 
 Query* CreateQuery(webapp_str_t* in, Request* r, Database* db, int desc) {
 	if (r == NULL || db == NULL) return NULL;
-	Query* q = NULL;
-	if (in == NULL) q = new Query(db, desc);
-	else q = new Query(db, *in, desc);
+    Query* q = NULL;
+    if (in == NULL) q = new Query(db, desc);
+    else q = new Query(db, *in, desc);
 
-	r->queries.push_back(q);
+    r->queries.push_back(q);
 	return q;
 }
 
@@ -285,7 +270,7 @@ void SetQuery(Query* q, webapp_str_t* in) {
 
 void BindParameter(Query* q, webapp_str_t* param) {
 	if (q == NULL || param == NULL) return;
-	q->params->push_back(*param);
+    q->params.push_back(*param);
 }
 
 void tm_to_webapp(struct tm* src, struct webapp_tm* output) {

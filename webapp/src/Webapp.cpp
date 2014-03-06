@@ -57,11 +57,8 @@ static const char* script_t_names[] = {SCRIPT_NAMES};
 */
 Request::~Request() {
 	for(auto it: strings) delete it;
-	for(auto it: queries) delete it;
+    for(auto it: queries) delete it;
     for(auto it: sessions) delete it;
-	if (socket != NULL) delete socket;
-	if (v != NULL) delete v;
-	if (headers != NULL) delete headers;
 }
 
 /**
@@ -133,14 +130,14 @@ void RequestQueue::Cleanup() {
 	}
 }
 
-string* RequestQueue::RenderTemplate(const webapp_str_t& page) {
-	string* output = new string();
-	if(_cache)
-	_cache->ExpandNoLoad(page, STRIP_WHITESPACE, baseTemplate, NULL,
-						  output);
+webapp_str_t* RequestQueue::RenderTemplate(const webapp_str_t& page) {
+    webapp_str_t* output = new webapp_str_t();
+    WebappStringEmitter wse(output);
+    if(_cache)
+    _cache->ExpandNoLoad(page, STRIP_WHITESPACE, baseTemplate, NULL, &wse);
 	else {
 		mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::LAZY_RELOAD);
-		ExpandTemplate(page, STRIP_WHITESPACE, baseTemplate, output);
+        ExpandTemplate(page, STRIP_WHITESPACE, baseTemplate, &wse);
 	}
 	return output;
 }
@@ -308,7 +305,7 @@ void Webapp::RunScript(LuaParam* params, int nArgs, script_t script) {
 	//If script is SCRIPT_INIT, provide a temporary Request object
 	//to operate on (Request needed when calling handlers)
 	if(script == SCRIPT_INIT) {
-		r = new Request();
+        r = request_pool.newElement(svc);
 		lua_pushlightuserdata(L, r);
 		lua_setglobal(L, "tmp_request");
 	}
@@ -328,7 +325,7 @@ lua_error:
 
 finish:
 	delete[] static_strings;
-	if(r != NULL) delete r;
+    if(r != NULL) request_pool.deleteElement(r);
 	lua_close(L);
 }
 
@@ -366,7 +363,7 @@ Webapp::Webapp(const char* session_dir,
 	while(!bound) {
 		try {
 			tcp::endpoint endpoint(tcp::v4(), port);
-			acceptor = new tcp::acceptor(svc, endpoint, true);
+            acceptor = new tcp::acceptor(svc, endpoint, true);
 			bound = 1;
 		} catch (const asio::system_error& ec) {
 			failed++;
@@ -389,18 +386,30 @@ Webapp::Webapp(const char* session_dir,
  * @param bytes_transferred the amount of bytes transferred.
 */
 void Webapp::process_request_async(
-    Request* request, const asio::error_code& ec, std::size_t bytes_transferred) {
-	size_t read = 0;
-	
-	//Read each input chain variable recieved from nginx appropriately.
-	for(int i = 0; i < STRING_VARS; i++) {
-        char* h = (char*) request->v->data() + read;
-        request->input_chain[i]->data = h;
-        read += request->input_chain[i]->len;
-	}
+    Request* r, const asio::error_code& ec, size_t n_bytes) {
+    if(!ec) {
+        int n = r->headers_body.size();
+        int max = r->headers_body.capacity();
+        n += r->socket.read_some(buffer(&r->headers_body[n], max - n));
+        if(n != max) {
+            r->socket.async_read_some(null_buffers(),
+                std::bind(&Webapp::process_request_async, this, r, _1, _2));
+            return;
+        }
+        size_t read = 0;
 
-    unsigned int selected_node = node_counter++ % WEBAPP_NUM_THREADS;
-    workers.workers[selected_node]->enqueue(request);
+        //Read each input chain variable recieved from nginx appropriately.
+        for(int i = 0; i < STRING_VARS; i++) {
+            char* h = (char*) r->headers_body.data() + read;
+            r->input_chain[i]->data = h;
+            read += r->input_chain[i]->len;
+        }
+
+        unsigned int selected_node = node_counter++ % WEBAPP_NUM_THREADS;
+        workers.workers[selected_node]->enqueue(r);
+    } else {
+        request_pool.deleteElement(r);
+    }
 }
 
 /**
@@ -411,10 +420,17 @@ void Webapp::process_request_async(
  * @param ec the asio error code, if any
  * @param bytes_transferred the amount bytes transferred
 */
-void Webapp::process_header_async(Request* r, const asio::error_code& ec,
-	std::size_t bytes_transferred) {
+void Webapp::process_header_async(Request* r, const asio::error_code& ec, size_t n_bytes) {
     if(!ec) {
-        int16_t* headers = (int16_t*)r->headers->data();
+        int n = r->headers.size();
+        n += r->socket.read_some(buffer(&r->headers[n], PROTOCOL_LENGTH_SIZEINFO - n));
+        if(n != PROTOCOL_LENGTH_SIZEINFO) {
+            r->socket.async_read_some(null_buffers(), bind(
+                    &Webapp::process_header_async, this, r, _1, _2));
+            return;
+        }
+
+        int16_t* headers = (int16_t*)r->headers.data();
 		//At this stage, at least PROTOCOL_SIZELENGTH_INFO has been read into the buffer.
 		//STATE: Read protocol.
 		r->uri.len =          ntohs(*headers++);
@@ -435,10 +451,13 @@ void Webapp::process_header_async(Request* r, const asio::error_code& ec,
 			len += r->input_chain[i]->len;
 		}
 		
-		r->v = new std::vector<char>(len);
-		asio::async_read(*r->socket, asio::buffer(*r->v), transfer_exactly(len),
-			std::bind(&Webapp::process_request_async, this, r, _1, _2));
-	}
+        r->headers_body.reserve(len);
+        r->socket.async_read_some(null_buffers(),
+            std::bind(&Webapp::process_request_async, this, r, _1, _2));
+    } else {
+        //Failed. Destroy request.
+        request_pool.deleteElement(r);
+    }
 }
 
 /**
@@ -447,13 +466,9 @@ void Webapp::process_header_async(Request* r, const asio::error_code& ec,
  * The next stage will be executed after async_read completes as necessary.
  * @param s the asio socket object of the accepted connection.
 */
-void Webapp::accept_conn_async(tcp::socket* s, const asio::error_code& error) {
-	Request* r = new Request();
-	r->socket = s;
-	r->headers = new std::vector<char>(PROTOCOL_LENGTH_SIZEINFO);
+void Webapp::accept_conn_async(Request* r, const asio::error_code& error) {
 	try {
-		asio::async_read(*r->socket, asio::buffer(*r->headers), 
-			transfer_exactly(PROTOCOL_LENGTH_SIZEINFO), bind(
+        r->socket.async_read_some(null_buffers(), bind(
 				&Webapp::process_header_async, this, r, _1, _2));
 		accept_conn();
 	} catch(std::system_error er) {
@@ -467,10 +482,10 @@ void Webapp::accept_conn_async(tcp::socket* s, const asio::error_code& error) {
  * connections. Re-called after each async_accept callback is completed.
 */
 void Webapp::accept_conn() {
-	tcp::socket* current_socket = new tcp::socket(svc);
-	acceptor->async_accept(*current_socket, 
+    Request* r = request_pool.newElement(svc);
+    acceptor->async_accept(r->socket,
 		std::bind(&Webapp::accept_conn_async, this, 
-			current_socket, std::placeholders::_1));
+            r, std::placeholders::_1));
 }
 
 /**

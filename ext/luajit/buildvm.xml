@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <project>
 	<output type="app">buildvm</output>
-	<flags compiler="msvc">MT;W3;wd4996</flags>
-	<flags>O2</flags>
+	<flags compiler="msvc">MT;W3;wd4996;Ox</flags>
+	<flags compiler="gcc">O3</flags>
 	<flags type="pp">LUAJIT_ENABLE_LUA52COMPAT</flags>
 	<flags compiler="gcc">m$(ARCH)</flags>
 	<flags compiler="gcc" step="link">m$(ARCH)</flags>

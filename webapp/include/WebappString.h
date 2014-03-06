@@ -1,6 +1,7 @@
 #ifndef WEBAPPSTRING_H
 #define WEBAPPSTRING_H
 #include <ctemplate/template.h>
+#include <ctemplate/template_emitter.h>
 #include <leveldb/db.h>
 
 struct _webapp_str_t {
@@ -30,6 +31,11 @@ struct webapp_str_t {
         data = new char[len];
         memcpy(data, s, len);
     }
+    webapp_str_t(const std::string& other) {
+        len = other.size();
+        data = new char[len];
+        memcpy(data, other.c_str(), len);
+    }
     webapp_str_t(webapp_str_t* other) {
         if(other == NULL) {
             data = new char[1];
@@ -57,6 +63,7 @@ struct webapp_str_t {
     operator leveldb::Slice const () const {
         return leveldb::Slice(data, len);
     }
+
     webapp_str_t& operator +=(const webapp_str_t& other) {
         int32_t newlen = len + other.len;
         char* r = new char[newlen];
@@ -80,6 +87,7 @@ struct webapp_str_t {
     friend webapp_str_t operator+(const webapp_str_t& w1, const webapp_str_t& w2);
     friend webapp_str_t operator+(const char* lhs, const webapp_str_t& rhs);
     friend webapp_str_t operator+(const webapp_str_t& lhs, const char* rhs);
+    friend webapp_str_t operator+(const webapp_str_t& lhs, char c);
     void from_number(int num) {
         if(allocated) delete[] data;
         data = new char[21];
@@ -92,5 +100,15 @@ struct webapp_data_t : webapp_str_t {
     webapp_data_t(T _data) : webapp_str_t(sizeof(T)) {
         *(T*)(data) = _data;
     }
+};
+
+class  WebappStringEmitter : public ctemplate::ExpandEmitter {
+  webapp_str_t* const outbuf_;
+ public:
+  WebappStringEmitter(webapp_str_t* outbuf) : outbuf_(outbuf) {}
+  virtual void Emit(char c) { char tmp[1]; tmp[0] = c; *outbuf_ += webapp_str_t(tmp, 1); }
+  virtual void Emit(const std::string& s) { *outbuf_ += s; }
+  virtual void Emit(const char* s) { *outbuf_ += s; }
+  virtual void Emit(const char* s, size_t slen) { *outbuf_ += webapp_str_t(s, slen); }
 };
 #endif // WEBAPPSTRING_H

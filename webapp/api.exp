@@ -38,8 +38,6 @@
 	CreateQuery;
 	SetQuery;
 	BindParameter;
-	GetCell;
-	GetColumnName;
 	
 	Image_Load;
 	Image_Resize;

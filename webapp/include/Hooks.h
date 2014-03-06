@@ -16,7 +16,7 @@ class Sessions;
 class Webapp;
 class Process;
 class Database;
-class Query;
+struct Query;
 class Image;
 class File;
 template<typename T> class LockedQueue;
@@ -33,21 +33,21 @@ APIEXPORT void Template_SetIntValue(ctemplate::TemplateDictionary* dict,
 APIEXPORT void Template_SetValue(ctemplate::TemplateDictionary* dict,
 									  webapp_str_t* key, webapp_str_t* value);
 APIEXPORT ctemplate::TemplateDictionary* Template_Get(RequestQueue*, webapp_str_t* name);
-APIEXPORT void Template_Render(RequestQueue* worker, webapp_str_t* page,
-					Request* request, webapp_str_t* out);
+APIEXPORT webapp_str_t* Template_Render(RequestQueue* worker, webapp_str_t* page,
+                    Request* request);
 APIEXPORT void Template_Clear(ctemplate::TemplateDictionary* dict);
 APIEXPORT void Template_Load(webapp_str_t* page);
 APIEXPORT void Template_Include(Webapp* app, webapp_str_t* name, webapp_str_t* file);
 
 //Get a string stored in the session.
-APIEXPORT int GetSessionValue(Session*, webapp_str_t*, webapp_str_t* out);
+APIEXPORT webapp_str_t* GetSessionValue(Session*, webapp_str_t*);
 APIEXPORT int SetSessionValue(Session*, webapp_str_t* key, webapp_str_t* val);
 APIEXPORT Session* GetSession(RequestQueue*, Request*);
 APIEXPORT Session* NewSession(RequestQueue*, Request*);
 APIEXPORT void DestroySession(Session*);
-APIEXPORT int GetSessionID(Session*, webapp_str_t* out);
+APIEXPORT webapp_str_t* GetSessionID(Session*);
 
-APIEXPORT void FinishRequest(Request*);
+APIEXPORT void FinishRequest(Webapp*, Request*);
 APIEXPORT void QueueProcess(BackgroundQueue*, webapp_str_t* funtion,
 							webapp_str_t* vars);
 APIEXPORT Process* GetNextProcess(BackgroundQueue*);
@@ -89,8 +89,6 @@ APIEXPORT int SelectQuery(Query*);
 APIEXPORT Query* CreateQuery(webapp_str_t*, Request*, Database*, int desc);
 APIEXPORT void SetQuery(Query*, webapp_str_t*);
 APIEXPORT void BindParameter(Query* q, webapp_str_t* in);
-APIEXPORT void GetCell(Query* q, unsigned int column, webapp_str_t* out);
-APIEXPORT void GetColumnName(Query* q, unsigned int column, webapp_str_t* out);
 
 //Image API
 APIEXPORT Image* Image_Load(webapp_str_t* filename);

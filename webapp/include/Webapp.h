@@ -8,10 +8,12 @@
 #define WEBAPP_H
 
 #include <asio.hpp>
-#include "Platform.h"
-#include "WebappString.h"
-#include "Session.h"
 #include <readerwriterqueue.h>
+#include <MemoryPool.h>
+#include "WebappString.h"
+#include "Platform.h"
+#include "Database.h"
+#include "Session.h"
 
 #define WEBAPP_NUM_THREADS 2
 #define WEBAPP_STATIC_STRINGS 10
@@ -32,15 +34,6 @@
 #define STRING_VARS 5
 #define PROTOCOL_LENGTH_SIZEINFO sizeof(int16_t) * PROTOCOL_VARS
 
-/**
- * Forward definitions for classes referenced in this header.
- * Related headers must be pulled into definitions that make use of
- * this file.
-*/
-class Database;
-struct Session;
-class Sessions;
-class Query;
 class Webapp;
 
 /**
@@ -55,24 +48,26 @@ struct LuaParam {
  * @brief Required information per request.
  */
 struct Request {
-	asio::ip::tcp::socket* socket = NULL;
-	std::vector<char>* v = NULL;
-	std::vector<char>* headers = NULL;
-	int amount_to_recieve = 0;
-	int length = 0;
-	int method = 0;
+    int method = 0;
     _webapp_str_t uri;
     _webapp_str_t host;
     _webapp_str_t user_agent;
     _webapp_str_t cookies;
     _webapp_str_t request_body;
-	std::vector<std::string*> strings;
     _webapp_str_t* input_chain[STRING_VARS];
-	std::vector<Query*> queries;
+    asio::ip::tcp::socket socket;
+    std::vector<char> headers;
+    std::vector<char> headers_body;
+    std::vector<webapp_str_t*> strings;
+    std::vector<Query*> queries;
     std::vector<Session*> sessions;
 	int shutdown = 0;
 	std::atomic<int> waiting{0};
 	~Request();
+    Request(asio::io_service& svc) :
+        socket(svc) {
+        headers.reserve(PROTOCOL_LENGTH_SIZEINFO);
+    }
 };
 
 /**
@@ -177,7 +172,7 @@ struct RequestQueue : public WebappTask, public LockedQueue<Request*> {
 	~RequestQueue();
 	void Cleanup();
 	void Execute();
-	std::string* RenderTemplate(const webapp_str_t& tpl);  
+    webapp_str_t* RenderTemplate(const webapp_str_t& tpl);
 };
 
 typedef enum {SCRIPT_INIT, SCRIPT_QUEUE, SCRIPT_REQUEST, SCRIPT_HANDLERS} script_t;
@@ -256,9 +251,9 @@ class Webapp {
 	//IPC api
 	asio::ip::tcp::acceptor* acceptor;
 	void accept_conn();
-	void accept_conn_async(asio::ip::tcp::socket*, const asio::error_code&);
-	void process_header_async(Request *r, const asio::error_code&, std::size_t);
-	void process_request_async(Request* r, const asio::error_code&, std::size_t);
+    void accept_conn_async(Request* r, const asio::error_code&);
+    void process_header_async(Request* r, const asio::error_code&, std::size_t);
+    void process_request_async(Request* r, const asio::error_code&, std::size_t);
 	asio::io_service& svc;
 	asio::io_service::work wrk;
 
@@ -272,6 +267,8 @@ public:
 
     std::unordered_map<std::string, std::string> templates;
 	
+    MemoryPool<Request> request_pool;
+
     Webapp(const char* session_dir, unsigned int port, asio::io_service& io_svc);
 	~Webapp();
 	

@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <project>
 	<output type="static">libjpeg</output>
-	<flags compiler="msvc">MT;W3</flags>
-	<flags>O2</flags>
+	<flags compiler="msvc">MT;W3;Ox</flags>
+	<flags compiler="gcc">O3</flags>
 	<include>include</include>
 	<source f="./src/bmp.c"/>
 	<source f="./src/cdjpeg.c"/>

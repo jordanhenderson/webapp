@@ -8,6 +8,7 @@
 #define SESSION_H
 
 #include "Platform.h"
+#include <MemoryPool.h>
 
 #define SESSIONID_STR "sessionid"
 #define SESSIONID_SIZE 32
@@ -22,7 +23,6 @@ namespace leveldb {
 
 class DataStore {
     leveldb::DB* db;
-
     std::vector<webapp_str_t*> vals;
 public:
     DataStore(leveldb::DB* db) : db(db) {}
@@ -37,7 +37,6 @@ struct Session : public DataStore {
     ~Session() {}
     webapp_str_t* get(const webapp_str_t& key);
     void put(const webapp_str_t& key, const webapp_str_t& value);
-
 };
 
 class Sessions {
