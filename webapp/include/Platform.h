@@ -8,8 +8,8 @@
 #define PLATFORM_H
 
 #if _MSC_VER
-	#pragma warning (disable : 4503)
-	#define snprintf _snprintf
+#pragma warning (disable : 4503)
+#define snprintf _snprintf
 #endif
 
 #define ERROR_SUCCESS 0L
@@ -86,7 +86,7 @@
 bool endsWith(const std::string &a, const std::string &b);
 bool is_number(const std::string &a);
 std::string replaceAll(std::string const& original, std::string const& before,
-	std::string const& after);
+					   std::string const& after);
 std::string url_decode(const std::string& src);
 
 /**
@@ -95,7 +95,8 @@ std::string url_decode(const std::string& src);
  * @param h the haystack to search in.
 */
 template<class T, class X>
-bool contains(T& n, X& h) {
+bool contains(T& n, X& h)
+{
 	return std::find(n.begin(), n.end(), h) != n.end();
 }
 
@@ -108,9 +109,11 @@ bool contains(T& n, X& h) {
 */
 template < class T >
 void tokenize(const std::string& str, T& tokens,
-	const std::string& delimiters = " ", bool trimEmpty = false) {
+			  const std::string& delimiters = " ", bool trimEmpty = false)
+{
 	//Provide typedefs for GCC
-	typedef T Base; typedef typename Base::value_type VType;
+	typedef T Base;
+	typedef typename Base::value_type VType;
 	typedef typename VType::size_type SType;
 
 	std::string::size_type pos, lastPos = 0;
@@ -120,12 +123,12 @@ void tokenize(const std::string& str, T& tokens,
 			pos = str.length();
 			if (pos != lastPos || !trimEmpty)
 				tokens.push_back(VType(str.data() + lastPos,
-					(SType)pos - lastPos));
+									   (SType)pos - lastPos));
 			break;
 		} else {
 			if (pos != lastPos || !trimEmpty)
 				tokens.push_back(VType(str.data() + lastPos,
-				(SType)pos - lastPos));
+									   (SType)pos - lastPos));
 		}
 		lastPos = pos + 1;
 	}

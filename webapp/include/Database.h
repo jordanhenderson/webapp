@@ -30,20 +30,20 @@ struct webapp_str_t;
 
 class Database;
 struct Query {
-    int status = DATABASE_QUERY_INIT;
-    int64_t lastrowid = 0;
+	int status = DATABASE_QUERY_INIT;
+	int64_t lastrowid = 0;
 	int column_count = 0;
-    webapp_str_t* row = NULL;
-    webapp_str_t* description = NULL;
+	webapp_str_t* row = NULL;
+	webapp_str_t* description = NULL;
 	int desc = 0;
 	int havedesc = 0;
-    int rows_affected = 0;
-    webapp_str_t dbq;
-    std::vector<webapp_str_t> params;
-    Query(Database* db, int desc=0);
-    Query(Database* db, const webapp_str_t& dbq, int desc=0);
-    ~Query();
-    void process();
+	int rows_affected = 0;
+	webapp_str_t dbq;
+	std::vector<webapp_str_t> params;
+	Query(Database* db, int desc=0);
+	Query(Database* db, const webapp_str_t& dbq, int desc=0);
+	~Query();
+	void process();
 private:
 //Database instance parameters
 	Database* _db;
@@ -53,7 +53,7 @@ private:
 	unsigned long* out_size_arr = NULL;
 	MYSQL_RES* prepare_meta_result = NULL;
 	MYSQL_BIND* bind_params = NULL;
-    MYSQL_BIND* bind_output = NULL;
+	MYSQL_BIND* bind_output = NULL;
 };
 
 class Database {
@@ -62,14 +62,20 @@ class Database {
 public:
 	sqlite3* sqlite_db = NULL;
 	MYSQL* mysql_db = NULL;
-	inline unsigned int GetDBType() { return db_type; }
-	inline size_t GetID() { return _db_id; }
+	inline unsigned int GetDBType()
+	{
+		return db_type;
+	}
+	inline size_t GetID()
+	{
+		return _db_id;
+	}
 	Database(size_t db_id) : _db_id(db_id) {}
 	~Database();
 
-	int connect(int database_type, const char* host, const char* username, 
-		const char* password, const char* database);
-    int64_t exec(const webapp_str_t& query);
+	int connect(int database_type, const char* host, const char* username,
+				const char* password, const char* database);
+	int64_t exec(const webapp_str_t& query);
 };
 
 #endif //DATABASE_H

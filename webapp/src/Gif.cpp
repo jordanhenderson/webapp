@@ -15,7 +15,8 @@ extern "C" {
  * in the Image object. Produced frames are stored in RGBA format.
  * @param frame the index of the frame to decode
 */
-void Image::gifInsertFrame(unsigned int frame) {
+void Image::gifInsertFrame(unsigned int frame)
+{
 	GifImageDesc* img = &gif->SavedImages[frame].ImageDesc;
 	int rastersize = width * height * 4;
 	//Set color map to use local or global colour map. Local overrides global.
@@ -43,7 +44,7 @@ void Image::gifInsertFrame(unsigned int frame) {
 		unsigned char target[4];
 		GifColorType c;
 		c = map->Colors[bgcolor];
-		
+
 		target[0] = c.Red;
 		target[1] = c.Green;
 		target[2] = c.Blue;
@@ -52,18 +53,18 @@ void Image::gifInsertFrame(unsigned int frame) {
 			memcpy(framePixels + i, &target, 4);
 		}
 	}
-	
+
 	//Iterate over the rasterized pixel data, finding it's actual colour
 	//value in the colour map, and producing RGBA pixel data in framePixels.
 	for(int i = 0; i < img->Height; i++) {
-		int pixelRowNumber = i;	
+		int pixelRowNumber = i;
 		//Offset the image by the Top value
 		pixelRowNumber += img->Top;
 		if( pixelRowNumber < height ) {
 			int k = pixelRowNumber * width;
 			//Offset the x by the Left value.
 			int dest_x = k + img->Left;
-			int dlim = dest_x + img->Width; 
+			int dlim = dest_x + img->Width;
 			if( (k + width) < dlim ) dlim = k + width; // past dest edge
 			int source_x = i * img->Width;
 			while (dest_x < dlim) {
@@ -73,8 +74,7 @@ void Image::gifInsertFrame(unsigned int frame) {
 				//dispose of transparent colours.
 				if(gcb.TransparentColor > 0 && indexInColourTable == alpha) {
 					a = 0;
-				}
-				else {
+				} else {
 					if(indexInColourTable < map->ColorCount) {
 						c = map->Colors[indexInColourTable];
 					}
@@ -89,7 +89,7 @@ void Image::gifInsertFrame(unsigned int frame) {
 			}
 		}
 	}
-	
+
 	//If there is a frame left to process
 	if(frame + 1 < imagecount) {
 		unsigned char* nextFrame = frames[frame + 1];
@@ -131,20 +131,21 @@ void Image::gifInsertFrame(unsigned int frame) {
 }
 
 /**
- * Rasterize a gif image, producing an array of rasterized bits and a 
+ * Rasterize a gif image, producing an array of rasterized bits and a
  * colour map.
  * @param frame the frame to rasterize.
  * @param map the output colour map destination
  * @param raster the output raster array destination
 */
 void Image::gifRasterizeFrame(unsigned int frame, unsigned char** map,
-							  unsigned char** raster) {
+							  unsigned char** raster)
+{
 	unsigned char* image = frames[frame];
 	palinitnet(NULL, 0, 1.0, image, width * height * 4, 256,
-		1, 1.8, 0.0, 0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 0);
+			   1, 1.8, 0.0, 0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 0);
 
-	unsigned int sample_factor = (int)(1 + 
-		(double)width * (double)height / (512*512));
+	unsigned int sample_factor = (int)(1 +
+									   (double)width * (double)height / (512*512));
 	if (sample_factor > 10) {
 		sample_factor = 10;
 	}
@@ -181,10 +182,10 @@ void Image::gifRasterizeFrame(unsigned int frame, unsigned char** map,
 
 	//Write the frame to the savedImage's rasterbits.
 	/* Assign the new colors */
-	for( int j=0;j<rasterSize;j++) {
+	for( int j=0; j<rasterSize; j++) {
 		(*raster)[j] = remap[inxsearch(image[j*4+3],
-			image[j*4+2],
-			image[j*4+1],
-			image[j*4])];
+									   image[j*4+2],
+									   image[j*4+1],
+									   image[j*4])];
 	}
 }

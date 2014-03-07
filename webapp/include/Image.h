@@ -28,29 +28,31 @@ class Image {
 	int height = 0;
 	int nBytes = 0;
 	unsigned char* pixels = NULL;
-	unsigned char* _resize(unsigned char* image, int width, int height, 
-		int oldWidth, int oldHeight);
+	unsigned char* _resize(unsigned char* image, int width, int height,
+						   int oldWidth, int oldHeight);
 	void changeType(const webapp_str_t& filename);
 	//PNG ONLY
 	int bitdepth = 0;
-	unsigned char** row_pointers = NULL; 
+	unsigned char** row_pointers = NULL;
 	//GIF ONLY
 	unsigned int imagecount = 0;
 	GifFileType* gif = NULL;
 	unsigned char** frames = NULL;
 	void gifInsertFrame(unsigned int frame);
 	void gifRasterizeFrame(unsigned int frame, unsigned char** map,
-		unsigned char** raster);
+						   unsigned char** raster);
 	void cleanup();
 	void regenRowPointers();
 
 public:
 	Image(const webapp_str_t& filename);
 	~Image();
-	inline int getWidth() {
+	inline int getWidth()
+	{
 		return width;
 	}
-	inline int getHeight() {
+	inline int getHeight()
+	{
 		return height;
 	}
 	int load(const webapp_str_t& filename);

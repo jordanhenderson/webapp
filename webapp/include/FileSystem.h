@@ -16,22 +16,23 @@ class File {
 	webapp_str_t _flags;
 	webapp_str_t buffer;
 	FILE* pszFile = NULL;
-    int64_t size = 0;
+	int64_t size = 0;
 	int refresh = 1;
 public:
 	int Open(const webapp_str_t& fileName, const webapp_str_t& flags);
 	File() : _flags(2) {}
-	File(const webapp_str_t& fileName, const webapp_str_t& flags) : File() {
+	File(const webapp_str_t& fileName, const webapp_str_t& flags) : File()
+	{
 		Open(fileName, flags);
 	}
 	~File();
 
-    int16_t Read(int16_t n_bytes);
+	int16_t Read(int16_t n_bytes);
 	void Close();
 	void Cleanup();
-    int64_t Size();
+	int64_t Size();
 	void Refresh();
-	
+
 	void Write(const webapp_str_t& buffer);
 	void WriteLine(const webapp_str_t& buffer);
 	FILE* GetPointer();
@@ -39,7 +40,7 @@ public:
 };
 
 namespace FileSystem {
-	int MakePath(const webapp_str_t& path);
-	void DeletePath(const webapp_str_t& path);
+int MakePath(const webapp_str_t& path);
+void DeletePath(const webapp_str_t& path);
 }
 #endif
