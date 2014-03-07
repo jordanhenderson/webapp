@@ -12,6 +12,7 @@
 	<depends link="true">../ext/leveldb</depends>
 	<depends link="true">../ext/snappy</depends>
 	<depends link="true">../ext/cjson</depends>
+	<depends link="true">../ext/gif</depends>
 	<depends>../ext/nginx</depends>
 	<output type="app">webapp</output>
 	<flags compiler="msvc">MT;W3;wd4996;EHsc;Ox</flags>
@@ -21,7 +22,7 @@
 	<flags step="link" compiler="gcc">pthread;lstdc++;lm;ldl;fvisibility=hidden;Wl,--dynamic-list=api.exp</flags>
 	<flags type="pp" compiler="msvc">UNICODE;_UNICODE;_WIN32_WINNT=0x0502;ASIO_MSVC;ASIO_WINDOWS;_CONSOLE;_WIN32;_VISUALC_</flags>
 	<flags type="pp">ASIO_STANDALONE;NDEBUG</flags>
-	<include>include;../ext/cjson/include;../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;../ext/openssl/include;include/gif;include/pngnq;include/tinydir;include/lpeg;include/readerwriterqueue;../ext/mariadb/include;../ext/sqlite/include;../ext/leveldb/include;include/simpleopt;include/MemoryPool;./</include>
+	<include>include;../ext/cjson/include;../ext/luajit/include;../ext/opencv/modules/core/include;../ext/opencv/modules/imgproc/include;../ext/libjpeg/include;../ext/zlib/include;../ext/lpng/include;../ext/openssl/include;../ext/gif/include;include/pngnq;include/tinydir;include/lpeg;include/readerwriterqueue;../ext/mariadb/include;../ext/sqlite/include;../ext/leveldb/include;include/simpleopt;include/MemoryPool;./</include>
 	<include os="win32">../ext/ctemplate/include/windows</include>
 	<include os="linux">../ext/ctemplate/include</include>
 	<link compiler="msvc">ws2_32.lib;kernel32.lib;user32.lib;Advapi32.lib;crypt32.lib;Gdi32.lib;Shlwapi.lib</link>
@@ -30,12 +31,6 @@
 	<source f="src/Database.cpp"/>
 	<source f="src/FileSystem.cpp"/>
 	<source f="src/Gif.cpp"/>
-	<source f="src/gif/dgif_lib.c"/>
-	<source f="src/gif/egif_lib.c"/>
-	<source f="src/gif/gifalloc.c"/>
-	<source f="src/gif/gif_err.c"/>
-	<source f="src/gif/gif_font.c"/>
-	<source f="src/gif/gif_hash.c"/>
 	<source f="src/Image.cpp"/>
     <source f="src/lpeg/lpcap.c"/>
     <source f="src/lpeg/lpcode.c"/>
