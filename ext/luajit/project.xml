@@ -5,7 +5,6 @@
 	<output type="static">luajit</output>
 	<flags compiler="msvc">MT;W3;Ox</flags>
 	<flags compiler="gcc">fomit-frame-pointer;O3</flags>
-	<flags>O2</flags>
 	<include>include</include>
 	<flags type="pp" compiler="msvc">WIN32</flags>
 	<flags type="pp">LUAJIT_ENABLE_LUA52COMPAT</flags>
