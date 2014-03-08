@@ -13,6 +13,8 @@
 	<depends link="true">../ext/snappy</depends>
 	<depends link="true">../ext/cjson</depends>
 	<depends link="true">../ext/gif</depends>
+	<depends link="true">../ext/lpeg</depends>
+	<depends link="true">../ext/pngnq</depends>
 	<depends>../ext/nginx</depends>
 	<output type="app">webapp</output>
 	<flags compiler="msvc">MT;W3;wd4996;EHsc;Ox</flags>
@@ -22,7 +24,7 @@
 	<flags step="link" compiler="gcc">pthread;lstdc++;lm;ldl;fvisibility=hidden;Wl,--dynamic-list=api.exp</flags>
 	<flags type="pp" compiler="msvc">UNICODE;_UNICODE;_WIN32_WINNT=0x0502;ASIO_MSVC;ASIO_WINDOWS;_CONSOLE;_WIN32;_VISUALC_</flags>
 	<flags type="pp">ASIO_STANDALONE;NDEBUG</flags>
-	<include>include;include/simpleopt;include/MemoryPool;include/readerwriterqueue;include/tinydir;include/pngnq;include/gif;include/lpeg</include>
+	<include>include;include/simpleopt;include/MemoryPool;include/readerwriterqueue;include/tinydir;include/pngnq</include>
 	<link compiler="msvc">ws2_32.lib;kernel32.lib;user32.lib;Advapi32.lib;crypt32.lib;Gdi32.lib;Shlwapi.lib</link>
     <source f="src/Session.cpp"/>
     <source f="src/Platform.cpp"/>
@@ -30,13 +32,7 @@
 	<source f="src/FileSystem.cpp"/>
 	<source f="src/Gif.cpp"/>
 	<source f="src/Image.cpp"/>
-    <source f="src/lpeg/lpcap.c"/>
-    <source f="src/lpeg/lpcode.c"/>
-    <source f="src/lpeg/lpprint.c"/>
-    <source f="src/lpeg/lptree.c"/>
-    <source f="src/lpeg/lpvm.c"/>
     <source f="src/main.cpp"/>
     <source f="src/Hooks.cpp"/>
-    <source f="src/pngnq/neuquant32.c"/>
 	<source f="src/Webapp.cpp"/>
 </project>
