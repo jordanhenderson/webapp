@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <project>
 	<output type="static">ctemplate</output>
-	<flags compiler="msvc">MT;W3;EHsc</flags>
+	<flags compiler="msvc">MT;W3;EHsc;Ox</flags>
 	<flags compiler="gcc" ext="cc">std=c++11;O3</flags>
-	<flags compiler="msvc" type="pp">CTEMPLATE_DLL_DECL=;Ox</flags>
+	<flags compiler="msvc" type="pp">CTEMPLATE_DLL_DECL=</flags>
 	<include os="win32">include/windows;include</include>
 	<include os="linux">include</include>
 	<source f="src/base/arena.cc"/>

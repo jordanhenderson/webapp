@@ -18,41 +18,41 @@ struct webapp_str_t;
 struct Request;
 class Webapp;
 namespace leveldb {
-    class DB;
+class DB;
 }
 
 class DataStore {
-    std::vector<webapp_str_t*> vals;
+	std::vector<webapp_str_t*> vals;
 protected:
-    leveldb::DB* db;
+	leveldb::DB* db;
 public:
-    DataStore(leveldb::DB* db) : db(db) {}
-    virtual ~DataStore();
-    virtual webapp_str_t* get(const webapp_str_t& key);
-    virtual void put(const webapp_str_t& key, const webapp_str_t& value);
+	DataStore(leveldb::DB* db) : db(db) {}
+	virtual ~DataStore();
+	virtual webapp_str_t* get(const webapp_str_t& key);
+	virtual void put(const webapp_str_t& key, const webapp_str_t& value);
 };
 
 struct Session : public DataStore {
-    webapp_str_t session_id;
-    void destroy();
-    Session(leveldb::DB*, const webapp_str_t&);
-    ~Session() {}
-    webapp_str_t* get(const webapp_str_t& key);
-    void put(const webapp_str_t& key, const webapp_str_t& value);
+	webapp_str_t session_id;
+	void destroy();
+	Session(leveldb::DB*, const webapp_str_t&);
+	~Session() {}
+	webapp_str_t* get(const webapp_str_t& key);
+	void put(const webapp_str_t& key, const webapp_str_t& value);
 };
 
 class Sessions {
 	Webapp* handler;
 	std::mt19937_64 rng;
-    leveldb::DB* db;
-    int32_t session_expiry();
+	leveldb::DB* db;
+	int32_t session_expiry();
 public:
-    Sessions(Webapp* _handler);
+	Sessions(Webapp* _handler);
 	~Sessions();
 	//Create a new session based on the request.
 	void CleanupSessions();
-    Session* new_session(Request* request);
-    Session* get_session(Request* request);
+	Session* new_session(Request* request);
+	Session* get_session(Request* request);
 };
 
 #endif //SESSION_H

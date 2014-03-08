@@ -1,8 +1,7 @@
 <?xml version="1.0"?>
 <project>
 	<output type="static">cjson</output>
-	<flags compiler="msvc">MT;W3;EHsc</flags>
-	<flags compiler="msvc" type="pp">Ox</flags>
+	<flags compiler="msvc">MT;W3;EHsc;Ox</flags>
 	<include>include;../luajit/include</include>
 	<source f="src/dtoa.c"/>
 	<source f="src/g_fmt.c"/>

@@ -16,9 +16,10 @@ using namespace std;
  * @param flags the file mode used to open the file.
  * @return the success of the file.
 */
-int File::Open(const webapp_str_t& fileName, const webapp_str_t& flags) {
+int File::Open(const webapp_str_t& fileName, const webapp_str_t& flags)
+{
 	FILE* tmpFile;
-	
+
 #ifdef _WIN32
 	wchar_t* wfileName, *wflags;
 	wfileName = strtowide(fileName.data);
@@ -36,17 +37,18 @@ int File::Open(const webapp_str_t& fileName, const webapp_str_t& flags) {
 		_flags = webapp_str_t(flags);
 		pszFile = tmpFile;
 	}
-	
+
 	//Update the file size.
 	Size();
-	
+
 	return success;
 }
 
 /**
  * Destroy the File object.
 */
-File::~File() {
+File::~File()
+{
 	if(pszFile != NULL) fclose(pszFile);
 }
 
@@ -55,7 +57,8 @@ File::~File() {
  * Allows other libraries to handle closing it (If absolutely necessary)
  * @return the detached file pointer.
 */
-FILE* File::Detach() {
+FILE* File::Detach()
+{
 	FILE* tmp = pszFile;
 	pszFile = NULL;
 	return tmp;
@@ -65,21 +68,24 @@ FILE* File::Detach() {
  * Get the internal file pointer.
  * @return the file pointer.
 */
-FILE* File::GetPointer() {
+FILE* File::GetPointer()
+{
 	return pszFile;
 }
 
 /**
  * Signal any cached data (stat etc) to be reloaded at next pass.
 */
-void File::Refresh() {
+void File::Refresh()
+{
 	refresh = 1;
 }
 
 /**
  * Close a File object, setting pointers to NULL.
 */
-void File::Close() {
+void File::Close()
+{
 	if(pszFile == NULL) return;
 	fclose(pszFile);
 	pszFile = NULL;
@@ -90,7 +96,8 @@ void File::Close() {
  * position.
  * @return file size
 */
-int64_t File::Size() {
+int64_t File::Size()
+{
 	if(refresh == 1) {
 		//Seek the file to the end, retrieve
 		int old = ftell64(pszFile);
@@ -109,26 +116,27 @@ int64_t File::Size() {
  * @param out the char* to store read data
  * @return the file size
 */
-int16_t File::Read(int16_t n_bytes) {
+int16_t File::Read(int16_t n_bytes)
+{
 	//Get the file size.
-    int64_t size = Size();
+	int64_t size = Size();
 	char* buf = NULL;
 
-    int16_t to_read = size < n_bytes ? size : n_bytes;
+	int16_t to_read = size < n_bytes ? size : n_bytes;
 	//Seek to the beginning.
 	FILE* tmpFile = pszFile;
 	rewind(pszFile);
-	
+
 	//Allocate room for the data.
 	buf = new char[to_read];
 	size_t nRead = fread(buf, sizeof(char), to_read, tmpFile);
-	
+
 	if(buffer.data != NULL) delete[] buffer.data;
 	buffer.data = buf;
-	buffer.len = nRead; 
+	buffer.len = nRead;
 	buffer.allocated = 1;
-	
-    return (int16_t)nRead;
+
+	return (int16_t)nRead;
 }
 
 /**
@@ -136,7 +144,8 @@ int16_t File::Read(int16_t n_bytes) {
  * Writes according to filemode specified upon opening the file.
  * @param buffer the buffer to write
 */
-void File::Write(const webapp_str_t& buffer) {
+void File::Write(const webapp_str_t& buffer)
+{
 	if(pszFile == NULL) return;
 	fwrite(buffer.data, sizeof(char), buffer.len, pszFile);
 	fflush(pszFile);
@@ -147,10 +156,11 @@ void File::Write(const webapp_str_t& buffer) {
  * @param path the directory tree which should be created.
  * @return whether the directory tree was created successfully.
 */
-int FileSystem::MakePath(const webapp_str_t& path) {
+int FileSystem::MakePath(const webapp_str_t& path)
+{
 	//Recurisvely make a path structure.
 	int nFilename = tinydir_todir(path.data, path.len);
-	
+
 	for(int i = 0; i <= (int)path.len - nFilename; i++) {
 		if(path.data[i] == '/' || path.data[i] == 0) {
 			path.data[i] = 0;
@@ -170,7 +180,8 @@ int FileSystem::MakePath(const webapp_str_t& path) {
  * Delete a path recursively, including all files contained within.
  * @param path the directory to delete.
 */
-void FileSystem::DeletePath(const webapp_str_t& path) {
+void FileSystem::DeletePath(const webapp_str_t& path)
+{
 	tinydir_dir dir;
 	tinydir_open(&dir, path.data);
 
@@ -186,13 +197,12 @@ void FileSystem::DeletePath(const webapp_str_t& path) {
 #else
 			unlink(f.path);
 #endif
-		}
-		else if(f.name[0] != '.') {
+		} else if(f.name[0] != '.') {
 			DeletePath(f.path);
 		}
 		tinydir_next(&dir);
 	}
-	
+
 	tinydir_close(&dir);
 #ifdef _WIN32
 	wchar_t* wPath = strtowide(path.data);

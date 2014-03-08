@@ -11,10 +11,11 @@ using namespace std;
 /**
  * returns if string a ends with string b.
  * @param a entire string
- * @param b substring 
+ * @param b substring
  * @return if string a ends with b.
 */
-bool endsWith(const string &a, const string &b) {
+bool endsWith(const string &a, const string &b)
+{
 	if (a.length() >= b.length()) {
 		return (a.compare (a.length() - b.length(), b.length(), b) == 0);
 	} else {
@@ -25,11 +26,14 @@ bool endsWith(const string &a, const string &b) {
 /**
  * returns if string s is a string representation of a number.
  * @param s string in the possible form of a number.
- * @return if string s is a numeric string. 
+ * @return if string s is a numeric string.
 */
-bool is_number(const string &s) {	
-		return !s.empty() && find_if(s.begin(), 
-			s.end(), [](char c) { return !isdigit(c); }) == s.end();
+bool is_number(const string &s)
+{
+	return !s.empty() && find_if(s.begin(),
+	s.end(), [](char c) {
+		return !isdigit(c);
+	}) == s.end();
 }
 
 /**
@@ -41,7 +45,8 @@ bool is_number(const string &s) {
  * @return the resultant string
 */
 string replaceAll( string const& original, string const& before,
-				   string const& after ) {
+				   string const& after )
+{
 	string retval;
 	string::const_iterator end     = original.end();
 	string::const_iterator current = original.begin();
@@ -63,8 +68,9 @@ string replaceAll( string const& original, string const& before,
  * @param src the URI encoded string
  * @return the decoded string
 */
-string url_decode(const string& src) {
- string ret;
+string url_decode(const string& src)
+{
+	string ret;
 	char ch;
 	unsigned int i, ii;
 	for (i=0; i<src.length(); i++) {

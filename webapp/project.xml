@@ -12,6 +12,7 @@
 	<depends link="true">../ext/leveldb</depends>
 	<depends link="true">../ext/snappy</depends>
 	<depends link="true">../ext/cjson</depends>
+	<depends link="true">../ext/gif</depends>
 	<depends>../ext/nginx</depends>
 	<output type="app">webapp</output>
 	<flags compiler="msvc">MT;W3;wd4996;EHsc;Ox</flags>
@@ -28,12 +29,6 @@
 	<source f="src/Database.cpp"/>
 	<source f="src/FileSystem.cpp"/>
 	<source f="src/Gif.cpp"/>
-	<source f="src/gif/dgif_lib.c"/>
-	<source f="src/gif/egif_lib.c"/>
-	<source f="src/gif/gifalloc.c"/>
-	<source f="src/gif/gif_err.c"/>
-	<source f="src/gif/gif_font.c"/>
-	<source f="src/gif/gif_hash.c"/>
 	<source f="src/Image.cpp"/>
     <source f="src/lpeg/lpcap.c"/>
     <source f="src/lpeg/lpcode.c"/>
