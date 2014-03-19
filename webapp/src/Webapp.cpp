@@ -131,7 +131,10 @@ void Webapp::Reload()
 		CompileScript("plugins/core/handlers.lua", &scripts[SCRIPT_HANDLERS]);
 
 		//Run init script.
-		LuaParam _v[] = { { "app", this } };
+		Request r(svc);
+		RequestBase worker(this);
+		LuaParam _v[] = { { "app", this }, { "request", &r },
+						  { "worker", &worker} };
 		RunScript(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_INIT);
 
 		if (background_queue_enabled)
@@ -151,7 +154,6 @@ void Webapp::Reload()
 void Webapp::RunScript(LuaParam* params, int nArgs, script_t script)
 {
 	if(scripts[script].data == NULL) return;
-	Request* r = NULL;
 
 	//Initialize a lua state, loading appropriate libraries.
 	lua_State* L = luaL_newstate();
@@ -186,14 +188,6 @@ void Webapp::RunScript(LuaParam* params, int nArgs, script_t script)
 	//Store loaded script buffer in 'load_handlers' global.
 	lua_setfield (L, LUA_GLOBALSINDEX, "load_handlers");
 
-	//If script is SCRIPT_INIT, provide a temporary Request object
-	//to operate on (Request needed when calling handlers)
-	if(script == SCRIPT_INIT) {
-		r = request_pool.newElement(svc);
-		lua_pushlightuserdata(L, r);
-		lua_setglobal(L, "tmp_request");
-	}
-
 	//Load the lua buffer.
 	if(luaL_loadbuffer(L, scripts[script].data, scripts[script].len,
 					   script_t_names[script]))
@@ -208,7 +202,6 @@ lua_error:
 	printf("Error: %s\n", lua_tostring(L, -1));
 
 finish:
-	if(r != NULL) request_pool.deleteElement(r);
 	lua_close(L);
 }
 

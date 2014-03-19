@@ -84,14 +84,13 @@ webapp_str_t* Session::get(const webapp_str_t &key)
 void Session::destroy()
 {
 	if(!session_id.len > 0) return;
-	DataStore::wipe(session_id);
+	DataStore::wipe("s_" + session_id);
 
 }
 
 void Session::put(const webapp_str_t &key, const webapp_str_t &value)
 {
-	webapp_str_t actual_key = "s_" + session_id + key;
-	DataStore::put(actual_key, value);
+	DataStore::put("s_" + session_id + key, value);
 }
 
 Sessions::Sessions(leveldb::DB* db) :

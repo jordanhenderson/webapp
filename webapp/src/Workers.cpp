@@ -89,24 +89,9 @@ void RequestBase::Cleanup()
 {
 	_sessions.CleanupSessions();
 	if(_cache != NULL) delete _cache;
-
 	if(baseTemplate != NULL) delete baseTemplate;
-	baseTemplate = new TemplateDictionary("");
 
 	templates.clear();
-
-	for(auto tmpl: _handler->templates) {
-		TemplateDictionary* dict = baseTemplate->AddIncludeDictionary(tmpl.first);
-		dict->SetFilename(tmpl.second);
-		templates.insert({tmpl.first, dict});
-	}
-	if(_handler->GetParamInt(WEBAPP_PARAM_TPLCACHE)) {
-		_cache = mutable_default_template_cache()->Clone();
-		_cache->Freeze();
-	} else {
-		_cache = NULL;
-	}
-	
 	TaskBase::Cleanup();
 }
 
@@ -131,6 +116,19 @@ RequestQueue::~RequestQueue()
 
 void RequestQueue::Execute()
 {
+	baseTemplate = new TemplateDictionary("");
+	for(auto tmpl: _handler->templates) {
+		TemplateDictionary* dict = baseTemplate->AddIncludeDictionary(tmpl.first);
+		dict->SetFilename(tmpl.second);
+		templates.insert({tmpl.first, dict});
+	}
+	if(_handler->GetParamInt(WEBAPP_PARAM_TPLCACHE)) {
+		_cache = mutable_default_template_cache()->Clone();
+		_cache->Freeze();
+	} else {
+		_cache = NULL;
+	}
+	
 	finished = 0;
 	LuaParam _v[] = { { "worker", (RequestBase*)this },
 		{ "app", _handler }
