@@ -89,7 +89,9 @@ void RequestBase::Cleanup()
 {
 	_sessions.CleanupSessions();
 	if(_cache != NULL) delete _cache;
+	_cache = NULL;
 	if(baseTemplate != NULL) delete baseTemplate;
+	baseTemplate = NULL;
 
 	templates.clear();
 	TaskBase::Cleanup();
