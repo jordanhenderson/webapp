@@ -9,9 +9,8 @@
 
 #include <asio.hpp>
 #include <readerwriterqueue.h>
-#include <MemoryPool.h>
-#include "WebappString.h"
 #include "Platform.h"
+#include "WebappString.h"
 #include "Database.h"
 #include "Session.h"
 
@@ -293,7 +292,6 @@ class Webapp {
 
 public:
 	leveldb::DB* db;
-	MemoryPool<Request> request_pool;
 	std::unordered_map<std::string, std::string> templates;
 
 	Webapp(const char* session_dir, unsigned int port, 

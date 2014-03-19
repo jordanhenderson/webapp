@@ -20,7 +20,6 @@ class Database;
 struct Query;
 class Image;
 class File;
-template<typename T> class LockedQueue;
 
 extern "C" {
 /* Template */
@@ -71,7 +70,7 @@ extern "C" {
 /* Requests */
 	APIEXPORT Request* 
 				   GetNextRequest(RequestBase*);
-	APIEXPORT void FinishRequest(Webapp*, Request*);
+	APIEXPORT void FinishRequest(Request*);
 
 /* BG Requests */
 	APIEXPORT Process* 

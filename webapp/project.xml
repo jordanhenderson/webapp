@@ -24,7 +24,8 @@
 	<flags step="link" compiler="gcc">pthread;lstdc++;lm;ldl;fvisibility=hidden;Wl,--dynamic-list=api.exp</flags>
 	<flags type="pp" compiler="msvc">UNICODE;_UNICODE;_WIN32_WINNT=0x0502;ASIO_MSVC;ASIO_WINDOWS;_CONSOLE;_WIN32;_VISUALC_</flags>
 	<flags type="pp">ASIO_STANDALONE;NDEBUG</flags>
-	<include>include;include/simpleopt;include/MemoryPool;include/readerwriterqueue;include/tinydir;include/pngnq</include>
+	<flags compiler="msvc" type="pp">CTEMPLATE_DLL_DECL=</flags>
+	<include>include;include/simpleopt;include/readerwriterqueue;include/tinydir;include/pngnq</include>
 	<link compiler="msvc">ws2_32.lib;kernel32.lib;user32.lib;Advapi32.lib;crypt32.lib;Gdi32.lib;Shlwapi.lib</link>
 	<source f="src/Session.cpp"/>
 	<source f="src/Platform.cpp"/>

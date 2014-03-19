@@ -75,22 +75,22 @@ Image::Image(const webapp_str_t& filename)
 
 void Image::changeType(const webapp_str_t& filename)
 {
-	string f = string(filename.data, filename.len);
-	std::transform(f.begin(), f.end(),f.begin(), ::tolower);
+	webapp_str_t f(filename);
+	f.to_lower();
 	for(int i = 0; THUMB_EXTENSIONS_JPEG[i] != NULL; i++) {
-		if(endsWith(f, THUMB_EXTENSIONS_JPEG[i])) {
+		if(f.endsWith(THUMB_EXTENSIONS_JPEG[i])) {
 			imageType = IMAGE_TYPE_JPEG;
 		}
 	}
 
-	if(endsWith(f, ".png")) {
+	if(f.endsWith(".png")) {
 		if(imageType >= 0 && imageType != IMAGE_TYPE_PNG) {
 			regenRowPointers();
 		}
 		imageType = IMAGE_TYPE_PNG;
 	}
 
-	if(endsWith(f, ".gif")) {
+	if(f.endsWith(".gif")) {
 		//PNG/JPG->GIF
 		if(imageType >= 0 && imageType != IMAGE_TYPE_GIF) {
 			if(frames != NULL)

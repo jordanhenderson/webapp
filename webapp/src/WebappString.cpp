@@ -1,3 +1,4 @@
+#include "Platform.h"
 #include "WebappString.h"
 
 webapp_str_t operator+(const webapp_str_t& w1, const webapp_str_t& w2)

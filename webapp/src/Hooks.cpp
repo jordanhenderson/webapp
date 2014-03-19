@@ -178,20 +178,20 @@ Request* GetNextRequest(RequestBase* worker)
 	return worker->dequeue();
 }
 
-void CleanupRequest(Webapp* app, Request* r)
+void CleanupRequest(Request* r)
 {
 	if(r->waiting == 0) {
-		app->request_pool.deleteElement(r);
+		delete r;
 	} else {
-		r->socket.get_io_service().post(bind(CleanupRequest, app, r));
+		r->socket.get_io_service().post(bind(CleanupRequest, r));
 	}
 }
 
-void FinishRequest(Webapp* app, Request* r)
+void FinishRequest(Request* r)
 {
 	if(r == NULL) return;
 	r->shutdown = 1;
-	r->socket.get_io_service().post(bind(CleanupRequest, app, r));
+	r->socket.get_io_service().post(bind(CleanupRequest, r));
 }
 
 /* BG Requests */

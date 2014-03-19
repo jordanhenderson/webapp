@@ -83,58 +83,6 @@
 #define fseek64(a,b,c) fseeko(a,b,c)
 #endif
 
-bool endsWith(const std::string &a, const std::string &b);
-bool is_number(const std::string &a);
-std::string replaceAll(std::string const& original, std::string const& before,
-					   std::string const& after);
-std::string url_decode(const std::string& src);
-
-/**
- * Checks if a needle (n) exists within haystack (h).
- * @param n the needle to search for.
- * @param h the haystack to search in.
-*/
-template<class T, class X>
-bool contains(T& n, X& h)
-{
-	return std::find(n.begin(), n.end(), h) != n.end();
-}
-
-/**
- * Tokenize a string into the provided container using the specified delimiter.
- * @param str the string to tokenize.
- * @param tokens the output STL container to store tokens.
- * @param delimiters with which to separate tokens.
- * @param trimEmpty store empty tokens in the output.
-*/
-template < class T >
-void tokenize(const std::string& str, T& tokens,
-			  const std::string& delimiters = " ", bool trimEmpty = false)
-{
-	//Provide typedefs for GCC
-	typedef T Base;
-	typedef typename Base::value_type VType;
-	typedef typename VType::size_type SType;
-
-	std::string::size_type pos, lastPos = 0;
-	while (true) {
-		pos = str.find_first_of(delimiters, lastPos);
-		if (pos == std::string::npos) {
-			pos = str.length();
-			if (pos != lastPos || !trimEmpty)
-				tokens.push_back(VType(str.data() + lastPos,
-									   (SType)pos - lastPos));
-			break;
-		} else {
-			if (pos != lastPos || !trimEmpty)
-				tokens.push_back(VType(str.data() + lastPos,
-									   (SType)pos - lastPos));
-		}
-		lastPos = pos + 1;
-	}
-}
-
-
 int32_t strntol(const char* src, size_t n);
 extern struct tm epoch_tm;
 extern time_t epoch;

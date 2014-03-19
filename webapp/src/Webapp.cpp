@@ -289,7 +289,7 @@ void Webapp::process_request_async(
 		unsigned int selected_node = node_counter++ % WEBAPP_NUM_THREADS;
 		workers.workers[selected_node]->enqueue(r);
 	} else {
-		request_pool.deleteElement(r);
+		delete r;
 	}
 }
 
@@ -338,7 +338,7 @@ void Webapp::process_header_async(Request* r, const asio::error_code& ec, size_t
 								  std::bind(&Webapp::process_request_async, this, r, _1, _2));
 	} else {
 		//Failed. Destroy request.
-		request_pool.deleteElement(r);
+		delete r;
 	}
 }
 
@@ -366,7 +366,7 @@ void Webapp::accept_conn_async(Request* r, const asio::error_code& error)
 */
 void Webapp::accept_conn()
 {
-	Request* r = request_pool.newElement(svc);
+	Request* r = new Request(svc);
 	acceptor->async_accept(r->socket,
 						   std::bind(&Webapp::accept_conn_async, this,
 									 r, std::placeholders::_1));

@@ -64,11 +64,11 @@ void DataStore::wipe(const webapp_str_t& key)
 Session::Session(leveldb::DB* db, const webapp_str_t &sid)
 	: DataStore(db), session_id(sid)
 {
-	if(!session_id.len > 0) return;
+	if(session_id.len <= 0) return;
 	
 	//Update/write the stored session time.
 	time_t current_time = time(0);
-	int32_t diff = difftime(current_time, epoch);
+	int32_t diff = (int32_t)difftime(current_time, epoch);
 	webapp_str_t str_diff;
 	str_diff.from_number(diff);
 	DataStore::put("s_" + sid, str_diff);
@@ -83,7 +83,7 @@ webapp_str_t* Session::get(const webapp_str_t &key)
 
 void Session::destroy()
 {
-	if(!session_id.len > 0) return;
+	if(session_id.len <= 0) return;
 	DataStore::wipe("s_" + session_id);
 
 }

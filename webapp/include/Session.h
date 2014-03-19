@@ -8,7 +8,6 @@
 #define SESSION_H
 
 #include "Platform.h"
-#include <MemoryPool.h>
 
 #define SESSIONID_STR "sessionid"
 #define SESSIONID_SIZE 32
