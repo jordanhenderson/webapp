@@ -24,12 +24,13 @@ class DB;
 class DataStore {
 	std::vector<webapp_str_t*> vals;
 protected:
-	leveldb::DB* db;
+	leveldb::DB* _db;
 public:
-	DataStore(leveldb::DB* db) : db(db) {}
+	DataStore(leveldb::DB* db) : _db(db) {}
 	virtual ~DataStore();
 	virtual webapp_str_t* get(const webapp_str_t& key);
 	virtual void put(const webapp_str_t& key, const webapp_str_t& value);
+	virtual void wipe(const webapp_str_t& key);
 };
 
 struct Session : public DataStore {
@@ -42,17 +43,17 @@ struct Session : public DataStore {
 };
 
 class Sessions {
-	Webapp* handler;
 	std::mt19937_64 rng;
-	leveldb::DB* db;
+	leveldb::DB* _db;
 	int32_t session_expiry();
 public:
-	Sessions(Webapp* _handler);
+	Sessions(leveldb::DB*);
 	~Sessions();
 	//Create a new session based on the request.
 	void CleanupSessions();
 	Session* new_session(Request* request);
 	Session* get_session(Request* request);
+	Session* get_raw_session(Request* request);
 };
 
 #endif //SESSION_H

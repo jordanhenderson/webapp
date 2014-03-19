@@ -33,6 +33,8 @@
 #define PROTOCOL_VARS 6
 #define STRING_VARS 5
 #define PROTOCOL_LENGTH_SIZEINFO sizeof(int16_t) * PROTOCOL_VARS
+typedef enum {SCRIPT_INIT, SCRIPT_QUEUE, SCRIPT_REQUEST, SCRIPT_HANDLERS} script_t;
+#define SCRIPT_NAMES "SCRIPT_INIT", "SCRIPT_QUEUE","SCRIPT_REQUEST", "SCRIPT_HANDLERS"
 
 class Webapp;
 
@@ -82,10 +84,9 @@ struct TaskQueue {
 	unsigned int finished = 0;
 	std::condition_variable cv;
 	std::mutex cv_mutex;
-	void notify()
-	{
-		cv.notify_one();
-	}
+	void notify();
+	void FinishTask();
+	void RestartTask();
 	TaskQueue() : aborted(0) {}
 };
 
@@ -142,62 +143,71 @@ struct LockedQueue : public TaskQueue {
  * @brief WebappTask provides a worker thread wrapper for each Lua VM.
  */
 class WebappTask {
-protected:
-	Webapp* _handler;
-private:
 	std::thread _worker;
-	void handleCleanup();
-
 public:
-	void start();
-	void stop()
-	{
-		if(_worker.joinable()) _worker.join();
-	}
-	WebappTask(Webapp* handler, TaskQueue* q):
-		_handler(handler), _worker(), _q(q) {}
-
-	virtual ~WebappTask()
-	{
-		stop();
-	}
+	void Start();
+	void Stop();
+	WebappTask() : _worker() {}
+	virtual ~WebappTask() { Stop(); };
 	virtual void Execute() = 0;
 	virtual void Cleanup() = 0;
-	TaskQueue* _q;
+	virtual int IsAborted() = 0;
+};
+
+/**
+ * 
+*/
+template<typename T>
+struct TaskBase : public LockedQueue<T>
+{
+	Webapp* _handler;
+	TaskBase(Webapp* handler) : _handler(handler) {}
+	void Cleanup()
+	{
+		this->_handler->Cleanup(&this->cleanupTask, this->shutdown);
+	}
+	int IsAborted()
+	{
+		return this->_handler->GetParamInt(WEBAPP_PARAM_ABORTED);
+	}
 };
 
 /**
  * @brief BackgroundQueue provides a Lua VM with a Process queue
  */
-struct BackgroundQueue : public WebappTask, public LockedQueue<Process*> {
-	BackgroundQueue(Webapp* handler) :
-		WebappTask(handler, this) {}
+struct BackgroundQueue : public WebappTask, TaskBase<Process*> {
+	BackgroundQueue(Webapp* handler) : TaskBase(handler) {}
 	void Execute();
-	void Cleanup() {}
+	void Cleanup();
+	int IsAborted();
+};
+
+/**
+ * @brief RequestBase provides a base request object (allows Hooks to use
+ * mock RequestQueues without the need to start threads or VMs.)
+*/
+struct RequestBase : TaskBase<Request*> {
+	ctemplate::TemplateCache* _cache = NULL;
+	ctemplate::TemplateDictionary* baseTemplate = NULL;
+	std::unordered_map<std::string, ctemplate::TemplateDictionary*> templates;
+	Sessions _sessions;
+	
+	RequestBase(Webapp* handler);
+	webapp_str_t* RenderTemplate(const webapp_str_t& tpl);
+	void Cleanup();
 };
 
 /**
  * @brief RequestQueue provides a Lua VM with a session container, template
  * cache and queue for Requests.
  */
-struct RequestQueue : public WebappTask, public LockedQueue<Request*> {
-	Sessions _sessions;
-	ctemplate::TemplateCache* _cache = NULL;
-	ctemplate::TemplateDictionary* baseTemplate = NULL;
-	std::unordered_map<std::string, ctemplate::TemplateDictionary*> templates;
-	RequestQueue(Webapp *handler)
-		: WebappTask(handler, this), _sessions(handler)
-	{
-		Cleanup();
-	}
+struct RequestQueue : RequestBase, public WebappTask {
+	RequestQueue(Webapp *handler) : RequestBase(handler) {}
 	~RequestQueue();
-	void Cleanup();
 	void Execute();
-	webapp_str_t* RenderTemplate(const webapp_str_t& tpl);
+	void Cleanup();
+	int IsAborted();
 };
-
-typedef enum {SCRIPT_INIT, SCRIPT_QUEUE, SCRIPT_REQUEST, SCRIPT_HANDLERS} script_t;
-#define SCRIPT_NAMES "SCRIPT_INIT", "SCRIPT_QUEUE","SCRIPT_REQUEST", "SCRIPT_HANDLERS"
 
 template<class T>
 struct WorkerArray {
@@ -220,30 +230,14 @@ struct WorkerArray {
 	{
 		//Ensure each worker is aborted, waiting to be restarted.
 		for (auto it: workers) {
-			TaskQueue* q = it->_q;
-			//Ensure no other thread is cleaning.
-			q->cleanupTask = 0;
-
-			//Abort the worker (aborts any new requests).
-			q->aborted = 1;
-
-			//Notify any blocked threads to process the next request.
-			while(!q->finished) {
-				q->cv.notify_one();
-				//Sleep to allow thread to finish, then check again.
-				std::this_thread::
-				sleep_for(std::chrono::milliseconds(100));
-			}
-			//Prevent any new requests from being queued.
-			q->cv_mutex.lock();
+			it->FinishTask();
 		}
 	}
 
 	void Restart()
 	{
 		for (auto it: workers) {
-			it->_q->aborted = 0;
-			it->_q->cv_mutex.unlock();
+			it->RestartTask();
 		}
 	}
 
@@ -252,14 +246,14 @@ struct WorkerArray {
 		for (unsigned int i = 0; i < nWorkers; i++) {
 			T* worker = new T(handler);
 			workers.emplace_back(worker);
-			worker->start();
+			worker->Start();
 		}
 	}
 
 	void Stop()
 	{
 		for(auto it: workers) {
-			it->stop();
+			it->Stop();
 		}
 	}
 };
@@ -275,6 +269,7 @@ class Webapp {
 	unsigned int template_cache_enabled = 1;
 	unsigned int port = WEBAPP_PORT_DEFAULT;
 
+	const char* session_dir = WEBAPP_OPT_SESSION_DEFAULT;
 	std::mutex cleanupLock;
 
 	//Keep track of dynamic databases
@@ -285,8 +280,10 @@ class Webapp {
 	asio::ip::tcp::acceptor* acceptor;
 	void accept_conn();
 	void accept_conn_async(Request* r, const asio::error_code&);
-	void process_header_async(Request* r, const asio::error_code&, std::size_t);
-	void process_request_async(Request* r, const asio::error_code&, std::size_t);
+	void process_header_async(Request* r, const asio::error_code&, 
+							  std::size_t);
+	void process_request_async(Request* r, const asio::error_code&, 
+							  std::size_t);
 	asio::io_service& svc;
 	asio::io_service::work wrk;
 
@@ -296,36 +293,30 @@ class Webapp {
 
 public:
 	leveldb::DB* db;
-	const char* session_dir = WEBAPP_OPT_SESSION_DEFAULT;
-
+	MemoryPool<Request> request_pool;
 	std::unordered_map<std::string, std::string> templates;
 
-	MemoryPool<Request> request_pool;
-
-	Webapp(const char* session_dir, unsigned int port, asio::io_service& io_svc);
+	Webapp(const char* session_dir, unsigned int port, 
+		   asio::io_service& io_svc);
 	~Webapp();
 
-	//Public webapp methods
-	void Start()
-	{
-		svc.run();
-	}
+	void Start();
 	Database* CreateDatabase();
 	Database* GetDatabase(size_t index);
 	void DestroyDatabase(Database*);
-	void CompileScript(const char* filename, webapp_str_t* output);
+
+	//Parameter Store
 	void SetParamInt(unsigned int key, int value);
-	int GetParamInt(unsigned int key);
-	void RunScript(LuaParam* params, int nArgs, script_t script);
+	int  GetParamInt(unsigned int key);
 
 	//Worker methods
-	void StartWorker(WebappTask*);
+	void Cleanup(unsigned int* cleanupTask, unsigned int shutdown);
+	
+	void CompileScript(const char* filename, webapp_str_t* output);
+	void RunScript(LuaParam* params, int nArgs, script_t script);
 
 	//Cleanup methods.
-	void refresh_templates();
-	void reload_all();
-	int start_cleanup(TaskQueue*);
-	void perform_cleanup();
+	void Reload();
 };
 
 #endif //WEBAPP_H

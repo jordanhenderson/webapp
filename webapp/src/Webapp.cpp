@@ -8,7 +8,6 @@
 #include "Webapp.h"
 #include "Session.h"
 #include "Database.h"
-#include "Image.h"
 
 extern "C" {
 #include <lua.h>
@@ -28,33 +27,6 @@ using namespace std::placeholders;
 #pragma warning(disable:4316)
 #endif
 
-int32_t strntol(const char* src, size_t n)
-{
-	int32_t x = 0;
-	while(isdigit(*src) && n--) {
-		x = x * 10 + (*src - '0');
-		src++;
-	}
-	return x;
-}
-
-webapp_str_t operator+(const webapp_str_t& w1, const webapp_str_t& w2)
-{
-	webapp_str_t n = w1;
-	n += w2;
-	return n;
-}
-
-webapp_str_t operator+(const char* lhs, const webapp_str_t& rhs)
-{
-	return webapp_str_t(lhs) + rhs;
-}
-
-webapp_str_t operator+(const webapp_str_t& lhs, const char* rhs)
-{
-	return lhs + webapp_str_t(rhs);
-}
-
 static const char* script_t_names[] = {SCRIPT_NAMES};
 /**
  * Request destructor.
@@ -67,133 +39,28 @@ Request::~Request()
 }
 
 /**
- * Clean up a worker thread. Called as each task is signalled to finish.
- * Performs actual cleanup from originally signalled thread while
- * other threads are waiting/blocked (q->finished = 1)
+ * Lock/block all workers, then reload all data associated to the webapp
+ * @param cleanupTask pointer to an integer which indicates if the 
+ * caller has signalled the cleanup process. This is required to be a
+ * pointer, as multiple threads may call into this function at the same
+ * time, and will affect the cleanupTask value of other workers, 
+ * preventing a cleanup task from occuring twice.
+ * @param shutdown whether to shut down the webapp after cleaning.
 */
-void WebappTask::handleCleanup()
+void Webapp::Cleanup(unsigned int* cleanupTask, unsigned int shutdown) 
 {
-	//Set the finished flag to signify this thread is waiting.
-	_q->finished = 1;
-
-	int cleaning = _handler->start_cleanup(_q);
-	//Actual cleaning stage, performed after all workers terminated.
-	if(cleaning) {
-		if(_q->shutdown) _handler->SetParamInt(WEBAPP_PARAM_ABORTED, 1);
-		_handler->perform_cleanup();
-	} else {
-		//Just (attempt to) grab own lock.
-		unique_lock<mutex> lk(_q->cv_mutex);
-		//(Automatically) unlock when done to complete the process.
-	}
-}
-
-/**
- * Execute a worker task.
- * Worker tasks process queues of recieved requests (each single threaded)
- * The LUA VM must only block after handling each request.
- * Performs cleanup when finished.
-*/
-void WebappTask::start()
-{
-	_worker = std::thread([this] {
-		while (!_handler->GetParamInt(WEBAPP_PARAM_ABORTED))
-		{
-			_q->finished = 0;
-			Execute();
-			handleCleanup();
-		}
-	});
-}
-
-RequestQueue::~RequestQueue()
-{
-	if(_cache != NULL) delete _cache;
-	if(baseTemplate != NULL) delete baseTemplate;
-}
-
-void RequestQueue::Execute()
-{
-	LuaParam _v[] = { { "worker", this },
-		{ "app", _handler }
-	};
-	_handler->RunScript(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_REQUEST);
-}
-
-void RequestQueue::Cleanup()
-{
-	_sessions.CleanupSessions();
-	if(_cache != NULL) delete _cache;
-
-	if(baseTemplate != NULL) delete baseTemplate;
-	baseTemplate = new TemplateDictionary("");
-
-	templates.clear();
-
-	for(auto tmpl: _handler->templates) {
-		TemplateDictionary* dict = baseTemplate->AddIncludeDictionary(tmpl.first);
-		dict->SetFilename(tmpl.second);
-		templates.insert({tmpl.first, dict});
-	}
-
-	if(_handler->GetParamInt(WEBAPP_PARAM_TPLCACHE)) {
-		_cache = mutable_default_template_cache()->Clone();
-		_cache->Freeze();
-	} else {
-		_cache = NULL;
-	}
-}
-
-webapp_str_t* RequestQueue::RenderTemplate(const webapp_str_t& page)
-{
-	webapp_str_t* output = new webapp_str_t();
-	WebappStringEmitter wse(output);
-	if(_cache)
-		_cache->ExpandNoLoad(page, STRIP_WHITESPACE, baseTemplate, NULL, &wse);
-	else {
-		mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::LAZY_RELOAD);
-		ExpandTemplate(page, STRIP_WHITESPACE, baseTemplate, &wse);
-	}
-	return output;
-}
-
-void BackgroundQueue::Execute()
-{
-	LuaParam _v[] = { { "bgworker", this },
-		{ "app", _handler }
-	};
-	_handler->RunScript(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_QUEUE);
-}
-
-/**
- * Begin the reload process by stopping all workers.
- * @param _q the taskqueue of the cleaning up worker.
- * @return 1 if the calling thread should perform the actual cleanup.
-*/
-int Webapp::start_cleanup(TaskQueue* _q)
-{
-	int cleaning = 0;
-	//Lock the following to prevent more than one thread from
-	//cleaning at a time.
-	unique_lock<mutex> lk(cleanupLock);
-	if (_q->cleanupTask == 1) {
-		cleaning = 1;
+	cleanupLock.lock();
+	if(*cleanupTask == 1) {
 		workers.Clean();
 		bg_workers.Clean();
+		if(shutdown) SetParamInt(WEBAPP_PARAM_ABORTED, 1);
+		Reload();
+		workers.Restart();
+		bg_workers.Restart();
+		cleanupLock.unlock();
+	} else {
+		cleanupLock.unlock();
 	}
-	return cleaning;
-}
-
-/**
- * Perform the actual cleanup process, reloading any cached data.
- * Signals all workers to unpause, when cleanup is finished.
-*/
-void Webapp::perform_cleanup()
-{
-	//Reload the webapp.
-	reload_all();
-	workers.Restart();
-	bg_workers.Restart();
 }
 
 /**
@@ -233,12 +100,13 @@ void Webapp::CompileScript(const char* filename, webapp_str_t* output)
 /**
  * Reload all cached data as necessary.
 */
-void Webapp::reload_all()
+void Webapp::Reload()
 {
 	//Clear templates
 	mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::IMMEDIATE_RELOAD);
 
 	templates.clear();
+
 	//Delete cached preprocessed scripts.
 	for(int i = 0; i < WEBAPP_SCRIPTS; i++) {
 		if(scripts[i].data != NULL) {
@@ -269,8 +137,6 @@ void Webapp::reload_all()
 		if (background_queue_enabled)
 			CompileScript("plugins/core/process_queue.lua", &scripts[SCRIPT_QUEUE]);
 
-		workers.Cleanup();
-		bg_workers.Cleanup();
 	} else {
 		svc.stop();
 	}
@@ -362,7 +228,7 @@ Webapp::Webapp(const char* session_dir,
 	options.create_if_missing = true;
 	leveldb::DB::Open(options, session_dir, &db);
 
-	reload_all();
+	Reload();
 
 	if(!background_queue_enabled) {
 		workers.Start(this, WEBAPP_NUM_THREADS > 1
@@ -392,6 +258,10 @@ Webapp::Webapp(const char* session_dir,
 		}
 	}
 	accept_conn();
+}
+
+void Webapp::Start() {
+	svc.run();
 }
 
 /**

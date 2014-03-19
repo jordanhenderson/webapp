@@ -58,6 +58,12 @@ struct webapp_str_t {
 		data = new char[len];
 		memcpy(data, other.data, len);
 	}
+	webapp_str_t(const leveldb::Slice& other)
+	{
+		len = other.size();
+		data = new char[len];
+		memcpy(data, other.data(), len);
+	}
 	~webapp_str_t()
 	{
 		if(allocated) delete[] data;
