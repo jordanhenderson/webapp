@@ -123,7 +123,7 @@ Session* Sessions::new_session(Request* request)
 	if (request->host.len == 0 || request->user_agent.len == 0)
 		return NULL;
 	unsigned char output[SHA256_DIGEST_LENGTH];
-	char output_hex[32];
+	char output_hex[SESSIONID_SIZE + 1]; //(must be odd for loop below)
 	SHA256_CTX ctx;
 	SHA256_Init(&ctx);
 	SHA256_Update(&ctx, (unsigned char*)request->host.data,
@@ -139,7 +139,7 @@ Session* Sessions::new_session(Request* request)
 	SHA256_Final(output, &ctx);
 	const char* hex_lookup = "0123456789ABCDEF";
 	char* p = output_hex;
-	for (int i = 0; i <= 16; i++) {
+	for (int i = 0; i < SESSIONID_SIZE / 2; i++) {
 		*p++ = hex_lookup[output[i] >> 4];
 		*p++ = hex_lookup[output[i] & 0x0F];
 	}
