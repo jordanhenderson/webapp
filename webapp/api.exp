@@ -27,10 +27,6 @@
 	GetNextRequest;
 	FinishRequest;
 	
-	GetNextProcess;
-	FinishProcess;
-	QueueProcess;
-	
 	WriteData;
 	WriteHeader;
 

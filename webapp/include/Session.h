@@ -20,6 +20,8 @@ namespace leveldb {
 class DB;
 }
 
+extern webapp_str_t empty;
+
 class DataStore {
 	std::vector<webapp_str_t*> vals;
 public:
@@ -33,7 +35,7 @@ public:
 struct Session : public DataStore {
 	webapp_str_t session_id;
 	void destroy();
-	Session(const webapp_str_t&);
+	Session(Request*, const webapp_str_t& key);
 	~Session() {}
 	webapp_str_t* get(const webapp_str_t& key);
 	void put(const webapp_str_t& key, const webapp_str_t& value);

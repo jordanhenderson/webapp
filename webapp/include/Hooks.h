@@ -15,7 +15,6 @@ struct Session;
 struct RequestBase;
 
 class Webapp;
-class Process;
 class Database;
 struct Query;
 class Image;
@@ -70,13 +69,6 @@ extern "C" {
 	APIEXPORT Request* 
 				   GetNextRequest(RequestBase*);
 	APIEXPORT void FinishRequest(Request*);
-
-/* BG Requests */
-	APIEXPORT Process* 
-				   GetNextProcess(BackgroundQueue*);
-	APIEXPORT void FinishProcess(Process*);
-	APIEXPORT void QueueProcess(BackgroundQueue*, webapp_str_t* funtion,
-								webapp_str_t* vars);
 	APIEXPORT void WriteData(Request*, webapp_str_t* data);
 	APIEXPORT void WriteHeader(Request*, int32_t n_bytes,
 							   webapp_str_t* content_type, 

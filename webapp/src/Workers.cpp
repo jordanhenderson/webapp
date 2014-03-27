@@ -19,11 +19,7 @@ using namespace ctemplate;
 void WebappTask::Start()
 {
 	_worker = std::thread([this] {
-		while (!IsAborted())
-		{
-			Execute();
-			Cleanup();
-		}
+		Execute();
 	});
 }
 
@@ -32,37 +28,12 @@ void WebappTask::Stop()
 	if(_worker.joinable()) _worker.join();
 }
 
-void BackgroundQueue::Execute()
-{
-	finished = 0;
-	LuaParam _v[] = { { "bgworker", this } };
-	app->RunScript(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_QUEUE);
-	//Set the finished flag to signify this thread is waiting.
-	finished = 1;
-}
-
-void BackgroundQueue::Cleanup()
-{
-	app->Cleanup(&this->cleanupTask, this->shutdown);
-}
-
-int BackgroundQueue::IsAborted()
-{
-	return app->GetParamInt(WEBAPP_PARAM_ABORTED);
-}
-
 RequestBase::RequestBase() {}
 
-void RequestBase::Cleanup()
-{
-	_sessions.CleanupSessions();
+RequestBase::~RequestBase() {
 	if(_cache != NULL) delete _cache;
-	_cache = NULL;
 	if(baseTemplate != NULL) delete baseTemplate;
-	baseTemplate = NULL;
-
-	templates.clear();
-	app->Cleanup(&this->cleanupTask, this->shutdown);
+	_sessions.CleanupSessions();
 }
 
 webapp_str_t* RequestBase::RenderTemplate(const webapp_str_t& page)
@@ -76,12 +47,6 @@ webapp_str_t* RequestBase::RenderTemplate(const webapp_str_t& page)
 		ExpandTemplate(page, STRIP_WHITESPACE, baseTemplate, &wse);
 	}
 	return output;
-}
-
-RequestQueue::~RequestQueue()
-{
-	if(_cache != NULL) delete _cache;
-	if(baseTemplate != NULL) delete baseTemplate;
 }
 
 void RequestQueue::Execute()
@@ -105,12 +70,9 @@ void RequestQueue::Execute()
 	
 	//Set the finished flag to signify this thread is waiting.
 	finished = 1;
+	app->Cleanup(cleanupTask, shutdown);
 }
 
-void RequestQueue::Cleanup()
-{
-	RequestBase::Cleanup();
-}
 
 int RequestQueue::IsAborted()
 {

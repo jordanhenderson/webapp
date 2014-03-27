@@ -192,25 +192,6 @@ void FinishRequest(Request* r)
 	r->socket.get_io_service().post(bind(CleanupRequest, r));
 }
 
-/* BG Requests */
-Process* GetNextProcess(BackgroundQueue* worker)
-{
-	return worker->dequeue();
-}
-
-void FinishProcess(Process* process)
-{
-	delete process;
-}
-
-void QueueProcess(BackgroundQueue* worker, webapp_str_t* func,
-				  webapp_str_t* vars)
-{
-	if (func == NULL || vars == NULL || worker->aborted) return;
-	Process* p = new Process(func, vars);
-	worker->enqueue(p);
-}
-
 /* Socket API */
 void WriteComplete(std::atomic<int>* wt, webapp_str_t* buf,
 				   const asio::error_code& error, size_t bytes_transferred)

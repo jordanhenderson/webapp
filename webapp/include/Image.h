@@ -39,7 +39,7 @@ class Image {
 	void gifInsertFrame(unsigned int frame);
 	void gifRasterizeFrame(unsigned int frame, unsigned char** map,
 						   unsigned char** raster);
-	void cleanup();
+	void Cleanup();
 	void regenRowPointers();
 
 public:

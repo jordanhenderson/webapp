@@ -14,13 +14,15 @@
 #include "Database.h"
 #include "Session.h"
 
-#define WEBAPP_NUM_THREADS 2
+//LevelDB uses 3 threads, leave room for that + server thread.
+#define WEBAPP_MAX_THREADS 100
 #define WEBAPP_STATIC_STRINGS 10
 #define WEBAPP_SCRIPTS 4
 #define WEBAPP_PARAM_PORT 0
 #define WEBAPP_PARAM_ABORTED 1
-#define WEBAPP_PARAM_BGQUEUE 2
-#define WEBAPP_PARAM_TPLCACHE 3
+#define WEBAPP_PARAM_TPLCACHE 2
+#define WEBAPP_PARAM_LEVELDB 3
+#define WEBAPP_PARAM_THREADS 4
 #define WEBAPP_PORT_DEFAULT 5000
 #define WEBAPP_DEFAULT_QUEUESIZE 1023
 #define WEBAPP_OPT_SESSION 0
@@ -75,25 +77,6 @@ struct Request {
 };
 
 /**
- * @brief Process is used to pass requests to Background Queue.
- */
-class Process {
-	webapp_str_t* func = NULL;
-	webapp_str_t* vars = NULL;
-public:
-	Process(webapp_str_t* f, webapp_str_t* v)
-	{
-		func = new webapp_str_t(f);
-		v = new webapp_str_t(v);
-	}
-	~Process()
-	{
-		if(func != NULL) delete func;
-		if(vars != NULL) delete vars;
-	}
-};
-
-/**
  * @brief LockedQueue is a bounded multi-thread safe queue that provides
  * signalling capabilities.
  * Uses moodycamel's ReaderWriterQueue (lock free queue)
@@ -128,21 +111,11 @@ struct LockedQueue {
 			std::this_thread::
 				sleep_for(std::chrono::milliseconds(100));
 		}
-		//Prevent any new requests from being queued.
-		cv_mutex.lock();
-	}
-	void RestartTask() {
-		aborted = 0;
-		cv_mutex.unlock();
 	}
 	
-	//Each operation (enqueue, dequeue) must be done single threaded.
-	//We need MP (Multi-Producer), so lock production.
 	void enqueue(T* i)
 	{
-		cv_mutex.lock();
 		queue.enqueue(i);
-		cv_mutex.unlock();
 		cv.notify_one();
 	}
 	
@@ -170,18 +143,7 @@ public:
 	WebappTask() : _worker() {}
 	virtual ~WebappTask() { Stop(); };
 	virtual void Execute() = 0;
-	virtual void Cleanup() = 0;
 	virtual int IsAborted() = 0;
-};
-
-/**
- * @brief BackgroundQueue provides a Lua VM with a Process queue
- */
-struct BackgroundQueue : public WebappTask, LockedQueue<Process> {
-	BackgroundQueue() {}
-	void Execute();
-	void Cleanup();
-	int IsAborted();
 };
 
 /**
@@ -195,8 +157,8 @@ struct RequestBase : LockedQueue<Request> {
 	Sessions _sessions;
 	
 	RequestBase();
+	virtual ~RequestBase();
 	webapp_str_t* RenderTemplate(const webapp_str_t& tpl);
-	void Cleanup();
 };
 
 /**
@@ -205,15 +167,15 @@ struct RequestBase : LockedQueue<Request> {
  */
 struct RequestQueue : public WebappTask, RequestBase {
 	RequestQueue() {}
-	~RequestQueue();
+	~RequestQueue() {}
 	void Execute();
-	void Cleanup();
 	int IsAborted();
 };
 
 template<class T>
 struct WorkerArray {
 	std::vector<T*> workers;
+	unsigned int counter = 0;
 	WorkerArray() {}
 	~WorkerArray()
 	{
@@ -224,8 +186,9 @@ struct WorkerArray {
 	void Cleanup()
 	{
 		for(auto it: workers) {
-			it->Cleanup();
+			delete it;
 		}
+		workers.clear();
 	}
 
 	void Clean()
@@ -236,13 +199,6 @@ struct WorkerArray {
 		}
 	}
 
-	void Restart()
-	{
-		for (auto it: workers) {
-			it->RestartTask();
-		}
-	}
-
 	void Start(unsigned int nWorkers)
 	{
 		for (unsigned int i = 0; i < nWorkers; i++) {
@@ -250,6 +206,11 @@ struct WorkerArray {
 			workers.emplace_back(worker);
 			worker->Start();
 		}
+	}
+	
+	void Enqueue(Request* r) {
+		unsigned int selected_node = counter++ % workers.size();
+		workers[selected_node]->enqueue(r);
 	}
 
 	void Stop()
@@ -263,14 +224,14 @@ struct WorkerArray {
 class Webapp {
 	std::array<webapp_str_t, WEBAPP_SCRIPTS> scripts;
 	WorkerArray<RequestQueue> workers;
-	WorkerArray<BackgroundQueue> bg_workers;
-
+	
 	//Parameters
 	unsigned int aborted = 0;
-	unsigned int background_queue_enabled = 1;
 	unsigned int template_cache_enabled = 1;
+	unsigned int leveldb_enabled = 1;
 	unsigned int port = WEBAPP_PORT_DEFAULT;
-
+	int num_threads = 1;
+	
 	const char* session_dir = WEBAPP_OPT_SESSION_DEFAULT;
 	std::mutex cleanupLock;
 
@@ -288,13 +249,8 @@ class Webapp {
 							  std::size_t);
 	asio::io_service& svc;
 	asio::io_service::work wrk;
-
-	//Worker/node variables
-	unsigned int nWorkers = WEBAPP_NUM_THREADS;
-	unsigned int node_counter = 0;
-
 public:
-	leveldb::DB* db;
+	leveldb::DB* db = NULL;
 	std::unordered_map<std::string, std::string> templates;
 
 	Webapp(const char* session_dir, unsigned int port, 
@@ -311,13 +267,14 @@ public:
 	int  GetParamInt(unsigned int key);
 
 	//Worker methods
-	void Cleanup(unsigned int* cleanupTask, unsigned int shutdown);
+	void Cleanup(unsigned int cleanupTask, unsigned int shutdown);
 	
 	void CompileScript(const char* filename, webapp_str_t* output);
 	void RunScript(LuaParam* params, int nArgs, script_t script);
 
 	//Cleanup methods.
 	void Reload();
+	void ToggleLevelDB();
 };
 
 #endif //WEBAPP_H

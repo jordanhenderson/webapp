@@ -40,23 +40,17 @@ Request::~Request()
 
 /**
  * Lock/block all workers, then reload all data associated to the webapp
- * @param cleanupTask pointer to an integer which indicates if the 
- * caller has signalled the cleanup process. This is required to be a
- * pointer, as multiple threads may call into this function at the same
- * time, and will affect the cleanupTask value of other workers, 
- * preventing a cleanup task from occuring twice.
+ * @param cleanupTask indicates if the caller has signalled the cleanup 
+ * process. 
  * @param shutdown whether to shut down the webapp after cleaning.
 */
-void Webapp::Cleanup(unsigned int* cleanupTask, unsigned int shutdown) 
+void Webapp::Cleanup(unsigned int cleanupTask, unsigned int shutdown) 
 {
 	cleanupLock.lock();
-	if(*cleanupTask == 1) {
+	if(cleanupTask == 1) {
 		workers.Clean();
-		bg_workers.Clean();
-		if(shutdown) SetParamInt(WEBAPP_PARAM_ABORTED, 1);
-		Reload();
-		workers.Restart();
-		bg_workers.Restart();
+		if(shutdown) aborted = 1;
+		svc.stop();
 		cleanupLock.unlock();
 	} else {
 		cleanupLock.unlock();
@@ -97,11 +91,27 @@ void Webapp::CompileScript(const char* filename, webapp_str_t* output)
 	lua_close(L);
 }
 
+void Webapp::ToggleLevelDB() {
+	//Enable/disable leveldb as required.
+	if(!leveldb_enabled && db != NULL) {
+		delete db;
+		db = NULL;
+	}
+	else if(leveldb_enabled && db == NULL) {
+		leveldb::Options options;
+		options.filter_policy = leveldb::NewBloomFilterPolicy(10);
+		options.create_if_missing = true;
+		leveldb::DB::Open(options, session_dir, &db);
+	}
+}
+
 /**
  * Reload all cached data as necessary.
 */
 void Webapp::Reload()
 {
+	ToggleLevelDB();
+	
 	//Clear templates
 	mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::IMMEDIATE_RELOAD);
 
@@ -136,10 +146,9 @@ void Webapp::Reload()
 		LuaParam _v[] = { { "request", &r },
 						  { "worker", &worker} };
 		RunScript(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_INIT);
-
-		if (background_queue_enabled)
-			CompileScript("plugins/core/process_queue.lua", &scripts[SCRIPT_QUEUE]);
-
+		
+		//LevelDB may now be disabled. Clean it up as necessary.
+		ToggleLevelDB();
 	} else {
 		svc.stop();
 	}
@@ -214,13 +223,8 @@ Webapp::Webapp(const char* session_dir,
 	session_dir(session_dir),
 	port(port),
 	svc(io_svc),
-	wrk(svc)
+	wrk(io_svc)
 {
-	leveldb::Options options;
-	options.filter_policy = leveldb::NewBloomFilterPolicy(10);
-	options.create_if_missing = true;
-	leveldb::DB::Open(options, session_dir, &db);
-
 	//Create the TCP endpoint and acceptor.
 	int bound = 0;
 	int failed = 0;
@@ -243,17 +247,19 @@ Webapp::Webapp(const char* session_dir,
 }
 
 void Webapp::Start() {
-	Reload();
+	while(!aborted) {
+		Reload();
+		
+		if(num_threads <= 0 || num_threads > WEBAPP_MAX_THREADS) 
+			num_threads = 1;
+		workers.Start(num_threads);
 
-	if(!background_queue_enabled) {
-		workers.Start(WEBAPP_NUM_THREADS > 1
-					  ? WEBAPP_NUM_THREADS * 2 :
-					  WEBAPP_NUM_THREADS);
-	} else {
-		workers.Start(WEBAPP_NUM_THREADS);
-		bg_workers.Start(WEBAPP_NUM_THREADS);
+		svc.run();
+		svc.reset();
+		
+		//Clear workers
+		workers.Cleanup();
 	}
-	svc.run();
 }
 
 /**
@@ -285,8 +291,7 @@ void Webapp::process_request_async(
 			read += r->input_chain[i]->len;
 		}
 
-		unsigned int selected_node = node_counter++ % WEBAPP_NUM_THREADS;
-		workers.workers[selected_node]->enqueue(r);
+		workers.Enqueue(r);
 	} else {
 		delete r;
 	}
@@ -377,9 +382,9 @@ void Webapp::accept_conn()
 Webapp::~Webapp()
 {
 	workers.Stop();
-	bg_workers.Stop();
 
-	delete db;
+	//Perform leveldb cleanup if necessary.
+	if(db != NULL) delete db;
 
 	//Delete databases
 	for(auto db_entry : databases) {
@@ -444,14 +449,17 @@ void Webapp::SetParamInt(unsigned int key, int value)
 	case WEBAPP_PARAM_PORT:
 		port = value;
 		break;
-	case WEBAPP_PARAM_BGQUEUE:
-		background_queue_enabled = value;
-		break;
 	case WEBAPP_PARAM_ABORTED:
 		aborted = value;
 		break;
 	case WEBAPP_PARAM_TPLCACHE:
 		template_cache_enabled = value;
+		break;
+	case WEBAPP_PARAM_LEVELDB:
+		leveldb_enabled = value;
+		break;
+	case WEBAPP_PARAM_THREADS:
+		num_threads = value;
 		break;
 	default:
 		return;
@@ -470,14 +478,17 @@ int Webapp::GetParamInt(unsigned int key)
 	case WEBAPP_PARAM_PORT:
 		return port;
 		break;
-	case WEBAPP_PARAM_BGQUEUE:
-		return background_queue_enabled;
-		break;
 	case WEBAPP_PARAM_ABORTED:
 		return aborted;
 		break;
 	case WEBAPP_PARAM_TPLCACHE:
 		return template_cache_enabled;
+		break;
+	case WEBAPP_PARAM_LEVELDB:
+		return leveldb_enabled;
+		break;
+	case WEBAPP_PARAM_THREADS:
+		return num_threads;
 		break;
 	default:
 		return 0;

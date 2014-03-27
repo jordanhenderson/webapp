@@ -30,7 +30,7 @@ using namespace std;
 extern "C" {
 	jmp_buf buf;
 }
-void Image::cleanup()
+void Image::Cleanup()
 {
 	//Clean up various image allocations.
 	switch(imageType) {
@@ -115,7 +115,7 @@ int Image::load(const webapp_str_t& filename)
 	width = height = nBytes = bitdepth = 0;
 	gif = NULL;
 
-	cleanup();
+	Cleanup();
 
 	changeType(filename);
 
@@ -481,5 +481,5 @@ unsigned char* Image::_resize(unsigned char* image, int width, int height,
 
 Image::~Image()
 {
-	cleanup();
+	Cleanup();
 }
