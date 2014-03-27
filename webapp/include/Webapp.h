@@ -35,6 +35,8 @@
 typedef enum {SCRIPT_INIT, SCRIPT_QUEUE, SCRIPT_REQUEST, SCRIPT_HANDLERS} script_t;
 #define SCRIPT_NAMES "SCRIPT_INIT", "SCRIPT_QUEUE","SCRIPT_REQUEST", "SCRIPT_HANDLERS"
 
+extern Webapp* app;
+
 class Webapp;
 
 /**
@@ -73,23 +75,6 @@ struct Request {
 };
 
 /**
- * @brief TaskQueue provides the base locking mechanisms for queues, and support
- * for required webapp functionality.
- */
-struct TaskQueue {
-	unsigned int cleanupTask = 0;
-	unsigned int shutdown = 0;
-	std::atomic<unsigned int> aborted;
-	unsigned int finished = 0;
-	std::condition_variable cv;
-	std::mutex cv_mutex;
-	void notify();
-	void FinishTask();
-	void RestartTask();
-	TaskQueue() : aborted(0) {}
-};
-
-/**
  * @brief Process is used to pass requests to Background Queue.
  */
 class Process {
@@ -114,20 +99,56 @@ public:
  * Uses moodycamel's ReaderWriterQueue (lock free queue)
  */
 template<typename T>
-struct LockedQueue : public TaskQueue {
-	moodycamel::ReaderWriterQueue<T> queue;
+struct LockedQueue {
+	/* Members */
+	unsigned int cleanupTask = 0;
+	unsigned int shutdown = 0;
+	std::atomic<unsigned int> aborted;
+	unsigned int finished = 0;
+	std::condition_variable cv;
+	std::mutex cv_mutex;
+	moodycamel::ReaderWriterQueue<T*> queue;
+	
+	/* Procedures */
+	void notify() {
+		cv.notify_one();
+	}
+	
+	void FinishTask() {
+		//Ensure no other thread is cleaning.
+		cleanupTask = 0;
+
+		//Abort the worker (aborts any new requests).
+		aborted = 1;
+
+		//Notify any blocked threads to process the next request.
+		while(!finished) {
+			cv.notify_one();
+			//Sleep to allow thread to finish, then check again.
+			std::this_thread::
+				sleep_for(std::chrono::milliseconds(100));
+		}
+		//Prevent any new requests from being queued.
+		cv_mutex.lock();
+	}
+	void RestartTask() {
+		aborted = 0;
+		cv_mutex.unlock();
+	}
+	
 	//Each operation (enqueue, dequeue) must be done single threaded.
 	//We need MP (Multi-Producer), so lock production.
-	void enqueue(T i)
+	void enqueue(T* i)
 	{
 		cv_mutex.lock();
 		queue.enqueue(i);
 		cv_mutex.unlock();
 		cv.notify_one();
 	}
-	T dequeue()
+	
+	T* dequeue()
 	{
-		T r = NULL;
+		T* r = NULL;
 		{
 			std::unique_lock<std::mutex> lk(cv_mutex);
 			while (!queue.try_dequeue(r) && !aborted) cv.wait(lk);
@@ -135,7 +156,7 @@ struct LockedQueue : public TaskQueue {
 		if(aborted) return NULL;
 		return r;
 	}
-	LockedQueue() : queue(WEBAPP_DEFAULT_QUEUESIZE) {}
+	LockedQueue() : aborted(0), queue(WEBAPP_DEFAULT_QUEUESIZE) {}
 };
 
 /**
@@ -154,28 +175,10 @@ public:
 };
 
 /**
- * 
-*/
-template<typename T>
-struct TaskBase : public LockedQueue<T>
-{
-	Webapp* _handler;
-	TaskBase(Webapp* handler) : _handler(handler) {}
-	void Cleanup()
-	{
-		this->_handler->Cleanup(&this->cleanupTask, this->shutdown);
-	}
-	int IsAborted()
-	{
-		return this->_handler->GetParamInt(WEBAPP_PARAM_ABORTED);
-	}
-};
-
-/**
  * @brief BackgroundQueue provides a Lua VM with a Process queue
  */
-struct BackgroundQueue : public WebappTask, TaskBase<Process*> {
-	BackgroundQueue(Webapp* handler) : TaskBase(handler) {}
+struct BackgroundQueue : public WebappTask, LockedQueue<Process> {
+	BackgroundQueue() {}
 	void Execute();
 	void Cleanup();
 	int IsAborted();
@@ -185,13 +188,13 @@ struct BackgroundQueue : public WebappTask, TaskBase<Process*> {
  * @brief RequestBase provides a base request object (allows Hooks to use
  * mock RequestQueues without the need to start threads or VMs.)
 */
-struct RequestBase : TaskBase<Request*> {
+struct RequestBase : LockedQueue<Request> {
 	ctemplate::TemplateCache* _cache = NULL;
 	ctemplate::TemplateDictionary* baseTemplate = NULL;
 	std::unordered_map<std::string, ctemplate::TemplateDictionary*> templates;
 	Sessions _sessions;
 	
-	RequestBase(Webapp* handler);
+	RequestBase();
 	webapp_str_t* RenderTemplate(const webapp_str_t& tpl);
 	void Cleanup();
 };
@@ -200,8 +203,8 @@ struct RequestBase : TaskBase<Request*> {
  * @brief RequestQueue provides a Lua VM with a session container, template
  * cache and queue for Requests.
  */
-struct RequestQueue : RequestBase, public WebappTask {
-	RequestQueue(Webapp *handler) : RequestBase(handler) {}
+struct RequestQueue : public WebappTask, RequestBase {
+	RequestQueue() {}
 	~RequestQueue();
 	void Execute();
 	void Cleanup();
@@ -240,10 +243,10 @@ struct WorkerArray {
 		}
 	}
 
-	void Start(Webapp* handler, unsigned int nWorkers)
+	void Start(unsigned int nWorkers)
 	{
 		for (unsigned int i = 0; i < nWorkers; i++) {
-			T* worker = new T(handler);
+			T* worker = new T();
 			workers.emplace_back(worker);
 			worker->Start();
 		}

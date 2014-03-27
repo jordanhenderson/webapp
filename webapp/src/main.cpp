@@ -22,6 +22,8 @@ CSimpleOptA::SOption webapp_options[] = {
 	SO_END_OF_OPTIONS
 };
 
+Webapp* app;
+
 int main(int argc, char* argv[])
 {
 	setlocale(LC_ALL, "");
@@ -49,8 +51,10 @@ int main(int argc, char* argv[])
 	}
 
 	asio::io_service svc;
-	Webapp app(session, port, svc);
-
-	app.Start();
+	Webapp _app(session, port, svc);
+	//Assign address on stack. This is normally dangerous, however this
+	//function will only return at the end of execution (shutting down).
+	app = &_app; 
+	_app.Start();
 	return 0;
 }

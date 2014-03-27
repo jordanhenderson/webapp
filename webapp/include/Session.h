@@ -22,10 +22,8 @@ class DB;
 
 class DataStore {
 	std::vector<webapp_str_t*> vals;
-protected:
-	leveldb::DB* _db;
 public:
-	DataStore(leveldb::DB* db) : _db(db) {}
+	DataStore() {}
 	virtual ~DataStore();
 	virtual webapp_str_t* get(const webapp_str_t& key);
 	virtual void put(const webapp_str_t& key, const webapp_str_t& value);
@@ -35,7 +33,7 @@ public:
 struct Session : public DataStore {
 	webapp_str_t session_id;
 	void destroy();
-	Session(leveldb::DB*, const webapp_str_t&);
+	Session(const webapp_str_t&);
 	~Session() {}
 	webapp_str_t* get(const webapp_str_t& key);
 	void put(const webapp_str_t& key, const webapp_str_t& value);
@@ -43,10 +41,9 @@ struct Session : public DataStore {
 
 class Sessions {
 	std::mt19937_64 rng;
-	leveldb::DB* _db;
 	int32_t session_expiry();
 public:
-	Sessions(leveldb::DB*);
+	Sessions();
 	~Sessions();
 	//Create a new session based on the request.
 	void CleanupSessions();

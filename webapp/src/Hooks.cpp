@@ -73,7 +73,7 @@ void Template_Clear(TemplateDictionary* dict)
 	dict->Clear();
 }
 
-void Template_Include(Webapp* app, webapp_str_t* name, webapp_str_t* file)
+void Template_Include(webapp_str_t* name, webapp_str_t* file)
 {
 	app->templates.insert({*name, *file});
 	LoadTemplate(*file, STRIP_WHITESPACE);
@@ -142,15 +142,13 @@ Session* GetRawSession(RequestBase* worker, Request* request)
 }
 
 /* Parameter Store */
-void SetParamInt(Webapp* app, unsigned int key, int value)
+void SetParamInt(unsigned int key, int value)
 {
-	if(app == NULL) return;
 	app->SetParamInt(key, value);
 }
 
-int GetParamInt(Webapp* app, unsigned int key)
+int GetParamInt(unsigned int key)
 {
-	if(app == NULL) return 0;
 	return app->GetParamInt(key);
 }
 
@@ -259,21 +257,18 @@ void WriteHeader(Request* r, int32_t n_bytes,
 }
 
 /* Database */
-Database* CreateDatabase(Webapp* app)
+Database* CreateDatabase()
 {
-	if(app == NULL) return NULL;
 	return app->CreateDatabase();
 }
 
-void DestroyDatabase(Webapp* app, Database* db)
+void DestroyDatabase(Database* db)
 {
-	if(app == NULL) return;
 	return app->DestroyDatabase(db);
 }
 
-Database* GetDatabase(Webapp* app, size_t index)
+Database* GetDatabase(size_t index)
 {
-	if(app == NULL) return NULL;
 	return app->GetDatabase(index);
 }
 

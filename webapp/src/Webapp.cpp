@@ -132,8 +132,8 @@ void Webapp::Reload()
 
 		//Run init script.
 		Request r(svc);
-		RequestBase worker(this);
-		LuaParam _v[] = { { "app", this }, { "request", &r },
+		RequestBase worker;
+		LuaParam _v[] = { { "request", &r },
 						  { "worker", &worker} };
 		RunScript(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_INIT);
 
@@ -221,17 +221,6 @@ Webapp::Webapp(const char* session_dir,
 	options.create_if_missing = true;
 	leveldb::DB::Open(options, session_dir, &db);
 
-	Reload();
-
-	if(!background_queue_enabled) {
-		workers.Start(this, WEBAPP_NUM_THREADS > 1
-					  ? WEBAPP_NUM_THREADS * 2 :
-					  WEBAPP_NUM_THREADS);
-	} else {
-		workers.Start(this, WEBAPP_NUM_THREADS);
-		bg_workers.Start(this, WEBAPP_NUM_THREADS);
-	}
-
 	//Create the TCP endpoint and acceptor.
 	int bound = 0;
 	int failed = 0;
@@ -254,6 +243,16 @@ Webapp::Webapp(const char* session_dir,
 }
 
 void Webapp::Start() {
+	Reload();
+
+	if(!background_queue_enabled) {
+		workers.Start(WEBAPP_NUM_THREADS > 1
+					  ? WEBAPP_NUM_THREADS * 2 :
+					  WEBAPP_NUM_THREADS);
+	} else {
+		workers.Start(WEBAPP_NUM_THREADS);
+		bg_workers.Start(WEBAPP_NUM_THREADS);
+	}
 	svc.run();
 }
 

@@ -9,35 +9,6 @@
 
 using namespace std;
 using namespace ctemplate;
-void TaskQueue::FinishTask() 
-{
-	//Ensure no other thread is cleaning.
-	cleanupTask = 0;
-
-	//Abort the worker (aborts any new requests).
-	aborted = 1;
-
-	//Notify any blocked threads to process the next request.
-	while(!finished) {
-		cv.notify_one();
-		//Sleep to allow thread to finish, then check again.
-		std::this_thread::
-			sleep_for(std::chrono::milliseconds(100));
-	}
-	//Prevent any new requests from being queued.
-	cv_mutex.lock();
-}
-
-void TaskQueue::RestartTask()
-{
-	aborted = 0;
-	cv_mutex.unlock();
-}
-
-void TaskQueue::notify()
-{
-	cv.notify_one();
-}
 
 /**
  * Execute a worker task.
@@ -64,26 +35,23 @@ void WebappTask::Stop()
 void BackgroundQueue::Execute()
 {
 	finished = 0;
-	LuaParam _v[] = { { "bgworker", this },
-		{ "app", _handler }
-	};
-	_handler->RunScript(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_QUEUE);
+	LuaParam _v[] = { { "bgworker", this } };
+	app->RunScript(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_QUEUE);
 	//Set the finished flag to signify this thread is waiting.
 	finished = 1;
 }
 
 void BackgroundQueue::Cleanup()
 {
-	TaskBase::Cleanup();
+	app->Cleanup(&this->cleanupTask, this->shutdown);
 }
 
 int BackgroundQueue::IsAborted()
 {
-	return TaskBase::IsAborted();
+	return app->GetParamInt(WEBAPP_PARAM_ABORTED);
 }
 
-RequestBase::RequestBase(Webapp* handler) :
-		TaskBase(handler), _sessions(_handler->db) {}
+RequestBase::RequestBase() {}
 
 void RequestBase::Cleanup()
 {
@@ -94,7 +62,7 @@ void RequestBase::Cleanup()
 	baseTemplate = NULL;
 
 	templates.clear();
-	TaskBase::Cleanup();
+	app->Cleanup(&this->cleanupTask, this->shutdown);
 }
 
 webapp_str_t* RequestBase::RenderTemplate(const webapp_str_t& page)
@@ -119,12 +87,12 @@ RequestQueue::~RequestQueue()
 void RequestQueue::Execute()
 {
 	baseTemplate = new TemplateDictionary("");
-	for(auto tmpl: _handler->templates) {
+	for(auto tmpl: app->templates) {
 		TemplateDictionary* dict = baseTemplate->AddIncludeDictionary(tmpl.first);
 		dict->SetFilename(tmpl.second);
 		templates.insert({tmpl.first, dict});
 	}
-	if(_handler->GetParamInt(WEBAPP_PARAM_TPLCACHE)) {
+	if(app->GetParamInt(WEBAPP_PARAM_TPLCACHE)) {
 		_cache = mutable_default_template_cache()->Clone();
 		_cache->Freeze();
 	} else {
@@ -132,10 +100,8 @@ void RequestQueue::Execute()
 	}
 	
 	finished = 0;
-	LuaParam _v[] = { { "worker", (RequestBase*)this },
-		{ "app", _handler }
-	};
-	_handler->RunScript(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_REQUEST);
+	LuaParam _v[] = { { "worker", (RequestBase*)this } };
+	app->RunScript(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_REQUEST);
 	
 	//Set the finished flag to signify this thread is waiting.
 	finished = 1;
@@ -148,5 +114,5 @@ void RequestQueue::Cleanup()
 
 int RequestQueue::IsAborted()
 {
-	return TaskBase::IsAborted();
+	return app->GetParamInt(WEBAPP_PARAM_ABORTED);
 }

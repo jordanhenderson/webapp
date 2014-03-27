@@ -36,8 +36,7 @@ extern "C" {
 	APIEXPORT ctemplate::TemplateDictionary* 
 				   Template_Get(RequestBase*, webapp_str_t* name);
 	APIEXPORT void Template_Clear(ctemplate::TemplateDictionary* dict);
-	APIEXPORT void Template_Include(Webapp* app, 
-		webapp_str_t* name, webapp_str_t* file);
+	APIEXPORT void Template_Include(webapp_str_t* name, webapp_str_t* file);
 	APIEXPORT void Template_Load(webapp_str_t* page);
 	APIEXPORT webapp_str_t* 
 				   Template_Render(RequestBase* worker, 
@@ -60,8 +59,8 @@ extern "C" {
 				   GetRawSession(RequestBase*, Request*);
 
 /* Parameter Store */
-	APIEXPORT void SetParamInt(Webapp*, unsigned int key, int value);
-	APIEXPORT int  GetParamInt(Webapp*, unsigned int key);
+	APIEXPORT void SetParamInt(unsigned int key, int value);
+	APIEXPORT int  GetParamInt(unsigned int key);
 
 /* Worker Handling */
 	APIEXPORT void ClearCache(RequestBase*);
@@ -85,10 +84,10 @@ extern "C" {
 
 /* Database */
 	APIEXPORT Database* 
-				   CreateDatabase(Webapp*);
-	APIEXPORT void DestroyDatabase(Webapp*, Database*);
+				   CreateDatabase();
+	APIEXPORT void DestroyDatabase(Database*);
 	APIEXPORT Database* 
-				   GetDatabase(Webapp*, size_t index);
+				   GetDatabase(size_t index);
 	APIEXPORT int  ConnectDatabase(Database*, int database_type, const char* host,
 								  const char* username, 
 								  const char* password, 
