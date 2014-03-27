@@ -8,7 +8,6 @@
 #define SESSION_H
 
 #include "Platform.h"
-#include <MemoryPool.h>
 
 #define SESSIONID_STR "sessionid"
 #define SESSIONID_SIZE 32
@@ -21,38 +20,38 @@ namespace leveldb {
 class DB;
 }
 
+extern webapp_str_t empty;
+
 class DataStore {
 	std::vector<webapp_str_t*> vals;
-protected:
-	leveldb::DB* db;
 public:
-	DataStore(leveldb::DB* db) : db(db) {}
+	DataStore() {}
 	virtual ~DataStore();
 	virtual webapp_str_t* get(const webapp_str_t& key);
 	virtual void put(const webapp_str_t& key, const webapp_str_t& value);
+	virtual void wipe(const webapp_str_t& key);
 };
 
 struct Session : public DataStore {
 	webapp_str_t session_id;
 	void destroy();
-	Session(leveldb::DB*, const webapp_str_t&);
+	Session(Request*, const webapp_str_t& key);
 	~Session() {}
 	webapp_str_t* get(const webapp_str_t& key);
 	void put(const webapp_str_t& key, const webapp_str_t& value);
 };
 
 class Sessions {
-	Webapp* handler;
 	std::mt19937_64 rng;
-	leveldb::DB* db;
 	int32_t session_expiry();
 public:
-	Sessions(Webapp* _handler);
+	Sessions();
 	~Sessions();
 	//Create a new session based on the request.
 	void CleanupSessions();
 	Session* new_session(Request* request);
 	Session* get_session(Request* request);
+	Session* get_raw_session(Request* request);
 };
 
 #endif //SESSION_H

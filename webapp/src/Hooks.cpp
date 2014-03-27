@@ -23,6 +23,7 @@ using namespace std::placeholders;
 using namespace asio;
 using namespace asio::ip;
 
+/* Template */
 void Template_ShowGlobalSection(TemplateDictionary* dict, webapp_str_t* section)
 {
 	if(dict == NULL || section == NULL) return;
@@ -56,7 +57,7 @@ void Template_SetIntValue(TemplateDictionary* dict, webapp_str_t* key,
 	dict->SetIntValue(*key, value);
 }
 
-TemplateDictionary* Template_Get(RequestQueue* worker, webapp_str_t* name)
+TemplateDictionary* Template_Get(RequestBase* worker, webapp_str_t* name)
 {
 	if(worker == NULL) return NULL;
 	TemplateDictionary* base = worker->baseTemplate;
@@ -72,7 +73,7 @@ void Template_Clear(TemplateDictionary* dict)
 	dict->Clear();
 }
 
-void Template_Include(Webapp* app, webapp_str_t* name, webapp_str_t* file)
+void Template_Include(webapp_str_t* name, webapp_str_t* file)
 {
 	app->templates.insert({*name, *file});
 	LoadTemplate(*file, STRIP_WHITESPACE);
@@ -84,7 +85,7 @@ void Template_Load(webapp_str_t* page)
 	LoadTemplate(*page, STRIP_WHITESPACE);
 }
 
-webapp_str_t* Template_Render(RequestQueue* worker, webapp_str_t* page,
+webapp_str_t* Template_Render(RequestBase* worker, webapp_str_t* page,
 							  Request* request)
 {
 	if (page == NULL) return NULL;
@@ -94,6 +95,7 @@ webapp_str_t* Template_Render(RequestQueue* worker, webapp_str_t* page,
 	return output;
 }
 
+/* Session */
 webapp_str_t* GetSessionValue(Session* session, webapp_str_t* key)
 {
 	if(session == NULL || key == NULL) return NULL;
@@ -115,13 +117,13 @@ webapp_str_t* GetSessionID(Session* session)
 	return &session->session_id;
 }
 
-Session* GetSession(RequestQueue* worker, Request* request)
+Session* GetSession(RequestBase* worker, Request* request)
 {
 	if (worker == NULL || request == NULL) return NULL;
 	return worker->_sessions.get_session(request);
 }
 
-Session* NewSession(RequestQueue* worker, Request* request)
+Session* NewSession(RequestBase* worker, Request* request)
 {
 	if (worker == NULL || request == NULL) return NULL;
 	return worker->_sessions.new_session(request);
@@ -133,24 +135,25 @@ void DestroySession(Session* session)
 		session->destroy();
 }
 
-void SetParamInt(Webapp* app, unsigned int key, int value)
+Session* GetRawSession(RequestBase* worker, Request* request)
 {
-	if(app == NULL) return;
+	if(worker == NULL || request == NULL) return NULL;
+	return worker->_sessions.get_raw_session(request);
+}
+
+/* Parameter Store */
+void SetParamInt(unsigned int key, int value)
+{
 	app->SetParamInt(key, value);
 }
 
-int GetParamInt(Webapp* app, unsigned int key)
+int GetParamInt(unsigned int key)
 {
-	if(app == NULL) return 0;
 	return app->GetParamInt(key);
 }
 
-Request* GetNextRequest(RequestQueue* worker)
-{
-	return worker->dequeue();
-}
-
-void ClearCache(RequestQueue* worker)
+/* Worker Handling */
+void ClearCache(RequestBase* worker)
 {
 	//Abort this lua vm.
 	worker->aborted = 1;
@@ -158,8 +161,7 @@ void ClearCache(RequestQueue* worker)
 	worker->cleanupTask = 1;
 }
 
-//Shuts the entire server down.
-void Shutdown(RequestQueue* worker)
+void Shutdown(RequestBase* worker)
 {
 	//Abort this lua vm.
 	worker->aborted = 1;
@@ -168,40 +170,29 @@ void Shutdown(RequestQueue* worker)
 	worker->shutdown = 1;
 }
 
-void QueueProcess(BackgroundQueue* worker, webapp_str_t* func,
-				  webapp_str_t* vars)
-{
-	if (func == NULL || vars == NULL || worker->aborted) return;
-	Process* p = new Process(func, vars);
-	worker->enqueue(p);
-}
-
-Process* GetNextProcess(BackgroundQueue* worker)
+/* Requests */
+Request* GetNextRequest(RequestBase* worker)
 {
 	return worker->dequeue();
 }
 
-void FinishProcess(Process* process)
-{
-	delete process;
-}
-
-void CleanupRequest(Webapp* app, Request* r)
+void CleanupRequest(Request* r)
 {
 	if(r->waiting == 0) {
-		app->request_pool.deleteElement(r);
+		delete r;
 	} else {
-		r->socket.get_io_service().post(bind(CleanupRequest, app, r));
+		r->socket.get_io_service().post(bind(CleanupRequest, r));
 	}
 }
 
-void FinishRequest(Webapp* app, Request* r)
+void FinishRequest(Request* r)
 {
 	if(r == NULL) return;
 	r->shutdown = 1;
-	r->socket.get_io_service().post(bind(CleanupRequest, app, r));
+	r->socket.get_io_service().post(bind(CleanupRequest, r));
 }
 
+/* Socket API */
 void WriteComplete(std::atomic<int>* wt, webapp_str_t* buf,
 				   const asio::error_code& error, size_t bytes_transferred)
 {
@@ -209,9 +200,6 @@ void WriteComplete(std::atomic<int>* wt, webapp_str_t* buf,
 	delete buf;
 }
 
-/**
- * WriteSocket must own _data (handles garbage collection).
-*/
 void WriteSocket(Request* r, webapp_str_t* s)
 {
 	auto wt = &r->waiting;
@@ -249,21 +237,19 @@ void WriteHeader(Request* r, int32_t n_bytes,
 	WriteSocket(r, s);
 }
 
-Database* CreateDatabase(Webapp* app)
+/* Database */
+Database* CreateDatabase()
 {
-	if(app == NULL) return NULL;
 	return app->CreateDatabase();
 }
 
-void DestroyDatabase(Webapp* app, Database* db)
+void DestroyDatabase(Database* db)
 {
-	if(app == NULL) return;
 	return app->DestroyDatabase(db);
 }
 
-Database* GetDatabase(Webapp* app, size_t index)
+Database* GetDatabase(size_t index)
 {
-	if(app == NULL) return NULL;
 	return app->GetDatabase(index);
 }
 
@@ -312,6 +298,7 @@ void BindParameter(Query* q, webapp_str_t* param)
 	q->params.push_back(*param);
 }
 
+/* Time */
 void tm_to_webapp(struct tm* src, struct webapp_tm* output)
 {
 	output->tm_sec = src->tm_sec;
@@ -361,7 +348,7 @@ void UpdateTime(struct webapp_tm* output)
 	tm_to_webapp(&tmp_tm, output);
 }
 
-//Image API
+/* Image */
 Image* Image_Load(webapp_str_t* filename)
 {
 	if(filename == NULL) return NULL;
@@ -387,7 +374,7 @@ void Image_Destroy(Image* img)
 	delete img;
 }
 
-//File API
+/* File */
 File* File_Open(webapp_str_t* filename, webapp_str_t* mode)
 {
 	if(filename == NULL || mode == NULL) return NULL;

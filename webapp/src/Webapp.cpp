@@ -8,7 +8,6 @@
 #include "Webapp.h"
 #include "Session.h"
 #include "Database.h"
-#include "Image.h"
 
 extern "C" {
 #include <lua.h>
@@ -28,33 +27,6 @@ using namespace std::placeholders;
 #pragma warning(disable:4316)
 #endif
 
-int32_t strntol(const char* src, size_t n)
-{
-	int32_t x = 0;
-	while(isdigit(*src) && n--) {
-		x = x * 10 + (*src - '0');
-		src++;
-	}
-	return x;
-}
-
-webapp_str_t operator+(const webapp_str_t& w1, const webapp_str_t& w2)
-{
-	webapp_str_t n = w1;
-	n += w2;
-	return n;
-}
-
-webapp_str_t operator+(const char* lhs, const webapp_str_t& rhs)
-{
-	return webapp_str_t(lhs) + rhs;
-}
-
-webapp_str_t operator+(const webapp_str_t& lhs, const char* rhs)
-{
-	return lhs + webapp_str_t(rhs);
-}
-
 static const char* script_t_names[] = {SCRIPT_NAMES};
 /**
  * Request destructor.
@@ -67,133 +39,22 @@ Request::~Request()
 }
 
 /**
- * Clean up a worker thread. Called as each task is signalled to finish.
- * Performs actual cleanup from originally signalled thread while
- * other threads are waiting/blocked (q->finished = 1)
+ * Lock/block all workers, then reload all data associated to the webapp
+ * @param cleanupTask indicates if the caller has signalled the cleanup 
+ * process. 
+ * @param shutdown whether to shut down the webapp after cleaning.
 */
-void WebappTask::handleCleanup()
+void Webapp::Cleanup(unsigned int cleanupTask, unsigned int shutdown) 
 {
-	//Set the finished flag to signify this thread is waiting.
-	_q->finished = 1;
-
-	int cleaning = _handler->start_cleanup(_q);
-	//Actual cleaning stage, performed after all workers terminated.
-	if(cleaning) {
-		if(_q->shutdown) _handler->SetParamInt(WEBAPP_PARAM_ABORTED, 1);
-		_handler->perform_cleanup();
-	} else {
-		//Just (attempt to) grab own lock.
-		unique_lock<mutex> lk(_q->cv_mutex);
-		//(Automatically) unlock when done to complete the process.
-	}
-}
-
-/**
- * Execute a worker task.
- * Worker tasks process queues of recieved requests (each single threaded)
- * The LUA VM must only block after handling each request.
- * Performs cleanup when finished.
-*/
-void WebappTask::start()
-{
-	_worker = std::thread([this] {
-		while (!_handler->GetParamInt(WEBAPP_PARAM_ABORTED))
-		{
-			_q->finished = 0;
-			Execute();
-			handleCleanup();
-		}
-	});
-}
-
-RequestQueue::~RequestQueue()
-{
-	if(_cache != NULL) delete _cache;
-	if(baseTemplate != NULL) delete baseTemplate;
-}
-
-void RequestQueue::Execute()
-{
-	LuaParam _v[] = { { "worker", this },
-		{ "app", _handler }
-	};
-	_handler->RunScript(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_REQUEST);
-}
-
-void RequestQueue::Cleanup()
-{
-	_sessions.CleanupSessions();
-	if(_cache != NULL) delete _cache;
-
-	if(baseTemplate != NULL) delete baseTemplate;
-	baseTemplate = new TemplateDictionary("");
-
-	templates.clear();
-
-	for(auto tmpl: _handler->templates) {
-		TemplateDictionary* dict = baseTemplate->AddIncludeDictionary(tmpl.first);
-		dict->SetFilename(tmpl.second);
-		templates.insert({tmpl.first, dict});
-	}
-
-	if(_handler->GetParamInt(WEBAPP_PARAM_TPLCACHE)) {
-		_cache = mutable_default_template_cache()->Clone();
-		_cache->Freeze();
-	} else {
-		_cache = NULL;
-	}
-}
-
-webapp_str_t* RequestQueue::RenderTemplate(const webapp_str_t& page)
-{
-	webapp_str_t* output = new webapp_str_t();
-	WebappStringEmitter wse(output);
-	if(_cache)
-		_cache->ExpandNoLoad(page, STRIP_WHITESPACE, baseTemplate, NULL, &wse);
-	else {
-		mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::LAZY_RELOAD);
-		ExpandTemplate(page, STRIP_WHITESPACE, baseTemplate, &wse);
-	}
-	return output;
-}
-
-void BackgroundQueue::Execute()
-{
-	LuaParam _v[] = { { "bgworker", this },
-		{ "app", _handler }
-	};
-	_handler->RunScript(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_QUEUE);
-}
-
-/**
- * Begin the reload process by stopping all workers.
- * @param _q the taskqueue of the cleaning up worker.
- * @return 1 if the calling thread should perform the actual cleanup.
-*/
-int Webapp::start_cleanup(TaskQueue* _q)
-{
-	int cleaning = 0;
-	//Lock the following to prevent more than one thread from
-	//cleaning at a time.
-	unique_lock<mutex> lk(cleanupLock);
-	if (_q->cleanupTask == 1) {
-		cleaning = 1;
+	cleanupLock.lock();
+	if(cleanupTask == 1) {
 		workers.Clean();
-		bg_workers.Clean();
+		if(shutdown) aborted = 1;
+		svc.stop();
+		cleanupLock.unlock();
+	} else {
+		cleanupLock.unlock();
 	}
-	return cleaning;
-}
-
-/**
- * Perform the actual cleanup process, reloading any cached data.
- * Signals all workers to unpause, when cleanup is finished.
-*/
-void Webapp::perform_cleanup()
-{
-	//Reload the webapp.
-	reload_all();
-	workers.Restart();
-	bg_workers.Restart();
 }
 
 /**
@@ -230,15 +91,32 @@ void Webapp::CompileScript(const char* filename, webapp_str_t* output)
 	lua_close(L);
 }
 
+void Webapp::ToggleLevelDB() {
+	//Enable/disable leveldb as required.
+	if(!leveldb_enabled && db != NULL) {
+		delete db;
+		db = NULL;
+	}
+	else if(leveldb_enabled && db == NULL) {
+		leveldb::Options options;
+		options.filter_policy = leveldb::NewBloomFilterPolicy(10);
+		options.create_if_missing = true;
+		leveldb::DB::Open(options, session_dir, &db);
+	}
+}
+
 /**
  * Reload all cached data as necessary.
 */
-void Webapp::reload_all()
+void Webapp::Reload()
 {
+	ToggleLevelDB();
+	
 	//Clear templates
 	mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::IMMEDIATE_RELOAD);
 
 	templates.clear();
+
 	//Delete cached preprocessed scripts.
 	for(int i = 0; i < WEBAPP_SCRIPTS; i++) {
 		if(scripts[i].data != NULL) {
@@ -263,14 +141,14 @@ void Webapp::reload_all()
 		CompileScript("plugins/core/handlers.lua", &scripts[SCRIPT_HANDLERS]);
 
 		//Run init script.
-		LuaParam _v[] = { { "app", this } };
+		Request r(svc);
+		RequestBase worker;
+		LuaParam _v[] = { { "request", &r },
+						  { "worker", &worker} };
 		RunScript(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_INIT);
-
-		if (background_queue_enabled)
-			CompileScript("plugins/core/process_queue.lua", &scripts[SCRIPT_QUEUE]);
-
-		workers.Cleanup();
-		bg_workers.Cleanup();
+		
+		//LevelDB may now be disabled. Clean it up as necessary.
+		ToggleLevelDB();
 	} else {
 		svc.stop();
 	}
@@ -285,7 +163,6 @@ void Webapp::reload_all()
 void Webapp::RunScript(LuaParam* params, int nArgs, script_t script)
 {
 	if(scripts[script].data == NULL) return;
-	Request* r = NULL;
 
 	//Initialize a lua state, loading appropriate libraries.
 	lua_State* L = luaL_newstate();
@@ -320,14 +197,6 @@ void Webapp::RunScript(LuaParam* params, int nArgs, script_t script)
 	//Store loaded script buffer in 'load_handlers' global.
 	lua_setfield (L, LUA_GLOBALSINDEX, "load_handlers");
 
-	//If script is SCRIPT_INIT, provide a temporary Request object
-	//to operate on (Request needed when calling handlers)
-	if(script == SCRIPT_INIT) {
-		r = request_pool.newElement(svc);
-		lua_pushlightuserdata(L, r);
-		lua_setglobal(L, "tmp_request");
-	}
-
 	//Load the lua buffer.
 	if(luaL_loadbuffer(L, scripts[script].data, scripts[script].len,
 					   script_t_names[script]))
@@ -342,7 +211,6 @@ lua_error:
 	printf("Error: %s\n", lua_tostring(L, -1));
 
 finish:
-	if(r != NULL) request_pool.deleteElement(r);
 	lua_close(L);
 }
 
@@ -355,24 +223,8 @@ Webapp::Webapp(const char* session_dir,
 	session_dir(session_dir),
 	port(port),
 	svc(io_svc),
-	wrk(svc)
+	wrk(io_svc)
 {
-	leveldb::Options options;
-	options.filter_policy = leveldb::NewBloomFilterPolicy(10);
-	options.create_if_missing = true;
-	leveldb::DB::Open(options, session_dir, &db);
-
-	reload_all();
-
-	if(!background_queue_enabled) {
-		workers.Start(this, WEBAPP_NUM_THREADS > 1
-					  ? WEBAPP_NUM_THREADS * 2 :
-					  WEBAPP_NUM_THREADS);
-	} else {
-		workers.Start(this, WEBAPP_NUM_THREADS);
-		bg_workers.Start(this, WEBAPP_NUM_THREADS);
-	}
-
 	//Create the TCP endpoint and acceptor.
 	int bound = 0;
 	int failed = 0;
@@ -392,6 +244,22 @@ Webapp::Webapp(const char* session_dir,
 		}
 	}
 	accept_conn();
+}
+
+void Webapp::Start() {
+	while(!aborted) {
+		Reload();
+		
+		if(num_threads <= 0 || num_threads > WEBAPP_MAX_THREADS) 
+			num_threads = 1;
+		workers.Start(num_threads);
+
+		svc.run();
+		svc.reset();
+		
+		//Clear workers
+		workers.Cleanup();
+	}
 }
 
 /**
@@ -423,10 +291,9 @@ void Webapp::process_request_async(
 			read += r->input_chain[i]->len;
 		}
 
-		unsigned int selected_node = node_counter++ % WEBAPP_NUM_THREADS;
-		workers.workers[selected_node]->enqueue(r);
+		workers.Enqueue(r);
 	} else {
-		request_pool.deleteElement(r);
+		delete r;
 	}
 }
 
@@ -475,7 +342,7 @@ void Webapp::process_header_async(Request* r, const asio::error_code& ec, size_t
 								  std::bind(&Webapp::process_request_async, this, r, _1, _2));
 	} else {
 		//Failed. Destroy request.
-		request_pool.deleteElement(r);
+		delete r;
 	}
 }
 
@@ -503,7 +370,7 @@ void Webapp::accept_conn_async(Request* r, const asio::error_code& error)
 */
 void Webapp::accept_conn()
 {
-	Request* r = request_pool.newElement(svc);
+	Request* r = new Request(svc);
 	acceptor->async_accept(r->socket,
 						   std::bind(&Webapp::accept_conn_async, this,
 									 r, std::placeholders::_1));
@@ -515,9 +382,9 @@ void Webapp::accept_conn()
 Webapp::~Webapp()
 {
 	workers.Stop();
-	bg_workers.Stop();
 
-	delete db;
+	//Perform leveldb cleanup if necessary.
+	if(db != NULL) delete db;
 
 	//Delete databases
 	for(auto db_entry : databases) {
@@ -582,14 +449,17 @@ void Webapp::SetParamInt(unsigned int key, int value)
 	case WEBAPP_PARAM_PORT:
 		port = value;
 		break;
-	case WEBAPP_PARAM_BGQUEUE:
-		background_queue_enabled = value;
-		break;
 	case WEBAPP_PARAM_ABORTED:
 		aborted = value;
 		break;
 	case WEBAPP_PARAM_TPLCACHE:
 		template_cache_enabled = value;
+		break;
+	case WEBAPP_PARAM_LEVELDB:
+		leveldb_enabled = value;
+		break;
+	case WEBAPP_PARAM_THREADS:
+		num_threads = value;
 		break;
 	default:
 		return;
@@ -608,14 +478,17 @@ int Webapp::GetParamInt(unsigned int key)
 	case WEBAPP_PARAM_PORT:
 		return port;
 		break;
-	case WEBAPP_PARAM_BGQUEUE:
-		return background_queue_enabled;
-		break;
 	case WEBAPP_PARAM_ABORTED:
 		return aborted;
 		break;
 	case WEBAPP_PARAM_TPLCACHE:
 		return template_cache_enabled;
+		break;
+	case WEBAPP_PARAM_LEVELDB:
+		return leveldb_enabled;
+		break;
+	case WEBAPP_PARAM_THREADS:
+		return num_threads;
 		break;
 	default:
 		return 0;

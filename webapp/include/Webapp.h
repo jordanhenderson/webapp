@@ -9,19 +9,20 @@
 
 #include <asio.hpp>
 #include <readerwriterqueue.h>
-#include <MemoryPool.h>
-#include "WebappString.h"
 #include "Platform.h"
+#include "WebappString.h"
 #include "Database.h"
 #include "Session.h"
 
-#define WEBAPP_NUM_THREADS 2
+//LevelDB uses 3 threads, leave room for that + server thread.
+#define WEBAPP_MAX_THREADS 100
 #define WEBAPP_STATIC_STRINGS 10
 #define WEBAPP_SCRIPTS 4
 #define WEBAPP_PARAM_PORT 0
 #define WEBAPP_PARAM_ABORTED 1
-#define WEBAPP_PARAM_BGQUEUE 2
-#define WEBAPP_PARAM_TPLCACHE 3
+#define WEBAPP_PARAM_TPLCACHE 2
+#define WEBAPP_PARAM_LEVELDB 3
+#define WEBAPP_PARAM_THREADS 4
 #define WEBAPP_PORT_DEFAULT 5000
 #define WEBAPP_DEFAULT_QUEUESIZE 1023
 #define WEBAPP_OPT_SESSION 0
@@ -33,6 +34,10 @@
 #define PROTOCOL_VARS 6
 #define STRING_VARS 5
 #define PROTOCOL_LENGTH_SIZEINFO sizeof(int16_t) * PROTOCOL_VARS
+typedef enum {SCRIPT_INIT, SCRIPT_QUEUE, SCRIPT_REQUEST, SCRIPT_HANDLERS} script_t;
+#define SCRIPT_NAMES "SCRIPT_INIT", "SCRIPT_QUEUE","SCRIPT_REQUEST", "SCRIPT_HANDLERS"
+
+extern Webapp* app;
 
 class Webapp;
 
@@ -72,62 +77,51 @@ struct Request {
 };
 
 /**
- * @brief TaskQueue provides the base locking mechanisms for queues, and support
- * for required webapp functionality.
+ * @brief LockedQueue is a bounded multi-thread safe queue that provides
+ * signalling capabilities.
+ * Uses moodycamel's ReaderWriterQueue (lock free queue)
  */
-struct TaskQueue {
+template<typename T>
+struct LockedQueue {
+	/* Members */
 	unsigned int cleanupTask = 0;
 	unsigned int shutdown = 0;
 	std::atomic<unsigned int> aborted;
 	unsigned int finished = 0;
 	std::condition_variable cv;
 	std::mutex cv_mutex;
-	void notify()
-	{
+	moodycamel::ReaderWriterQueue<T*> queue;
+	
+	/* Procedures */
+	void notify() {
 		cv.notify_one();
 	}
-	TaskQueue() : aborted(0) {}
-};
+	
+	void FinishTask() {
+		//Ensure no other thread is cleaning.
+		cleanupTask = 0;
 
-/**
- * @brief Process is used to pass requests to Background Queue.
- */
-class Process {
-	webapp_str_t* func = NULL;
-	webapp_str_t* vars = NULL;
-public:
-	Process(webapp_str_t* f, webapp_str_t* v)
-	{
-		func = new webapp_str_t(f);
-		v = new webapp_str_t(v);
-	}
-	~Process()
-	{
-		if(func != NULL) delete func;
-		if(vars != NULL) delete vars;
-	}
-};
+		//Abort the worker (aborts any new requests).
+		aborted = 1;
 
-/**
- * @brief LockedQueue is a bounded multi-thread safe queue that provides
- * signalling capabilities.
- * Uses moodycamel's ReaderWriterQueue (lock free queue)
- */
-template<typename T>
-struct LockedQueue : public TaskQueue {
-	moodycamel::ReaderWriterQueue<T> queue;
-	//Each operation (enqueue, dequeue) must be done single threaded.
-	//We need MP (Multi-Producer), so lock production.
-	void enqueue(T i)
+		//Notify any blocked threads to process the next request.
+		while(!finished) {
+			cv.notify_one();
+			//Sleep to allow thread to finish, then check again.
+			std::this_thread::
+				sleep_for(std::chrono::milliseconds(100));
+		}
+	}
+	
+	void enqueue(T* i)
 	{
-		cv_mutex.lock();
 		queue.enqueue(i);
-		cv_mutex.unlock();
 		cv.notify_one();
 	}
-	T dequeue()
+	
+	T* dequeue()
 	{
-		T r = NULL;
+		T* r = NULL;
 		{
 			std::unique_lock<std::mutex> lk(cv_mutex);
 			while (!queue.try_dequeue(r) && !aborted) cv.wait(lk);
@@ -135,73 +129,53 @@ struct LockedQueue : public TaskQueue {
 		if(aborted) return NULL;
 		return r;
 	}
-	LockedQueue() : queue(WEBAPP_DEFAULT_QUEUESIZE) {}
+	LockedQueue() : aborted(0), queue(WEBAPP_DEFAULT_QUEUESIZE) {}
 };
 
 /**
  * @brief WebappTask provides a worker thread wrapper for each Lua VM.
  */
 class WebappTask {
-protected:
-	Webapp* _handler;
-private:
 	std::thread _worker;
-	void handleCleanup();
-
 public:
-	void start();
-	void stop()
-	{
-		if(_worker.joinable()) _worker.join();
-	}
-	WebappTask(Webapp* handler, TaskQueue* q):
-		_handler(handler), _worker(), _q(q) {}
-
-	virtual ~WebappTask()
-	{
-		stop();
-	}
+	void Start();
+	void Stop();
+	WebappTask() : _worker() {}
+	virtual ~WebappTask() { Stop(); };
 	virtual void Execute() = 0;
-	virtual void Cleanup() = 0;
-	TaskQueue* _q;
+	virtual int IsAborted() = 0;
 };
 
 /**
- * @brief BackgroundQueue provides a Lua VM with a Process queue
- */
-struct BackgroundQueue : public WebappTask, public LockedQueue<Process*> {
-	BackgroundQueue(Webapp* handler) :
-		WebappTask(handler, this) {}
-	void Execute();
-	void Cleanup() {}
+ * @brief RequestBase provides a base request object (allows Hooks to use
+ * mock RequestQueues without the need to start threads or VMs.)
+*/
+struct RequestBase : LockedQueue<Request> {
+	ctemplate::TemplateCache* _cache = NULL;
+	ctemplate::TemplateDictionary* baseTemplate = NULL;
+	std::unordered_map<std::string, ctemplate::TemplateDictionary*> templates;
+	Sessions _sessions;
+	
+	RequestBase();
+	virtual ~RequestBase();
+	webapp_str_t* RenderTemplate(const webapp_str_t& tpl);
 };
 
 /**
  * @brief RequestQueue provides a Lua VM with a session container, template
  * cache and queue for Requests.
  */
-struct RequestQueue : public WebappTask, public LockedQueue<Request*> {
-	Sessions _sessions;
-	ctemplate::TemplateCache* _cache = NULL;
-	ctemplate::TemplateDictionary* baseTemplate = NULL;
-	std::unordered_map<std::string, ctemplate::TemplateDictionary*> templates;
-	RequestQueue(Webapp *handler)
-		: WebappTask(handler, this), _sessions(handler)
-	{
-		Cleanup();
-	}
-	~RequestQueue();
-	void Cleanup();
+struct RequestQueue : public WebappTask, RequestBase {
+	RequestQueue() {}
+	~RequestQueue() {}
 	void Execute();
-	webapp_str_t* RenderTemplate(const webapp_str_t& tpl);
+	int IsAborted();
 };
-
-typedef enum {SCRIPT_INIT, SCRIPT_QUEUE, SCRIPT_REQUEST, SCRIPT_HANDLERS} script_t;
-#define SCRIPT_NAMES "SCRIPT_INIT", "SCRIPT_QUEUE","SCRIPT_REQUEST", "SCRIPT_HANDLERS"
 
 template<class T>
 struct WorkerArray {
 	std::vector<T*> workers;
+	unsigned int counter = 0;
 	WorkerArray() {}
 	~WorkerArray()
 	{
@@ -212,54 +186,37 @@ struct WorkerArray {
 	void Cleanup()
 	{
 		for(auto it: workers) {
-			it->Cleanup();
+			delete it;
 		}
+		workers.clear();
 	}
 
 	void Clean()
 	{
 		//Ensure each worker is aborted, waiting to be restarted.
 		for (auto it: workers) {
-			TaskQueue* q = it->_q;
-			//Ensure no other thread is cleaning.
-			q->cleanupTask = 0;
-
-			//Abort the worker (aborts any new requests).
-			q->aborted = 1;
-
-			//Notify any blocked threads to process the next request.
-			while(!q->finished) {
-				q->cv.notify_one();
-				//Sleep to allow thread to finish, then check again.
-				std::this_thread::
-				sleep_for(std::chrono::milliseconds(100));
-			}
-			//Prevent any new requests from being queued.
-			q->cv_mutex.lock();
+			it->FinishTask();
 		}
 	}
 
-	void Restart()
-	{
-		for (auto it: workers) {
-			it->_q->aborted = 0;
-			it->_q->cv_mutex.unlock();
-		}
-	}
-
-	void Start(Webapp* handler, unsigned int nWorkers)
+	void Start(unsigned int nWorkers)
 	{
 		for (unsigned int i = 0; i < nWorkers; i++) {
-			T* worker = new T(handler);
+			T* worker = new T();
 			workers.emplace_back(worker);
-			worker->start();
+			worker->Start();
 		}
+	}
+	
+	void Enqueue(Request* r) {
+		unsigned int selected_node = counter++ % workers.size();
+		workers[selected_node]->enqueue(r);
 	}
 
 	void Stop()
 	{
 		for(auto it: workers) {
-			it->stop();
+			it->Stop();
 		}
 	}
 };
@@ -267,14 +224,15 @@ struct WorkerArray {
 class Webapp {
 	std::array<webapp_str_t, WEBAPP_SCRIPTS> scripts;
 	WorkerArray<RequestQueue> workers;
-	WorkerArray<BackgroundQueue> bg_workers;
-
+	
 	//Parameters
 	unsigned int aborted = 0;
-	unsigned int background_queue_enabled = 1;
 	unsigned int template_cache_enabled = 1;
+	unsigned int leveldb_enabled = 1;
 	unsigned int port = WEBAPP_PORT_DEFAULT;
-
+	int num_threads = 1;
+	
+	const char* session_dir = WEBAPP_OPT_SESSION_DEFAULT;
 	std::mutex cleanupLock;
 
 	//Keep track of dynamic databases
@@ -285,47 +243,38 @@ class Webapp {
 	asio::ip::tcp::acceptor* acceptor;
 	void accept_conn();
 	void accept_conn_async(Request* r, const asio::error_code&);
-	void process_header_async(Request* r, const asio::error_code&, std::size_t);
-	void process_request_async(Request* r, const asio::error_code&, std::size_t);
+	void process_header_async(Request* r, const asio::error_code&, 
+							  std::size_t);
+	void process_request_async(Request* r, const asio::error_code&, 
+							  std::size_t);
 	asio::io_service& svc;
 	asio::io_service::work wrk;
-
-	//Worker/node variables
-	unsigned int nWorkers = WEBAPP_NUM_THREADS;
-	unsigned int node_counter = 0;
-
 public:
-	leveldb::DB* db;
-	const char* session_dir = WEBAPP_OPT_SESSION_DEFAULT;
-
+	leveldb::DB* db = NULL;
 	std::unordered_map<std::string, std::string> templates;
 
-	MemoryPool<Request> request_pool;
-
-	Webapp(const char* session_dir, unsigned int port, asio::io_service& io_svc);
+	Webapp(const char* session_dir, unsigned int port, 
+		   asio::io_service& io_svc);
 	~Webapp();
 
-	//Public webapp methods
-	void Start()
-	{
-		svc.run();
-	}
+	void Start();
 	Database* CreateDatabase();
 	Database* GetDatabase(size_t index);
 	void DestroyDatabase(Database*);
-	void CompileScript(const char* filename, webapp_str_t* output);
+
+	//Parameter Store
 	void SetParamInt(unsigned int key, int value);
-	int GetParamInt(unsigned int key);
-	void RunScript(LuaParam* params, int nArgs, script_t script);
+	int  GetParamInt(unsigned int key);
 
 	//Worker methods
-	void StartWorker(WebappTask*);
+	void Cleanup(unsigned int cleanupTask, unsigned int shutdown);
+	
+	void CompileScript(const char* filename, webapp_str_t* output);
+	void RunScript(LuaParam* params, int nArgs, script_t script);
 
 	//Cleanup methods.
-	void refresh_templates();
-	void reload_all();
-	int start_cleanup(TaskQueue*);
-	void perform_cleanup();
+	void Reload();
+	void ToggleLevelDB();
 };
 
 #endif //WEBAPP_H

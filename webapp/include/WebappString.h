@@ -58,6 +58,12 @@ struct webapp_str_t {
 		data = new char[len];
 		memcpy(data, other.data, len);
 	}
+	webapp_str_t(const leveldb::Slice& other)
+	{
+		len = other.size();
+		data = new char[len];
+		memcpy(data, other.data(), len);
+	}
 	~webapp_str_t()
 	{
 		if(allocated) delete[] data;
@@ -106,6 +112,16 @@ struct webapp_str_t {
 		if(allocated) delete[] data;
 		data = new char[21];
 		len = snprintf(data, 21, "%d", num);
+	}
+	void to_lower()
+	{
+		for(int i = 0; i < len; i++) {
+			data[i] = tolower(data[i]);
+		}
+	}
+	int endsWith(const webapp_str_t& other) {
+		if(other.len > len) return 0;
+		return (0 == strncmp(data + len - other.len, other.data, other.len));
 	}
 };
 

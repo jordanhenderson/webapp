@@ -1,33 +1,34 @@
 {
-	Template_Get;
 	Template_ShowGlobalSection;
 	Template_ShowSection;
 	Template_SetGlobalValue;
 	Template_SetValue;
 	Template_SetIntValue;
-	Template_Render;
-	Template_Load;
-	Template_Include;
+	Template_Get;
 	Template_Clear;
+	Template_Include;
+	Template_Load;
+	Template_Render;
+
 	GetSessionValue;
 	SetSessionValue;
+	GetSessionID;
 	GetSession;
 	NewSession;
 	DestroySession;
-	GetSessionID;
-	FinishRequest;
-	QueueProcess;
-	GetNextProcess;
-	FinishProcess;
-
-	WriteData;
-	WriteHeader;
-
-	SetParamInt;
-	GetParamInt;
-	GetNextRequest;
+	GetRawSession;
+	
 	ClearCache;
 	Shutdown;
+	
+	SetParamInt;
+	GetParamInt;
+	
+	GetNextRequest;
+	FinishRequest;
+	
+	WriteData;
+	WriteHeader;
 
 	CreateDatabase;
 	DestroyDatabase;
@@ -39,6 +40,9 @@
 	SetQuery;
 	BindParameter;
 	
+	GetTime;
+	UpdateTime;
+	
 	Image_Load;
 	Image_Resize;
 	Image_Save;
@@ -49,6 +53,7 @@
 	File_Read;
 	File_Write;
 	File_Size;
+	
 	tinydir_open;
 	tinydir_open_sorted;
 	tinydir_close;
@@ -64,7 +69,4 @@
 	SHA384_Init;
 	SHA384_Update;
 	SHA384_Final;
-	
-	GetTime;
-	UpdateTime;
 };
