@@ -23,8 +23,7 @@
 #include "jpeglib.h"
 #include "jversion.h"
 #include "jerror.h"
-#include <setjmp.h>
-extern jmp_buf buf;
+
 #ifdef USE_WINDOWS_MESSAGEBOX
 #include <windows.h>
 #endif
@@ -76,10 +75,7 @@ error_exit (j_common_ptr cinfo)
   /* Let the memory manager delete any temp files before we die */
   jpeg_destroy(cinfo);
 
-  longjmp(buf, 1);
-  /*
   exit(EXIT_FAILURE);
-  */
 }
 
 
