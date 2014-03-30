@@ -75,6 +75,7 @@ void Template_Clear(TemplateDictionary* dict)
 
 void Template_Include(webapp_str_t* name, webapp_str_t* file)
 {
+	if(name == NULL || file == NULL) return;
 	app->templates.insert({*name, *file});
 	LoadTemplate(*file, STRIP_WHITESPACE);
 }
@@ -140,6 +141,14 @@ Session* GetRawSession(RequestBase* worker, Request* request)
 	if(worker == NULL || request == NULL) return NULL;
 	return worker->_sessions.get_raw_session(request);
 }
+
+/* Script API */
+webapp_str_t* CompileScript(const char* file)
+{
+	if(file != NULL)
+	return app->CompileScript(file);
+}
+
 
 /* Parameter Store */
 void SetParamInt(unsigned int key, int value)
@@ -209,6 +218,8 @@ void WriteSocket(Request* r, webapp_str_t* s)
 		asio::async_write(r->socket, asio::buffer(s->data, s->len),
 						  bind(&WriteComplete, wt, s, _1, _2));
 	} catch (asio::system_error ec) {
+		(*wt)--;
+		delete s;
 		printf("Error writing to socket!");
 	}
 }
@@ -219,21 +230,6 @@ void WriteData(Request* r, webapp_str_t* data)
 	if(r->shutdown) return;
 
 	webapp_str_t* s = new webapp_str_t(*data);
-	WriteSocket(r, s);
-}
-
-void WriteHeader(Request* r, int32_t n_bytes,
-				 webapp_str_t* content_type, webapp_str_t* cookies, int8_t cache)
-{
-	if(r == NULL || content_type == NULL || cookies == NULL) return;
-	if(r->shutdown) return;
-	webapp_data_t<int32_t> len(htonl(n_bytes));
-	webapp_data_t<int32_t> content_type_len = htonl(content_type->len);
-	webapp_data_t<int32_t> cookies_len = htonl(cookies->len);
-	webapp_data_t<int8_t> cache_s = cache;
-
-	webapp_str_t* s = new webapp_str_t(
-		len + content_type_len + cookies_len + cache_s + content_type + cookies);
 	WriteSocket(r, s);
 }
 

@@ -27,7 +27,6 @@ using namespace std::placeholders;
 #pragma warning(disable:4316)
 #endif
 
-static const char* script_t_names[] = {SCRIPT_NAMES};
 /**
  * Request destructor.
 */
@@ -57,40 +56,6 @@ void Webapp::Cleanup(unsigned int cleanupTask, unsigned int shutdown)
 	}
 }
 
-/**
- * Compile a lua script (preprocess macros etc.)
- * Stores the compiled script text in scripts[output]
- * Relies on lua script "plugins/process.lua" and LuaMacro.
- * @param filename the script to preprocess
- * @param output the destination webapp_str_t
-*/
-void Webapp::CompileScript(const char* filename, webapp_str_t* output)
-{
-	if(filename == NULL || output == NULL) return;
-	//Create a new lua state, with minimal libs for LuaMacro.
-	lua_State* L = luaL_newstate();
-	luaL_openlibs(L);
-	luaopen_lpeg(L);
-
-	//Execute the LuaMacro preprocessor.
-	int ret = luaL_loadfile(L, "plugins/process.lua");
-	if(ret) printf("Error: %s\n", lua_tostring(L, -1));
-
-	//Provide the target filename to preprocess.
-	lua_pushlstring(L, filename, strlen(filename));
-	lua_setglobal(L, "file");
-
-	//Execute the VM, store the results.
-	if(lua_pcall(L, 0, 1, 0) != 0)
-		printf("Error: %s\n", lua_tostring(L, -1));
-	else {
-		size_t len;
-		const char* chunk = lua_tolstring(L, -1, &len);
-		*output = webapp_str_t(chunk, len);
-	}
-	lua_close(L);
-}
-
 void Webapp::ToggleLevelDB() {
 	//Enable/disable leveldb as required.
 	if(!leveldb_enabled && db != NULL) {
@@ -118,52 +83,125 @@ void Webapp::Reload()
 	templates.clear();
 
 	//Delete cached preprocessed scripts.
-	for(int i = 0; i < WEBAPP_SCRIPTS; i++) {
-		if(scripts[i].data != NULL) {
-			delete[] scripts[i].data;
-			scripts[i].data = NULL;
-		}
+	for(auto it: scripts) {
+		delete it.second;
 	}
+	scripts.clear();
 
 	//Clear any databases.
-	for(auto it = databases.cbegin(); it != databases.cend(); ) {
-		delete (*it).second;
-		databases.erase(it++);
+	for(auto it: databases) {
+		delete it.second;
 	}
+	
+	databases.clear();
 
 	//Reset db_count to ensure new databases are created from index 0.
 	db_count = 0;
 
 	if(!aborted) {
 		//Recompile scripts.
-		CompileScript("plugins/core/init.lua", &scripts[SCRIPT_INIT]);
-		CompileScript("plugins/core/process.lua", &scripts[SCRIPT_REQUEST]);
-		CompileScript("plugins/core/handlers.lua", &scripts[SCRIPT_HANDLERS]);
+		webapp_str_t* init = CompileScript("plugins/core/init.lua");
+		CompileScript("plugins/core/process.lua");
 
 		//Run init script.
 		Request r(svc);
 		RequestBase worker;
 		LuaParam _v[] = { { "request", &r },
 						  { "worker", &worker} };
-		RunScript(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_INIT);
+		RunScript(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/init.lua");
 		
 		//LevelDB may now be disabled. Clean it up as necessary.
 		ToggleLevelDB();
+		
+		//Zero the init script (no need to hold in memory).
+		*init = webapp_str_t();
+		
+		
 	} else {
 		svc.stop();
 	}
 }
 
+int lua_writer(lua_State* L, const void* p, size_t sz, void* ud) {
+	char* d = (char*) p;
+	webapp_str_t src;
+	webapp_str_t* dest = (webapp_str_t*)ud;
+	src.data = d;
+	src.len = sz;
+	*dest += src;
+	return 0;
+}
+
+
 /**
- * Run script stored in scripts[] array, passing in provided params.
+ * Compile a lua script (preprocess macros etc.)
+ * Stores the compiled script text in scripts[output]
+ * Relies on lua script "plugins/process.lua" and LuaMacro.
+ * @param filename the script to preprocess
+ * @return the compiled script, stored in scripts.
+*/
+webapp_str_t* Webapp::CompileScript(const char* filename)
+{
+	if(filename == NULL) return NULL;
+	string filename_str = string(filename);
+	//Attempt to return an existing compiled script.
+	auto it = scripts.find(filename_str);
+	if(it != scripts.end()) {
+		//Found an existing script. Return it.
+		return it->second;
+	}
+	
+	//Create a new lua state, with minimal libs for LuaMacro.
+	lua_State* L = luaL_newstate();
+	luaL_openlibs(L);
+	luaopen_lpeg(L);
+
+	//Execute the LuaMacro preprocessor.
+	int ret = luaL_loadfile(L, "plugins/process.lua");
+	if(ret) printf("Error: %s\n", lua_tostring(L, -1));
+
+	//Provide the target filename to preprocess.
+	lua_pushlstring(L, filename, strlen(filename));
+	lua_setglobal(L, "file");
+
+	//Execute the VM, store the results.
+	webapp_str_t* chunk_str = new webapp_str_t(); 
+	chunk_str->allocated = 1;
+	const char* chunk = NULL;
+	size_t len;
+	if(lua_pcall(L, 0, 1, 0) != 0) goto lua_error;
+	
+	chunk = lua_tolstring(L, -1, &len);
+	
+	//Load the preprocessed chunk into the vm.
+	if(luaL_loadbuffer(L, chunk, len, filename))
+		goto lua_error;
+	
+	if(lua_dump(L, lua_writer, chunk_str) != 0) goto lua_error;
+	
+	scripts.emplace(filename_str, chunk_str);
+	goto finish;
+lua_error:
+	delete chunk_str;
+	printf("Error: %s\n", lua_tostring(L, -1));
+
+finish:
+	lua_close(L);
+	return chunk_str;
+}
+
+/**
+ * Run script stored in scripts map, passing in provided params.
  * @param params parameters to provide to the Lua instance
  * @param nArgs amount of parameters
- * @param index of script in scripts[] to execute.
+ * @param filename of script to execute.
 */
-void Webapp::RunScript(LuaParam* params, int nArgs, script_t script)
+void Webapp::RunScript(LuaParam* params, int nArgs, const char* file)
 {
-	if(scripts[script].data == NULL) return;
-
+	auto it = scripts.find(file);
+	if(it == scripts.end()) return;
+	
+	auto script = it->second;
 	//Initialize a lua state, loading appropriate libraries.
 	lua_State* L = luaL_newstate();
 	luaL_openlibs(L);
@@ -186,20 +224,8 @@ void Webapp::RunScript(LuaParam* params, int nArgs, script_t script)
 		}
 	}
 
-	//Preload handlers.
-	if(luaL_loadbuffer(L, scripts[SCRIPT_HANDLERS].data,
-					   scripts[SCRIPT_HANDLERS].len, "core/handlers"))
-		goto lua_error;
-
-	if(lua_pcall (L, 0, 1, 0))
-		goto lua_error;
-
-	//Store loaded script buffer in 'load_handlers' global.
-	lua_setfield (L, LUA_GLOBALSINDEX, "load_handlers");
-
 	//Load the lua buffer.
-	if(luaL_loadbuffer(L, scripts[script].data, scripts[script].len,
-					   script_t_names[script]))
+	if(luaL_loadbuffer(L, script->data, script->len, file))
 		goto lua_error;
 
 	if(lua_pcall(L, 0, 0, 0) != 0)
@@ -386,16 +412,12 @@ Webapp::~Webapp()
 	//Perform leveldb cleanup if necessary.
 	if(db != NULL) delete db;
 
-	//Delete databases
-	for(auto db_entry : databases) {
-		delete db_entry.second;
+	for(auto db : databases) {
+		delete db.second;
 	}
-
-	//Delete loaded scripts
-	for(int i = 0; i < WEBAPP_SCRIPTS; i++) {
-		if(scripts[i].data != NULL) {
-			delete[] scripts[i].data;
-		}
+	
+	for(auto it: scripts) {
+		delete it.second;
 	}
 }
 

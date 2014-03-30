@@ -34,8 +34,6 @@
 #define PROTOCOL_VARS 6
 #define STRING_VARS 5
 #define PROTOCOL_LENGTH_SIZEINFO sizeof(int16_t) * PROTOCOL_VARS
-typedef enum {SCRIPT_INIT, SCRIPT_QUEUE, SCRIPT_REQUEST, SCRIPT_HANDLERS} script_t;
-#define SCRIPT_NAMES "SCRIPT_INIT", "SCRIPT_QUEUE","SCRIPT_REQUEST", "SCRIPT_HANDLERS"
 
 extern Webapp* app;
 
@@ -222,7 +220,7 @@ struct WorkerArray {
 };
 
 class Webapp {
-	std::array<webapp_str_t, WEBAPP_SCRIPTS> scripts;
+	std::unordered_map<std::string, webapp_str_t*> scripts;
 	WorkerArray<RequestQueue> workers;
 	
 	//Parameters
@@ -269,8 +267,8 @@ public:
 	//Worker methods
 	void Cleanup(unsigned int cleanupTask, unsigned int shutdown);
 	
-	void CompileScript(const char* filename, webapp_str_t* output);
-	void RunScript(LuaParam* params, int nArgs, script_t script);
+	webapp_str_t* CompileScript(const char* filename);
+	void RunScript(LuaParam* params, int nArgs, const char* file);
 
 	//Cleanup methods.
 	void Reload();

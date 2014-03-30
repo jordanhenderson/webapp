@@ -58,19 +58,19 @@ private:
 
 class Database {
 	unsigned int db_type = 0;
-	size_t _db_id = 0;
+	size_t db_id = 0;
 public:
 	sqlite3* sqlite_db = NULL;
 	MYSQL* mysql_db = NULL;
-	inline unsigned int GetDBType()
+	inline unsigned int GetType()
 	{
 		return db_type;
 	}
 	inline size_t GetID()
 	{
-		return _db_id;
+		return db_id;
 	}
-	Database(size_t db_id) : _db_id(db_id) {}
+	Database(size_t db_id) : db_id(db_id) {}
 	~Database();
 
 	int connect(int database_type, const char* host, const char* username,

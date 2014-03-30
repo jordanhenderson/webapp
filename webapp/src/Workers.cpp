@@ -66,7 +66,7 @@ void RequestQueue::Execute()
 	
 	finished = 0;
 	LuaParam _v[] = { { "worker", (RequestBase*)this } };
-	app->RunScript(_v, sizeof(_v) / sizeof(LuaParam), SCRIPT_REQUEST);
+	app->RunScript(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/process.lua");
 	
 	//Set the finished flag to signify this thread is waiting.
 	finished = 1;

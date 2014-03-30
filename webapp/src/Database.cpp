@@ -46,7 +46,7 @@ Query::~Query()
 		delete[] row;
 	}
 
-	unsigned int db_type = _db->GetDBType();
+	unsigned int db_type = _db->GetType();
 
 	//Clean up mysql.
 	if (db_type == DATABASE_TYPE_MYSQL) {
@@ -75,7 +75,7 @@ void Query::process()
 {
 	unsigned int err = 0;
 	unsigned int lasterror = 0;
-	unsigned int db_type = _db->GetDBType();
+	unsigned int db_type = _db->GetType();
 
 	//Abort if query set to finished.
 	if (status == DATABASE_QUERY_FINISHED) return;

@@ -57,6 +57,9 @@ extern "C" {
 	APIEXPORT Session* 
 				   GetRawSession(RequestBase*, Request*);
 
+/* Script API */
+	APIEXPORT webapp_str_t* CompileScript(const char* file);
+
 /* Parameter Store */
 	APIEXPORT void SetParamInt(unsigned int key, int value);
 	APIEXPORT int  GetParamInt(unsigned int key);
@@ -70,9 +73,6 @@ extern "C" {
 				   GetNextRequest(RequestBase*);
 	APIEXPORT void FinishRequest(Request*);
 	APIEXPORT void WriteData(Request*, webapp_str_t* data);
-	APIEXPORT void WriteHeader(Request*, int32_t n_bytes,
-							   webapp_str_t* content_type, 
-							   webapp_str_t* cookies, int8_t cache);
 
 /* Database */
 	APIEXPORT Database* 

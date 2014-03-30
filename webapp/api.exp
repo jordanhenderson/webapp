@@ -18,6 +18,8 @@
 	DestroySession;
 	GetRawSession;
 	
+	CompileScript;
+	
 	ClearCache;
 	Shutdown;
 	
@@ -28,8 +30,7 @@
 	FinishRequest;
 	
 	WriteData;
-	WriteHeader;
-
+	
 	CreateDatabase;
 	DestroyDatabase;
 	GetDatabase;
