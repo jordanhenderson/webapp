@@ -4,17 +4,23 @@
  * Written by Jordan Henderson <jordan.henderson@ioflame.com>, 2013
  */
 
-#define PROTOCOL_VARS 6
-#define STRING_VARS 5
+//STEP 1: Adjust PROTOCOL_VARS to match total header strings.
+#define PROTOCOL_STRINGS 4
+//STEP 2: Adjust PROTOCOL_NUMS to match total header numbers.
+#define PROTOCOL_NUMS 2
 
-#define ADD_PROTOCOL_N(num) *last_p++ = htons(num);
+
 #define ADD_PROTOCOL_(str, total) \
-	*last_p++ = htons(str.len); *last_p_str++ = &str; total += str.len;
+    *last_p_str++ = &str; total += str.len;
 #define ADD_PROTOCOL(chk, str, total) \
-	if(chk != NULL) { \
-		ADD_PROTOCOL_(str, total)} \
-	else {*last_p++ = 0; *last_p_str++ = NULL; }
-#define ADD_RESPONSE_STR(num, total) num = ntohl(*last_p++); total += num;
+    if(chk != NULL) { \
+        ADD_PROTOCOL_(str, total)} \
+    else {*last_p_str++ = NULL; }
+
+//MsgPack maximum sizes.
+#define MSGPACK_SIZEOF_ARRAY 1 + 4
+#define MSGPACK_SIZEOF_NUMBER 1 + 8
+#define MSGPACK_SIZEOF_RAW 1 + 4
 
 typedef struct {
 	ngx_http_upstream_conf_t upstream;

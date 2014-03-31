@@ -48,10 +48,16 @@ extern "C" {
 								  webapp_str_t* val);
 	APIEXPORT webapp_str_t* 
 				   GetSessionID(Session*);
+    APIEXPORT Session*
+                   GetCookieSession(RequestBase*, Request*,
+                                    webapp_str_t* cookies);
 	APIEXPORT Session* 
-				   GetSession(RequestBase*, Request*);
+                   GetSession(RequestBase*, Request*,
+                              webapp_str_t* session_id);
 	APIEXPORT Session* 
-				   NewSession(RequestBase*, Request*);
+                   NewSession(RequestBase*, Request*,
+                              webapp_str_t* primary,
+                              webapp_str_t* secondary);
 	APIEXPORT void 
 				   DestroySession(Session*);
 	APIEXPORT Session* 

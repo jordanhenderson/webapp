@@ -47,10 +47,14 @@ class Sessions {
 public:
 	Sessions();
 	~Sessions();
-	//Create a new session based on the request.
 	void CleanupSessions();
-	Session* new_session(Request* request);
-	Session* get_session(Request* request);
+    Session* new_session(Request* request,
+                         const webapp_str_t& primary,
+                         const webapp_str_t& secondary);
+    Session* get_cookie_session(Request* request,
+                         const webapp_str_t& cookies);
+    Session* get_session(Request* request,
+                         const webapp_str_t& id);
 	Session* get_raw_session(Request* request);
 };
 

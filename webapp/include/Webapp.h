@@ -9,6 +9,7 @@
 
 #include <asio.hpp>
 #include <readerwriterqueue.h>
+#include <msgpack.h>
 #include "Platform.h"
 #include "WebappString.h"
 #include "Database.h"
@@ -29,12 +30,6 @@
 #define WEBAPP_OPT_SESSION_DEFAULT "session"
 #define WEBAPP_OPT_PORT 1
 
-//APP specific definitions
-//PROTOCOL SCHEMA DEFINITIONS
-#define PROTOCOL_VARS 6
-#define STRING_VARS 5
-#define PROTOCOL_LENGTH_SIZEINFO sizeof(int16_t) * PROTOCOL_VARS
-
 extern Webapp* app;
 
 class Webapp;
@@ -51,27 +46,25 @@ struct LuaParam {
  * @brief Required information per request.
  */
 struct Request {
-	int method = 0;
-	_webapp_str_t uri;
-	_webapp_str_t host;
-	_webapp_str_t user_agent;
-	_webapp_str_t cookies;
-	_webapp_str_t request_body;
-	_webapp_str_t* input_chain[STRING_VARS];
-	asio::ip::tcp::socket socket;
-	std::vector<char> headers;
-	std::vector<char> headers_body;
+    uint64_t headers_size = 0;
+    uint64_t headers_start = 0;
+    uint64_t headers_last = 0;
+    int shutdown = 0;
+    std::atomic<int> waiting {0};
+    asio::ip::tcp::socket socket;
+    std::vector<char> headers;
 	std::vector<webapp_str_t*> strings;
 	std::vector<Query*> queries;
 	std::vector<Session*> sessions;
-	int shutdown = 0;
-	std::atomic<int> waiting {0};
+    msgpack_unpacker msg;
 	~Request();
-	Request(asio::io_service& svc) :
-		socket(svc)
-	{
-		headers.reserve(PROTOCOL_LENGTH_SIZEINFO);
-	}
+    Request(asio::io_service& svc) : socket(svc)
+    {
+        //Allocate 9 bytes (maximum size of msgpack number).
+        //Initially recieves a single number representing
+        //size of incoming data.
+        headers.reserve(9);
+    }
 };
 
 /**
@@ -139,7 +132,7 @@ public:
 	void Start();
 	void Stop();
 	WebappTask() : _worker() {}
-	virtual ~WebappTask() { Stop(); };
+    virtual ~WebappTask() { Stop(); }
 	virtual void Execute() = 0;
 	virtual int IsAborted() = 0;
 };

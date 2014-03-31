@@ -10,10 +10,7 @@ struct _webapp_str_t {
 	int allocated = 0;
 };
 
-struct webapp_str_t {
-	char* data = NULL;
-	int32_t len = 0;
-	int allocated = 1;
+struct webapp_str_t : _webapp_str_t {
 	webapp_str_t()
 	{
 		allocated = 0;

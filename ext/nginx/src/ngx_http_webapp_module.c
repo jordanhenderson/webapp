@@ -2,6 +2,7 @@
 #include <ngx_core.h>
 #include <ngx_http.h>
 #include <stdint.h>
+#include <msgpack.h>
 #include "ngx_http_webapp_module.h"
 
 static ngx_conf_bitmask_t  ngx_http_webapp_next_upstream_masks[] = {
@@ -138,7 +139,7 @@ static ngx_int_t ngx_http_webapp_handler(ngx_http_request_t *r) {
 	u->input_filter_ctx = ctx;
 
 	if(!(r->method & NGX_HTTP_POST)) {
-		rc = ngx_http_discard_request_body(r);
+        rc = ngx_http_discard_request_body(r);
 		if(rc != NGX_OK) return rc;
 		r->main->count++;
 		ngx_http_upstream_init(r);
@@ -151,43 +152,29 @@ static ngx_int_t ngx_http_webapp_handler(ngx_http_request_t *r) {
 	return NGX_DONE;
 }
 
+static inline int ngx_http_webapp_msgpack_write(void* data, const char* buf, size_t len) {
+    ngx_buf_t* b = (ngx_buf_t*)data;
+    b->last = ngx_copy(b->last, buf, len);
+}
+
 static ngx_int_t ngx_http_webapp_create_request(ngx_http_request_t *r) {
-	ngx_http_webapp_loc_conf_t* wlcf;
+    ngx_http_webapp_loc_conf_t* wlcf;
 	ngx_chain_t* cl;
 	ngx_chain_t* body;
 	ngx_http_upstream_t* u;
 	ngx_buf_t* b;
 
-	ngx_str_t* output_chain[STRING_VARS] = {0};
-	int chain_ctr = 0;
-	ngx_str_t request_body = {0};
+    ngx_str_t request_body = {0};
 
-	//PROTOCOL variables (required for protocol macros)
-	uint16_t* last_p;
-	ngx_str_t** last_p_str = output_chain;
-	size_t total = 0;
+    msgpack_packer pk;
 
+    int total = 0; //string length counter
+    ngx_str_t* output_chain[PROTOCOL_STRINGS] = {0};
+    ngx_str_t** last_p_str = output_chain;
+    int chain_ctr = 0;
 
 	u = r->upstream;
 	wlcf = ngx_http_get_module_loc_conf(r, ngx_http_webapp_module);
-
-	//Create initial buffer.
-	b = ngx_create_temp_buf(r->pool, PROTOCOL_VARS * sizeof(uint16_t));
-	if (b == NULL) {
-		return NGX_ERROR;
-	}
-
-	cl = ngx_alloc_chain_link(r->pool);
-	if (cl == NULL) {
-		return NGX_ERROR;
-	}
-
-	//Keep a hold of any request_body content (for passing POST to upstream)
-	body = u->request_bufs;
-
-	cl->buf = b;
-	//Make the upstream connection use the created chain link.
-	u->request_bufs = cl;
 
 	//Calculate request body length if provided and needed.
 	if(r->method == NGX_HTTP_POST && r->headers_in.content_length != NULL &&
@@ -196,51 +183,88 @@ static ngx_int_t ngx_http_webapp_create_request(ngx_http_request_t *r) {
 				= atoi((const char*)r->headers_in.content_length->value.data);
 	}
 
-	last_p = (uint16_t*)b->start;
-	ADD_PROTOCOL_(r->unparsed_uri, total);
-	ADD_PROTOCOL(r->headers_in.host, r->headers_in.host->value, total);
-	ADD_PROTOCOL(r->headers_in.user_agent, r->headers_in.user_agent->value, total)
-	ADD_PROTOCOL(r->headers_in.cookies.elts,
-				 (*((ngx_table_elt_t**)r->headers_in.cookies.elts))->value, total)
-	ADD_PROTOCOL_(request_body, total)
-	ADD_PROTOCOL_N(r->method)
-	b->last = (u_char*)last_p;
+    //STEP 3: Add header strings here.
+    //Strings lengths are summed up in order to predetermine buffer size.
 
-	//Now populate the string buffer.
-	cl->next = ngx_alloc_chain_link(r->pool);
-	if(cl->next == NULL) {
-		return NGX_ERROR;
-	}
-	cl = cl->next;
+    ADD_PROTOCOL_(r->unparsed_uri, total)
+    ADD_PROTOCOL(r->headers_in.host, r->headers_in.host->value, total)
+    ADD_PROTOCOL(r->headers_in.user_agent, r->headers_in.user_agent->value, total)
+    ADD_PROTOCOL(r->headers_in.cookies.elts,
+                 (*((ngx_table_elt_t**)r->headers_in.cookies.elts))->value, total)
 
-	b = ngx_create_temp_buf(r->pool, total);
-	cl->buf = b;
+    //END
 
-	for(chain_ctr = 0; chain_ctr < STRING_VARS; chain_ctr++) {
-		ngx_str_t* s = output_chain[chain_ctr];
-		if(s != NULL && s->data != NULL) {
-			b->last = ngx_copy(b->last, s->data, s->len);
-		}
-	}
 
-	//Handle HTTP Body content.
+    //Create initial buffer to hold the (minimum) size of the serialized data.
+    b = ngx_create_temp_buf(r->pool, MSGPACK_SIZEOF_ARRAY * 2 +
+                                   MSGPACK_SIZEOF_NUMBER + //keep total size
+                                   PROTOCOL_STRINGS * MSGPACK_SIZEOF_RAW +
+                                   PROTOCOL_NUMS * MSGPACK_SIZEOF_NUMBER +
+                                   total);
+    if (b == NULL) {
+        return NGX_ERROR;
+    }
+
+    cl = ngx_alloc_chain_link(r->pool);
+    if (cl == NULL) {
+        return NGX_ERROR;
+    }
+
+    b->last += MSGPACK_SIZEOF_NUMBER; //Reserve space for a number.
+
+    msgpack_packer_init(&pk, b, ngx_http_webapp_msgpack_write);
+    msgpack_pack_array(&pk, PROTOCOL_STRINGS + PROTOCOL_NUMS);
+
+    //STEP 4: Add number variables here.
+    msgpack_pack_uint64(&pk, request_body.len);
+    msgpack_pack_int(&pk, r->method);
+    //END
+
+    //Keep a hold of any request_body content (for passing POST to upstream)
+    body = u->request_bufs;
+
+    cl->buf = b;
+    //Signal Nginx to use the created chain link (top level).
+    u->request_bufs = cl;
+
+    for(chain_ctr = 0; chain_ctr < PROTOCOL_STRINGS; chain_ctr++) {
+        ngx_str_t* s = output_chain[chain_ctr];
+        if(s != NULL && s->data != NULL) {
+            msgpack_pack_raw(&pk, s->len);
+            msgpack_pack_raw_body(&pk, s->data, s->len);
+        }
+    }
+
+    //Now the header is serialized. Store its size at the beginning.
+    //Since we don't know how large the header size needs to be, serialize it, then copy.
+    ngx_buf_t* header_length_buf = ngx_create_temp_buf(r->pool, 9);
+    msgpack_packer_init(&pk, header_length_buf, ngx_http_webapp_msgpack_write);
+    msgpack_pack_uint64(&pk, b->last - b->start);
+    int offset = MSGPACK_SIZEOF_NUMBER - (header_length_buf->last - header_length_buf->start);
+    //Copy the memory to the appropriate offset in b.
+    ngx_memcpy(b->start + offset, header_length_buf->start, MSGPACK_SIZEOF_NUMBER - offset);
+
+    //Adjust b's position to start at the beginning of the serialized number.
+    b->pos += offset;
+
+    //Finally, handle HTTP Body content.
 	while (body) {
-		b = ngx_alloc_buf(r->pool);
-		if (b == NULL) {
-			return NGX_ERROR;
-		}
+        b = ngx_alloc_buf(r->pool);
+        if (b == NULL) {
+            return NGX_ERROR;
+        }
 
-		ngx_memcpy(b, body->buf, sizeof(ngx_buf_t));
+        ngx_memcpy(b, body->buf, sizeof(ngx_buf_t));
 
-		cl->next = ngx_alloc_chain_link(r->pool);
-		if (cl->next == NULL) {
-			return NGX_ERROR;
-		}
+        cl->next = ngx_alloc_chain_link(r->pool);
+        if (cl->next == NULL) {
+            return NGX_ERROR;
+        }
 
-		cl = cl->next;
-		cl->buf = b;
+        cl = cl->next;
+        cl->buf = b;
 
-		body = body->next;
+        body = body->next;
 	}
 
 	b->flush = 1;

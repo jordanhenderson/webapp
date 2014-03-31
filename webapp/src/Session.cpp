@@ -128,18 +128,19 @@ int32_t Sessions::session_expiry()
 	return n_session_exp;
 }
 
-Session* Sessions::new_session(Request* request)
+Session* Sessions::new_session(Request* request,
+                               const webapp_str_t& primary,
+                               const webapp_str_t& secondary)
 {
-	if (request->host.len == 0 || request->user_agent.len == 0)
+    if (primary.len == 0 || secondary.len == 0)
 		return NULL;
 	unsigned char output[SHA256_DIGEST_LENGTH];
 	char output_hex[SESSIONID_SIZE + 1]; //(must be odd for loop below)
 	SHA256_CTX ctx;
 	SHA256_Init(&ctx);
-	SHA256_Update(&ctx, (unsigned char*)request->host.data,
-				  request->host.len);
-	SHA256_Update(&ctx, (unsigned char*)request->user_agent.data,
-				  request->user_agent.len);
+    SHA256_Update(&ctx, (unsigned char*)primary.data, primary.len);
+    SHA256_Update(&ctx, (unsigned char*)secondary.data,
+                  secondary.len);
 
 	//Calculate random number, add to hash.
 	uniform_int_distribution<int> dis;
@@ -198,28 +199,27 @@ Session* Sessions::get_raw_session(Request* request)
 	return session;
 }
 
-Session* Sessions::get_session(Request* request)
+Session* Sessions::get_cookie_session(Request* request,
+                               const webapp_str_t& cookies)
 {
 	leveldb::DB* db = app->db;
 	if(db == NULL) return NULL;
-	_webapp_str_t* cookies = &request->cookies;
-	if(cookies->len <
+    if(cookies.len <
 			sizeof(SESSIONID_STR) + SESSIONID_SIZE) {
 		return NULL;
 	}
 
 	webapp_str_t session_id;
-	char* cookie_str = cookies->data;
-	char* cookie_end = cookie_str + cookies->len;
+    char* cookie_str = cookies.data;
+    char* cookie_end = cookie_str + cookies.len;
 	for(; cookie_str < cookie_end; cookie_str++) {
 		if(cookie_end - cookie_str < sizeof(SESSIONID_STR) +
 				SESSIONID_SIZE) break;
-		if(*cookie_str == ' ' || cookie_str == cookies->data) {
+        if(*cookie_str == ' ' || cookie_str == cookies.data) {
 			if(*cookie_str == ' ') cookie_str++;
 			if(strncmp(cookie_str, SESSIONID_STR "=", sizeof(SESSIONID_STR)))
 				continue;
 			//Found a session ID!
-			//Session ID starts at sessionid=X12345.... where X is node ID.
 			session_id =
 				webapp_str_t(cookie_str + sizeof(SESSIONID_STR)
 							 , SESSIONID_SIZE);
@@ -229,33 +229,37 @@ Session* Sessions::get_session(Request* request)
 
 	if(session_id.len < SESSIONID_SIZE) return NULL;
 
-	webapp_str_t tmp_session_id = "s_" + session_id;
-	
-	leveldb::Iterator* it = db->NewIterator(leveldb::ReadOptions());
-	Session* session = NULL;
-	for(it->Seek(tmp_session_id); it->Valid(); it->Next()) {
-		leveldb::Slice key = it->key();
-		leveldb::Slice value = it->value();
-		if(key.compare(tmp_session_id) > 0) break;
-
-		//Get the current time
-		time_t current_time = time(0);
-		//Convert stored seconds to time_t
-		int32_t n_session_time = strntol(value.data(), value.size());
-		struct tm tmp = epoch_tm;
-		tmp.tm_sec += n_session_time;
-		time_t session_time = mktime(&tmp);
-
-		double time_difference = difftime(current_time, session_time);
-
-		if(time_difference < 0) return NULL; //Session in the past?
-		if(time_difference < session_expiry()) {
-			session = new Session(request, session_id);
-		} else {
-			db->Delete(leveldb::WriteOptions(), key);
-		}
-	}
-	delete it;
-	return session;
+    return get_session(request, &session_id);
 }
 
+Session* Sessions::get_session(Request* request,
+                     const webapp_str_t& session_id)
+{
+    webapp_str_t tmp_session_id = "s_" + session_id;
+    leveldb::Iterator* it = app->db->NewIterator(leveldb::ReadOptions());
+    Session* session = NULL;
+    for(it->Seek(tmp_session_id); it->Valid(); it->Next()) {
+        leveldb::Slice key = it->key();
+        leveldb::Slice value = it->value();
+        if(key.compare(tmp_session_id) > 0) break;
+
+        //Get the current time
+        time_t current_time = time(0);
+        //Convert stored seconds to time_t
+        int32_t n_session_time = strntol(value.data(), value.size());
+        struct tm tmp = epoch_tm;
+        tmp.tm_sec += n_session_time;
+        time_t session_time = mktime(&tmp);
+
+        double time_difference = difftime(current_time, session_time);
+
+        if(time_difference < 0) return NULL; //Session in the past?
+        if(time_difference < session_expiry()) {
+            session = new Session(request, session_id);
+        } else {
+            app->db->Delete(leveldb::WriteOptions(), key);
+        }
+    }
+    delete it;
+    return session;
+}

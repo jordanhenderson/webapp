@@ -13,6 +13,7 @@
 	GetSessionValue;
 	SetSessionValue;
 	GetSessionID;
+	GetCookieSession;
 	GetSession;
 	NewSession;
 	DestroySession;

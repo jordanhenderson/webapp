@@ -13,8 +13,9 @@ extern "C" {
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
-#include "lpeg.h"
+#include <lpeg.h>
 #include <cjson.h>
+#include <msgpack.h>
 }
 
 using namespace std;
@@ -300,23 +301,6 @@ void Webapp::process_request_async(
 	Request* r, const asio::error_code& ec, size_t n_bytes)
 {
 	if(!ec) {
-		int n = r->headers_body.size();
-		int max = r->headers_body.capacity();
-		n += r->socket.read_some(buffer(&r->headers_body[n], max - n));
-		if(n != max) {
-			r->socket.async_read_some(null_buffers(),
-									  std::bind(&Webapp::process_request_async, this, r, _1, _2));
-			return;
-		}
-		size_t read = 0;
-
-		//Read each input chain variable recieved from nginx appropriately.
-		for(int i = 0; i < STRING_VARS; i++) {
-			char* h = (char*) r->headers_body.data() + read;
-			r->input_chain[i]->data = h;
-			read += r->input_chain[i]->len;
-		}
-
 		workers.Enqueue(r);
 	} else {
 		delete r;
@@ -324,48 +308,49 @@ void Webapp::process_request_async(
 }
 
 /**
- * Begin to process the request header. At this stage, exactly
- * PROTOCOL_LENGTH_SIZEINFO bytes have been recieved, providing all
- * variable length data for further stages.
+ * Keep reading data in here, until the requested amount of bytes
+ * have been read. The total bytes should be encoded and recieved
+ * as a MessagePack integer.
  * @param r the Request object
  * @param ec the asio error code, if any
- * @param bytes_transferred the amount bytes transferred
+ * @param n_bytes the amount bytes transferred
 */
 void Webapp::process_header_async(Request* r, const asio::error_code& ec, size_t n_bytes)
 {
-	if(!ec) {
-		int n = r->headers.size();
-		n += r->socket.read_some(buffer(&r->headers[n], PROTOCOL_LENGTH_SIZEINFO - n));
-		if(n != PROTOCOL_LENGTH_SIZEINFO) {
-			r->socket.async_read_some(null_buffers(), bind(
-										  &Webapp::process_header_async, this, r, _1, _2));
-			return;
-		}
+    if(!ec) {
+        try {
+            uint64_t n = r->headers_last;
+            int to_read = r->headers_size == 0 ? 9 : r->headers_size;
+            n += r->socket.read_some(buffer(&r->headers[n], to_read - n));
+            r->headers_last = n;
 
-		int16_t* headers = (int16_t*)r->headers.data();
-		//At this stage, at least PROTOCOL_SIZELENGTH_INFO has been read into the buffer.
-		//STATE: Read protocol.
-		r->uri.len =          ntohs(*headers++);
-		r->host.len =         ntohs(*headers++);
-		r->user_agent.len =   ntohs(*headers++);
-		r->cookies.len =      ntohs(*headers++);
-		r->request_body.len = ntohs(*headers++);
-		r->method =           ntohs(*headers++);
-		//Update the input chain.
-		r->input_chain[0] = &r->uri;
-		r->input_chain[1] = &r->host;
-		r->input_chain[2] = &r->user_agent;
-		r->input_chain[3] = &r->cookies;
-		r->input_chain[4] = &r->request_body;
+            if(r->headers_size > 0 && n == r->headers_size) {
+                r->socket.async_read_some(null_buffers(),
+                                          std::bind(&Webapp::process_request_async, this, r, _1, _2));
+                return;
+            } else if(r->headers_size == 0 && n >= 1) {
+                msgpack_unpacked result;
+                msgpack_unpacked_init(&result);
+                size_t offset = 0;
+                if(msgpack_unpack_next(&result, &r->headers[0], n, &offset)) {
+                    msgpack_object obj = result.data;
 
-		size_t len = 0;
-		for(int i = 0; i < STRING_VARS; i++) {
-			len += r->input_chain[i]->len;
-		}
+                    if(obj.type == MSGPACK_OBJECT_POSITIVE_INTEGER) {
+                        r->headers_size = obj.via.u64 - (9 - offset); //Include the total number in size.
+                        r->headers.reserve(offset + r->headers_size);
+                        r->headers_start = offset;
+                    }
+                }
 
-		r->headers_body.reserve(len);
-		r->socket.async_read_some(null_buffers(),
-								  std::bind(&Webapp::process_request_async, this, r, _1, _2));
+            }
+
+            r->socket.async_read_some(null_buffers(), bind(
+                                          &Webapp::process_header_async, this, r, _1, _2));
+
+        } catch (...) {
+            delete r;
+            return;
+        }
 	} else {
 		//Failed. Destroy request.
 		delete r;

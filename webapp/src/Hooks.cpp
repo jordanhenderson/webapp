@@ -118,16 +118,25 @@ webapp_str_t* GetSessionID(Session* session)
 	return &session->session_id;
 }
 
-Session* GetSession(RequestBase* worker, Request* request)
+Session* GetCookieSession(RequestBase* worker, Request* request,
+                          webapp_str_t* cookies)
 {
-	if (worker == NULL || request == NULL) return NULL;
-	return worker->_sessions.get_session(request);
+    if(worker == NULL || request == NULL) return NULL;
+    return worker->_sessions.get_cookie_session(request, cookies);
 }
 
-Session* NewSession(RequestBase* worker, Request* request)
+Session* GetSession(RequestBase* worker, Request* request,
+                    webapp_str_t* session_id)
 {
 	if (worker == NULL || request == NULL) return NULL;
-	return worker->_sessions.new_session(request);
+    return worker->_sessions.get_session(request, session_id);
+}
+
+Session* NewSession(RequestBase* worker, Request* request,
+                    webapp_str_t* primary, webapp_str_t* secondary)
+{
+	if (worker == NULL || request == NULL) return NULL;
+    return worker->_sessions.new_session(request, primary, secondary);
 }
 
 void DestroySession(Session* session)
