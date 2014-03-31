@@ -3,6 +3,7 @@
 	<depends link="true">../zlib</depends>
 	<depends link="true">../pcre</depends>
 	<depends link="true">../openssl</depends>
+	<depends link="true">../msgpack-c</depends>
 	<include>src/core;src/event;src/event/modules;src/http/modules;src/http;src/mail;src/mysql;include;../zlib/include;../pcre/include;../openssl/include</include>
 	<include os="win32">src/os/win32</include>
 	<include os="linux">src/os/unix</include>

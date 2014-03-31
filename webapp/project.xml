@@ -15,6 +15,7 @@
 	<depends link="true">../ext/gif</depends>
 	<depends link="true">../ext/lpeg</depends>
 	<depends link="true">../ext/pngnq</depends>
+	<depends link="true">../ext/msgpack-c</depends>
 	<depends>../ext/nginx</depends>
 	<output type="app">webapp</output>
 	<flags compiler="msvc">MT;W3;wd4996;EHsc;Ox</flags>

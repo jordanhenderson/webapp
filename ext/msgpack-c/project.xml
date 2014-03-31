@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<project>
+	<output type="static">msgpack</output>
+	<flags compiler="msvc">MT;W3;EHsc;Ox</flags>
+	<flags compiler="gcc">O3</flags>
+	<include>include</include>
+	<source f="src/objectc.c"/>
+	<source f="src/unpack.c"/>
+	<source f="src/vrefbuffer.c"/>
+	<source f="src/zone.c"/>
+</project>
