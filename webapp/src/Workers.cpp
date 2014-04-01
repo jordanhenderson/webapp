@@ -19,7 +19,9 @@ using namespace ctemplate;
 void WebappTask::Start()
 {
 	_worker = std::thread([this] {
-		Execute();
+		while(!IsAborted()) {
+			Execute();
+		}
 	});
 }
 
@@ -68,6 +70,15 @@ void RequestQueue::Execute()
 	LuaParam _v[] = { { "worker", (RequestBase*)this } };
 	app->RunScript(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/process.lua");
 	
+	if(_cache != NULL) {
+		delete _cache;
+		_cache = NULL;
+	}
+
+	if(baseTemplate != NULL) {
+		delete baseTemplate;
+		baseTemplate = NULL;
+	}
 	//Set the finished flag to signify this thread is waiting.
 	finished = 1;
 	app->Cleanup(cleanupTask, shutdown);
@@ -76,5 +87,5 @@ void RequestQueue::Execute()
 
 int RequestQueue::IsAborted()
 {
-	return app->GetParamInt(WEBAPP_PARAM_ABORTED);
+	return aborted;
 }

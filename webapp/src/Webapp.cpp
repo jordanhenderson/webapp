@@ -40,8 +40,8 @@ Request::~Request()
 
 /**
  * Lock/block all workers, then reload all data associated to the webapp
- * @param cleanupTask indicates if the caller has signalled the cleanup 
- * process. 
+ * @param cleanupTask indicates if the caller has signalled the cleanup
+ * process.
  * @param shutdown whether to shut down the webapp after cleaning.
 */
 void Webapp::Cleanup(unsigned int cleanupTask, unsigned int shutdown) 
@@ -166,7 +166,7 @@ webapp_str_t* Webapp::CompileScript(const char* filename)
 	lua_setglobal(L, "file");
 
 	//Execute the VM, store the results.
-	webapp_str_t* chunk_str = new webapp_str_t(); 
+	webapp_str_t* chunk_str = new webapp_str_t();
 	chunk_str->allocated = 1;
 	const char* chunk = NULL;
 	size_t len;
@@ -277,7 +277,7 @@ void Webapp::Start() {
 	while(!aborted) {
 		Reload();
 		
-		if(num_threads <= 0 || num_threads > WEBAPP_MAX_THREADS) 
+		if(num_threads <= 0 || num_threads > WEBAPP_MAX_THREADS)
 			num_threads = 1;
 		workers.Start(num_threads);
 
@@ -286,24 +286,6 @@ void Webapp::Start() {
 		
 		//Clear workers
 		workers.Cleanup();
-	}
-}
-
-/**
- * Process a recieved request.
- * By this stage, the entire request has been recieved. This stage reads
- * in/sets each variable and passes the request to lua workers.
- * @param request the Request object
- * @param ec the asio error code, if any.
- * @param bytes_transferred the amount of bytes transferred.
-*/
-void Webapp::process_request_async(
-	Request* r, const asio::error_code& ec, size_t n_bytes)
-{
-	if(!ec) {
-		workers.Enqueue(r);
-	} else {
-		delete r;
 	}
 }
 
@@ -317,40 +299,57 @@ void Webapp::process_request_async(
 */
 void Webapp::process_header_async(Request* r, const asio::error_code& ec, size_t n_bytes)
 {
-    if(!ec) {
-        try {
-            uint64_t n = r->headers_last;
-            int to_read = r->headers_size == 0 ? 9 : r->headers_size;
-            n += r->socket.read_some(buffer(&r->headers[n], to_read - n));
-            r->headers_last = n;
+	if(!ec) {
+		try {
+			//Read in the next chunk of data from the socket
+			uint16_t& n = r->headers_last;
+			int32_t& headers_size = r->headers_buf.len;
+			//If headers_size unknown, read 9 bytes (maximum size for number)
+			int to_read = headers_size == 0 ? 9 : headers_size;
+			//Load max to_read - n bytes into the buffer.
+			n += r->socket.read_some(buffer(r->headers.data() + n,
+											to_read - n));
 
-            if(r->headers_size > 0 && n == r->headers_size) {
-                r->socket.async_read_some(null_buffers(),
-                                          std::bind(&Webapp::process_request_async, this, r, _1, _2));
-                return;
-            } else if(r->headers_size == 0 && n >= 1) {
-                msgpack_unpacked result;
-                msgpack_unpacked_init(&result);
-                size_t offset = 0;
-                if(msgpack_unpack_next(&result, &r->headers[0], n, &offset)) {
-                    msgpack_object obj = result.data;
+			//If the header size has been read, and we have read all headers
+			if(headers_size > 0 && n == headers_size ) {
+				workers.Enqueue(r);
+				return;
+			} else if(headers_size == 0 && n >= 1) {
+				//If the header size hasn't been read, attempt to parse
+				//a msgpack number.
+				msgpack_unpacked result;
+				msgpack_unpacked_init(&result);
+				size_t offset = 0;
 
-                    if(obj.type == MSGPACK_OBJECT_POSITIVE_INTEGER) {
-                        r->headers_size = obj.via.u64 - (9 - offset); //Include the total number in size.
-                        r->headers.reserve(offset + r->headers_size);
-                        r->headers_start = offset;
-                    }
-                }
+				if(msgpack_unpack_next(&result, &r->headers[0], n, &offset)) {
+					msgpack_object obj = result.data;
+					//If positive integer read, set the known headers_size.
+					if(obj.type == MSGPACK_OBJECT_POSITIVE_INTEGER) {
+						/*
+							Header size is calculated with the extra space
+							for the maximum number size (9 bytes). Reduce header
+							size by the extra bytes associated with storing
+							header_bytes (9 - offset). offset is the bytes
+							parsed until the current msgpack_unpack_next
+						*/
+						headers_size = (int32_t) obj.via.u64 - (9 - offset);
+						//Reserve enough room for the entire header chunk.
+						r->headers.reserve(offset + headers_size);
+						//Set the headers buffer location (needed by frontend)
+						//to the actual header start location.
+						r->headers_buf.data = r->headers.data() + offset;
+					}
+				}
+			}
 
-            }
+			r->socket.async_read_some(null_buffers(), bind(
+									  &Webapp::process_header_async,
+									  this, r, _1, _2));
 
-            r->socket.async_read_some(null_buffers(), bind(
-                                          &Webapp::process_header_async, this, r, _1, _2));
-
-        } catch (...) {
-            delete r;
-            return;
-        }
+		} catch (...) {
+			delete r;
+			return;
+		}
 	} else {
 		//Failed. Destroy request.
 		delete r;
@@ -365,9 +364,12 @@ void Webapp::process_header_async(Request* r, const asio::error_code& ec, size_t
 */
 void Webapp::accept_conn_async(Request* r, const asio::error_code& error)
 {
+	//Reset the header buffer. Allows
+	r->reset();
 	try {
 		r->socket.async_read_some(null_buffers(), bind(
-									  &Webapp::process_header_async, this, r, _1, _2));
+									  &Webapp::process_header_async,
+									  this, r, _1, _2));
 		accept_conn();
 	} catch(std::system_error er) {
 		delete r;

@@ -46,9 +46,8 @@ struct LuaParam {
  * @brief Required information per request.
  */
 struct Request {
-    uint64_t headers_size = 0;
-    uint64_t headers_start = 0;
-    uint64_t headers_last = 0;
+	webapp_str_t headers_buf;
+	uint16_t headers_last;
     int shutdown = 0;
     std::atomic<int> waiting {0};
     asio::ip::tcp::socket socket;
@@ -57,13 +56,18 @@ struct Request {
 	std::vector<Query*> queries;
 	std::vector<Session*> sessions;
     msgpack_unpacker msg;
+	void reset() {
+		headers_last = 0;
+		//Allocate 9 bytes (maximum size of msgpack number).
+		//Initially recieves a single number representing
+		//size of incoming data.
+		headers.clear();
+		headers.reserve(9);
+	}
 	~Request();
-    Request(asio::io_service& svc) : socket(svc)
+	Request(asio::io_service& svc) : socket(svc)
     {
-        //Allocate 9 bytes (maximum size of msgpack number).
-        //Initially recieves a single number representing
-        //size of incoming data.
-        headers.reserve(9);
+		reset();
     }
 };
 
@@ -235,8 +239,6 @@ class Webapp {
 	void accept_conn();
 	void accept_conn_async(Request* r, const asio::error_code&);
 	void process_header_async(Request* r, const asio::error_code&, 
-							  std::size_t);
-	void process_request_async(Request* r, const asio::error_code&, 
 							  std::size_t);
 	asio::io_service& svc;
 	asio::io_service::work wrk;

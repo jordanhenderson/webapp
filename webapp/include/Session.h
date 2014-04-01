@@ -48,13 +48,13 @@ public:
 	Sessions();
 	~Sessions();
 	void CleanupSessions();
-    Session* new_session(Request* request,
-                         const webapp_str_t& primary,
-                         const webapp_str_t& secondary);
-    Session* get_cookie_session(Request* request,
-                         const webapp_str_t& cookies);
-    Session* get_session(Request* request,
-                         const webapp_str_t& id);
+	Session* new_session(Request* request,
+						 const webapp_str_t& primary,
+						 const webapp_str_t& secondary);
+	Session* get_cookie_session(Request* request,
+								const webapp_str_t& cookies);
+	Session* get_session(Request* request,
+						 const webapp_str_t& id);
 	Session* get_raw_session(Request* request);
 };
 

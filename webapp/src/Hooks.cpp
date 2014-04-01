@@ -119,24 +119,24 @@ webapp_str_t* GetSessionID(Session* session)
 }
 
 Session* GetCookieSession(RequestBase* worker, Request* request,
-                          webapp_str_t* cookies)
+						  webapp_str_t* cookies)
 {
-    if(worker == NULL || request == NULL) return NULL;
-    return worker->_sessions.get_cookie_session(request, cookies);
+	if(worker == NULL || request == NULL) return NULL;
+	return worker->_sessions.get_cookie_session(request, cookies);
 }
 
 Session* GetSession(RequestBase* worker, Request* request,
-                    webapp_str_t* session_id)
+					webapp_str_t* session_id)
 {
 	if (worker == NULL || request == NULL) return NULL;
-    return worker->_sessions.get_session(request, session_id);
+	return worker->_sessions.get_session(request, session_id);
 }
 
 Session* NewSession(RequestBase* worker, Request* request,
-                    webapp_str_t* primary, webapp_str_t* secondary)
+					webapp_str_t* primary, webapp_str_t* secondary)
 {
 	if (worker == NULL || request == NULL) return NULL;
-    return worker->_sessions.new_session(request, primary, secondary);
+	return worker->_sessions.new_session(request, primary, secondary);
 }
 
 void DestroySession(Session* session)
@@ -155,7 +155,7 @@ Session* GetRawSession(RequestBase* worker, Request* request)
 webapp_str_t* CompileScript(const char* file)
 {
 	if(file != NULL)
-	return app->CompileScript(file);
+		return app->CompileScript(file);
 }
 
 
@@ -218,17 +218,17 @@ void WriteComplete(std::atomic<int>* wt, webapp_str_t* buf,
 	delete buf;
 }
 
-void WriteSocket(Request* r, webapp_str_t* s)
+void WriteSocket(Request* r, webapp_str_t* buf)
 {
 	auto wt = &r->waiting;
 	(*wt)++;
 
 	try {
-		asio::async_write(r->socket, asio::buffer(s->data, s->len),
-						  bind(&WriteComplete, wt, s, _1, _2));
+		asio::async_write(r->socket, asio::buffer(buf->data, buf->len),
+						  bind(&WriteComplete, wt, buf, _1, _2));
 	} catch (asio::system_error ec) {
 		(*wt)--;
-		delete s;
+		delete buf;
 		printf("Error writing to socket!");
 	}
 }
