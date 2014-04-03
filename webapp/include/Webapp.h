@@ -24,6 +24,7 @@
 #define WEBAPP_PARAM_TPLCACHE 2
 #define WEBAPP_PARAM_LEVELDB 3
 #define WEBAPP_PARAM_THREADS 4
+#define WEBAPP_PARAM_REQUESTSIZE 5
 #define WEBAPP_PORT_DEFAULT 5000
 #define WEBAPP_DEFAULT_QUEUESIZE 1023
 #define WEBAPP_OPT_SESSION 0
@@ -47,6 +48,7 @@ struct LuaParam {
  */
 struct Request {
 	webapp_str_t headers_buf;
+	void* lua_request = NULL; //request object set/tracked by VM.
 	uint16_t headers_last;
     int shutdown = 0;
     std::atomic<int> waiting {0};
@@ -55,14 +57,13 @@ struct Request {
 	std::vector<webapp_str_t*> strings;
 	std::vector<Query*> queries;
 	std::vector<Session*> sessions;
-    msgpack_unpacker msg;
 	void reset() {
 		headers_last = 0;
 		//Allocate 9 bytes (maximum size of msgpack number).
 		//Initially recieves a single number representing
 		//size of incoming data.
 		headers.clear();
-		headers.reserve(9);
+		headers.resize(9); //Needs to be resize since we write into buffer directly (not reserve()).
 	}
 	~Request();
 	Request(asio::io_service& svc) : socket(svc)
@@ -225,6 +226,7 @@ class Webapp {
 	unsigned int template_cache_enabled = 1;
 	unsigned int leveldb_enabled = 1;
 	unsigned int port = WEBAPP_PORT_DEFAULT;
+	unsigned int request_size = 0;
 	int num_threads = 1;
 	
 	const char* session_dir = WEBAPP_OPT_SESSION_DEFAULT;

@@ -36,6 +36,7 @@ Request::~Request()
 	for(auto it: strings) delete it;
 	for(auto it: queries) delete it;
 	for(auto it: sessions) delete it;
+	if(lua_request != NULL) free(lua_request);
 }
 
 /**
@@ -312,6 +313,7 @@ void Webapp::process_header_async(Request* r, const asio::error_code& ec, size_t
 
 			//If the header size has been read, and we have read all headers
 			if(headers_size > 0 && n == headers_size ) {
+				r->lua_request = malloc(request_size);
 				workers.Enqueue(r);
 				return;
 			} else if(headers_size == 0 && n >= 1) {
@@ -332,9 +334,9 @@ void Webapp::process_header_async(Request* r, const asio::error_code& ec, size_t
 							header_bytes (9 - offset). offset is the bytes
 							parsed until the current msgpack_unpack_next
 						*/
-						headers_size = (int32_t) obj.via.u64 - (9 - offset);
+						headers_size = (int32_t) obj.via.u64 - n;
 						//Reserve enough room for the entire header chunk.
-						r->headers.reserve(offset + headers_size);
+						r->headers.resize(n + headers_size);
 						//Set the headers buffer location (needed by frontend)
 						//to the actual header start location.
 						r->headers_buf.data = r->headers.data() + offset;
@@ -364,7 +366,7 @@ void Webapp::process_header_async(Request* r, const asio::error_code& ec, size_t
 */
 void Webapp::accept_conn_async(Request* r, const asio::error_code& error)
 {
-	//Reset the header buffer. Allows
+	//Reset the header buffer. Allows reusing a request object.
 	r->reset();
 	try {
 		r->socket.async_read_some(null_buffers(), bind(
@@ -470,6 +472,9 @@ void Webapp::SetParamInt(unsigned int key, int value)
 	case WEBAPP_PARAM_THREADS:
 		num_threads = value;
 		break;
+	case WEBAPP_PARAM_REQUESTSIZE:
+		request_size = value;
+		break;
 	default:
 		return;
 		break;
@@ -498,6 +503,9 @@ int Webapp::GetParamInt(unsigned int key)
 		break;
 	case WEBAPP_PARAM_THREADS:
 		return num_threads;
+		break;
+	case WEBAPP_PARAM_REQUESTSIZE:
+		return request_size;
 		break;
 	default:
 		return 0;
