@@ -18,28 +18,18 @@
     else {*last_p_str++ = NULL; }
 
 //MsgPack maximum sizes.
-#define MSGPACK_SIZEOF_ARRAY 1 + 4
-#define MSGPACK_SIZEOF_NUMBER 1 + 8
-#define MSGPACK_SIZEOF_RAW 1 + 4
+#define MSGPACK_SIZEOF_ARRAY 5 //1 + 4
+#define MSGPACK_SIZEOF_NUMBER 9 //1 + 8
+#define MSGPACK_SIZEOF_RAW 5 //1 + 4
 
 typedef struct {
 	ngx_http_upstream_conf_t upstream;
 } ngx_http_webapp_loc_conf_t;
 
-#pragma pack(push, 1)
 typedef struct {
-	uint32_t total_len;
-	uint32_t content_type_len;
-	uint32_t cookies_len;
-	int8_t cache;
-} ngx_http_webapp_response_t;
-
-typedef struct {
-	ngx_http_webapp_response_t resp;
 	ngx_http_request_t* request;
 	uint16_t remaining_header_len;
 } ngx_http_webapp_ctx_t;
-#pragma pack(pop)
 
 typedef enum {
     NGX_HTTP_EXPIRES_OFF,

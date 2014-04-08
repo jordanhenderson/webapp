@@ -336,6 +336,7 @@ void Webapp::process_header_async(Request* r, const asio::error_code& ec, size_t
 						n -= offset;
 					}
 				}
+				msgpack_unpacked_destroy(&result);
 			}
 
 			r->socket.async_read_some(null_buffers(), bind(

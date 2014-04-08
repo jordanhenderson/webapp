@@ -240,7 +240,7 @@ static ngx_int_t ngx_http_webapp_create_request(ngx_http_request_t *r) {
     //Since we don't know how large the header size needs to be, serialize it, then copy.
     ngx_buf_t* header_length_buf = ngx_create_temp_buf(r->pool, 9);
     msgpack_packer_init(&pk, header_length_buf, ngx_http_webapp_msgpack_write);
-	msgpack_pack_uint64(&pk, b->last - b->start + MSGPACK_SIZEOF_NUMBER);
+	msgpack_pack_uint64(&pk, b->last - b->start - MSGPACK_SIZEOF_NUMBER);
     int offset = MSGPACK_SIZEOF_NUMBER - (header_length_buf->last - header_length_buf->start);
     //Copy the memory to the appropriate offset in b.
     ngx_memcpy(b->start + offset, header_length_buf->start, MSGPACK_SIZEOF_NUMBER - offset);
@@ -278,13 +278,34 @@ static ngx_int_t ngx_http_webapp_reinit_request(ngx_http_request_t *r) {
 	return NGX_OK;
 }
 
-//Perform appropriate host order conversion on response variables.
-//Return the remaining header length required to read before handling body.
-static uint16_t ngx_http_webapp_read_response(ngx_http_webapp_response_t* resp) {
-	resp->total_len = ntohl(resp->total_len);
-	resp->content_type_len = ntohl(resp->content_type_len);
-	resp->cookies_len = ntohl(resp->cookies_len);
-	return resp->content_type_len + resp->cookies_len;
+static uint64_t unpack_next(msgpack_unpacked* result, ngx_http_upstream_t* u) {
+	size_t offset = 0;
+	uint64_t ret = 0;
+	if(msgpack_unpack_next(result, u->buffer.pos, 
+								   u->buffer.last - u->buffer.pos, 
+								   &offset)) {
+		msgpack_object obj = result->data;
+		if(obj.type == MSGPACK_OBJECT_POSITIVE_INTEGER) {
+			ret = obj.via.u64;
+		}
+		u->buffer.pos += offset;
+	}
+	return ret;
+}
+
+void unpack_string(msgpack_unpacked* result, ngx_http_upstream_t* u, 
+	ngx_str_t* str) {
+	size_t offset = 0;
+	if(msgpack_unpack_next(result, u->buffer.pos,
+								   u->buffer.last - u->buffer.pos,
+								   &offset)) {
+		msgpack_object obj = result->data;
+		if(obj.type == MSGPACK_OBJECT_RAW) {
+			str->len = obj.via.raw.size;
+			str->data = (u_char*)obj.via.raw.ptr;
+		}
+		u->buffer.pos += offset;
+	}
 }
 
 static ngx_int_t ngx_http_webapp_process_header(ngx_http_request_t *r) {
@@ -292,69 +313,62 @@ static ngx_int_t ngx_http_webapp_process_header(ngx_http_request_t *r) {
     ngx_http_headers_conf_t  *hcf;
 	ngx_http_webapp_ctx_t* ctx =
 			ngx_http_get_module_ctx(r, ngx_http_webapp_module);
-	ngx_http_webapp_response_t* resp = &ctx->resp;
 	u = r->upstream;
-
+	ngx_int_t err = NGX_OK;
+	
 	//Stage 1
 	if(u->buffer.pos == u->buffer.start) {
-		//Attempt to read size of header.
 		msgpack_unpacked result;
 		msgpack_unpacked_init(&result);
-		size_t offset = 0;
-		if(msgpack_unpack_next(&result, u->buffer.start,
-										u->buffer.last - u->buffer.start,
-										&offset)) {
-			msgpack_object obj = result.data;
-			//If positive integer read, set the known headers_size.
-			if(obj.type == MSGPACK_OBJECT_POSITIVE_INTEGER) {
-				ctx->remaining_header_len = (int32_t) obj.via.u64;
-			}
-		}
-		return NGX_AGAIN;
-
+		ctx->remaining_header_len = (uint16_t) unpack_next(&result, u);
+		msgpack_unpacked_destroy(&result);
 	}
 
 	//Stage 2
 	if(u->buffer.last - u->buffer.pos >= ctx->remaining_header_len) {
-		//Remaining header read successfully.
-		u->headers_in.status_n = 200;
-		u->state->status = 200;
-		u->headers_in.content_length_n = resp->total_len;
-
-		if(resp->content_type_len > 0) {
-			r->headers_out.content_type_len = 
-				r->headers_out.content_type.len = resp->content_type_len;
-			r->headers_out.content_type.data = u->buffer.pos;
-			u->buffer.pos += resp->content_type_len;
-		}
-
+		msgpack_unpacked result;
+		msgpack_unpacked_init(&result);
+		ngx_str_t cookie;
+		uint8_t cache = 0;
+		
+		u->headers_in.content_length_n = (uint32_t) unpack_next(&result, u);
+		cache = (uint8_t) unpack_next(&result, u);
+		unpack_string(&result, u, &cookie);
+		unpack_string(&result, u, &r->headers_out.content_type);
+		
+				
 		//Send set-cookie header.
-		if(resp->cookies_len > 0) {
+		if(cookie.len > 0) {
 			ngx_table_elt_t* set_cookie;
 			set_cookie = ngx_list_push(&r->headers_out.headers);
 			if (set_cookie == NULL) {
-				return NGX_ERROR;
+				err = NGX_ERROR;
+			} else {
+				set_cookie->hash = 1;
+				ngx_str_set(&set_cookie->key, "Set-Cookie");
+				set_cookie->value.len = cookie.len;
+				set_cookie->value.data = cookie.data;
 			}
-
-			set_cookie->hash = 1;
-			ngx_str_set(&set_cookie->key, "Set-Cookie");
-			set_cookie->value.len = resp->cookies_len;
-			set_cookie->value.data = u->buffer.pos;
-			u->buffer.pos += resp->cookies_len;
 		}
+		
+		//Remaining header read successfully.
+		u->headers_in.status_n = 200;
+		u->state->status = 200;
 
         //Set caching mode
         hcf = ngx_http_get_module_loc_conf(r, ngx_http_headers_filter_module);
-		if(resp->cache == 0) {
+		if(cache == 0) {
             hcf->expires_time = -1;
             hcf->expires = NGX_HTTP_EXPIRES_ACCESS;
         } else {
             hcf->expires = NGX_HTTP_EXPIRES_OFF;
         }
-		return NGX_OK; //Ready to read body content.
+        msgpack_unpacked_destroy(&result);
+	} else {
+		err = NGX_AGAIN;
 	}
-	
-	return NGX_AGAIN;
+
+	return err;
 }
 
 static ngx_int_t ngx_http_webapp_filter_init(void *data) {
