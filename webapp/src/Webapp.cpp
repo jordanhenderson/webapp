@@ -308,7 +308,7 @@ void Webapp::process_header_async(Request* r, const asio::error_code& ec, size_t
 			//If headers_size unknown, read 9 bytes (maximum size for number)
 			int to_read = headers_size == 0 ? 9 : headers_size;
 			//Load max to_read - n bytes into the buffer.
-			n += r->socket.read_some(buffer(r->headers.data() + n,
+			n += r->socket.read_some(buffer(r->headers_buf.data + n,
 											to_read - n));
 
 			//If the header size has been read, and we have read all headers
@@ -327,19 +327,13 @@ void Webapp::process_header_async(Request* r, const asio::error_code& ec, size_t
 					msgpack_object obj = result.data;
 					//If positive integer read, set the known headers_size.
 					if(obj.type == MSGPACK_OBJECT_POSITIVE_INTEGER) {
-						/*
-							Header size is calculated with the extra space
-							for the maximum number size (9 bytes). Reduce header
-							size by the extra bytes associated with storing
-							header_bytes (9 - offset). offset is the bytes
-							parsed until the current msgpack_unpack_next
-						*/
-						headers_size = (int32_t) obj.via.u64 - n;
+						headers_size = (int32_t) obj.via.u64;
 						//Reserve enough room for the entire header chunk.
-						r->headers.resize(n + headers_size);
+						r->headers.resize(headers_size + offset);
 						//Set the headers buffer location (needed by frontend)
 						//to the actual header start location.
 						r->headers_buf.data = r->headers.data() + offset;
+						n -= offset;
 					}
 				}
 			}

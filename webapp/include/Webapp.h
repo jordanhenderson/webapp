@@ -64,6 +64,7 @@ struct Request {
 		//size of incoming data.
 		headers.clear();
 		headers.resize(9); //Needs to be resize since we write into buffer directly (not reserve()).
+		headers_buf.data = headers.data();
 	}
 	~Request();
 	Request(asio::io_service& svc) : socket(svc)
