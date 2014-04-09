@@ -4,10 +4,10 @@
 	<flags compiler="msvc">MT;W3;Ox</flags>
 	<flags compiler="gcc">O3</flags>
 	<flags type="pp">OPENSSL_NO_ASM</flags>
-	<include>include;src/crypto;src/crypto/asn1;src/crypto/evp;src/crypto/modes;src/ssl;src/engines/</include>
+	<include>include;src/crypto;src/crypto/asn1;src/crypto/evp;src/crypto/modes;src/ssl;src/engines/;include/openssl</include>
 	<source f="src/crypto/aes/aes_cbc.c" />
     <source f="src/crypto/aes/aes_cfb.c" />
-    <source f="src/crypto/aes/aes_core.c" />
+    <source f="src/crypto/aes/aes_x86core.c" />
     <source f="src/crypto/aes/aes_ctr.c" />
     <source f="src/crypto/aes/aes_ecb.c" />
     <source f="src/crypto/aes/aes_ige.c" />
