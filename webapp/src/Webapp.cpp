@@ -29,14 +29,6 @@ using namespace std::placeholders;
 #endif
 
 /**
- * Request destructor.
-*/
-Request::~Request()
-{
-	reset(1);
-}
-
-/**
  * Lock/block all workers, then reload all data associated to the webapp
  * @param cleanupTask indicates if the caller has signalled the cleanup
  * process.

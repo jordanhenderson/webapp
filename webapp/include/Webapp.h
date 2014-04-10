@@ -49,11 +49,10 @@ struct LuaParam {
 struct Request {
 	webapp_str_t headers_buf;
 	void* lua_request = NULL; //request object set/tracked by VM.
+	asio::ip::tcp::socket socket;
+
 	uint16_t headers_last;
 	std::vector<char> headers;
-	
-	asio::ip::tcp::socket socket;
-	
 	std::atomic<int> waiting {0}; //unfinished write() calls
 	//Per-request containers
 	std::vector<webapp_str_t*> strings;
@@ -74,7 +73,7 @@ struct Request {
 		for(auto it: strings) delete it;
 		for(auto it: queries) delete it;
 		for(auto it: sessions) delete it;
-		
+
 		strings.clear();
 		queries.clear();
 		sessions.clear();
@@ -83,7 +82,11 @@ struct Request {
 		lua_request = NULL;
 	}
 	
-	~Request();
+	~Request()
+	{
+		reset();
+	}
+
 	Request(asio::io_service& svc) : socket(svc)
 	{
 		reset();
