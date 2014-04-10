@@ -194,20 +194,11 @@ Request* GetNextRequest(RequestBase* worker)
 	return worker->dequeue();
 }
 
-void CleanupRequest(Request* r)
-{
-	if(r->waiting == 0) {
-		delete r;
-	} else {
-		r->socket.get_io_service().post(bind(CleanupRequest, r));
-	}
-}
-
 void FinishRequest(Request* r)
 {
 	if(r == NULL) return;
-	r->shutdown = 1;
-	r->socket.get_io_service().post(bind(CleanupRequest, r));
+	asio::error_code ec;
+	app->accept_conn_async(r, ec);
 }
 
 /* Socket API */
@@ -236,7 +227,6 @@ void WriteSocket(Request* r, webapp_str_t* buf)
 void WriteData(Request* r, webapp_str_t* data)
 {
 	if(r == NULL || data == NULL) return;
-	if(r->shutdown) return;
 
 	webapp_str_t* s = new webapp_str_t(*data);
 	WriteSocket(r, s);

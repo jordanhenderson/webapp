@@ -50,27 +50,44 @@ struct Request {
 	webapp_str_t headers_buf;
 	void* lua_request = NULL; //request object set/tracked by VM.
 	uint16_t headers_last;
-    int shutdown = 0;
-    std::atomic<int> waiting {0};
-    asio::ip::tcp::socket socket;
-    std::vector<char> headers;
+	std::vector<char> headers;
+	
+	asio::ip::tcp::socket socket;
+	
+	std::atomic<int> waiting {0}; //unfinished write() calls
+	//Per-request containers
 	std::vector<webapp_str_t*> strings;
 	std::vector<Query*> queries;
 	std::vector<Session*> sessions;
-	void reset() {
+	
+	//Reset allows request objects to be reused.
+	void reset(int destroy=0) 
+	{
 		headers_last = 0;
-		//Allocate 9 bytes (maximum size of msgpack number).
-		//Initially recieves a single number representing
-		//size of incoming data.
-		headers.clear();
-		headers.resize(9); //Needs to be resize since we write into buffer directly (not reserve()).
-		headers_buf.data = headers.data();
+		if(!destroy) {
+			headers.clear();
+			headers.resize(9);
+			headers_buf.data = headers.data();
+			headers_buf.len = 0;
+		}
+		
+		for(auto it: strings) delete it;
+		for(auto it: queries) delete it;
+		for(auto it: sessions) delete it;
+		
+		strings.clear();
+		queries.clear();
+		sessions.clear();
+		
+		if(lua_request != NULL) free(lua_request);
+		lua_request = NULL;
 	}
+	
 	~Request();
 	Request(asio::io_service& svc) : socket(svc)
-    {
+	{
 		reset();
-    }
+	}
 };
 
 /**
@@ -138,7 +155,7 @@ public:
 	void Start();
 	void Stop();
 	WebappTask() : _worker() {}
-    virtual ~WebappTask() { Stop(); }
+	virtual ~WebappTask() { Stop(); }
 	virtual void Execute() = 0;
 	virtual int IsAborted() = 0;
 };
@@ -239,10 +256,6 @@ class Webapp {
 
 	//IPC api
 	asio::ip::tcp::acceptor* acceptor;
-	void accept_conn();
-	void accept_conn_async(Request* r, const asio::error_code&);
-	void process_header_async(Request* r, const asio::error_code&, 
-							  std::size_t);
 	asio::io_service& svc;
 	asio::io_service::work wrk;
 public:
@@ -267,6 +280,12 @@ public:
 	
 	webapp_str_t* CompileScript(const char* filename);
 	void RunScript(LuaParam* params, int nArgs, const char* file);
+	
+	//Request methods
+	void accept_conn();
+	void accept_conn_async(Request* r, const asio::error_code&);
+	void process_header_async(Request* r, const asio::error_code&, 
+							  std::size_t);
 
 	//Cleanup methods.
 	void Reload();

@@ -124,6 +124,7 @@ static ngx_int_t ngx_http_webapp_handler(ngx_http_request_t *r) {
 	u->process_header = ngx_http_webapp_process_header;
 	u->abort_request = ngx_http_webapp_abort_request;
 	u->finalize_request = ngx_http_webapp_finalize_request;
+	r->state = 0;
 
 	ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_webapp_ctx_t));
 	if (ctx == NULL) {
@@ -275,6 +276,7 @@ static ngx_int_t ngx_http_webapp_create_request(ngx_http_request_t *r) {
 }
 
 static ngx_int_t ngx_http_webapp_reinit_request(ngx_http_request_t *r) {
+	r->state = 0;
 	return NGX_OK;
 }
 
@@ -320,7 +322,12 @@ static ngx_int_t ngx_http_webapp_process_header(ngx_http_request_t *r) {
 	if(u->buffer.pos == u->buffer.start) {
 		msgpack_unpacked result;
 		msgpack_unpacked_init(&result);
-		ctx->remaining_header_len = (uint16_t) unpack_next(&result, u);
+		if((ctx->remaining_header_len = (uint16_t) unpack_next(&result, u)) == 0) {
+			u->keepalive = 0;
+		} else {
+			u->keepalive = 1;
+		}
+
 		msgpack_unpacked_destroy(&result);
 	}
 
@@ -378,7 +385,7 @@ static ngx_int_t ngx_http_webapp_filter_init(void *data) {
 	u = ctx->request->upstream;
 
 	if (u->headers_in.status_n != 404) {
-		u->length = -1;
+		u->length = u->headers_in.content_length_n;
 	} else {
 		u->length = 0;
 	}

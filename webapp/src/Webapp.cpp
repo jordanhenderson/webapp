@@ -33,10 +33,7 @@ using namespace std::placeholders;
 */
 Request::~Request()
 {
-	for(auto it: strings) delete it;
-	for(auto it: queries) delete it;
-	for(auto it: sessions) delete it;
-	if(lua_request != NULL) free(lua_request);
+	reset(1);
 }
 
 /**
@@ -312,9 +309,8 @@ void Webapp::process_header_async(Request* r, const asio::error_code& ec, size_t
 											to_read - n));
 
 			//If the header size has been read, and we have read all headers
-			if(headers_size > 0 && n == headers_size ) {
-				r->lua_request = malloc(request_size);
-				memset(r->lua_request, 0, request_size);
+			if(headers_size > 0 && n == headers_size) {
+				r->lua_request = calloc(request_size, 1);
 				workers.Enqueue(r);
 				return;
 			} else if(headers_size == 0 && n >= 1) {
@@ -324,7 +320,7 @@ void Webapp::process_header_async(Request* r, const asio::error_code& ec, size_t
 				msgpack_unpacked_init(&result);
 				size_t offset = 0;
 
-				if(msgpack_unpack_next(&result, &r->headers[0], n, &offset)) {
+				if(msgpack_unpack_next(&result, r->headers_buf.data, n, &offset)) {
 					msgpack_object obj = result.data;
 					//If positive integer read, set the known headers_size.
 					if(obj.type == MSGPACK_OBJECT_POSITIVE_INTEGER) {
