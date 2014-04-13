@@ -31,6 +31,7 @@
 	FinishRequest;
 	
 	WriteData;
+	ReadData;
 	
 	CreateDatabase;
 	DestroyDatabase;

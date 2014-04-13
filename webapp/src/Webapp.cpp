@@ -95,10 +95,11 @@ void Webapp::Reload()
 		CompileScript("plugins/core/process.lua");
 
 		//Run init script.
-		Request r(svc);
 		RequestBase worker;
+		Request r(svc);
+		
 		LuaParam _v[] = { { "request", &r },
-						  { "worker", &worker} };
+						  { "worker", &worker } };
 		RunScript(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/init.lua");
 		
 		//LevelDB may now be disabled. Clean it up as necessary.
@@ -236,7 +237,7 @@ finish:
  * @param io_svc the asio service object to listen upon
 */
 Webapp::Webapp(const char* session_dir,
-			   unsigned int port, asio::io_service& io_svc) :
+			   unsigned int port, io_service& io_svc) :
 	session_dir(session_dir),
 	port(port),
 	svc(io_svc),
@@ -292,7 +293,7 @@ void Webapp::process_header_async(Request* r, const asio::error_code& ec, size_t
 	if(!ec) {
 		try {
 			//Read in the next chunk of data from the socket
-			uint16_t& n = r->headers_last;
+			uint16_t& n = r->socket.ctr;
 			int32_t& headers_size = r->headers_buf.len;
 			//If headers_size unknown, read 9 bytes (maximum size for number)
 			int to_read = headers_size == 0 ? 9 : headers_size;
@@ -369,6 +370,7 @@ void Webapp::accept_conn_async(Request* r, const asio::error_code& error)
 */
 void Webapp::accept_conn()
 {
+	
 	Request* r = new Request(svc);
 	acceptor->async_accept(r->socket,
 						   std::bind(&Webapp::accept_conn_async, this,

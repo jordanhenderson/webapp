@@ -7,6 +7,7 @@
 #include "Webapp.h"
 #include "SimpleOpt.h"
 
+using namespace asio;
 using namespace std;
 
 struct tm epoch_tm = {
@@ -50,7 +51,7 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	asio::io_service svc;
+	io_service svc;
 	Webapp _app(session, port, svc);
 	//Assign address on stack. This is normally dangerous, however this
 	//function will only return at the end of execution (shutting down).

@@ -43,26 +43,36 @@ struct LuaParam {
 	void* ptr;
 };
 
+struct Socket : public asio::ip::tcp::socket {
+	uint16_t ctr = 0;
+	asio::steady_timer timer;
+	std::atomic<int> waiting {0}; //unfinished write() calls
+	Socket(asio::io_service& svc)
+			: asio::ip::tcp::socket(svc), timer(svc) {};
+};
+
+struct RequestBase;
 /**
  * @brief Required information per request.
  */
 struct Request {
 	webapp_str_t headers_buf;
+	Socket& socket_ref;
 	void* lua_request = NULL; //request object set/tracked by VM.
-	asio::ip::tcp::socket socket;
-
-	uint16_t headers_last;
+	
+	//Internal members (not lua accessible)
+	Socket socket;
 	std::vector<char> headers;
-	std::atomic<int> waiting {0}; //unfinished write() calls
 	//Per-request containers
 	std::vector<webapp_str_t*> strings;
 	std::vector<Query*> queries;
 	std::vector<Session*> sessions;
 	
+	//Functions
 	//Reset allows request objects to be reused.
 	void reset(int destroy=0) 
 	{
-		headers_last = 0;
+		socket.ctr = 0;
 		if(!destroy) {
 			headers.clear();
 			headers.resize(9);
@@ -87,7 +97,7 @@ struct Request {
 		reset();
 	}
 
-	Request(asio::io_service& svc) : socket(svc)
+	Request(asio::io_service& svc) : socket(svc), socket_ref(socket)
 	{
 		reset();
 	}

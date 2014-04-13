@@ -10,6 +10,7 @@
 #include "Platform.h"
 
 struct webapp_str_t;
+struct Socket;
 struct Request;
 struct Session;
 struct RequestBase;
@@ -78,7 +79,9 @@ extern "C" {
 	APIEXPORT Request* 
 				   GetNextRequest(RequestBase*);
 	APIEXPORT void FinishRequest(Request*);
-	APIEXPORT void WriteData(Request*, webapp_str_t* data);
+	APIEXPORT void WriteData(Socket*, webapp_str_t* data);
+	APIEXPORT webapp_str_t* ReadData(Socket* socket, RequestBase* worker, 
+						   Request* r, int bytes, int timeout);
 
 /* Database */
 	APIEXPORT Database* 

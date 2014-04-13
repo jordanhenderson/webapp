@@ -202,34 +202,64 @@ void FinishRequest(Request* r)
 }
 
 /* Socket API */
-void WriteComplete(std::atomic<int>* wt, webapp_str_t* buf,
+void WriteComplete(Socket* s, webapp_str_t* buf,
 				   const asio::error_code& error, size_t bytes_transferred)
 {
-	(*wt)--;
+	s->waiting--;
 	delete buf;
 }
 
-void WriteSocket(Request* r, webapp_str_t* buf)
+void WriteData(Socket* socket, webapp_str_t* buf)
 {
-	auto wt = &r->waiting;
-	(*wt)++;
+	if(socket == NULL || buf == NULL) return;
+
+	webapp_str_t* s = new webapp_str_t(*buf);
+	socket->waiting++;
 
 	try {
-		asio::async_write(r->socket, asio::buffer(buf->data, buf->len),
-						  bind(&WriteComplete, wt, buf, _1, _2));
+		async_write(*socket, buffer(s->data, s->len),
+						  bind(&WriteComplete, socket, s, _1, _2));
 	} catch (asio::system_error ec) {
-		(*wt)--;
+		socket->waiting--;
 		delete buf;
 		printf("Error writing to socket!");
 	}
 }
 
-void WriteData(Request* r, webapp_str_t* data)
+void ReadEvent(Socket* socket, RequestBase* worker, Request* r, 
+	webapp_str_t* output, const asio::error_code& ec, size_t n_bytes)
 {
-	if(r == NULL || data == NULL) return;
+	if(!ec) {
+		socket->timer.cancel();
+		uint16_t& n = socket->ctr;
+		n += socket->read_some(buffer(output->data + n, output->len - n));
+		if(n == output->len) {
+			//read complete.
+			worker->enqueue(r);
+		} else {
+			socket->async_read_some(null_buffers(), bind(&ReadEvent, 
+				socket, worker, r, output, _1, 0));
+		}
+	} else if(ec != asio::error::operation_aborted) {
+		//Read failed/timeout.
+		socket->close();
+		output->len = 0;
+	}
+}
 
-	webapp_str_t* s = new webapp_str_t(*data);
-	WriteSocket(r, s);
+webapp_str_t* ReadData(Socket* socket, RequestBase* worker, Request* r,
+			  int bytes, int timeout)
+{
+	webapp_str_t* output = new webapp_str_t(bytes);
+	r->strings.push_back(output);
+	socket->ctr = 0;
+	
+	socket->timer.expires_from_now(chrono::seconds(timeout));
+	socket->timer.async_wait(bind(&ReadEvent, socket, worker, r,
+								  output, _1, 0));
+	socket->async_read_some(null_buffers(), bind(&ReadEvent, socket, 
+							worker, r, output, _1, _2));
+	return output;
 }
 
 /* Database */
