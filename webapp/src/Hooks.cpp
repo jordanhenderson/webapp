@@ -196,9 +196,10 @@ Request* GetNextRequest(RequestBase* worker)
 
 void FinishRequest(Request* r)
 {
-	if(r == NULL) return;
-	asio::error_code ec;
-	app->accept_conn_async(r, ec);
+	r->reset();
+	r->socket.async_read_some(null_buffers(), bind(
+								  &Webapp::process_header_async,
+								  app, r, _1, _2));
 }
 
 /* Socket API */

@@ -296,8 +296,8 @@ public:
 	
 	//Request methods
 	void accept_conn();
-	void accept_conn_async(Request* r, const asio::error_code&);
-	void process_header_async(Request* r, const asio::error_code&, 
+	void accept_conn_async(Request* r, const std::error_code&);
+	void process_header_async(Request* r, const std::error_code&, 
 							  std::size_t);
 
 	//Cleanup methods.

@@ -11,10 +11,7 @@ struct _webapp_str_t {
 };
 
 struct webapp_str_t : _webapp_str_t {
-	webapp_str_t()
-	{
-		allocated = 0;
-	}
+	webapp_str_t() {}
 	webapp_str_t(const char* s, int32_t _len)
 	{
 		len = _len;

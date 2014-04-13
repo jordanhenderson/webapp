@@ -288,17 +288,19 @@ void Webapp::Start() {
  * @param ec the asio error code, if any
  * @param n_bytes the amount bytes transferred
 */
-void Webapp::process_header_async(Request* r, const asio::error_code& ec, size_t n_bytes)
+void Webapp::process_header_async(Request* r, const std::error_code& ec, size_t n_bytes)
 {
+	Socket& s = r->socket;
+	s.timer.cancel();
 	if(!ec) {
 		try {
 			//Read in the next chunk of data from the socket
-			uint16_t& n = r->socket.ctr;
+			uint16_t& n = s.ctr;
 			int32_t& headers_size = r->headers_buf.len;
 			//If headers_size unknown, read 9 bytes (maximum size for number)
 			int to_read = headers_size == 0 ? 9 : headers_size;
 			//Load max to_read - n bytes into the buffer.
-			n += r->socket.read_some(buffer(r->headers_buf.data + n,
+			n += s.read_some(buffer(r->headers_buf.data + n,
 											to_read - n));
 
 			//If the header size has been read, and we have read all headers
@@ -329,15 +331,18 @@ void Webapp::process_header_async(Request* r, const asio::error_code& ec, size_t
 				msgpack_unpacked_destroy(&result);
 			}
 
-			r->socket.async_read_some(null_buffers(), bind(
-									  &Webapp::process_header_async,
-									  this, r, _1, _2));
+			s.timer.expires_from_now(chrono::seconds(5));
+			s.timer.async_wait(bind(&Webapp::process_header_async, this, 
+									r, _1, 0));
+			s.async_read_some(null_buffers(), bind(
+										  &Webapp::process_header_async,
+										  this, r, _1, _2));
 
 		} catch (...) {
+			s.timer.cancel();
 			delete r;
-			return;
 		}
-	} else {
+	} else if(ec != asio::error::operation_aborted) {
 		//Failed. Destroy request.
 		delete r;
 	}
@@ -349,16 +354,20 @@ void Webapp::process_header_async(Request* r, const asio::error_code& ec, size_t
  * The next stage will be executed after async_read completes as necessary.
  * @param s the asio socket object of the accepted connection.
 */
-void Webapp::accept_conn_async(Request* r, const asio::error_code& error)
+void Webapp::accept_conn_async(Request* r, const std::error_code& error)
 {
 	//Reset the header buffer. Allows reusing a request object.
-	r->reset();
+	Socket& s = r->socket;
 	try {
-		r->socket.async_read_some(null_buffers(), bind(
+		s.timer.expires_from_now(chrono::seconds(5));
+		s.timer.async_wait(bind(&Webapp::process_header_async, this, r,
+								_1, 0));
+		s.async_read_some(null_buffers(), bind(
 									  &Webapp::process_header_async,
 									  this, r, _1, _2));
 		accept_conn();
 	} catch(std::system_error er) {
+		s.timer.cancel();
 		delete r;
 		accept_conn();
 	}
@@ -373,8 +382,8 @@ void Webapp::accept_conn()
 	
 	Request* r = new Request(svc);
 	acceptor->async_accept(r->socket,
-						   std::bind(&Webapp::accept_conn_async, this,
-									 r, std::placeholders::_1));
+						   bind(&Webapp::accept_conn_async, this,
+									 r, _1));
 }
 
 /**
