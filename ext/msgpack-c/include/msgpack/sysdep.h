@@ -30,11 +30,10 @@ typedef unsigned __int32 uint32_t;
 typedef __int64 int64_t;
 typedef unsigned __int64 uint64_t;
 #elif defined(_MSC_VER)  // && _MSC_VER >= 1600
-#include <stdint.h>
-#else
+#define inline __inline
+#endif
 #include <stdint.h>
 #include <stdbool.h>
-#endif
 
 #ifdef _WIN32
 #define _msgpack_atomic_counter_header <windows.h>

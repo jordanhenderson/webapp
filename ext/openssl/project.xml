@@ -4,10 +4,11 @@
 	<flags compiler="msvc">MT;W3;Ox</flags>
 	<flags compiler="gcc">O3</flags>
 	<flags type="pp">OPENSSL_NO_ASM</flags>
+	<flags type="pp" os="win32">WIN32_LEAN_AND_MEAN</flags>
 	<include>include;src/crypto;src/crypto/asn1;src/crypto/evp;src/crypto/modes;src/ssl;src/engines/;include/openssl</include>
 	<source f="src/crypto/aes/aes_cbc.c" />
     <source f="src/crypto/aes/aes_cfb.c" />
-    <source f="src/crypto/aes/aes_x86core.c" />
+    <source f="src/crypto/aes/aes_core.c" />
     <source f="src/crypto/aes/aes_ctr.c" />
     <source f="src/crypto/aes/aes_ecb.c" />
     <source f="src/crypto/aes/aes_ige.c" />
@@ -306,7 +307,7 @@
     <source f="src/crypto/engine/tb_rsa.c" />
     <source f="src/crypto/engine/tb_store.c" />
     <source f="src/crypto/err/err.c" />
-    <source f="src/crypto/err/err_all.c" />
+
     <source f="src/crypto/err/err_prn.c" />
     <source f="src/crypto/evp/bio_b64.c" />
     <source f="src/crypto/evp/bio_enc.c" />
@@ -402,6 +403,7 @@
     <source f="src/crypto/objects/obj_xref.c" />
     <source f="src/crypto/objects/o_names.c" />
     <source f="src/crypto/ocsp/ocsp_asn.c" />
+    <source f="src/crypto/err/err_all.c" />
     <source f="src/crypto/ocsp/ocsp_cl.c" />
     <source f="src/crypto/ocsp/ocsp_err.c" />
     <source f="src/crypto/ocsp/ocsp_ext.c" />
