@@ -660,4 +660,6 @@
     <source f="src/ssl/t1_reneg.c" />
     <source f="src/ssl/t1_srvr.c" />
     <source f="src/ssl/tls_srp.c" />
+    <source f="src/crypto/cversion.c"/>
+    <source f="src/crypto/uid.c"/>
 </project>
