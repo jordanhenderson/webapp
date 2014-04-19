@@ -90,6 +90,7 @@
 	<source f="src/http/modules/ngx_http_upstream_least_conn_module.c"/>
 	<source f="src/http/modules/ngx_http_userid_filter_module.c"/>
 	<source f="src/http/modules/ngx_http_uwsgi_module.c"/>
+	<source f="src/http/modules/ngx_http_sub_filter_module.c"/>
 	<source f="src/http/ngx_http.c"/>
 	<source f="src/http/ngx_http_busy_lock.c"/>
 	<source f="src/http/ngx_http_copy_filter_module.c"/>
