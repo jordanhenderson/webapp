@@ -3,7 +3,7 @@
 	<output type="static">pngnq</output>
 	<flags compiler="msvc">MT;W3;EHsc;Ox</flags>
 	<flags compiler="gcc" ext="cc">std=c++11</flags>
-	<flags compiler="gcc">O3</flags>
+	<flags compiler="gcc">O2</flags>
 	<include>include</include>
     <source f="src/neuquant32.c"/>
 </project>

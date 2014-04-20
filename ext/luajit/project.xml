@@ -4,7 +4,7 @@
 	<depends>buildvm.xml</depends>
 	<output type="static">luajit</output>
 	<flags compiler="msvc">MT;W3;Ox</flags>
-	<flags compiler="gcc">fomit-frame-pointer;O3</flags>
+	<flags compiler="gcc">fomit-frame-pointer;O2</flags>
 	<include>include</include>
 	<flags type="pp" compiler="msvc">WIN32</flags>
 	<flags type="pp">LUAJIT_ENABLE_LUA52COMPAT</flags>
@@ -13,6 +13,6 @@
 	<prebuild os="linux">cd $(OUTPUT) $(CSEP) gcc -c lj_vm.s -o lj_vm.o -m$(ARCH)</prebuild>
 	<link compiler="msvc">$(OUTPUT)/lj_vm.obj</link>
 	<link compiler="gcc">$(OUTPUT)/lj_vm.o</link>
-	<prebuild>cd src $(CSEP) ..$(SEP)$(OUTPUT)$(SEP)buildvm -m bcdef -o ../include/lj_bcdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c $(CSEP) ..$(SEP)$(OUTPUT)$(SEP)buildvm -m ffdef -o ../include/lj_ffdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c $(CSEP) ..$(SEP)$(OUTPUT)$(SEP)buildvm -m libdef -o ../include/lj_libdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c $(CSEP) ..$(SEP)$(OUTPUT)$(SEP)buildvm -m recdef -o ../include/lj_recdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c $(CSEP) ..$(SEP)$(OUTPUT)$(SEP)buildvm -m vmdef -o jit\vmdef.lua lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c $(CSEP) ..$(SEP)$(OUTPUT)$(SEP)buildvm -m folddef -o ../include/lj_folddef.h lj_opt_fold.c</prebuild>
+	<prebuild>cd src $(CSEP) ..$(SEP)$(OUTPUT)$(SEP)buildvm -m bcdef -o ../include/lj_bcdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c $(CSEP) ..$(SEP)$(OUTPUT)$(SEP)buildvm -m ffdef -o ../include/lj_ffdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c $(CSEP) ..$(SEP)$(OUTPUT)$(SEP)buildvm -m libdef -o ../include/lj_libdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c $(CSEP) ..$(SEP)$(OUTPUT)$(SEP)buildvm -m recdef -o ../include/lj_recdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c $(CSEP) ..$(SEP)$(OUTPUT)$(SEP)buildvm -m vmdef -o jit/vmdef.lua lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c $(CSEP) ..$(SEP)$(OUTPUT)$(SEP)buildvm -m folddef -o ../include/lj_folddef.h lj_opt_fold.c</prebuild>
 	<source f="src/ljamalg.c"/>
 </project>
