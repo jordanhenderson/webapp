@@ -17,12 +17,12 @@ int32_t strntol(const char* src, size_t n)
 {
 	int32_t x = 0;
 	int32_t multiplier = 1;
-	if(*src == '-' && n--) 
+	if(n > 0 && *src == '-' && n--)
 	{
 		multiplier *= -1;
 		src++;
 	}
-	while(isdigit(*src) && n--) {
+	for (; n > 0 && isdigit(*src); n--) {
 		x = x * 10 + (*src - '0');
 		src++;
 	}
