@@ -74,8 +74,8 @@ using HASH_NAMESPACE::hash_map;
 #endif
 
 static int kVerbosity = 0;   // you can change this by hand to get vlogs
-#define LOG(level)  if (0) std::cerr << #level ": "
-#define PLOG(level)   if(0) std::cerr << #level ": [" << strerror(errno) << "] "
+#define LOG(level)  std::cerr << #level ": "
+#define PLOG(level)   std::cerr << #level ": [" << strerror(errno) << "] "
 #define VLOG(level)  if (kVerbosity >= level)  std::cerr << "V" #level ": "
 
 _START_GOOGLE_NAMESPACE_
