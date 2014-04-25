@@ -40,6 +40,7 @@ void Webapp::Cleanup(unsigned int cleanupTask, unsigned int shutdown)
 	if(cleanupTask == 1) {
 		workers.Clean();
 		if(shutdown) aborted = 1;
+		if(client_sockets) client_svc.stop();
 		svc.stop();
 		cleanupLock.unlock();
 	} else {
@@ -103,13 +104,11 @@ void Webapp::Reload()
 							  { "worker", &worker } };
 			RunScript(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/init.lua");
 
-			//LevelDB may now be disabled. Clean it up as necessary.
-			ToggleLevelDB();
-
 			//Zero the init script (no need to hold in memory).
 			*init = webapp_str_t();
 		}
 	} else {
+		if(client_sockets) client_svc.stop();
 		svc.stop();
 	}
 }
@@ -252,7 +251,9 @@ Webapp::Webapp(const char* session_dir,
 	session_dir(session_dir),
 	port(port),
 	svc(io_svc),
-	wrk(io_svc)
+	wrk(io_svc),
+	resolver(client_svc),
+	client_wrk(client_svc)
 {
 	//Create the TCP endpoint and acceptor.
 	int bound = 0;
@@ -279,6 +280,21 @@ void Webapp::Start() {
 	while(!aborted) {
 		Reload();
 		
+		//LevelDB may now be disabled. Clean it up as necessary.
+		ToggleLevelDB();
+		
+		client_svc.stop();
+		client_svc.reset();
+		
+		if(client_socket_thread.joinable())
+			client_socket_thread.join();
+		
+		if(client_sockets) {
+			client_socket_thread = std::thread([this] {
+				client_svc.run();
+			});
+		}
+		
 		if(num_threads <= 0 || num_threads > WEBAPP_MAX_THREADS)
 			num_threads = 1;
 		workers.Start(num_threads);
@@ -288,6 +304,45 @@ void Webapp::Start() {
 		
 		//Clear workers
 		workers.Cleanup();
+	}
+}
+
+
+/**
+ * First connection stage. Called to provide an entry point for new
+ * connections. Re-called after each async_accept callback is completed.
+*/
+void Webapp::accept_conn()
+{
+	
+	Request* r = new Request(svc);
+	acceptor->async_accept(r->s.socket,
+						   bind(&Webapp::accept_conn_async, this,
+									 r, _1));
+}
+
+/**
+ * Begin to process a Request.
+ * At this stage, the connection has been accepted asynchronously.
+ * The next stage will be executed after async_read completes as necessary.
+ * @param s the asio socket object of the accepted connection.
+*/
+void Webapp::accept_conn_async(Request* r, const std::error_code& error)
+{
+	//Reset the header buffer. Allows reusing a request object.
+	Socket& s = r->s.socket;
+	try {
+		s.timer.expires_from_now(chrono::seconds(5));
+		s.timer.async_wait(bind(&Webapp::process_header_async, this, r,
+								_1, 0));
+		s.async_read_some(null_buffers(), bind(
+									  &Webapp::process_header_async,
+									  this, r, _1, _2));
+		accept_conn();
+	} catch(std::system_error er) {
+		s.timer.cancel();
+		delete r;
+		accept_conn();
 	}
 }
 
@@ -301,7 +356,7 @@ void Webapp::Start() {
 */
 void Webapp::process_header_async(Request* r, const std::error_code& ec, size_t n_bytes)
 {
-	Socket& s = r->socket;
+	Socket& s = r->s.socket;
 	s.timer.cancel();
 	if(!ec) {
 		try {
@@ -359,42 +414,20 @@ void Webapp::process_header_async(Request* r, const std::error_code& ec, size_t 
 	}
 }
 
-/**
- * Begin to process a Request.
- * At this stage, the connection has been accepted asynchronously.
- * The next stage will be executed after async_read completes as necessary.
- * @param s the asio socket object of the accepted connection.
-*/
-void Webapp::accept_conn_async(Request* r, const std::error_code& error)
+LuaSocket* Webapp::create_socket()
 {
-	//Reset the header buffer. Allows reusing a request object.
-	Socket& s = r->socket;
-	try {
-		s.timer.expires_from_now(chrono::seconds(5));
-		s.timer.async_wait(bind(&Webapp::process_header_async, this, r,
-								_1, 0));
-		s.async_read_some(null_buffers(), bind(
-									  &Webapp::process_header_async,
-									  this, r, _1, _2));
-		accept_conn();
-	} catch(std::system_error er) {
-		s.timer.cancel();
-		delete r;
-		accept_conn();
-	}
+	return new LuaSocket(client_svc);
 }
 
-/**
- * First connection stage. Called to provide an entry point for new
- * connections. Re-called after each async_accept callback is completed.
-*/
-void Webapp::accept_conn()
+void Webapp::destroy_socket(LuaSocket* s)
 {
-	
-	Request* r = new Request(svc);
-	acceptor->async_accept(r->socket,
-						   bind(&Webapp::accept_conn_async, this,
-									 r, _1));
+	s->socket.abort();
+	delete s;
+}
+
+tcp::resolver& Webapp::get_resolver()
+{
+	return resolver;
 }
 
 /**
@@ -402,6 +435,9 @@ void Webapp::accept_conn()
 */
 Webapp::~Webapp()
 {
+	if(client_socket_thread.joinable())
+		client_socket_thread.join();
+		
 	workers.Stop();
 
 	//Perform leveldb cleanup if necessary.
@@ -481,9 +517,11 @@ void Webapp::SetParamInt(unsigned int key, int value)
 	case WEBAPP_PARAM_REQUESTSIZE:
 		request_size = value;
 		break;
+	case WEBAPP_PARAM_CLIENTSOCKETS:
+		client_sockets = value;
+		break;
 	default:
 		return;
-		break;
 	}
 }
 
@@ -497,24 +535,19 @@ int Webapp::GetParamInt(unsigned int key)
 	switch(key) {
 	case WEBAPP_PARAM_PORT:
 		return port;
-		break;
 	case WEBAPP_PARAM_ABORTED:
 		return aborted;
-		break;
 	case WEBAPP_PARAM_TPLCACHE:
 		return template_cache_enabled;
-		break;
 	case WEBAPP_PARAM_LEVELDB:
 		return leveldb_enabled;
-		break;
 	case WEBAPP_PARAM_THREADS:
 		return num_threads;
-		break;
 	case WEBAPP_PARAM_REQUESTSIZE:
 		return request_size;
-		break;
+	case WEBAPP_PARAM_CLIENTSOCKETS:
+		return client_sockets;
 	default:
 		return 0;
-		break;
 	}
 }

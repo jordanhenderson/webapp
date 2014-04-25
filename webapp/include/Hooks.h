@@ -79,10 +79,12 @@ extern "C" {
 	APIEXPORT Request* 
 				   GetNextRequest(RequestBase*);
 	APIEXPORT void FinishRequest(Request*);
-	APIEXPORT void WriteData(Socket*, webapp_str_t* data);
-	APIEXPORT webapp_str_t* ReadData(Socket* socket, RequestBase* worker, 
+	APIEXPORT void WriteData(LuaSocket*, webapp_str_t* data);
+	APIEXPORT webapp_str_t* ReadData(LuaSocket* socket, RequestBase* worker, 
 						   Request* r, int bytes, int timeout);
-
+	APIEXPORT LuaSocket* ConnectSocket(RequestBase* worker, Request* r, 
+					  webapp_str_t* addr, webapp_str_t* port);
+	APIEXPORT void DestroySocket(LuaSocket* s);
 /* Database */
 	APIEXPORT Database* 
 				   CreateDatabase();

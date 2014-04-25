@@ -197,38 +197,84 @@ Request* GetNextRequest(RequestBase* worker)
 void FinishRequest(Request* r)
 {
 	r->reset();
-	r->socket.async_read_some(null_buffers(), bind(
+	r->s.socket.async_read_some(null_buffers(), bind(
 								  &Webapp::process_header_async,
 								  app, r, _1, _2));
 }
 
 /* Socket API */
-void WriteComplete(Socket* s, webapp_str_t* buf,
-				   const asio::error_code& error, size_t bytes_transferred)
+void ConnectHandler(RequestBase* worker, Request* r, Socket* s, 
+					const std::error_code& ec, 
+					tcp::resolver::iterator it)
 {
-	s->waiting--;
-	delete buf;
+	if(!ec) {
+		worker->enqueue(r);
+	} else if (it != tcp::resolver::iterator()) {
+		//Try next endpoint.
+		s->close();
+		tcp::endpoint ep = *it;
+		s->async_connect(ep, bind(&ConnectHandler, worker, r, s, _1, ++it));
+	} else if(ec != asio::error::operation_aborted) {
+		s->abort();
+		worker->enqueue(r);
+	}
 }
 
-void WriteData(Socket* socket, webapp_str_t* buf)
+void ResolveHandler(RequestBase* worker, Request* r, Socket* s,
+					const std::error_code& ec, 
+					tcp::resolver::iterator it)
 {
-	if(socket == NULL || buf == NULL) return;
+	if(!ec) {
+		tcp::endpoint ep = *it;
+		s->async_connect(ep, bind(&ConnectHandler, worker, r, s, _1, ++it));
+	} else if(ec != asio::error::operation_aborted) {
+		s->abort();
+		worker->enqueue(r);
+	}
+}
+
+LuaSocket* ConnectSocket(RequestBase* worker, Request* r, 
+					  webapp_str_t* addr, webapp_str_t* port) {
+	tcp::resolver::query qry(tcp::v4(), *addr, *port);
+	tcp::resolver& resolver = app->get_resolver();
+	LuaSocket* s = app->create_socket();
+	Socket* socket = &s->socket;
+	resolver.async_resolve(qry, bind(&ResolveHandler, worker, r, socket, _1, _2));
+	return s;
+}
+
+void DestroySocket(LuaSocket* s) {
+	app->destroy_socket(s);
+}
+
+void WriteComplete(Socket* s, webapp_str_t* buf,
+				   const std::error_code& error, size_t bytes_transferred)
+{
+	if(!error) {
+		s->waiting--;
+	}
+	delete buf;
+
+}
+
+void WriteData(LuaSocket* s, webapp_str_t* buf)
+{
+	Socket* socket = &s->socket;
 	//TODO: investigate leak here.
-	webapp_str_t* s = new webapp_str_t(*buf);
+	webapp_str_t* tmp_buf = new webapp_str_t(*buf);
 	socket->waiting++;
 
 	try {
-		async_write(*socket, buffer(s->data, s->len),
-						  bind(&WriteComplete, socket, s, _1, _2));
+		async_write(*socket, buffer(tmp_buf->data, tmp_buf->len),
+						  bind(&WriteComplete, socket, tmp_buf, _1, _2));
 	} catch (asio::system_error ec) {
 		socket->waiting--;
-		delete s;
-		printf("Error writing to socket!");
+		socket->abort();
 	}
 }
 
 void ReadEvent(Socket* socket, RequestBase* worker, Request* r, 
-	webapp_str_t* output, const asio::error_code& ec, size_t n_bytes)
+	webapp_str_t* output, int timeout, const std::error_code& ec, size_t n_bytes)
 {
 	if(!ec) {
 		socket->timer.cancel();
@@ -238,28 +284,32 @@ void ReadEvent(Socket* socket, RequestBase* worker, Request* r,
 			//read complete.
 			worker->enqueue(r);
 		} else {
+			socket->timer.expires_from_now(chrono::seconds(timeout));
+			socket->timer.async_wait(bind(&ReadEvent, socket, worker, r,
+										  output, timeout, _1, 0));
 			socket->async_read_some(null_buffers(), bind(&ReadEvent, 
-				socket, worker, r, output, _1, 0));
+				socket, worker, r, output, timeout, _1, 0));
 		}
 	} else if(ec != asio::error::operation_aborted) {
 		//Read failed/timeout.
-		socket->close();
+		socket->abort();
 		output->len = 0;
 	}
 }
 
-webapp_str_t* ReadData(Socket* socket, RequestBase* worker, Request* r,
+webapp_str_t* ReadData(LuaSocket* s, RequestBase* worker, Request* r,
 			  int bytes, int timeout)
 {
+	Socket* socket = &s->socket;
 	webapp_str_t* output = new webapp_str_t(bytes);
 	r->strings.push_back(output);
 	socket->ctr = 0;
 	
 	socket->timer.expires_from_now(chrono::seconds(timeout));
 	socket->timer.async_wait(bind(&ReadEvent, socket, worker, r,
-								  output, _1, 0));
+								  output, timeout, _1, 0));
 	socket->async_read_some(null_buffers(), bind(&ReadEvent, socket, 
-							worker, r, output, _1, _2));
+							worker, r, output, timeout, _1, _2));
 	return output;
 }
 

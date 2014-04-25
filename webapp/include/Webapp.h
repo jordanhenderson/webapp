@@ -25,6 +25,7 @@
 #define WEBAPP_PARAM_LEVELDB 3
 #define WEBAPP_PARAM_THREADS 4
 #define WEBAPP_PARAM_REQUESTSIZE 5
+#define WEBAPP_PARAM_CLIENTSOCKETS 6
 #define WEBAPP_PORT_DEFAULT 5000
 #define WEBAPP_DEFAULT_QUEUESIZE 1023
 #define WEBAPP_OPT_SESSION 0
@@ -49,6 +50,19 @@ struct Socket : public asio::ip::tcp::socket {
 	std::atomic<int> waiting {0}; //unfinished write() calls
 	Socket(asio::io_service& svc)
 			: asio::ip::tcp::socket(svc), timer(svc) {};
+	void abort() {
+		std::error_code ec;
+		
+		shutdown(asio::ip::tcp::socket::shutdown_both, ec);
+		close();
+		timer.cancel();
+	}
+};
+
+struct LuaSocket {
+	int8_t status = 0;
+	Socket socket;
+	LuaSocket(asio::io_service& svc) : socket(svc) {};
 };
 
 struct RequestBase;
@@ -57,11 +71,11 @@ struct RequestBase;
  */
 struct Request {
 	webapp_str_t headers_buf;
-	Socket& socket_ref;
+	LuaSocket& socket_ref;
 	void* lua_request = NULL; //request object set/tracked by VM.
 	
 	//Internal members (not lua accessible)
-	Socket socket;
+	LuaSocket s;
 	std::vector<char> headers;
 	//Per-request containers
 	std::vector<webapp_str_t*> strings;
@@ -72,7 +86,7 @@ struct Request {
 	//Reset allows request objects to be reused.
 	void reset(int destroy=0) 
 	{
-		socket.ctr = 0;
+		s.socket.ctr = 0;
 		if(!destroy) {
 			headers.clear();
 			headers.resize(9);
@@ -97,7 +111,7 @@ struct Request {
 		reset();
 	}
 
-	Request(asio::io_service& svc) : socket(svc), socket_ref(socket)
+	Request(asio::io_service& svc) : s(svc), socket_ref(s)
 	{
 		reset();
 	}
@@ -258,6 +272,7 @@ class Webapp {
 	unsigned int leveldb_enabled = 1;
 	unsigned int port = WEBAPP_PORT_DEFAULT;
 	unsigned int request_size = 0;
+	unsigned int client_sockets = 1;
 	int num_threads = 1;
 	
 	const char* session_dir = WEBAPP_OPT_SESSION_DEFAULT;
@@ -271,6 +286,12 @@ class Webapp {
 	asio::ip::tcp::acceptor* acceptor;
 	asio::io_service& svc;
 	asio::io_service::work wrk;
+	
+	//Client socket api
+	std::thread client_socket_thread;
+	asio::io_service client_svc;
+	asio::io_service::work client_wrk;
+	asio::ip::tcp::resolver resolver;
 public:
 	leveldb::DB* db = NULL;
 	std::unordered_map<std::string, std::string> templates;
@@ -300,6 +321,11 @@ public:
 	void process_header_async(Request* r, const std::error_code&, 
 							  std::size_t);
 
+	//Socket methods
+	LuaSocket* create_socket();
+	void destroy_socket(LuaSocket* s);
+	asio::ip::tcp::resolver& get_resolver();
+	
 	//Cleanup methods.
 	void Reload();
 	void ToggleLevelDB();

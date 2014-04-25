@@ -30,6 +30,8 @@
 	GetNextRequest;
 	FinishRequest;
 	
+	ConnectSocket;
+	DestroySocket;
 	WriteData;
 	ReadData;
 	
