@@ -2,7 +2,7 @@
 <project>
 	<output type="static">cjson</output>
 	<flags compiler="msvc">MT;W3;EHsc;Ox</flags>
-	<flags compiler="gcc">O3</flags>
+	<flags compiler="gcc">O2</flags>
 	<include>include;../luajit/include</include>
 	<source f="src/dtoa.c"/>
 	<source f="src/g_fmt.c"/>

@@ -213,7 +213,7 @@ void WriteComplete(Socket* s, webapp_str_t* buf,
 void WriteData(Socket* socket, webapp_str_t* buf)
 {
 	if(socket == NULL || buf == NULL) return;
-
+	//TODO: investigate leak here.
 	webapp_str_t* s = new webapp_str_t(*buf);
 	socket->waiting++;
 
@@ -222,7 +222,7 @@ void WriteData(Socket* socket, webapp_str_t* buf)
 						  bind(&WriteComplete, socket, s, _1, _2));
 	} catch (asio::system_error ec) {
 		socket->waiting--;
-		delete buf;
+		delete s;
 		printf("Error writing to socket!");
 	}
 }

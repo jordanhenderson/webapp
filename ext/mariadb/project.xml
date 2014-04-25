@@ -3,7 +3,7 @@
 	<output type="static">libmariadb</output>
 	<flags compiler="msvc">MT;W3;Ox</flags>
 	<flags type="pp">THREAD;ENABLED_LOCAL_INFILE;HAVE_COMPRESS;HAVE_OPENSSL;DNDEBUG;DBUG_OFF;LIBMARIADB;libmariadb_EXPORTS</flags>
-	<flags compiler="gcc">O3</flags>
+	<flags compiler="gcc">O2</flags>
 	<include>include;../openssl/include;../zlib/include</include>
 	<include os="win32">win-iconv</include>
 	<source f="libmariadb/array.c"/>

@@ -16,22 +16,26 @@ struct webapp_str_t : _webapp_str_t {
 	{
 		len = _len;
 		data = new char[_len];
+		allocated = 1;
 		memcpy(data, s, _len);
 	}
 	webapp_str_t(int32_t _len)
 	{
 		len = _len;
+		allocated = 1;
 		data = new char[_len];
 	}
 	webapp_str_t(const char* s)
 	{
 		len = strlen(s);
+		allocated = 1;
 		data = new char[len];
 		memcpy(data, s, len);
 	}
 	webapp_str_t(const std::string& other)
 	{
 		len = other.size();
+		allocated = 1;
 		data = new char[len];
 		memcpy(data, other.c_str(), len);
 	}
@@ -40,6 +44,7 @@ struct webapp_str_t : _webapp_str_t {
 		if(other == NULL) {
 			data = new char[1];
 			len = 0;
+			allocated = 0;
 		} else {
 			len = other->len;
 			data = other->data;
@@ -50,12 +55,14 @@ struct webapp_str_t : _webapp_str_t {
 	{
 		len = other.len;
 		data = new char[len];
+		allocated = 1;
 		memcpy(data, other.data, len);
 	}
 	webapp_str_t(const leveldb::Slice& other)
 	{
 		len = other.size();
 		data = new char[len];
+		allocated = 1;
 		memcpy(data, other.data(), len);
 	}
 	~webapp_str_t()
@@ -84,6 +91,7 @@ struct webapp_str_t : _webapp_str_t {
 		if(allocated) delete[] data;
 		len = newlen;
 		data = r;
+		allocated = 1;
 		return *this;
 	}
 	webapp_str_t& operator=(const webapp_str_t& other)
@@ -94,6 +102,7 @@ struct webapp_str_t : _webapp_str_t {
 			if(allocated) delete[] data;
 			data = r;
 			len = other.len;
+			allocated = 1;
 		}
 		return *this;
 	}
@@ -106,6 +115,7 @@ struct webapp_str_t : _webapp_str_t {
 		if(allocated) delete[] data;
 		data = new char[21];
 		len = snprintf(data, 21, "%d", num);
+		allocated = 1;
 	}
 	void to_lower()
 	{

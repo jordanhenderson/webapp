@@ -92,23 +92,23 @@ void Webapp::Reload()
 	if(!aborted) {
 		//Recompile scripts.
 		webapp_str_t* init = CompileScript("plugins/core/init.lua");
-		CompileScript("plugins/core/process.lua");
+		if(init != NULL) {
+			CompileScript("plugins/core/process.lua");
 
-		//Run init script.
-		RequestBase worker;
-		Request r(svc);
-		
-		LuaParam _v[] = { { "request", &r },
-						  { "worker", &worker } };
-		RunScript(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/init.lua");
-		
-		//LevelDB may now be disabled. Clean it up as necessary.
-		ToggleLevelDB();
-		
-		//Zero the init script (no need to hold in memory).
-		*init = webapp_str_t();
-		
-		
+			//Run init script.
+			RequestBase worker;
+			Request r(svc);
+
+			LuaParam _v[] = { { "request", &r },
+							  { "worker", &worker } };
+			RunScript(_v, sizeof(_v) / sizeof(LuaParam), "plugins/core/init.lua");
+
+			//LevelDB may now be disabled. Clean it up as necessary.
+			ToggleLevelDB();
+
+			//Zero the init script (no need to hold in memory).
+			*init = webapp_str_t();
+		}
 	} else {
 		svc.stop();
 	}
@@ -135,7 +135,15 @@ int lua_writer(lua_State* L, const void* p, size_t sz, void* ud) {
 webapp_str_t* Webapp::CompileScript(const char* filename)
 {
 	if(filename == NULL) return NULL;
+	webapp_str_t* chunk_str = NULL;
+
+	//Hold parsed lua code.
+	const char* chunk = NULL;
+	size_t len = 0;
+
+	//Convert filename to string for unordered_map storage.
 	string filename_str = string(filename);
+
 	//Attempt to return an existing compiled script.
 	auto it = scripts.find(filename_str);
 	if(it != scripts.end()) {
@@ -145,22 +153,21 @@ webapp_str_t* Webapp::CompileScript(const char* filename)
 	
 	//Create a new lua state, with minimal libs for LuaMacro.
 	lua_State* L = luaL_newstate();
+	if(L == NULL) goto lua_fail;
 	luaL_openlibs(L);
 	luaopen_lpeg(L);
 
 	//Execute the LuaMacro preprocessor.
-	int ret = luaL_loadfile(L, "plugins/process.lua");
-	if(ret) printf("Error: %s\n", lua_tostring(L, -1));
+	if(luaL_loadfile(L, "plugins/process.lua")) goto lua_error;
 
 	//Provide the target filename to preprocess.
 	lua_pushlstring(L, filename, strlen(filename));
 	lua_setglobal(L, "file");
 
 	//Execute the VM, store the results.
-	webapp_str_t* chunk_str = new webapp_str_t();
+	chunk_str = new webapp_str_t();
 	chunk_str->allocated = 1;
-	const char* chunk = NULL;
-	size_t len;
+
 	if(lua_pcall(L, 0, 1, 0) != 0) goto lua_error;
 	
 	chunk = lua_tolstring(L, -1, &len);
@@ -171,12 +178,15 @@ webapp_str_t* Webapp::CompileScript(const char* filename)
 	
 	if(lua_dump(L, lua_writer, chunk_str) != 0) goto lua_error;
 	
-	scripts.emplace(filename_str, chunk_str);
+	scripts.insert(make_pair(filename_str, chunk_str));
 	goto finish;
+lua_fail:
+	delete chunk_str;
+	return NULL;
 lua_error:
 	delete chunk_str;
+	chunk_str = NULL;
 	printf("Error: %s\n", lua_tostring(L, -1));
-
 finish:
 	lua_close(L);
 	return chunk_str;
@@ -196,6 +206,7 @@ void Webapp::RunScript(LuaParam* params, int nArgs, const char* file)
 	auto script = it->second;
 	//Initialize a lua state, loading appropriate libraries.
 	lua_State* L = luaL_newstate();
+	if(L == NULL) return;
 	luaL_openlibs(L);
 	luaopen_lpeg(L);
 	luaopen_cjson(L);

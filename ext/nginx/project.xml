@@ -9,7 +9,7 @@
 	<include os="linux">src/os/unix</include>
 	<output type="app">nginx</output>
 	<flags compiler="msvc">MT;W3;Ox</flags>
-	<flags compiler="gcc">O3</flags>
+	<flags compiler="gcc">O2</flags>
 	<flags step="link" compiler="gcc">pthread;lcrypt</flags>
 	<flags step="link" compiler="msvc">SUBSYSTEM:CONSOLE</flags>
 	<flags type="pp">PCRE_STATIC</flags>
@@ -90,6 +90,7 @@
 	<source f="src/http/modules/ngx_http_upstream_least_conn_module.c"/>
 	<source f="src/http/modules/ngx_http_userid_filter_module.c"/>
 	<source f="src/http/modules/ngx_http_uwsgi_module.c"/>
+	<source f="src/http/modules/ngx_http_sub_filter_module.c"/>
 	<source f="src/http/ngx_http.c"/>
 	<source f="src/http/ngx_http_busy_lock.c"/>
 	<source f="src/http/ngx_http_copy_filter_module.c"/>

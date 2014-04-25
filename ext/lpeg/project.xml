@@ -4,11 +4,11 @@
 	<depends include="true">../luajit</depends>
 	<flags compiler="msvc">MT;W3;EHsc;Ox</flags>
 	<flags compiler="gcc" ext="cc">std=c++11</flags>
-	<flags compiler="gcc">O3</flags>
+	<flags compiler="gcc">O2</flags>
 	<include>include</include>
-    <source f="src/lpcap.c"/>
-    <source f="src/lpcode.c"/>
-    <source f="src/lpprint.c"/>
-    <source f="src/lptree.c"/>
-    <source f="src/lpvm.c"/>
+	<source f="src/lpcap.c"/>
+	<source f="src/lpcode.c"/>
+	<source f="src/lpprint.c"/>
+	<source f="src/lptree.c"/>
+	<source f="src/lpvm.c"/>
 </project>
