@@ -13,9 +13,6 @@
 /* the location of <unordered_set> or <hash_set> */
 #define HASH_SET_H <unordered_set>
 
-/* Define to 1 if you have the <byteswap.h> header file. */
-#define HAVE_BYTESWAP_H 1
-
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
 #define HAVE_DIRENT_H 1
@@ -23,8 +20,21 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #define HAVE_DLFCN_H 1
 
-/* Define to 1 if you have the <endian.h> header file. */
+#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) 
+#define HAVE_SYS_ENDIAN_H 1
+#elif defined(__APPLE__)
+#define HAVE_MACHINE_ENDIAN_H 1
+#elif defined(__sun) && defined(__SVR4)
+#define HAVE_SYS_ISA_DEFS_H 1
+#define HAVE_SYS_BYTEORDER_H 1
+#else
 #define HAVE_ENDIAN_H 1
+#define HAVE_BYTESWAP_H 1
+/* Define to 1 if the system has the type `u_int32_t'. */
+#define HAVE_U_INT32_T 1
+/* Define to 1 if the system has the type `u_int64_t'. */
+#define HAVE_U_INT64_T 1
+#endif
 
 /* Define to 1 if you have the `getopt' function. */
 #define HAVE_GETOPT 1
@@ -46,9 +56,6 @@
 
 /* Define to 1 if you have the <libkern/OSByteOrder.h> header file. */
 /* #undef HAVE_LIBKERN_OSBYTEORDER_H */
-
-/* Define to 1 if you have the <machine/endian.h> header file. */
-/* #undef HAVE_MACHINE_ENDIAN_H */
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
@@ -77,23 +84,6 @@
 /* Define to 1 if you have the <string.h> header file. */
 #define HAVE_STRING_H 1
 
-/* Define to 1 if you have the <sys/byteorder.h> header file. */
-/* #undef HAVE_SYS_BYTEORDER_H */
-
-/* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
-   */
-/* #undef HAVE_SYS_DIR_H */
-
-/* Define to 1 if you have the <sys/endian.h> header file. */
-/* #undef HAVE_SYS_ENDIAN_H */
-
-/* Define to 1 if you have the <sys/isa_defs.h> header file. */
-/* #undef HAVE_SYS_ISA_DEFS_H */
-
-/* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
-   */
-/* #undef HAVE_SYS_NDIR_H */
-
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #define HAVE_SYS_STAT_H 1
 
@@ -114,12 +104,6 @@
 
 /* Define to 1 if you have the <utime.h> header file. */
 #define HAVE_UTIME_H 1
-
-/* Define to 1 if the system has the type `u_int32_t'. */
-#define HAVE_U_INT32_T 1
-
-/* Define to 1 if the system has the type `u_int64_t'. */
-#define HAVE_U_INT64_T 1
 
 /* define if your compiler has __attribute__ */
 #define HAVE___ATTRIBUTE__ 1
@@ -196,4 +180,5 @@
 #if defined( __MINGW32__) || defined(__MINGW64__)
 #include "windows/port.h"
 #endif
+
 
