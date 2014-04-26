@@ -48,27 +48,15 @@ void Webapp::Cleanup(unsigned int cleanupTask, unsigned int shutdown)
 	}
 }
 
-void Webapp::ToggleLevelDB() {
-	//Enable/disable leveldb as required.
-	if(!leveldb_enabled && db != NULL) {
-		delete db;
-		db = NULL;
-	}
-	else if(leveldb_enabled && db == NULL) {
-		leveldb::Options options;
-		options.filter_policy = leveldb::NewBloomFilterPolicy(10);
-		options.create_if_missing = true;
-		leveldb::DB::Open(options, session_dir, &db);
-	}
-}
-
 /**
  * Reload all cached data as necessary.
 */
 void Webapp::Reload()
 {
-	ToggleLevelDB();
-	
+	if(db != NULL) {
+		delete db;
+		db = NULL;
+	}
 	//Clear templates
 	mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::IMMEDIATE_RELOAD);
 
@@ -280,8 +268,12 @@ void Webapp::Start() {
 	while(!aborted) {
 		Reload();
 		
-		//LevelDB may now be disabled. Clean it up as necessary.
-		ToggleLevelDB();
+		if(leveldb_enabled && db == NULL) {
+			leveldb::Options options;
+			options.filter_policy = leveldb::NewBloomFilterPolicy(10);
+			options.create_if_missing = true;
+			leveldb::DB::Open(options, session_dir, &db);
+		}
 		
 		client_svc.stop();
 		client_svc.reset();

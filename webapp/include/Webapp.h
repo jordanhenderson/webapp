@@ -18,7 +18,6 @@
 //LevelDB uses 3 threads, leave room for that + server thread.
 #define WEBAPP_MAX_THREADS 100
 #define WEBAPP_STATIC_STRINGS 10
-#define WEBAPP_SCRIPTS 4
 #define WEBAPP_PARAM_PORT 0
 #define WEBAPP_PARAM_ABORTED 1
 #define WEBAPP_PARAM_TPLCACHE 2
