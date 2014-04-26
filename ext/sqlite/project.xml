@@ -2,6 +2,7 @@
 <project>
 	<output type="static">sqlite</output>
 	<flags compiler="msvc">MT;W3;Ox</flags>
+	<flags compiler="gcc" ext="c">std=gnu99</flags>
 	<flags type="pp">SQLITE_THREADSAFE=1;SQLITE_ENABLE_COLUMN_METADATA</flags>
 	<flags compiler="gcc">O2</flags>
 	<include>include</include>
