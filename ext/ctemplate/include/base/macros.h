@@ -34,6 +34,7 @@ typedef unsigned __int32 uint32;
 
 #if defined(HAVE_U_INT64_T)
 typedef u_int64_t uint64;
+#error nope
 #elif defined(HAVE_UINT64_T)
 typedef uint64_t uint64;
 #elif defined(HAVE___INT64)

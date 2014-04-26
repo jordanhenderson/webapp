@@ -46,6 +46,7 @@
 #include <inttypes.h>     // another place @ac_cv_unit64@ might live
 #endif
 #include <sys/types.h>    // final place @ac_cv_unit64@ might live
+#include "base/macros.h"
 
 class TemplateStringTest;          // needed for friendship declaration
 class StaticTemplateStringTest;
@@ -110,7 +111,7 @@ struct  StringHash {
 
 // ----------------------- THE CLASSES -------------------------------
 
-typedef u_int64_t TemplateId;
+typedef uint64 TemplateId;
 
 const TemplateId kIllegalTemplateId = 0;
 
