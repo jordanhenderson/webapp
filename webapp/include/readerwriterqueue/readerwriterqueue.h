@@ -1,4 +1,4 @@
-// Â©2013 Cameron Desrochers.
+// ©2013 Cameron Desrochers.
 // Distributed under the simplified BSD license (see the license file that
 // should have come with this header).
 
@@ -91,8 +91,8 @@ public:
 		fence(memory_order_sync);
 
 		// Destroy any remaining objects in queue and free memory
-		Block* tailBlock_ = tailBlock;
-		Block* block = frontBlock;
+		Block* frontBlock_ = frontBlock;
+		Block* block = frontBlock_;
 		do {
 			Block* nextBlock = block->next;
 			size_t blockFront = block->front;
@@ -107,7 +107,7 @@ public:
 			delete block;
 			block = nextBlock;
 
-		} while (block != tailBlock_);
+		} while (block != frontBlock_);
 	}
 
 

@@ -194,6 +194,10 @@ Request* GetNextRequest(RequestBase* worker)
 	return worker->dequeue();
 }
 
+void QueueRequest(RequestBase* worker, Request* r) {
+	worker->enqueue(r);
+}
+
 void FinishRequest(Request* r)
 {
 	r->reset();

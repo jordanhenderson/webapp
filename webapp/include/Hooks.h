@@ -78,6 +78,7 @@ extern "C" {
 /* Requests */
 	APIEXPORT Request* 
 				   GetNextRequest(RequestBase*);
+	APIEXPORT void QueueRequest(RequestBase*, Request*);
 	APIEXPORT void FinishRequest(Request*);
 	APIEXPORT void WriteData(LuaSocket*, webapp_str_t* data);
 	APIEXPORT webapp_str_t* ReadData(LuaSocket* socket, RequestBase* worker, 
