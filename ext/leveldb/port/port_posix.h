@@ -8,6 +8,15 @@
 #define STORAGE_LEVELDB_PORT_PORT_POSIX_H_
 
 #undef PLATFORM_IS_LITTLE_ENDIAN
+
+#if defined(__sun) && defined(__SVR4)
+#define OS_SOLARIS 1
+#endif
+
+#if defined(__APPLE__)
+#define OS_MACOSX 1
+#endif
+
 #if defined(OS_MACOSX)
   #include <machine/endian.h>
   #if defined(__DARWIN_LITTLE_ENDIAN) && defined(__DARWIN_BYTE_ORDER)

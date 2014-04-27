@@ -45,6 +45,9 @@
 #endif
 #endif
 
+#ifdef _FILE_OFFSET_BITS
+#undef _FILE_OFFSET_BITS
+#endif
 #define _FILE_OFFSET_BITS 64
 
 #include <sys/types.h>

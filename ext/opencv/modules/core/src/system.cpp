@@ -131,6 +131,12 @@ std::wstring GetTempFileNameWinRT(std::wstring prefix)
 #endif
 #endif
 
+#if defined(__sun) || defined (__SVR4)
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/types.h>
+#endif
+
 #ifdef ANDROID
 # include <android/log.h>
 #endif

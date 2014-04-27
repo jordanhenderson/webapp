@@ -163,7 +163,7 @@
 #define NGX_CONFIGURE ""
 
 #ifndef NGX_COMPILER
-#define NGX_COMPILER  "gcc 4.8.2 (GCC) "
+#define NGX_COMPILER  "gcc"
 #endif
 
 
@@ -181,24 +181,64 @@
 #define NGX_HAVE_GCC_VARIADIC_MACROS  1
 #endif
 
-
+#ifdef __linux__
 #ifndef NGX_HAVE_EPOLL
 #define NGX_HAVE_EPOLL  1
 #endif
-
-
-#ifndef NGX_HAVE_CLEAR_EVENT
-#define NGX_HAVE_CLEAR_EVENT  1
-#endif
-
-
 #ifndef NGX_HAVE_EPOLLRDHUP
 #define NGX_HAVE_EPOLLRDHUP  1
 #endif
-
-
+#ifndef NGX_HAVE_TCP_INFO
+#define NGX_HAVE_TCP_INFO 1
+#endif
+#ifndef NGX_HAVE_O_DIRECT
+#define NGX_HAVE_O_DIRECT  1
+#endif
+#ifndef NGX_HAVE_ALIGNED_DIRECTIO
+#define NGX_HAVE_ALIGNED_DIRECTIO  1
+#endif
+#ifndef NGX_CPU_CACHE_LINE
+#define NGX_CPU_CACHE_LINE  64
+#endif
+#ifndef NGX_HAVE_STATFS
+#define NGX_HAVE_STATFS 1
+#endif
+#ifndef NGX_HAVE_MSGHDR_MSG_CONTROL
+#define NGX_HAVE_MSGHDR_MSG_CONTROL  1
+#endif
+#ifndef NGX_HAVE_SCHED_SETAFFINITY
+#define NGX_HAVE_SCHED_SETAFFINITY  1
+#endif
+#ifndef NGX_HAVE_CLEAR_EVENT
+#define NGX_HAVE_CLEAR_EVENT  1
+#endif
 #ifndef NGX_HAVE_O_PATH
 #define NGX_HAVE_O_PATH  1
+#endif
+#ifndef NGX_HAVE_D_TYPE
+#define NGX_HAVE_D_TYPE  1
+#endif
+#ifndef NGX_HAVE_GMTOFF
+#define NGX_HAVE_GMTOFF  1
+#endif
+#ifndef NGX_HAVE_GNU_CRYPT_R
+#define NGX_HAVE_GNU_CRYPT_R  1
+#endif
+#ifndef NGX_HAVE_PR_SET_DUMPABLE
+#define NGX_HAVE_PR_SET_DUMPABLE  1
+#endif
+#ifndef NGX_HAVE_SENDFILE64
+#define NGX_HAVE_SENDFILE64  1
+#endif
+#endif
+
+#define NGX_HAVE_DEVPOLL 1
+#define NGX_HAVE_POLL 1
+
+#if defined(__sun) || defined(__SVR4)
+#ifndef NGX_CPU_CACHE_LINE
+#define NGX_CPU_CACHE_LINE 32
+#endif
 #endif
 
 
@@ -207,33 +247,8 @@
 #endif
 
 
-#ifndef NGX_HAVE_SENDFILE64
-#define NGX_HAVE_SENDFILE64  1
-#endif
-
-
-#ifndef NGX_HAVE_PR_SET_DUMPABLE
-#define NGX_HAVE_PR_SET_DUMPABLE  1
-#endif
-
-
-#ifndef NGX_HAVE_SCHED_SETAFFINITY
-#define NGX_HAVE_SCHED_SETAFFINITY  1
-#endif
-
-
-#ifndef NGX_HAVE_GNU_CRYPT_R
-#define NGX_HAVE_GNU_CRYPT_R  1
-#endif
-
-
 #ifndef NGX_HAVE_NONALIGNED
 #define NGX_HAVE_NONALIGNED  1
-#endif
-
-
-#ifndef NGX_CPU_CACHE_LINE
-#define NGX_CPU_CACHE_LINE  64
 #endif
 
 
@@ -242,21 +257,6 @@
 
 #ifndef NGX_HAVE_POSIX_FADVISE
 #define NGX_HAVE_POSIX_FADVISE  1
-#endif
-
-
-#ifndef NGX_HAVE_O_DIRECT
-#define NGX_HAVE_O_DIRECT  1
-#endif
-
-
-#ifndef NGX_HAVE_ALIGNED_DIRECTIO
-#define NGX_HAVE_ALIGNED_DIRECTIO  1
-#endif
-
-
-#ifndef NGX_HAVE_STATFS
-#define NGX_HAVE_STATFS  1
 #endif
 
 
@@ -277,11 +277,6 @@
 
 #ifndef NGX_HAVE_KEEPALIVE_TUNABLE
 #define NGX_HAVE_KEEPALIVE_TUNABLE  1
-#endif
-
-
-#ifndef NGX_HAVE_TCP_INFO
-#define NGX_HAVE_TCP_INFO  1
 #endif
 
 
@@ -314,13 +309,14 @@
 #endif
 
 
+#if UINTPTR_MAX == 0xffffffff
 #ifndef NGX_MAX_SIZE_T_VALUE
-#define NGX_MAX_SIZE_T_VALUE  9223372036854775807LL
+#define NGX_MAX_SIZE_T_VALUE  2147483647L
 #endif
 
 
 #ifndef NGX_SIZE_T_LEN
-#define NGX_SIZE_T_LEN  (sizeof("-9223372036854775808") - 1)
+#define NGX_SIZE_T_LEN  (sizeof("-2147483648") - 1)
 #endif
 
 
@@ -335,6 +331,35 @@
 
 
 #ifndef NGX_TIME_T_SIZE
+#define NGX_TIME_T_SIZE  4
+#endif
+
+
+#ifndef NGX_TIME_T_LEN
+#define NGX_TIME_T_LEN  (sizeof("-2147483648") - 1)
+#endif
+
+#elif UINTPTR_MAX == 0xffffffffffffffff
+#ifndef NGX_MAX_SIZE_T_VALUE
+#define NGX_MAX_SIZE_T_VALUE  9223372036854775807LL
+#endif
+
+
+#ifndef NGX_SIZE_T_LEN   
+#define NGX_SIZE_T_LEN  (sizeof("-9223372036854775808") - 1)
+#endif
+
+
+#ifndef NGX_MAX_OFF_T_VALUE
+#define NGX_MAX_OFF_T_VALUE  9223372036854775807LL
+#endif
+
+
+#ifndef NGX_OFF_T_LEN
+#define NGX_OFF_T_LEN  (sizeof("-9223372036854775808") - 1)
+#endif
+
+#ifndef NGX_TIME_T_SIZE
 #define NGX_TIME_T_SIZE  8
 #endif
 
@@ -342,6 +367,8 @@
 #ifndef NGX_TIME_T_LEN
 #define NGX_TIME_T_LEN  (sizeof("-9223372036854775808") - 1)
 #endif
+#endif
+
 
 
 #ifndef NGX_HAVE_PREAD
@@ -394,23 +421,8 @@
 #endif
 
 
-#ifndef NGX_HAVE_MSGHDR_MSG_CONTROL
-#define NGX_HAVE_MSGHDR_MSG_CONTROL  1
-#endif
-
-
 #ifndef NGX_HAVE_FIONBIO
 #define NGX_HAVE_FIONBIO  1
-#endif
-
-
-#ifndef NGX_HAVE_GMTOFF
-#define NGX_HAVE_GMTOFF  1
-#endif
-
-
-#ifndef NGX_HAVE_D_TYPE
-#define NGX_HAVE_D_TYPE  1
 #endif
 
 
@@ -429,27 +441,27 @@
 #endif
 
 #ifndef NGX_OPENSSL_MD5
-#define NGX_OPENSSL_MD5  0
+#define NGX_OPENSSL_MD5  1
 #endif
 
 
 #ifndef NGX_HAVE_OPENSSL_MD5_H
-#define NGX_HAVE_OPENSSL_MD5_H  0
+#define NGX_HAVE_OPENSSL_MD5_H  1
 #endif
 
 
 #ifndef NGX_HAVE_MD5
-#define NGX_HAVE_MD5  0
+#define NGX_HAVE_MD5  1
 #endif
 
 
 #ifndef NGX_HAVE_SHA1
-#define NGX_HAVE_SHA1  0
+#define NGX_HAVE_SHA1  1
 #endif
 
 
 #ifndef NGX_HAVE_OPENSSL_SHA1_H
-#define NGX_HAVE_OPENSSL_SHA1_H  0
+#define NGX_HAVE_OPENSSL_SHA1_H  1
 #endif
 
 #ifndef NGX_PREFIX
@@ -539,3 +551,4 @@
 
 
 #endif
+

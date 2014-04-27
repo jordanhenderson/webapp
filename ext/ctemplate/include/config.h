@@ -24,7 +24,7 @@
 #define HAVE_SYS_ENDIAN_H 1
 #elif defined(__APPLE__)
 #define HAVE_MACHINE_ENDIAN_H 1
-#elif defined(__sun) && defined(__SVR4)
+#elif defined(__sun) || defined(__SVR4)
 #define HAVE_SYS_ISA_DEFS_H 1
 #define HAVE_SYS_BYTEORDER_H 1
 #else
