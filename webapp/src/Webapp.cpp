@@ -361,12 +361,7 @@ void Webapp::process_header_async(Request* r, const std::error_code& ec, size_t 
 			n += s.read_some(buffer(r->headers_buf.data + n,
 											to_read - n));
 
-			//If the header size has been read, and we have read all headers
-			if(headers_size > 0 && n == headers_size) {
-				r->lua_request = calloc(request_size, 1);
-				workers.Enqueue(r);
-				return;
-			} else if(headers_size == 0 && n >= 1) {
+			if(headers_size == 0 && n >= 1) {
 				//If the header size hasn't been read, attempt to parse
 				//a msgpack number.
 				msgpack_unpacked result;
@@ -387,6 +382,13 @@ void Webapp::process_header_async(Request* r, const std::error_code& ec, size_t 
 					}
 				}
 				msgpack_unpacked_destroy(&result);
+			}
+			
+			//If the header size has been read, and we have read all headers
+			if(headers_size > 0 && n >= headers_size) {
+				r->lua_request = calloc(request_size, 1);
+				workers.Enqueue(r);
+				return;
 			}
 
 			s.timer.expires_from_now(chrono::seconds(5));
