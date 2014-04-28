@@ -230,14 +230,19 @@
 #ifndef NGX_HAVE_SENDFILE64
 #define NGX_HAVE_SENDFILE64  1
 #endif
+#ifndef NGX_HAVE_POLL
+#define NGX_HAVE_POLL 1
+#endif
 #endif
 
-#define NGX_HAVE_DEVPOLL 1
-#define NGX_HAVE_POLL 1
+
 
 #if defined(__sun) || defined(__SVR4)
 #ifndef NGX_CPU_CACHE_LINE
 #define NGX_CPU_CACHE_LINE 32
+#endif
+#ifndef NGX_HAVE_DEVPOLL
+#define NGX_HAVE_DEVPOLL 1
 #endif
 #endif
 
