@@ -252,7 +252,7 @@ Webapp::Webapp(const char* session_dir,
 			tcp::endpoint endpoint(tcp::v4(), port);
 			acceptor = new tcp::acceptor(svc, endpoint, true);
 			bound = 1;
-		} catch (const asio::system_error& ec) {
+		} catch (const std::system_error& ec) {
 			failed++;
 			printf("Error: bind to %d failed: (%s)\n", port, ec.what());
 			this_thread::sleep_for(chrono::milliseconds(1000));
@@ -374,7 +374,9 @@ void Webapp::process_header_async(Request* r, const std::error_code& ec, size_t 
 					if(obj.type == MSGPACK_OBJECT_POSITIVE_INTEGER) {
 						headers_size = (int32_t) obj.via.u64;
 						//Reserve enough room for the entire header chunk.
-						r->headers.resize(headers_size + offset);
+						if(headers_size + offset > 9) {
+							r->headers.resize(headers_size + offset);
+						}
 						//Set the headers buffer location (needed by frontend)
 						//to the actual header start location.
 						r->headers_buf.data = r->headers.data() + offset;

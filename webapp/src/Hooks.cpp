@@ -201,6 +201,9 @@ void QueueRequest(RequestBase* worker, Request* r) {
 void FinishRequest(Request* r)
 {
 	r->reset();
+	r->s.socket.timer.expires_from_now(chrono::seconds(5));
+	r->s.socket.timer.async_wait(bind(&Webapp::process_header_async, app, 
+							r, _1, 0));
 	r->s.socket.async_read_some(null_buffers(), bind(
 								  &Webapp::process_header_async,
 								  app, r, _1, _2));
@@ -267,11 +270,11 @@ void WriteData(LuaSocket* s, webapp_str_t* buf)
 	//TODO: investigate leak here.
 	webapp_str_t* tmp_buf = new webapp_str_t(*buf);
 	socket->waiting++;
-
+	
 	try {
 		async_write(*socket, buffer(tmp_buf->data, tmp_buf->len),
 						  bind(&WriteComplete, socket, tmp_buf, _1, _2));
-	} catch (asio::system_error ec) {
+	} catch (std::system_error ec) {
 		socket->waiting--;
 		socket->abort();
 	}

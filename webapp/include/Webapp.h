@@ -87,8 +87,9 @@ struct Request {
 	{
 		s.socket.ctr = 0;
 		if(!destroy) {
-			headers.clear();
-			headers.resize(9);
+			if(headers_buf.len > 255) {
+				headers.resize(9);
+			}
 			headers_buf.data = headers.data();
 			headers_buf.len = 0;
 		}
@@ -107,11 +108,12 @@ struct Request {
 	
 	~Request()
 	{
-		reset();
+		reset(1);
 	}
 
 	Request(asio::io_service& svc) : s(svc), socket_ref(s)
 	{
+		headers.resize(9);
 		reset();
 	}
 };
@@ -155,7 +157,10 @@ struct LockedQueue {
 	
 	void enqueue(T* i)
 	{
-		queue.enqueue(i);
+		{
+			std::lock_guard<std::mutex> lk(cv_mutex);
+			queue.enqueue(i);
+		}
 		cv.notify_one();
 	}
 	
