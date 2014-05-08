@@ -25,11 +25,13 @@
 #define WEBAPP_PARAM_THREADS 4
 #define WEBAPP_PARAM_REQUESTSIZE 5
 #define WEBAPP_PARAM_CLIENTSOCKETS 6
-#define WEBAPP_PORT_DEFAULT 5000
 #define WEBAPP_DEFAULT_QUEUESIZE 1023
 #define WEBAPP_OPT_SESSION 0
 #define WEBAPP_OPT_SESSION_DEFAULT "session"
 #define WEBAPP_OPT_PORT 1
+#define WEBAPP_OPT_PORT_DEFAULT 5000
+#define WEBAPP_OPT_REQUESTS 2
+#define WEBAPP_OPT_REQUESTS_DEFAULT 10000
 
 extern Webapp* app;
 
@@ -92,6 +94,9 @@ struct Request {
 			}
 			headers_buf.data = headers.data();
 			headers_buf.len = 0;
+		} else {
+			if(lua_request != NULL) free(lua_request);
+			lua_request = NULL;
 		}
 		
 		for(auto it: strings) delete it;
@@ -101,9 +106,6 @@ struct Request {
 		strings.clear();
 		queries.clear();
 		sessions.clear();
-		
-		if(lua_request != NULL) free(lua_request);
-		lua_request = NULL;
 	}
 	
 	~Request()
@@ -111,11 +113,7 @@ struct Request {
 		reset(1);
 	}
 
-	Request(asio::io_service& svc) : s(svc), socket_ref(s)
-	{
-		headers.resize(9);
-		reset();
-	}
+	Request();
 };
 
 /**
@@ -128,7 +126,7 @@ struct LockedQueue {
 	/* Members */
 	unsigned int cleanupTask = 0;
 	unsigned int shutdown = 0;
-	std::atomic<unsigned int> aborted;
+	std::atomic<unsigned int> aborted {0};
 	unsigned int finished = 0;
 	std::condition_variable cv;
 	std::mutex cv_mutex;
@@ -173,6 +171,17 @@ struct LockedQueue {
 		}
 		if(aborted) return NULL;
 		return r;
+	}
+	
+	T* try_dequeue()
+	{
+		T* r = NULL;
+		{
+			std::unique_lock<std::mutex> lk(cv_mutex);
+			queue.try_dequeue(r);
+			if(aborted) return NULL;
+			return r;
+		}
 	}
 	LockedQueue() : aborted(0), queue(WEBAPP_DEFAULT_QUEUESIZE) {}
 };
@@ -267,21 +276,30 @@ struct WorkerArray {
 };
 
 class Webapp {
+friend class Request;
 	std::unordered_map<std::string, webapp_str_t*> scripts;
 	WorkerArray<RequestQueue> workers;
+	/* Queue finished requests for reuse. */
+	LockedQueue<Request> finished_requests;
+	
+	/* Concurrent request counter. */
+	std::atomic<int> current_request {0};
+	/* Current request pool. */
+	std::atomic<int> current_pool {0};
+	std::vector<Request*> request_pools;
 	
 	//Parameters
 	unsigned int aborted = 0;
 	unsigned int template_cache_enabled = 1;
 	unsigned int leveldb_enabled = 1;
-	unsigned int port = WEBAPP_PORT_DEFAULT;
+	unsigned int port = WEBAPP_OPT_PORT_DEFAULT;
+	const char* session_dir = WEBAPP_OPT_SESSION_DEFAULT;
+	/* Amount of requests to create in each request pool. */
+	unsigned int n_requests = WEBAPP_OPT_REQUESTS_DEFAULT;
 	unsigned int request_size = 0;
 	unsigned int client_sockets = 1;
-	int num_threads = 1;
-	
-	const char* session_dir = WEBAPP_OPT_SESSION_DEFAULT;
+	unsigned int num_threads = 1;
 	std::mutex cleanupLock;
-
 	//Keep track of dynamic databases
 	std::unordered_map<size_t, Database*> databases;
 	std::atomic<size_t> db_count {0};
@@ -296,12 +314,13 @@ class Webapp {
 	asio::io_service client_svc;
 	asio::io_service::work client_wrk;
 	asio::ip::tcp::resolver resolver;
+	
 public:
 	leveldb::DB* db = NULL;
 	std::unordered_map<std::string, std::string> templates;
 
 	Webapp(const char* session_dir, unsigned int port, 
-		   asio::io_service& io_svc);
+		   asio::io_service& io_svc, unsigned int requests);
 	~Webapp();
 
 	void Start();

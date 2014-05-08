@@ -20,6 +20,7 @@ time_t epoch = mktime(&epoch_tm);
 CSimpleOptA::SOption webapp_options[] = {
 	{WEBAPP_OPT_SESSION, "--session", SO_REQ_CMB},
 	{WEBAPP_OPT_PORT, "--port", SO_REQ_CMB},
+	{WEBAPP_OPT_REQUESTS, "--requests", SO_REQ_CMB},
 	SO_END_OF_OPTIONS
 };
 
@@ -34,7 +35,8 @@ int main(int argc, char* argv[])
 
 	CSimpleOptA args(argc, argv, webapp_options);
 	const char* session = WEBAPP_OPT_SESSION_DEFAULT;
-	unsigned int port = WEBAPP_PORT_DEFAULT;
+	unsigned int port = WEBAPP_OPT_PORT_DEFAULT;
+	unsigned int requests = WEBAPP_OPT_REQUESTS_DEFAULT;
 	while(args.Next()) {
 		ESOError err = args.LastError();
 		if(err == SO_SUCCESS) {
@@ -44,6 +46,10 @@ int main(int argc, char* argv[])
 				break;
 			case WEBAPP_OPT_PORT:
 				port = atoi(args.OptionArg());
+				break;
+			case WEBAPP_OPT_REQUESTS:
+				requests = atoi(args.OptionArg());
+				break;
 			}
 		} else if(err == SO_ARG_MISSING || err == SO_ARG_INVALID_DATA) {
 			printf("Error. Usage: webapp [--session=directory]\n");
@@ -52,7 +58,7 @@ int main(int argc, char* argv[])
 	}
 
 	io_service svc;
-	Webapp _app(session, port, svc);
+	Webapp _app(session, port, svc, requests);
 	//Assign address on stack. This is normally dangerous, however this
 	//function will only return at the end of execution (shutting down).
 	app = &_app; 

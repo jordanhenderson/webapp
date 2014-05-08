@@ -28,6 +28,12 @@ using namespace std::placeholders;
 #pragma warning(disable:4316)
 #endif
 
+Request::Request() : s(app->svc), socket_ref(s)
+{
+	headers.resize(9);
+	reset();
+}
+
 /**
  * Lock/block all workers, then reload all data associated to the webapp
  * @param cleanupTask indicates if the caller has signalled the cleanup
@@ -86,7 +92,7 @@ void Webapp::Reload()
 
 			//Run init script.
 			RequestBase worker;
-			Request r(svc);
+			Request r;
 
 			LuaParam _v[] = { { "request", &r },
 							  { "worker", &worker } };
@@ -235,7 +241,8 @@ finish:
  * @param io_svc the asio service object to listen upon
 */
 Webapp::Webapp(const char* session_dir,
-			   unsigned int port, io_service& io_svc) :
+			   unsigned int port, io_service& io_svc,
+			   unsigned int n_requests) :
 	session_dir(session_dir),
 	port(port),
 	svc(io_svc),
@@ -246,7 +253,6 @@ Webapp::Webapp(const char* session_dir,
 	//Create the TCP endpoint and acceptor.
 	int bound = 0;
 	int failed = 0;
-
 	while(!bound) {
 		try {
 			tcp::endpoint endpoint(tcp::v4(), port);
@@ -261,10 +267,10 @@ Webapp::Webapp(const char* session_dir,
 			}
 		}
 	}
-	accept_conn();
 }
 
 void Webapp::Start() {
+	accept_conn();
 	while(!aborted) {
 		Reload();
 		
@@ -306,8 +312,21 @@ void Webapp::Start() {
 */
 void Webapp::accept_conn()
 {
-	
-	Request* r = new Request(svc);
+	Request* r = finished_requests.try_dequeue();
+	if(r == NULL) {
+		/* Get the next request. We may need to allocate a new pool here. */
+		if(current_request >= n_requests || current_request == 0) {
+			//Allocate a new pool, use that pool from now on.
+			Request* r_pool = new Request[n_requests];
+			request_pools.push_back(r_pool);
+			current_pool = request_pools.size() - 1;
+			current_request = 1;
+			r = &r_pool[0];
+		} else {
+			r = &request_pools.at(current_pool)[current_request];
+			current_request++;
+		}
+	}
 	acceptor->async_accept(r->s.socket,
 						   bind(&Webapp::accept_conn_async, this,
 									 r, _1));
@@ -321,19 +340,24 @@ void Webapp::accept_conn()
 */
 void Webapp::accept_conn_async(Request* r, const std::error_code& error)
 {
-	//Reset the header buffer. Allows reusing a request object.
-	Socket& s = r->s.socket;
-	try {
-		s.timer.expires_from_now(chrono::seconds(5));
-		s.timer.async_wait(bind(&Webapp::process_header_async, this, r,
-								_1, 0));
-		s.async_read_some(null_buffers(), bind(
-									  &Webapp::process_header_async,
-									  this, r, _1, _2));
-		accept_conn();
-	} catch(std::system_error er) {
-		s.timer.cancel();
-		delete r;
+	if(!error) {
+		Socket& s = r->s.socket;
+		try {
+			s.timer.expires_from_now(chrono::seconds(5));
+			s.timer.async_wait(bind(&Webapp::process_header_async, this, r,
+									_1, 0));
+			s.async_read_some(null_buffers(), bind(
+										  &Webapp::process_header_async,
+										  this, r, _1, _2));
+			accept_conn();
+		} catch(std::system_error er) {
+			s.timer.cancel();
+			s.cancel();
+			r->reset();
+			finished_requests.enqueue(r);
+			accept_conn();
+		}
+	} else {
 		accept_conn();
 	}
 }
@@ -346,11 +370,12 @@ void Webapp::accept_conn_async(Request* r, const std::error_code& error)
  * @param ec the asio error code, if any
  * @param n_bytes the amount bytes transferred
 */
+int derp = 0;
 void Webapp::process_header_async(Request* r, const std::error_code& ec, size_t n_bytes)
 {
 	Socket& s = r->s.socket;
-	s.timer.cancel();
 	if(!ec) {
+		s.timer.cancel();
 		try {
 			//Read in the next chunk of data from the socket
 			uint16_t& n = s.ctr;
@@ -388,7 +413,11 @@ void Webapp::process_header_async(Request* r, const std::error_code& ec, size_t 
 			
 			//If the header size has been read, and we have read all headers
 			if(headers_size > 0 && n >= headers_size) {
-				r->lua_request = calloc(request_size, 1);
+				if(r->lua_request == NULL) {
+					r->lua_request = calloc(request_size, 1);
+				} else {
+					memset(r->lua_request, 0, request_size);
+				}
 				workers.Enqueue(r);
 				return;
 			}
@@ -399,15 +428,20 @@ void Webapp::process_header_async(Request* r, const std::error_code& ec, size_t 
 			s.async_read_some(null_buffers(), bind(
 										  &Webapp::process_header_async,
 										  this, r, _1, _2));
-
 		} catch (...) {
 			s.timer.cancel();
-			delete r;
+			s.cancel();
+			s.close();
+			r->reset();
+			finished_requests.enqueue(r);
 		}
 	} else if(ec != asio::error::operation_aborted) {
-		//Failed. Destroy request.
-		delete r;
-	}
+		s.timer.cancel();
+		s.cancel();
+		s.close();
+		r->reset();
+		finished_requests.enqueue(r);
+	} 
 }
 
 LuaSocket* Webapp::create_socket()

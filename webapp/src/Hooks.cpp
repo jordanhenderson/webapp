@@ -158,7 +158,6 @@ webapp_str_t* CompileScript(const char* file)
 		return app->CompileScript(file);
 }
 
-
 /* Parameter Store */
 void SetParamInt(unsigned int key, int value)
 {
@@ -201,9 +200,6 @@ void QueueRequest(RequestBase* worker, Request* r) {
 void FinishRequest(Request* r)
 {
 	r->reset();
-	r->s.socket.timer.expires_from_now(chrono::seconds(5));
-	r->s.socket.timer.async_wait(bind(&Webapp::process_header_async, app, 
-							r, _1, 0));
 	r->s.socket.async_read_some(null_buffers(), bind(
 								  &Webapp::process_header_async,
 								  app, r, _1, _2));
