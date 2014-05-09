@@ -272,6 +272,7 @@ int Database::connect(int database_type, const char* host, const char* username,
 			return DATABASE_FAILED;
 		}
 		mysql_real_connect(mysql_db, host, username, password, database, 0, NULL, 0);
+		
 		//Disable mysql trunctation reporting.
 		bool f = false;
 		mysql_options(mysql_db, MYSQL_REPORT_DATA_TRUNCATION, &f);

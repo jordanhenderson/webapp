@@ -239,6 +239,7 @@ struct WorkerArray {
 	}
 	void Cleanup()
 	{
+		Stop();
 		for(auto it: workers) {
 			delete it;
 		}
