@@ -85,7 +85,8 @@ extern "C" {
 						   Request* r, int bytes, int timeout);
 	APIEXPORT LuaSocket* ConnectSocket(RequestBase* worker, Request* r, 
 					  webapp_str_t* addr, webapp_str_t* port);
-	APIEXPORT void DestroySocket(LuaSocket* s);
+	APIEXPORT void DestroySocket(LuaSocket* socket);
+	APIEXPORT int SocketAvailable(LuaSocket* socket);
 /* Database */
 	APIEXPORT Database* 
 				   CreateDatabase();

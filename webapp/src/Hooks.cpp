@@ -316,6 +316,18 @@ webapp_str_t* ReadData(LuaSocket* s, RequestBase* worker, Request* r,
 	return output;
 }
 
+int SocketAvailable(LuaSocket* s)
+{
+	Socket& socket = s->socket;
+	std::error_code ec;
+	int bytes = socket.available(ec);
+	if(ec) {
+		return 0;
+	} else {
+		return bytes;
+	}
+}
+
 /* Database */
 Database* CreateDatabase()
 {
