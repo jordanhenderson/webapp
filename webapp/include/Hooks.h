@@ -23,7 +23,7 @@ class File;
 
 extern "C" {
 /* Helper methods */
-	APIEXPORT void CleanupString(webapp_str_t*);
+	APIEXPORT void String_Destroy(webapp_str_t*);
 
 /* Template */
 	APIEXPORT void Template_ShowGlobalSection(ctemplate::TemplateDictionary*,
@@ -47,69 +47,65 @@ extern "C" {
 
 /* Session */
 	APIEXPORT webapp_str_t* 
-				   GetSessionValue(Session*, webapp_str_t*);
-	APIEXPORT int  SetSessionValue(Session*, webapp_str_t* key, 
+				   Session_GetValue(Session*, webapp_str_t*);
+	APIEXPORT void Session_SetValue(Session*, webapp_str_t* key, 
 								  webapp_str_t* val);
-	APIEXPORT webapp_str_t* 
-				   GetSessionID(Session*);
     APIEXPORT Session*
-                   GetCookieSession(RequestBase*, webapp_str_t* cookies);
+                   Session_GetFromCookies(RequestBase*, webapp_str_t* cookies);
 	APIEXPORT Session* 
-                   GetSession(RequestBase*, webapp_str_t* session_id);
+                   Session_Get(RequestBase*, webapp_str_t* id);
 	APIEXPORT Session* 
-                   NewSession(RequestBase*, webapp_str_t* primary,
-                              webapp_str_t* secondary);
+                   Session_New(RequestBase*, webapp_str_t* uid);
 	APIEXPORT void 
-				   DestroySession(Session*);
+				   Session_Destroy(Session*);
 	APIEXPORT Session* 
-				   GetRawSession(RequestBase*);
+				   Session_GetRaw(RequestBase*);
 
 /* Script API */
 	APIEXPORT webapp_str_t* 
-				   CompileScript(const char* file);
+				   Script_Compile(const char* file);
 
 /* Parameter Store */
-	APIEXPORT void SetParamInt(unsigned int key, int value);
-	APIEXPORT int  GetParamInt(unsigned int key);
+	APIEXPORT void Param_Set(unsigned int key, int value);
+	APIEXPORT int  Param_Get(unsigned int key);
 
 /* Worker Handling */
-	APIEXPORT void ClearCache(RequestBase*);
-	APIEXPORT void Shutdown(RequestBase*);
+	APIEXPORT void Worker_ClearCache(RequestBase*);
+	APIEXPORT void Worker_Shutdown(RequestBase*);
 
 /* Requests */
 	APIEXPORT Request* 
-				   GetNextRequest(RequestBase*);
-	APIEXPORT void QueueRequest(RequestBase*, Request*);
-	APIEXPORT void FinishRequest(Request*);
-	APIEXPORT void WriteData(LuaSocket*, webapp_str_t* data);
+				   Request_GetNext(RequestBase*);
+	APIEXPORT void Request_Queue(RequestBase*, Request*);
+	APIEXPORT void Request_Finish(Request*);
+	APIEXPORT void Socket_Write(LuaSocket*, webapp_str_t* data);
 	APIEXPORT webapp_str_t* 
-				   ReadData(LuaSocket* socket, RequestBase* worker, 
+				   Socket_Read(LuaSocket* socket, RequestBase* worker, 
 							Request* r, int bytes, int timeout);
 	APIEXPORT LuaSocket* 
-				   ConnectSocket(RequestBase* worker, Request* r, 
-								 webapp_str_t* addr, webapp_str_t* port);
-	APIEXPORT void DestroySocket(LuaSocket* socket);
-	APIEXPORT int  SocketAvailable(LuaSocket* socket);
+				   Socket_Connect(RequestBase* worker, Request* r, 
+								  webapp_str_t* addr, webapp_str_t* port);
+	APIEXPORT void Socket_Destroy(LuaSocket* socket);
+	APIEXPORT int  Socket_DataAvailable(LuaSocket* socket);
 /* Database */
 	APIEXPORT Database* 
-				   CreateDatabase();
-	APIEXPORT void DestroyDatabase(Database*);
+				   Database_Create();
+	APIEXPORT void Database_Destroy(Database*);
 	APIEXPORT Database* 
-				   GetDatabase(size_t index);
-	APIEXPORT int  ConnectDatabase(Database*, int database_type, 
-								  const char* host,
-								  const char* username, 
-								  const char* password, 
-								  const char* database);
-	APIEXPORT void QueryError(Database*, webapp_str_t* output);
+				   Database_Get(size_t index);
+	APIEXPORT int  Database_Connect(Database*, int database_type, 
+									const char* host,
+									const char* username, 
+									const char* password, 
+									const char* database);
 	APIEXPORT int64_t 
-				   ExecString(Database*, webapp_str_t* in);
-	APIEXPORT int  SelectQuery(Query*);
+				   Database_Exec(Database*, webapp_str_t* in);
+	APIEXPORT int  Query_Select(Query*);
 	APIEXPORT Query* 
-				   CreateQuery(webapp_str_t*, Database*, int desc);
-	APIEXPORT void DestroyQuery(webapp_str_t*);
-	APIEXPORT void SetQuery(Query*, webapp_str_t*);
-	APIEXPORT void BindParameter(Query* q, webapp_str_t* in);
+				   Query_Create(Database*, webapp_str_t*, int desc);
+	APIEXPORT void Query_Destroy(webapp_str_t*);
+	APIEXPORT void Query_Set(Query*, webapp_str_t*);
+	APIEXPORT void Query_Bind(Query* q, webapp_str_t* in);
 	
 /* Time */
 	struct webapp_tm {
@@ -124,8 +120,8 @@ extern "C" {
 		int tm_isdst;
 	};
 
-	APIEXPORT void GetTime(struct webapp_tm*);
-	APIEXPORT void UpdateTime(struct webapp_tm*);
+	APIEXPORT void Time_Get(struct webapp_tm*);
+	APIEXPORT void Time_Update(struct webapp_tm*);
 
 /* Image */
 	APIEXPORT Image* 
@@ -138,6 +134,7 @@ extern "C" {
 	APIEXPORT File* 
 				   File_Open(webapp_str_t* filename, webapp_str_t* mode);
 	APIEXPORT void File_Close(File*);
+	APIEXPORT void File_Destroy(File*);
 	APIEXPORT int16_t 
 				   File_Read(File*, int16_t n_bytes);
 	APIEXPORT void File_Write(File*, webapp_str_t* buf);

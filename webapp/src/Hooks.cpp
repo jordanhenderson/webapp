@@ -24,47 +24,46 @@ using namespace asio;
 using namespace asio::ip;
 
 /* Helper methods */
-void CleanupString(webapp_str_t* str) {
+void String_Destroy(webapp_str_t* str) {
 	delete str;
 }
 
 /* Template */
 void Template_ShowGlobalSection(TemplateDictionary* dict, webapp_str_t* section)
 {
-	if(dict == NULL || section == NULL) return;
+	if(dict == NULL) return;
 	dict->ShowTemplateGlobalSection(*section);
 }
 
 void Template_ShowSection(TemplateDictionary* dict, webapp_str_t* section)
 {
-	if(dict == NULL || section == NULL) return;
+	if(dict == NULL) return;
 	dict->ShowSection(*section);
 }
 
 void Template_SetGlobalValue(TemplateDictionary* dict, webapp_str_t* key,
 							 webapp_str_t* value)
 {
-	if (dict == NULL || key == NULL || value == NULL) return;
+	if(dict == NULL) return;
 	dict->SetTemplateGlobalValue(*key, *value);
 }
 
 void Template_SetValue(TemplateDictionary* dict, webapp_str_t* key,
 					   webapp_str_t* value)
 {
-	if (dict == NULL || key == NULL || value == NULL) return;
+	if(dict == NULL) return;
 	dict->SetValue(*key, *value);
 }
 
 void Template_SetIntValue(TemplateDictionary* dict, webapp_str_t* key,
 						  long value)
 {
-	if (dict == NULL || key == NULL) return;
+	if(dict == NULL) return;
 	dict->SetIntValue(*key, value);
 }
 
 TemplateDictionary* Template_Get(RequestBase* worker, webapp_str_t* name)
 {
-	if(worker == NULL) return NULL;
 	TemplateDictionary* base = worker->baseTemplate;
 	if(name == NULL) return base;
 	auto tmpl = &worker->templates;
@@ -75,100 +74,86 @@ TemplateDictionary* Template_Get(RequestBase* worker, webapp_str_t* name)
 
 void Template_Clear(TemplateDictionary* dict)
 {
+	if(dict == NULL) return;
 	dict->Clear();
 }
 
 void Template_Include(webapp_str_t* name, webapp_str_t* file)
 {
-	if(name == NULL || file == NULL) return;
 	app->templates.insert({*name, *file});
 	LoadTemplate(*file, STRIP_WHITESPACE);
 }
 
 void Template_Load(webapp_str_t* page)
 {
-	if(page == NULL) return;
 	LoadTemplate(*page, STRIP_WHITESPACE);
 }
 
 webapp_str_t* Template_Render(RequestBase* worker, webapp_str_t* page)
 {
-	if (page == NULL) return NULL;
 	webapp_str_t dir = "content/";
 	return worker->RenderTemplate(dir + page);
 }
 
 /* Session */
-webapp_str_t* GetSessionValue(Session* session, webapp_str_t* key)
+webapp_str_t* Session_GetValue(Session* session, webapp_str_t* key)
 {
-	if(session == NULL || key == NULL) return NULL;
+	if(session == NULL) return NULL;
 	return session->get(*key);
 }
 
-int SetSessionValue(Session* session, webapp_str_t* key,
+void Session_SetValue(Session* session, webapp_str_t* key, 
 					webapp_str_t* val)
 {
-	if (session == NULL || key == NULL || val == NULL)
-		return 0;
+	if(session == NULL) return;
 	session->put(*key, *val);
-	return 1;
 }
 
-webapp_str_t* GetSessionID(Session* session)
+Session* Session_GetFromCookies(RequestBase* worker, webapp_str_t* cookies)
 {
-	if(session == NULL) return NULL;
-	return &session->session_id;
-}
-
-Session* GetCookieSession(RequestBase* worker, webapp_str_t* cookies)
-{
-	if(worker == NULL) return NULL;
 	return worker->_sessions.get_cookie_session(cookies);
 }
 
-Session* GetSession(RequestBase* worker, webapp_str_t* session_id)
+Session* Session_Get(RequestBase* worker, webapp_str_t* id)
 {
-	if (worker == NULL) return NULL;
-	return worker->_sessions.get_session(session_id);
+	return worker->_sessions.get_session(id);
 }
 
-Session* NewSession(RequestBase* worker, webapp_str_t* primary, 
-					webapp_str_t* secondary)
+Session* Session_New(RequestBase* worker, webapp_str_t* uid)
 {
-	if (worker == NULL) return NULL;
-	return worker->_sessions.new_session(primary, secondary);
+	return worker->_sessions.new_session(uid);
 }
 
-void DestroySession(Session* session)
+void Session_Destroy(Session* session)
 {
+	if(session == NULL) return;
 	delete session;
 }
 
-Session* GetRawSession(RequestBase* worker)
+Session* Session_GetRaw(RequestBase* worker)
 {
-	if(worker == NULL) return NULL;
 	return worker->_sessions.get_raw_session();
 }
 
 /* Script API */
-webapp_str_t* CompileScript(const char* file)
+webapp_str_t* Script_Compile(const char* file)
 {
 	return app->CompileScript(file);
 }
 
 /* Parameter Store */
-void SetParamInt(unsigned int key, int value)
+void Param_Set(unsigned int key, int value)
 {
 	app->SetParamInt(key, value);
 }
 
-int GetParamInt(unsigned int key)
+int Param_Get(unsigned int key)
 {
 	return app->GetParamInt(key);
 }
 
 /* Worker Handling */
-void ClearCache(RequestBase* worker)
+void Worker_ClearCache(RequestBase* worker)
 {
 	//Abort this lua vm.
 	worker->aborted = 1;
@@ -176,7 +161,7 @@ void ClearCache(RequestBase* worker)
 	worker->cleanupTask = 1;
 }
 
-void Shutdown(RequestBase* worker)
+void Worker_Shutdown(RequestBase* worker)
 {
 	//Abort this lua vm.
 	worker->aborted = 1;
@@ -186,16 +171,16 @@ void Shutdown(RequestBase* worker)
 }
 
 /* Requests */
-Request* GetNextRequest(RequestBase* worker)
+Request* Request_GetNext(RequestBase* worker)
 {
 	return worker->dequeue();
 }
 
-void QueueRequest(RequestBase* worker, Request* r) {
+void Request_Queue(RequestBase* worker, Request* r) {
 	worker->enqueue(r);
 }
 
-void FinishRequest(Request* r)
+void Request_Finish(Request* r)
 {
 	r->reset();
 	r->s.socket.async_read_some(null_buffers(), bind(
@@ -234,7 +219,7 @@ void ResolveHandler(RequestBase* worker, Request* r, Socket* s,
 	}
 }
 
-LuaSocket* ConnectSocket(RequestBase* worker, Request* r, 
+LuaSocket* Socket_Connect(RequestBase* worker, Request* r, 
 					  webapp_str_t* addr, webapp_str_t* port) {
 	tcp::resolver::query qry(tcp::v4(), *addr, *port);
 	tcp::resolver& resolver = app->get_resolver();
@@ -244,31 +229,17 @@ LuaSocket* ConnectSocket(RequestBase* worker, Request* r,
 	return s;
 }
 
-void DestroySocket(LuaSocket* s) {
+void Socket_Destroy(LuaSocket* s) {
 	app->destroy_socket(s);
 }
 
-void WriteComplete(Socket* s, webapp_str_t* buf,
-				   const std::error_code& error, size_t bytes_transferred)
+void WriteEvent(Socket* s, webapp_str_t* buf,
+				const std::error_code& error, size_t bytes_transferred)
 {
 	if(!error) {
 		s->waiting--;
 	}
 	delete buf;
-
-}
-
-void WriteData(LuaSocket* s, webapp_str_t* buf)
-{
-	Socket* socket = &s->socket;
-	//TODO: investigate leak here.
-	webapp_str_t* tmp_buf = new webapp_str_t(*buf);
-	socket->waiting++;
-	
-	//No try/catch statement needed; async_write always succeeds.
-	//Errors handled in callback.
-	async_write(*socket, buffer(tmp_buf->data, tmp_buf->len),
-					  bind(&WriteComplete, socket, tmp_buf, _1, _2));
 }
 
 void ReadEvent(Socket* socket, RequestBase* worker, Request* r, 
@@ -301,8 +272,21 @@ void ReadEvent(Socket* socket, RequestBase* worker, Request* r,
 	}
 }
 
-webapp_str_t* ReadData(LuaSocket* socket, RequestBase* worker, Request* r,
-			  int bytes, int timeout)
+void Socket_Write(LuaSocket* s, webapp_str_t* buf)
+{
+	Socket* socket = &s->socket;
+	//TODO: investigate leak here.
+	webapp_str_t* tmp_buf = new webapp_str_t(*buf);
+	socket->waiting++;
+	
+	//No try/catch statement needed; async_write always succeeds.
+	//Errors handled in callback.
+	async_write(*socket, buffer(tmp_buf->data, tmp_buf->len),
+					  bind(&WriteEvent, socket, tmp_buf, _1, _2));
+}
+
+webapp_str_t* Socket_Read(LuaSocket* socket, RequestBase* worker, 
+						Request* r, int bytes, int timeout)
 {
 	//LuaSocket wraps the actual socket object.
 	Socket* s = &socket->socket;
@@ -317,7 +301,7 @@ webapp_str_t* ReadData(LuaSocket* socket, RequestBase* worker, Request* r,
 	return output;
 }
 
-int SocketAvailable(LuaSocket* s)
+int Socket_DataAvailable(LuaSocket* s)
 {
 	Socket& socket = s->socket;
 	std::error_code ec;
@@ -330,64 +314,62 @@ int SocketAvailable(LuaSocket* s)
 }
 
 /* Database */
-Database* CreateDatabase()
+Database* Database_Create()
 {
 	return app->CreateDatabase();
 }
 
-void DestroyDatabase(Database* db)
+void Database_Destroy(Database* db)
 {
+	if(db == NULL) return;
 	return app->DestroyDatabase(db);
 }
 
-Database* GetDatabase(size_t index)
+Database* Database_Get(size_t index)
 {
 	return app->GetDatabase(index);
 }
 
-int ConnectDatabase(Database* db, int database_type, const char* host,
+int Database_Connect(Database* db, int database_type, const char* host,
 					const char* username, const char* password,
 					const char* database)
 {
-	if (db == NULL) return -1;
+	if(db == NULL) return 0;
 	return db->connect(database_type, host, username, password, database);
 }
 
-int64_t ExecString(Database* db, webapp_str_t* query)
+int64_t Database_Exec(Database* db, webapp_str_t* query)
 {
-	if (db == NULL || query == NULL) return -1;
+	if(db == NULL) return 0;
 	return db->exec(*query);
 }
 
-int SelectQuery(Query* q)
+int Query_Select(Query* q)
 {
-	if (q == NULL) return 0;
 	q->process();
 	return q->status;
 }
 
-Query* CreateQuery(webapp_str_t* in, Database* db, int desc)
+Query* Query_Create(Database* db, webapp_str_t* in, int desc)
 {
-	if (db == NULL) return NULL;
-	Query* q = NULL;
-	if (in == NULL) q = new Query(db, desc);
-	else q = new Query(db, *in, desc);
+	if(db == NULL) return NULL;
+	Query* q = (in == NULL) ? 
+		new Query(db, desc) : new Query(db, *in, desc);
 	return q;
 }
 
-void DestroyQuery(webapp_str_t* qry)
+void Query_Destroy(webapp_str_t* qry)
 {
 	delete qry;
 }
 
-void SetQuery(Query* q, webapp_str_t* in)
+void Query_Set(Query* q, webapp_str_t* in)
 {
-	if (in == NULL || q == NULL
-			|| q->status != DATABASE_QUERY_INIT) return;
+	if (q == NULL || q->status != DATABASE_QUERY_INIT) return;
 	q->dbq = webapp_str_t(*in);
 }
 
-void BindParameter(Query* q, webapp_str_t* param)
+void Query_Bind(Query* q, webapp_str_t* param)
 {
 	if (q == NULL || param == NULL) return;
 	q->params.push_back(*param);
@@ -420,9 +402,8 @@ void webapp_to_tm(struct webapp_tm* src, struct tm* output)
 	output->tm_isdst = src->tm_isdst;
 }
 
-void GetTime(struct webapp_tm* output)
+void Time_Get(struct webapp_tm* output)
 {
-	if(output == NULL) return;
 	time_t current_time = time(0);
 	struct tm tmp_tm;
 #ifdef _MSC_VER
@@ -434,9 +415,8 @@ void GetTime(struct webapp_tm* output)
 
 }
 
-void UpdateTime(struct webapp_tm* output)
+void Time_Update(struct webapp_tm* output)
 {
-	if(output == NULL) return;
 	struct tm tmp_tm;
 	webapp_to_tm(output, &tmp_tm);
 	mktime(&tmp_tm);
@@ -446,7 +426,6 @@ void UpdateTime(struct webapp_tm* output)
 /* Image */
 Image* Image_Load(webapp_str_t* filename)
 {
-	if(filename == NULL) return NULL;
 	return new Image(*filename);
 }
 
@@ -458,7 +437,7 @@ void Image_Resize(Image* img, int width, int height)
 
 void Image_Save(Image* img, webapp_str_t* filename, int destroy)
 {
-	if(img == NULL || filename == NULL) return;
+	if(img == NULL) return;
 	img->save(*filename);
 	if(destroy) delete img;
 }
@@ -472,15 +451,18 @@ void Image_Destroy(Image* img)
 /* File */
 File* File_Open(webapp_str_t* filename, webapp_str_t* mode)
 {
-	if(filename == NULL || mode == NULL) return NULL;
-	File* f = new File(*filename, mode);
-	return f;
+	return new File(*filename, mode);
 }
 
 void File_Close(File* f)
 {
 	if(f == NULL) return;
 	f->Close();
+}
+
+void File_Destroy(File* f)
+{
+	if(f == NULL) return;
 	delete f;
 }
 
@@ -492,7 +474,7 @@ int16_t File_Read(File* f, int16_t n_bytes)
 
 void File_Write(File* f, webapp_str_t* buf)
 {
-	if(f == NULL || buf == NULL) return;
+	if(f == NULL) return;
 	f->Write(*buf);
 }
 

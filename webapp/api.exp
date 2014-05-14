@@ -1,5 +1,5 @@
 {
-	CleanupString;
+	String_Destroy;
 
 	Template_ShowGlobalSection;
 	Template_ShowSection;
@@ -12,48 +12,46 @@
 	Template_Load;
 	Template_Render;
 
-	GetSessionValue;
-	SetSessionValue;
-	GetSessionID;
-	GetCookieSession;
-	GetSession;
-	NewSession;
-	DestroySession;
-	GetRawSession;
+	Session_GetValue;
+	Session_SetValue;
+	Session_GetFromCookies;
+	Session_Get;
+	Session_GetRaw;
+	Session_New;
+	Session_Destroy;
 	
-	CompileScript;
+	Script_Compile;
 	
-	ClearCache;
-	Shutdown;
+	Worker_ClearCache;
+	Worker_Shutdown;
 	
-	SetParamInt;
-	GetParamInt;
+	Param_Set;
+	Param_Get;
 	
-	GetNextRequest;
-	FinishRequest;
-	QueueRequest;
+	Request_GetNext;
+	Request_Finish;
+	Request_Queue;
 	
-	WriteData;
-	ReadData;
-	ConnectSocket;
-	DestroySocket;
-	SocketAvailable;
+	Socket_Write;
+	Socket_Read;
+	Socket_Connect;
+	Socket_Destroy;
+	Socket_DataAvailable;
 
-	CreateDatabase;
-	DestroyDatabase;
-	GetDatabase;
-	ConnectDatabase;
-	DatabaseError;
+	Database_Exec;
+	Database_Create;
+	Database_Destroy;
+	Database_Get;
+	Database_Connect;
+
+	Query_Select;
+	Query_Create;
+	Query_Destroy;
+	Query_Set;
+	Query_Bind;
 	
-	ExecString;
-	SelectQuery;
-	CreateQuery;
-	DestroyQuery;
-	SetQuery;
-	BindParameter;
-	
-	GetTime;
-	UpdateTime;
+	Time_Get;
+	Time_Update;
 	
 	Image_Load;
 	Image_Resize;
@@ -62,6 +60,7 @@
 
 	File_Open;
 	File_Close;
+	File_Destroy;
 	File_Read;
 	File_Write;
 	File_Size;
