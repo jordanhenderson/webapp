@@ -23,6 +23,11 @@ using namespace std::placeholders;
 using namespace asio;
 using namespace asio::ip;
 
+/* Helper methods */
+void CleanupString(webapp_str_t* str) {
+	delete str;
+}
+
 /* Template */
 void Template_ShowGlobalSection(TemplateDictionary* dict, webapp_str_t* section)
 {
@@ -86,14 +91,11 @@ void Template_Load(webapp_str_t* page)
 	LoadTemplate(*page, STRIP_WHITESPACE);
 }
 
-webapp_str_t* Template_Render(RequestBase* worker, webapp_str_t* page,
-							  Request* request)
+webapp_str_t* Template_Render(RequestBase* worker, webapp_str_t* page)
 {
 	if (page == NULL) return NULL;
 	webapp_str_t dir = "content/";
-	webapp_str_t* output = worker->RenderTemplate(dir + page);
-	request->strings.push_back(output);
-	return output;
+	return worker->RenderTemplate(dir + page);
 }
 
 /* Session */
@@ -118,37 +120,34 @@ webapp_str_t* GetSessionID(Session* session)
 	return &session->session_id;
 }
 
-Session* GetCookieSession(RequestBase* worker, Request* request,
-						  webapp_str_t* cookies)
+Session* GetCookieSession(RequestBase* worker, webapp_str_t* cookies)
 {
-	if(worker == NULL || request == NULL) return NULL;
-	return worker->_sessions.get_cookie_session(request, cookies);
+	if(worker == NULL) return NULL;
+	return worker->_sessions.get_cookie_session(cookies);
 }
 
-Session* GetSession(RequestBase* worker, Request* request,
-					webapp_str_t* session_id)
+Session* GetSession(RequestBase* worker, webapp_str_t* session_id)
 {
-	if (worker == NULL || request == NULL) return NULL;
-	return worker->_sessions.get_session(request, session_id);
+	if (worker == NULL) return NULL;
+	return worker->_sessions.get_session(session_id);
 }
 
-Session* NewSession(RequestBase* worker, Request* request,
-					webapp_str_t* primary, webapp_str_t* secondary)
+Session* NewSession(RequestBase* worker, webapp_str_t* primary, 
+					webapp_str_t* secondary)
 {
-	if (worker == NULL || request == NULL) return NULL;
-	return worker->_sessions.new_session(request, primary, secondary);
+	if (worker == NULL) return NULL;
+	return worker->_sessions.new_session(primary, secondary);
 }
 
 void DestroySession(Session* session)
 {
-	if(session != NULL)
-		session->destroy();
+	delete session;
 }
 
-Session* GetRawSession(RequestBase* worker, Request* request)
+Session* GetRawSession(RequestBase* worker)
 {
-	if(worker == NULL || request == NULL) return NULL;
-	return worker->_sessions.get_raw_session(request);
+	if(worker == NULL) return NULL;
+	return worker->_sessions.get_raw_session();
 }
 
 /* Script API */
@@ -213,7 +212,7 @@ void ConnectHandler(RequestBase* worker, Request* r, Socket* s,
 		worker->enqueue(r);
 	} else if (it != tcp::resolver::iterator()) {
 		//Try next endpoint.
-		s->close();
+		s->abort();
 		tcp::endpoint ep = *it;
 		s->async_connect(ep, bind(&ConnectHandler, worker, r, s, _1, ++it));
 	} else if(ec != asio::error::operation_aborted) {
@@ -266,51 +265,54 @@ void WriteData(LuaSocket* s, webapp_str_t* buf)
 	webapp_str_t* tmp_buf = new webapp_str_t(*buf);
 	socket->waiting++;
 	
-	try {
-		async_write(*socket, buffer(tmp_buf->data, tmp_buf->len),
-						  bind(&WriteComplete, socket, tmp_buf, _1, _2));
-	} catch (std::system_error ec) {
-		socket->waiting--;
-		socket->abort();
-	}
+	//No try/catch statement needed; async_write always succeeds.
+	//Errors handled in callback.
+	async_write(*socket, buffer(tmp_buf->data, tmp_buf->len),
+					  bind(&WriteComplete, socket, tmp_buf, _1, _2));
 }
 
 void ReadEvent(Socket* socket, RequestBase* worker, Request* r, 
 	webapp_str_t* output, int timeout, const std::error_code& ec, size_t n_bytes)
 {
+	Socket& s = *socket;
 	if(!ec) {
-		socket->timer.cancel();
-		uint16_t& n = socket->ctr;
-		n += socket->read_some(buffer(output->data + n, output->len - n));
-		if(n == output->len) {
-			//read complete.
-			worker->enqueue(r);
-		} else {
-			socket->timer.expires_from_now(chrono::seconds(timeout));
-			socket->timer.async_wait(bind(&ReadEvent, socket, worker, r,
-										  output, timeout, _1, 0));
-			socket->async_read_some(null_buffers(), bind(&ReadEvent, 
-				socket, worker, r, output, timeout, _1, 0));
+		s.timer.cancel();
+		try {
+			uint16_t& n = socket->ctr;
+			n += socket->read_some(buffer(output->data + n, output->len - n));
+			if(n == output->len) {
+				//read complete.
+				worker->enqueue(r);
+			} else {
+				s.timer.expires_from_now(chrono::seconds(timeout));
+				s.timer.async_wait(bind(&ReadEvent, socket, worker, r,
+											  output, timeout, _1, 0));
+				s.async_read_some(null_buffers(), bind(&ReadEvent, 
+					socket, worker, r, output, timeout, _1, 0));
+			}
+		} catch (...) {
+			s.abort();
+			output->len = 0;
 		}
 	} else if(ec != asio::error::operation_aborted) {
 		//Read failed/timeout.
-		socket->abort();
+		s.abort();
 		output->len = 0;
 	}
 }
 
-webapp_str_t* ReadData(LuaSocket* s, RequestBase* worker, Request* r,
+webapp_str_t* ReadData(LuaSocket* socket, RequestBase* worker, Request* r,
 			  int bytes, int timeout)
 {
-	Socket* socket = &s->socket;
+	//LuaSocket wraps the actual socket object.
+	Socket* s = &socket->socket;
 	webapp_str_t* output = new webapp_str_t(bytes);
-	r->strings.push_back(output);
-	socket->ctr = 0;
+	s->ctr = 0;
 	
-	socket->timer.expires_from_now(chrono::seconds(timeout));
-	socket->timer.async_wait(bind(&ReadEvent, socket, worker, r,
+	s->timer.expires_from_now(chrono::seconds(timeout));
+	s->timer.async_wait(bind(&ReadEvent, s, worker, r,
 								  output, timeout, _1, 0));
-	socket->async_read_some(null_buffers(), bind(&ReadEvent, socket, 
+	s->async_read_some(null_buffers(), bind(&ReadEvent, s, 
 							worker, r, output, timeout, _1, _2));
 	return output;
 }
@@ -364,15 +366,18 @@ int SelectQuery(Query* q)
 	return q->status;
 }
 
-Query* CreateQuery(webapp_str_t* in, Request* r, Database* db, int desc)
+Query* CreateQuery(webapp_str_t* in, Database* db, int desc)
 {
-	if (r == NULL || db == NULL) return NULL;
+	if (db == NULL) return NULL;
 	Query* q = NULL;
 	if (in == NULL) q = new Query(db, desc);
 	else q = new Query(db, *in, desc);
-
-	r->queries.push_back(q);
 	return q;
+}
+
+void DestroyQuery(webapp_str_t* qry)
+{
+	delete qry;
 }
 
 void SetQuery(Query* q, webapp_str_t* in)

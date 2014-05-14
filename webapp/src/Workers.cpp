@@ -41,29 +41,31 @@ RequestBase::~RequestBase() {
 webapp_str_t* RequestBase::RenderTemplate(const webapp_str_t& page)
 {
 	webapp_str_t* output = new webapp_str_t();
-	WebappStringEmitter wse(output);
-	if(_cache)
-		_cache->ExpandNoLoad(page, STRIP_WHITESPACE, baseTemplate, NULL, &wse);
-	else {
-		mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::LAZY_RELOAD);
-		ExpandTemplate(page, STRIP_WHITESPACE, baseTemplate, &wse);
+	if(app->templates_enabled) {
+		WebappStringEmitter wse(output);
+		if(_cache != NULL)
+			_cache->ExpandNoLoad(page, STRIP_WHITESPACE, baseTemplate, NULL, &wse);
+		else {
+			mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::LAZY_RELOAD);
+			ExpandTemplate(page, STRIP_WHITESPACE, baseTemplate, &wse);
+		}
 	}
 	return output;
 }
 
 void RequestQueue::Execute()
 {
-	baseTemplate = new TemplateDictionary("");
-	for(auto tmpl: app->templates) {
-		TemplateDictionary* dict = baseTemplate->AddIncludeDictionary(tmpl.first);
-		dict->SetFilename(tmpl.second);
-		templates.insert({tmpl.first, dict});
-	}
-	if(app->GetParamInt(WEBAPP_PARAM_TPLCACHE)) {
-		_cache = mutable_default_template_cache()->Clone();
-		_cache->Freeze();
-	} else {
-		_cache = NULL;
+	if(app->templates_enabled) {
+		baseTemplate = new TemplateDictionary("");
+		for(auto tmpl: app->templates) {
+			TemplateDictionary* dict = baseTemplate->AddIncludeDictionary(tmpl.first);
+			dict->SetFilename(tmpl.second);
+			templates.insert({tmpl.first, dict});
+		}
+		if(app->template_cache_enabled) {
+			_cache = mutable_default_template_cache()->Clone();
+			_cache->Freeze();
+		}
 	}
 	
 	finished = 0;

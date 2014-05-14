@@ -25,6 +25,7 @@
 #define WEBAPP_PARAM_THREADS 4
 #define WEBAPP_PARAM_REQUESTSIZE 5
 #define WEBAPP_PARAM_CLIENTSOCKETS 6
+#define WEBAPP_PARAM_TEMPLATES 7
 #define WEBAPP_DEFAULT_QUEUESIZE 1023
 #define WEBAPP_OPT_SESSION 0
 #define WEBAPP_OPT_SESSION_DEFAULT "session"
@@ -53,9 +54,9 @@ struct Socket : public asio::ip::tcp::socket {
 			: asio::ip::tcp::socket(svc), timer(svc) {};
 	void abort() {
 		std::error_code ec;
-		
 		shutdown(asio::ip::tcp::socket::shutdown_both, ec);
-		close();
+		close(ec);
+		cancel(ec);
 		timer.cancel();
 	}
 };
@@ -78,10 +79,6 @@ struct Request {
 	//Internal members (not lua accessible)
 	LuaSocket s;
 	std::vector<char> headers;
-	//Per-request containers
-	std::vector<webapp_str_t*> strings;
-	std::vector<Query*> queries;
-	std::vector<Session*> sessions;
 	
 	//Functions
 	//Reset allows request objects to be reused.
@@ -98,14 +95,6 @@ struct Request {
 			if(lua_request != NULL) free(lua_request);
 			lua_request = NULL;
 		}
-		
-		for(auto it: strings) delete it;
-		for(auto it: queries) delete it;
-		for(auto it: sessions) delete it;
-
-		strings.clear();
-		queries.clear();
-		sessions.clear();
 	}
 	
 	~Request()
@@ -289,17 +278,6 @@ friend class Request;
 	std::atomic<int> current_pool {0};
 	std::vector<Request*> request_pools;
 	
-	//Parameters
-	unsigned int aborted = 0;
-	unsigned int template_cache_enabled = 1;
-	unsigned int leveldb_enabled = 1;
-	unsigned int port = WEBAPP_OPT_PORT_DEFAULT;
-	const char* session_dir = WEBAPP_OPT_SESSION_DEFAULT;
-	/* Amount of requests to create in each request pool. */
-	unsigned int n_requests = WEBAPP_OPT_REQUESTS_DEFAULT;
-	unsigned int request_size = 0;
-	unsigned int client_sockets = 1;
-	unsigned int num_threads = 1;
 	std::mutex cleanupLock;
 	//Keep track of dynamic databases
 	std::unordered_map<size_t, Database*> databases;
@@ -317,6 +295,19 @@ friend class Request;
 	asio::ip::tcp::resolver resolver;
 	
 public:
+	//Parameters
+	unsigned int aborted = 0;
+	unsigned int template_cache_enabled = 1;
+	unsigned int templates_enabled = 1;
+	unsigned int leveldb_enabled = 1;
+	unsigned int port = WEBAPP_OPT_PORT_DEFAULT;
+	const char* session_dir = WEBAPP_OPT_SESSION_DEFAULT;
+	/* Amount of requests to create in each request pool. */
+	unsigned int n_requests = WEBAPP_OPT_REQUESTS_DEFAULT;
+	unsigned int request_size = 0;
+	unsigned int client_sockets = 1;
+	unsigned int num_threads = 1;
+	
 	leveldb::DB* db = NULL;
 	std::unordered_map<std::string, std::string> templates;
 
@@ -352,7 +343,6 @@ public:
 	
 	//Cleanup methods.
 	void Reload();
-	void ToggleLevelDB();
 };
 
 #endif //WEBAPP_H

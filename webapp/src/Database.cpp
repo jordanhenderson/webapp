@@ -46,7 +46,7 @@ Query::~Query()
 		delete[] row;
 	}
 
-	unsigned int db_type = _db->GetType();
+	unsigned int db_type = _db->db_type;
 
 	//Clean up mysql.
 	if (db_type == DATABASE_TYPE_MYSQL) {
@@ -65,7 +65,6 @@ Query::~Query()
 	if (sqlite_stmt != NULL) sqlite3_finalize(sqlite_stmt);
 	mysql_stmt = NULL;
 	sqlite_stmt = NULL;
-
 }
 
 /**
@@ -73,26 +72,37 @@ Query::~Query()
 */
 void Query::process()
 {
-	unsigned int err = 0;
 	unsigned int lasterror = 0;
-	unsigned int db_type = _db->GetType();
+	unsigned int db_type = _db->db_type;
+	sqlite3* sqlite_db = _db->sqlite_db;
+	MYSQL* mysql_db = _db->mysql_db;
+	if(_db->last_error != NULL) delete _db->last_error;
+	_db->last_error = NULL;
 
 	//Abort if query set to finished.
 	if (status == DATABASE_QUERY_FINISHED) return;
+	
+	//Abort if db not initialised.
+	if ((db_type == DATABASE_TYPE_SQLITE && sqlite_db == NULL) ||
+		(db_type == DATABASE_TYPE_MYSQL && mysql_db == NULL))
+	{
+		status = DATABASE_QUERY_FINISHED;
+		goto cleanup;
+	}
 
 	//Initialize database depending on type.
 	if (db_type == DATABASE_TYPE_SQLITE) {
 		if(sqlite_stmt == NULL) {
-			if (sqlite3_prepare_v2(_db->sqlite_db, dbq.data,
+			if (sqlite3_prepare_v2(sqlite_db, dbq.data,
 								   dbq.len, &sqlite_stmt, 0))
 				goto cleanup;
 		}
 	} else if (db_type == DATABASE_TYPE_MYSQL) {
 		if(mysql_stmt == NULL) {
-			mysql_stmt = mysql_stmt_init(_db->mysql_db);
+			mysql_stmt = mysql_stmt_init(mysql_db);
 			if (mysql_stmt == NULL)
 				goto cleanup;
-			err = mysql_stmt_prepare(mysql_stmt, dbq.data, dbq.len);
+			lasterror = mysql_stmt_prepare(mysql_stmt, dbq.data, dbq.len);
 		}
 	}
 
@@ -121,7 +131,7 @@ void Query::process()
 			}
 		}
 		if(db_type == DATABASE_TYPE_MYSQL) {
-			if((err = mysql_stmt_bind_param(mysql_stmt, bind_params))) {
+			if((lasterror = mysql_stmt_bind_param(mysql_stmt, bind_params))) {
 				goto cleanup;
 			}
 		}
@@ -130,27 +140,27 @@ void Query::process()
 	//Query is new, populate query statistics, allocate row/description memory
 	if (status == DATABASE_QUERY_INIT) {
 		if (db_type == DATABASE_TYPE_SQLITE) {
-			lasterror = sqlite3_step(sqlite_stmt);
+			//Populate statistics
 			column_count = sqlite3_column_count(sqlite_stmt);
-			lastrowid = sqlite3_last_insert_rowid(_db->sqlite_db);
-			rows_affected = sqlite3_changes(_db->sqlite_db);
+			lastrowid = sqlite3_last_insert_rowid(sqlite_db);
+			rows_affected = sqlite3_changes(sqlite_db);
+			
 		} else if (db_type == DATABASE_TYPE_MYSQL) {
+			//Populate statistics
 			if (prepare_meta_result == NULL) {
 				if (!(prepare_meta_result = mysql_stmt_result_metadata(mysql_stmt)))
 					goto cleanup;
 			}
+			
 			column_count = mysql_num_fields(prepare_meta_result);
 			lastrowid = mysql_insert_id(_db->mysql_db);
 			rows_affected = mysql_affected_rows(_db->mysql_db);
 		}
 
-		if (column_count == 0)
-			goto cleanup;
+		if (column_count == 0) goto cleanup;
 
 		//Initialize row memory.
-		if (row == NULL) {
-			row = new webapp_str_t[column_count]();
-		}
+		if (row == NULL)  row = new webapp_str_t[column_count]();
 
 		//Initialize description memory.
 		if (desc && description == NULL) {
@@ -160,9 +170,14 @@ void Query::process()
 		//Populate next row.
 		if (db_type == DATABASE_TYPE_SQLITE) {
 			lasterror = sqlite3_step(sqlite_stmt);
+			//Populate error message
+			const char* err_str = sqlite3_errmsg(sqlite_db);
+			if(err_str != NULL) err = err_str;
 		} else if (db_type == DATABASE_TYPE_MYSQL) {
-			if (mysql_stmt_execute(mysql_stmt))
-				goto cleanup;
+			if (mysql_stmt_execute(mysql_stmt)) goto cleanup;
+			//Populate error message
+			const char* err_str = sqlite3_errmsg(sqlite_db);
+			if(err_str != NULL) err = err_str;
 		}
 	}
 
@@ -217,9 +232,9 @@ void Query::process()
 				bind_output[col].length = (unsigned long*)&row[col].len;
 				mysql_stmt_fetch_column(mysql_stmt, &bind_output[col], col, 0);
 			}
-		} else
-			goto cleanup;
+		} else goto cleanup;
 	}
+	
 	//Set the Query to started, to ensure future calls don't reinit.
 	status = DATABASE_QUERY_STARTED;
 	return;
@@ -268,14 +283,14 @@ int Database::connect(int database_type, const char* host, const char* username,
 	} else if(database_type == DATABASE_TYPE_MYSQL) {
 		mysql_library_init(0, NULL, NULL);
 		mysql_db = mysql_init(NULL);
+		mysql_db = mysql_real_connect(mysql_db, host, username, password, database, 0, NULL, 0);
 		if(mysql_db == NULL) {
 			return DATABASE_FAILED;
+		} else {
+			//Disable mysql trunctation reporting.
+			bool f = false;
+			mysql_options(mysql_db, MYSQL_REPORT_DATA_TRUNCATION, &f);
 		}
-		mysql_real_connect(mysql_db, host, username, password, database, 0, NULL, 0);
-		
-		//Disable mysql trunctation reporting.
-		bool f = false;
-		mysql_options(mysql_db, MYSQL_REPORT_DATA_TRUNCATION, &f);
 	}
 	return DATABASE_SUCCESS;
 }

@@ -63,28 +63,25 @@ void Webapp::Reload()
 		delete db;
 		db = NULL;
 	}
-	//Clear templates
-	mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::IMMEDIATE_RELOAD);
-
-	templates.clear();
-
-	//Delete cached preprocessed scripts.
-	for(auto it: scripts) {
-		delete it.second;
-	}
-	scripts.clear();
-
-	//Clear any databases.
-	for(auto it: databases) {
-		delete it.second;
-	}
 	
-	databases.clear();
+	if(templates_enabled) {
+		//Clear templates
+		mutable_default_template_cache()->
+			ReloadAllIfChanged(TemplateCache::IMMEDIATE_RELOAD);
+	}
 
-	//Reset db_count to ensure new databases are created from index 0.
-	db_count = 0;
-
+	for(auto it: scripts) delete it.second;
+	for(auto it: databases) delete it.second;
+	
+	
 	if(!aborted) {
+		scripts.clear();
+		
+		db_count = 0;
+		databases.clear();
+		
+		templates.clear();
+		
 		//Recompile scripts.
 		webapp_str_t* init = CompileScript("plugins/core/init.lua");
 		if(init != NULL) {
@@ -121,7 +118,7 @@ int lua_writer(lua_State* L, const void* p, size_t sz, void* ud) {
 /**
  * Compile a lua script (preprocess macros etc.)
  * Stores the compiled script text in scripts[output]
- * Relies on lua script "plugins/process.lua" and LuaMacro.
+ * Relies on lua script "plugins/parse.lua" and LuaMacro.
  * @param filename the script to preprocess
  * @return the compiled script, stored in scripts.
 */
@@ -151,7 +148,7 @@ webapp_str_t* Webapp::CompileScript(const char* filename)
 	luaopen_lpeg(L);
 
 	//Execute the LuaMacro preprocessor.
-	if(luaL_loadfile(L, "plugins/process.lua")) goto lua_error;
+	if(luaL_loadfile(L, "plugins/parse.lua")) goto lua_error;
 
 	//Provide the target filename to preprocess.
 	lua_pushlstring(L, filename, strlen(filename));
@@ -205,10 +202,10 @@ void Webapp::RunScript(LuaParam* params, int nArgs, const char* file)
 	luaopen_cjson(L);
 
 	//Allocate memory for temporary string operations.
-	_webapp_str_t* static_strings[WEBAPP_STATIC_STRINGS];
+	_webapp_str_t static_strings[WEBAPP_STATIC_STRINGS];
 
 	//Provide and set temporary string memory global.
-	lua_pushlightuserdata(L, static_strings);
+	lua_pushlightuserdata(L, &static_strings);
 	lua_setglobal(L, "static_strings");
 
 	//Pass each param into the Lua state.
@@ -429,16 +426,12 @@ void Webapp::process_header_async(Request* r, const std::error_code& ec, size_t 
 										  &Webapp::process_header_async,
 										  this, r, _1, _2));
 		} catch (...) {
-			s.timer.cancel();
-			s.cancel();
-			s.close();
+			s.abort();
 			r->reset();
 			finished_requests.enqueue(r);
 		}
 	} else if(ec != asio::error::operation_aborted) {
-		s.timer.cancel();
-		s.cancel();
-		s.close();
+		s.abort();
 		r->reset();
 		finished_requests.enqueue(r);
 	} 
@@ -516,8 +509,7 @@ Database* Webapp::GetDatabase(size_t index)
 */
 void Webapp::DestroyDatabase(Database* db)
 {
-	size_t id = db->GetID();
-	databases.erase(id);
+	databases.erase(db->db_id);
 	delete db;
 }
 
@@ -550,6 +542,8 @@ void Webapp::SetParamInt(unsigned int key, int value)
 	case WEBAPP_PARAM_CLIENTSOCKETS:
 		client_sockets = value;
 		break;
+	case WEBAPP_PARAM_TEMPLATES:
+		templates_enabled = value;
 	default:
 		return;
 	}
@@ -577,6 +571,8 @@ int Webapp::GetParamInt(unsigned int key)
 		return request_size;
 	case WEBAPP_PARAM_CLIENTSOCKETS:
 		return client_sockets;
+	case WEBAPP_PARAM_TEMPLATES:
+		return templates_enabled;
 	default:
 		return 0;
 	}

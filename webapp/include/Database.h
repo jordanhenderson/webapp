@@ -28,7 +28,7 @@ struct sqlite3_stmt;
 struct sqlite3;
 struct webapp_str_t;
 
-class Database;
+struct Database;
 struct Query {
 	int status = DATABASE_QUERY_INIT;
 	int64_t lastrowid = 0;
@@ -39,6 +39,7 @@ struct Query {
 	int havedesc = 0;
 	int rows_affected = 0;
 	webapp_str_t dbq;
+	webapp_str_t err;
 	std::vector<webapp_str_t> params;
 	Query(Database* db, int desc=0);
 	Query(Database* db, const webapp_str_t& dbq, int desc=0);
@@ -56,20 +57,12 @@ private:
 	MYSQL_BIND* bind_output = NULL;
 };
 
-class Database {
-	unsigned int db_type = 0;
+struct Database {
+	int db_type = 0;
 	size_t db_id = 0;
-public:
 	sqlite3* sqlite_db = NULL;
 	MYSQL* mysql_db = NULL;
-	inline unsigned int GetType()
-	{
-		return db_type;
-	}
-	inline size_t GetID()
-	{
-		return db_id;
-	}
+	const char* last_error = NULL;
 	Database(size_t db_id) : db_id(db_id) {}
 	~Database();
 

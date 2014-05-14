@@ -1,4 +1,6 @@
 {
+	CleanupString;
+
 	Template_ShowGlobalSection;
 	Template_ShowSection;
 	Template_SetGlobalValue;
@@ -41,9 +43,12 @@
 	DestroyDatabase;
 	GetDatabase;
 	ConnectDatabase;
+	DatabaseError;
+	
 	ExecString;
 	SelectQuery;
 	CreateQuery;
+	DestroyQuery;
 	SetQuery;
 	BindParameter;
 	

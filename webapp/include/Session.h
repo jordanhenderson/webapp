@@ -22,23 +22,26 @@ class DB;
 
 extern webapp_str_t empty;
 
-class DataStore {
-	std::vector<webapp_str_t*> vals;
-public:
+struct DataStore {
 	DataStore() {}
 	virtual ~DataStore();
 	virtual webapp_str_t* get(const webapp_str_t& key);
 	virtual void put(const webapp_str_t& key, const webapp_str_t& value);
 	virtual void wipe(const webapp_str_t& key);
+	virtual void cache(webapp_str_t* buf) = 0;
+	virtual void clear_cache() = 0;
 };
 
-struct Session : public DataStore {
+struct Session : DataStore {
 	webapp_str_t session_id;
-	void destroy();
-	Session(Request*, const webapp_str_t& key);
-	~Session() {}
+	std::vector<webapp_str_t*> vals;
+	
+	Session(const webapp_str_t& key);
+	~Session();
 	webapp_str_t* get(const webapp_str_t& key);
 	void put(const webapp_str_t& key, const webapp_str_t& value);
+	void cache(webapp_str_t* buf);
+	void clear_cache();
 };
 
 class Sessions {
@@ -48,14 +51,11 @@ public:
 	Sessions();
 	~Sessions();
 	void CleanupSessions();
-	Session* new_session(Request* request,
-						 const webapp_str_t& primary,
+	Session* new_session(const webapp_str_t& primary,
 						 const webapp_str_t& secondary);
-	Session* get_cookie_session(Request* request,
-								const webapp_str_t& cookies);
-	Session* get_session(Request* request,
-						 const webapp_str_t& id);
-	Session* get_raw_session(Request* request);
+	Session* get_cookie_session(const webapp_str_t& cookies);
+	Session* get_session(const webapp_str_t& id);
+	Session* get_raw_session(void);
 };
 
 #endif //SESSION_H

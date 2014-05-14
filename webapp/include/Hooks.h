@@ -16,12 +16,15 @@ struct Session;
 struct RequestBase;
 
 class Webapp;
-class Database;
+struct Database;
 struct Query;
 class Image;
 class File;
 
 extern "C" {
+/* Helper methods */
+	APIEXPORT void CleanupString(webapp_str_t*);
+
 /* Template */
 	APIEXPORT void Template_ShowGlobalSection(ctemplate::TemplateDictionary*,
 			webapp_str_t* section);
@@ -40,7 +43,7 @@ extern "C" {
 	APIEXPORT void Template_Load(webapp_str_t* page);
 	APIEXPORT webapp_str_t* 
 				   Template_Render(RequestBase* worker, 
-						webapp_str_t* page, Request* request);
+						webapp_str_t* page);
 
 /* Session */
 	APIEXPORT webapp_str_t* 
@@ -50,22 +53,20 @@ extern "C" {
 	APIEXPORT webapp_str_t* 
 				   GetSessionID(Session*);
     APIEXPORT Session*
-                   GetCookieSession(RequestBase*, Request*,
-                                    webapp_str_t* cookies);
+                   GetCookieSession(RequestBase*, webapp_str_t* cookies);
 	APIEXPORT Session* 
-                   GetSession(RequestBase*, Request*,
-                              webapp_str_t* session_id);
+                   GetSession(RequestBase*, webapp_str_t* session_id);
 	APIEXPORT Session* 
-                   NewSession(RequestBase*, Request*,
-                              webapp_str_t* primary,
+                   NewSession(RequestBase*, webapp_str_t* primary,
                               webapp_str_t* secondary);
 	APIEXPORT void 
 				   DestroySession(Session*);
 	APIEXPORT Session* 
-				   GetRawSession(RequestBase*, Request*);
+				   GetRawSession(RequestBase*);
 
 /* Script API */
-	APIEXPORT webapp_str_t* CompileScript(const char* file);
+	APIEXPORT webapp_str_t* 
+				   CompileScript(const char* file);
 
 /* Parameter Store */
 	APIEXPORT void SetParamInt(unsigned int key, int value);
@@ -81,28 +82,32 @@ extern "C" {
 	APIEXPORT void QueueRequest(RequestBase*, Request*);
 	APIEXPORT void FinishRequest(Request*);
 	APIEXPORT void WriteData(LuaSocket*, webapp_str_t* data);
-	APIEXPORT webapp_str_t* ReadData(LuaSocket* socket, RequestBase* worker, 
-						   Request* r, int bytes, int timeout);
-	APIEXPORT LuaSocket* ConnectSocket(RequestBase* worker, Request* r, 
-					  webapp_str_t* addr, webapp_str_t* port);
+	APIEXPORT webapp_str_t* 
+				   ReadData(LuaSocket* socket, RequestBase* worker, 
+							Request* r, int bytes, int timeout);
+	APIEXPORT LuaSocket* 
+				   ConnectSocket(RequestBase* worker, Request* r, 
+								 webapp_str_t* addr, webapp_str_t* port);
 	APIEXPORT void DestroySocket(LuaSocket* socket);
-	APIEXPORT int SocketAvailable(LuaSocket* socket);
+	APIEXPORT int  SocketAvailable(LuaSocket* socket);
 /* Database */
 	APIEXPORT Database* 
 				   CreateDatabase();
 	APIEXPORT void DestroyDatabase(Database*);
 	APIEXPORT Database* 
 				   GetDatabase(size_t index);
-	APIEXPORT int  ConnectDatabase(Database*, int database_type, const char* host,
+	APIEXPORT int  ConnectDatabase(Database*, int database_type, 
+								  const char* host,
 								  const char* username, 
 								  const char* password, 
 								  const char* database);
+	APIEXPORT void QueryError(Database*, webapp_str_t* output);
 	APIEXPORT int64_t 
 				   ExecString(Database*, webapp_str_t* in);
 	APIEXPORT int  SelectQuery(Query*);
 	APIEXPORT Query* 
-				   CreateQuery(webapp_str_t*, Request*, Database*, 
-							   int desc);
+				   CreateQuery(webapp_str_t*, Database*, int desc);
+	APIEXPORT void DestroyQuery(webapp_str_t*);
 	APIEXPORT void SetQuery(Query*, webapp_str_t*);
 	APIEXPORT void BindParameter(Query* q, webapp_str_t* in);
 	

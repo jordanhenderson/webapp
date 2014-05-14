@@ -30,15 +30,15 @@ webapp_str_t* DataStore::get(const webapp_str_t &key)
 		leveldb::Slice it_key = it->key();
 		leveldb::Slice it_value = it->value();
 		if(it_key.compare(key) > 0) break;
-		val =
-				new webapp_str_t(it_value.data(), it_value.size());
+		val = new webapp_str_t(it_value.data(), it_value.size());
 	}
 	delete it;
 
 	//Fallback if value not found.
 	if(val == NULL) return &empty;
 	
-	vals.push_back(val);
+	//Store the value temporarily (for cleanup purposes).
+	cache(val);
 
 	return val;
 }
@@ -50,7 +50,7 @@ void DataStore::put(const webapp_str_t &key, const webapp_str_t &value)
 
 DataStore::~DataStore()
 {
-	for(auto it: vals) delete it;
+	clear_cache();
 }
 
 void DataStore::wipe(const webapp_str_t& key)
@@ -69,20 +69,21 @@ void DataStore::wipe(const webapp_str_t& key)
 	delete it;
 }
 
-Session::Session(Request* request, const webapp_str_t &sid) 
-	: session_id(sid)
+Session::Session(const webapp_str_t &sid) : session_id(sid)
 {
 	if(session_id.len <= 0) return;
-
-	request->sessions.push_back(this);
-	
 	//Update/write the stored session time.
 	time_t current_time = time(0);
 	int32_t diff = (int32_t)difftime(current_time, epoch);
 	webapp_str_t str_diff;
 	str_diff.from_number(diff);
 	DataStore::put("s_" + sid, str_diff);
-	
+}
+
+Session::~Session()
+{
+	if(session_id.len <= 0) return;
+	DataStore::wipe("s_" + session_id);
 }
 
 webapp_str_t* Session::get(const webapp_str_t &key)
@@ -91,16 +92,19 @@ webapp_str_t* Session::get(const webapp_str_t &key)
 	return DataStore::get(actual_key);
 }
 
-void Session::destroy()
-{
-	if(session_id.len <= 0) return;
-	DataStore::wipe("s_" + session_id);
-
-}
-
 void Session::put(const webapp_str_t &key, const webapp_str_t &value)
 {
 	DataStore::put("s_" + session_id + key, value);
+}
+
+void Session::cache(webapp_str_t* buf) 
+{
+	vals.push_back(buf);
+}
+
+void Session::clear_cache()
+{
+	for(auto it: vals) delete it;
 }
 
 Sessions::Sessions() :
@@ -128,8 +132,7 @@ int32_t Sessions::session_expiry()
 	return n_session_exp;
 }
 
-Session* Sessions::new_session(Request* request,
-							   const webapp_str_t& primary,
+Session* Sessions::new_session(const webapp_str_t& primary,
 							   const webapp_str_t& secondary)
 {
 	if (primary.len == 0 || secondary.len == 0)
@@ -158,7 +161,7 @@ Session* Sessions::new_session(Request* request,
 	webapp_str_t session_id =
 			webapp_str_t((char*)output_hex, SESSIONID_SIZE);
 	
-	Session* session = new Session(request, session_id);
+	Session* session = new Session(session_id);
 	return session;
 }
 
@@ -193,14 +196,13 @@ void Sessions::CleanupSessions()
 	delete it;
 }
 
-Session* Sessions::get_raw_session(Request* request)
+Session* Sessions::get_raw_session(void)
 {
-	Session* session = new Session(request, "");
+	Session* session = new Session("");
 	return session;
 }
 
-Session* Sessions::get_cookie_session(Request* request,
-									  const webapp_str_t& cookies)
+Session* Sessions::get_cookie_session(const webapp_str_t& cookies)
 {
 	leveldb::DB* db = app->db;
 	if(db == NULL) return NULL;
@@ -229,11 +231,10 @@ Session* Sessions::get_cookie_session(Request* request,
 
 	if(session_id.len < SESSIONID_SIZE) return NULL;
 
-	return get_session(request, &session_id);
+	return get_session(&session_id);
 }
 
-Session* Sessions::get_session(Request* request,
-							   const webapp_str_t& session_id)
+Session* Sessions::get_session(const webapp_str_t& session_id)
 {
 	webapp_str_t tmp_session_id = "s_" + session_id;
 	leveldb::Iterator* it = app->db->NewIterator(leveldb::ReadOptions());
@@ -255,7 +256,7 @@ Session* Sessions::get_session(Request* request,
 
 		if(time_difference < 0) return NULL; //Session in the past?
 		if(time_difference < session_expiry()) {
-			session = new Session(request, session_id);
+			session = new Session(session_id);
 		} else {
 			app->db->Delete(leveldb::WriteOptions(), key);
 		}
