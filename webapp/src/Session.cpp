@@ -50,7 +50,6 @@ void DataStore::put(const webapp_str_t &key, const webapp_str_t &value)
 
 DataStore::~DataStore()
 {
-	clear_cache();
 }
 
 void DataStore::wipe(const webapp_str_t& key)
@@ -69,42 +68,48 @@ void DataStore::wipe(const webapp_str_t& key)
 	delete it;
 }
 
-Session::Session(const webapp_str_t &sid) : session_id(sid)
+DataStoreStandalone::~DataStoreStandalone()
 {
-	if(session_id.len <= 0) return;
-	//Update/write the stored session time.
-	time_t current_time = time(0);
-	int32_t diff = (int32_t)difftime(current_time, epoch);
-	webapp_str_t str_diff;
-	str_diff.from_number(diff);
-	DataStore::put("s_" + sid, str_diff);
+	for(auto it: vals) delete it;
+}
+
+void DataStoreStandalone::cache(webapp_str_t* buf)
+{
+	vals.push_back(buf);
+}
+
+Session::Session(const webapp_str_t &sid) : id(sid)
+{
+	if(id.len > 0) {
+		//Update/write the stored session time.
+		time_t current_time = time(0);
+		int32_t diff = (int32_t)difftime(current_time, epoch);
+		webapp_str_t str_diff;
+		str_diff.from_number(diff);
+		DataStore::put("s_" + sid, str_diff);
+	}
 }
 
 Session::~Session()
 {
-	if(session_id.len <= 0) return;
-	DataStore::wipe("s_" + session_id);
+	if(id.len > 0) DataStore::wipe("s_" + id);
+	for(auto it: vals) delete it;
 }
 
 webapp_str_t* Session::get(const webapp_str_t &key)
 {
-	webapp_str_t actual_key = "s_" + session_id + key;
+	webapp_str_t actual_key = "s_" + id + key;
 	return DataStore::get(actual_key);
 }
 
 void Session::put(const webapp_str_t &key, const webapp_str_t &value)
 {
-	DataStore::put("s_" + session_id + key, value);
+	DataStore::put("s_" + id + key, value);
 }
 
 void Session::cache(webapp_str_t* buf) 
 {
 	vals.push_back(buf);
-}
-
-void Session::clear_cache()
-{
-	for(auto it: vals) delete it;
 }
 
 Sessions::Sessions() :
@@ -118,7 +123,7 @@ Sessions::~Sessions()
 
 int32_t Sessions::session_expiry()
 {
-	DataStore s;
+	DataStoreStandalone s;
 	webapp_str_t session_exp = s.get("session_exp");
 	int32_t n_session_exp = 0;
 	if(session_exp.len == 0) {
@@ -132,18 +137,13 @@ int32_t Sessions::session_expiry()
 	return n_session_exp;
 }
 
-Session* Sessions::new_session(const webapp_str_t& primary,
-							   const webapp_str_t& secondary)
+Session* Sessions::new_session(const webapp_str_t& uid)
 {
-	if (primary.len == 0 || secondary.len == 0)
-		return NULL;
 	unsigned char output[SHA256_DIGEST_LENGTH];
 	char output_hex[SESSIONID_SIZE + 1]; //(must be odd for loop below)
 	SHA256_CTX ctx;
 	SHA256_Init(&ctx);
-	SHA256_Update(&ctx, (unsigned char*)primary.data, primary.len);
-	SHA256_Update(&ctx, (unsigned char*)secondary.data,
-				  secondary.len);
+	SHA256_Update(&ctx, (unsigned char*)uid.data, uid.len);
 
 	//Calculate random number, add to hash.
 	uniform_int_distribution<int> dis;
@@ -173,7 +173,7 @@ void Sessions::CleanupSessions()
 {
 	if(app->db == NULL) return;
 	leveldb::Iterator* it = app->db->NewIterator(leveldb::ReadOptions());
-	DataStore store;
+	DataStoreStandalone store;
 	//Get the current time
 	time_t current_time = time(0);
 	double time_difference;
