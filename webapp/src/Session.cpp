@@ -48,8 +48,15 @@ void DataStore::put(const webapp_str_t &key, const webapp_str_t &value)
 	if(app->db != NULL) app->db->Put(leveldb::WriteOptions(), key, value);
 }
 
+void DataStore::cache(webapp_str_t* buf) 
+{
+	vals.push_back(buf);
+}
+
+
 DataStore::~DataStore()
 {
+	for(auto it: vals) delete it;
 }
 
 void DataStore::wipe(const webapp_str_t& key)
@@ -68,16 +75,6 @@ void DataStore::wipe(const webapp_str_t& key)
 	delete it;
 }
 
-DataStoreStandalone::~DataStoreStandalone()
-{
-	for(auto it: vals) delete it;
-}
-
-void DataStoreStandalone::cache(webapp_str_t* buf)
-{
-	vals.push_back(buf);
-}
-
 Session::Session(const webapp_str_t &sid) : id(sid)
 {
 	if(id.len > 0) {
@@ -86,30 +83,24 @@ Session::Session(const webapp_str_t &sid) : id(sid)
 		int32_t diff = (int32_t)difftime(current_time, epoch);
 		webapp_str_t str_diff;
 		str_diff.from_number(diff);
-		DataStore::put("s_" + sid, str_diff);
+		store.put("s_" + sid, str_diff);
 	}
 }
 
 Session::~Session()
 {
-	if(id.len > 0) DataStore::wipe("s_" + id);
-	for(auto it: vals) delete it;
+	if(id.len > 0) store.wipe("s_" + id);
 }
 
 webapp_str_t* Session::get(const webapp_str_t &key)
 {
 	webapp_str_t actual_key = "s_" + id + key;
-	return DataStore::get(actual_key);
+	return store.get(actual_key);
 }
 
 void Session::put(const webapp_str_t &key, const webapp_str_t &value)
 {
-	DataStore::put("s_" + id + key, value);
-}
-
-void Session::cache(webapp_str_t* buf) 
-{
-	vals.push_back(buf);
+	store.put("s_" + id + key, value);
 }
 
 Sessions::Sessions() :
@@ -123,13 +114,13 @@ Sessions::~Sessions()
 
 int32_t Sessions::session_expiry()
 {
-	DataStoreStandalone s;
-	webapp_str_t session_exp = s.get("session_exp");
+	DataStore store;
+	webapp_str_t session_exp = store.get("session_exp");
 	int32_t n_session_exp = 0;
 	if(session_exp.len == 0) {
 		n_session_exp = SESSION_TIME_DEFAULT;
 		session_exp.from_number(SESSION_TIME_DEFAULT);
-		s.put("session_exp", session_exp);
+		store.put("session_exp", session_exp);
 	} else {
 		n_session_exp =
 				strntol(session_exp.data, session_exp.len);
@@ -173,7 +164,7 @@ void Sessions::CleanupSessions()
 {
 	if(app->db == NULL) return;
 	leveldb::Iterator* it = app->db->NewIterator(leveldb::ReadOptions());
-	DataStoreStandalone store;
+	DataStore store;
 	//Get the current time
 	time_t current_time = time(0);
 	double time_difference;

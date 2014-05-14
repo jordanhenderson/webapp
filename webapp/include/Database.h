@@ -41,8 +41,8 @@ struct Query {
 	webapp_str_t dbq;
 	webapp_str_t err;
 	std::vector<webapp_str_t> params;
-	Query(Database* db, int desc=0);
-	Query(Database* db, const webapp_str_t& dbq, int desc=0);
+	Query(Database* db);
+	Query(Database* db, const webapp_str_t& dbq);
 	~Query();
 	void process();
 private:

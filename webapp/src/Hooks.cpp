@@ -350,11 +350,11 @@ int Query_Select(Query* q)
 	return q->status;
 }
 
-Query* Query_Create(Database* db, webapp_str_t* in, int desc)
+Query* Query_Create(Database* db, webapp_str_t* in)
 {
 	if(db == NULL) return NULL;
 	Query* q = (in == NULL) ? 
-		new Query(db, desc) : new Query(db, *in, desc);
+		new Query(db) : new Query(db, *in);
 	return q;
 }
 

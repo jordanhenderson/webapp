@@ -23,25 +23,19 @@ class DB;
 extern webapp_str_t empty;
 
 struct DataStore {
+	std::vector<webapp_str_t*> vals;
 	DataStore() {}
-	virtual ~DataStore();
-	virtual webapp_str_t* get(const webapp_str_t& key);
-	virtual void put(const webapp_str_t& key, const webapp_str_t& value);
-	virtual void wipe(const webapp_str_t& key);
-	virtual void cache(webapp_str_t* buf) = 0;
+	~DataStore();
+	webapp_str_t* get(const webapp_str_t& key);
+	void put(const webapp_str_t& key, const webapp_str_t& value);
+	void wipe(const webapp_str_t& key);
+	void cache(webapp_str_t* buf);
 	/* Up to derived classes to manage cache. */
 };
 
-struct DataStoreStandalone : DataStore {
-	std::vector<webapp_str_t*> vals;
-	DataStoreStandalone() {};
-	~DataStoreStandalone();
-	void cache(webapp_str_t* buf);
-};
-
-struct Session : DataStore {
+struct Session {
 	webapp_str_t id;
-	std::vector<webapp_str_t*> vals;
+	DataStore store;
 	
 	Session(const webapp_str_t& key);
 	~Session();

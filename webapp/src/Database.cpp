@@ -15,9 +15,8 @@ using namespace std;
 /**
  * Create a new Query instance.
  * @param db The associated database connection
- * @param desc Whether to populate column description fields
 */
-Query::Query(Database* db, int desc) : _db(db), desc(desc)
+Query::Query(Database* db) : _db(db)
 {
 }
 
@@ -26,8 +25,8 @@ Query::Query(Database* db, int desc) : _db(db), desc(desc)
  * @see Query
  * @param dbq The initial query string
 */
-Query::Query(Database* db, const webapp_str_t& _dbq, int desc)
-	: dbq(_dbq), _db(db), desc(desc)
+Query::Query(Database* db, const webapp_str_t& _dbq)
+	: dbq(_dbq), _db(db)
 {
 }
 
@@ -140,6 +139,8 @@ void Query::process()
 	//Query is new, populate query statistics, allocate row/description memory
 	if (status == DATABASE_QUERY_INIT) {
 		if (db_type == DATABASE_TYPE_SQLITE) {
+			//SQLite needs to exec in order to get column info.
+			lasterror = sqlite3_step(sqlite_stmt); 
 			//Populate statistics
 			column_count = sqlite3_column_count(sqlite_stmt);
 			lastrowid = sqlite3_last_insert_rowid(sqlite_db);
@@ -158,14 +159,7 @@ void Query::process()
 		}
 
 		if (column_count == 0) goto cleanup;
-
-		//Initialize row memory.
-		if (row == NULL)  row = new webapp_str_t[column_count]();
-
-		//Initialize description memory.
-		if (desc && description == NULL) {
-			description = new webapp_str_t[column_count]();
-		}
+		
 	} else if(status == DATABASE_QUERY_STARTED) {
 		//Populate next row.
 		if (db_type == DATABASE_TYPE_SQLITE) {
@@ -180,6 +174,14 @@ void Query::process()
 			if(err_str != NULL) err = err_str;
 		}
 	}
+	
+	//Initialize description memory.
+	if (desc && description == NULL) {
+		description = new webapp_str_t[column_count]();
+	}
+	
+	//Initialize row memory.
+	if (row == NULL) row = new webapp_str_t[column_count]();
 
 	//Populate row data and column description
 	if (db_type == DATABASE_TYPE_SQLITE) {
