@@ -290,7 +290,7 @@ void Webapp::Start() {
 			});
 		}
 		
-		if(num_threads <= 0 || num_threads > WEBAPP_MAX_THREADS)
+		if(num_threads <= 0)
 			num_threads = 1;
 		workers.Start(num_threads);
 
@@ -544,6 +544,7 @@ void Webapp::SetParamInt(unsigned int key, int value)
 		break;
 	case WEBAPP_PARAM_TEMPLATES:
 		templates_enabled = value;
+		break;
 	default:
 		return;
 	}
@@ -573,6 +574,8 @@ int Webapp::GetParamInt(unsigned int key)
 		return client_sockets;
 	case WEBAPP_PARAM_TEMPLATES:
 		return templates_enabled;
+	case WEBAPP_PARAM_STRINGS:
+		return WEBAPP_STATIC_STRINGS;
 	default:
 		return 0;
 	}

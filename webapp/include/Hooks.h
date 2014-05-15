@@ -103,7 +103,7 @@ extern "C" {
 	APIEXPORT int  Query_Select(Query*);
 	APIEXPORT Query* 
 				   Query_Create(Database*, webapp_str_t*);
-	APIEXPORT void Query_Destroy(webapp_str_t*);
+	APIEXPORT void Query_Destroy(Query*);
 	APIEXPORT void Query_Set(Query*, webapp_str_t*);
 	APIEXPORT void Query_Bind(Query* q, webapp_str_t* in);
 	

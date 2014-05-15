@@ -358,7 +358,7 @@ Query* Query_Create(Database* db, webapp_str_t* in)
 	return q;
 }
 
-void Query_Destroy(webapp_str_t* qry)
+void Query_Destroy(Query* qry)
 {
 	delete qry;
 }
