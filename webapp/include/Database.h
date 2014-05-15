@@ -62,7 +62,6 @@ struct Database {
 	size_t db_id = 0;
 	sqlite3* sqlite_db = NULL;
 	MYSQL* mysql_db = NULL;
-	const char* last_error = NULL;
 	Database(size_t db_id) : db_id(db_id) {}
 	~Database();
 

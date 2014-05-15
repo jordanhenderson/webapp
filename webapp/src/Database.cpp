@@ -75,9 +75,7 @@ void Query::process()
 	unsigned int db_type = _db->db_type;
 	sqlite3* sqlite_db = _db->sqlite_db;
 	MYSQL* mysql_db = _db->mysql_db;
-	if(_db->last_error != NULL) delete _db->last_error;
-	_db->last_error = NULL;
-
+	
 	//Abort if query set to finished.
 	if (status == DATABASE_QUERY_FINISHED) return;
 	
@@ -109,7 +107,7 @@ void Query::process()
 	if(size_arr == NULL || bind_params == NULL) {
 		int m = params.size();
 		//Set up MYSQL_BIND and size array for MYSQL parameters.
-		if(db_type == DATABASE_TYPE_MYSQL) {
+		if(db_type == DATABASE_TYPE_MYSQL && m > 0) {
 			size_arr = new unsigned long[m];
 			bind_params = new MYSQL_BIND[m];
 			memset(bind_params,0, sizeof(MYSQL_BIND)*m);
@@ -129,7 +127,8 @@ void Query::process()
 				size_arr[i] = p_str.len;
 			}
 		}
-		if(db_type == DATABASE_TYPE_MYSQL) {
+		
+		if(db_type == DATABASE_TYPE_MYSQL && m > 0) {
 			if((lasterror = mysql_stmt_bind_param(mysql_stmt, bind_params))) {
 				goto cleanup;
 			}
@@ -140,7 +139,9 @@ void Query::process()
 	if (status == DATABASE_QUERY_INIT) {
 		if (db_type == DATABASE_TYPE_SQLITE) {
 			//SQLite needs to exec in order to get column info.
-			lasterror = sqlite3_step(sqlite_stmt); 
+			lasterror = sqlite3_step(sqlite_stmt);
+			const char* err_str = sqlite3_errmsg(sqlite_db);
+			if(err_str != NULL) err = err_str;
 			//Populate statistics
 			column_count = sqlite3_column_count(sqlite_stmt);
 			lastrowid = sqlite3_last_insert_rowid(sqlite_db);
@@ -149,13 +150,20 @@ void Query::process()
 		} else if (db_type == DATABASE_TYPE_MYSQL) {
 			//Populate statistics
 			if (prepare_meta_result == NULL) {
-				if (!(prepare_meta_result = mysql_stmt_result_metadata(mysql_stmt)))
-					goto cleanup;
+				prepare_meta_result = mysql_stmt_result_metadata(mysql_stmt);
 			}
 			
-			column_count = mysql_num_fields(prepare_meta_result);
-			lastrowid = mysql_insert_id(_db->mysql_db);
-			rows_affected = mysql_affected_rows(_db->mysql_db);
+			if(prepare_meta_result != NULL) {
+				column_count = mysql_num_fields(prepare_meta_result);
+			}
+			if (mysql_stmt_execute(mysql_stmt)) goto cleanup;
+			//Populate error message
+			const char* err_str = mysql_stmt_error(mysql_stmt);
+			if(err_str != NULL) err = err_str;
+			
+			lastrowid = mysql_stmt_insert_id(mysql_stmt);
+			rows_affected = mysql_stmt_affected_rows(mysql_stmt);
+			
 		}
 
 		if (column_count == 0) goto cleanup;
@@ -170,7 +178,7 @@ void Query::process()
 		} else if (db_type == DATABASE_TYPE_MYSQL) {
 			if (mysql_stmt_execute(mysql_stmt)) goto cleanup;
 			//Populate error message
-			const char* err_str = sqlite3_errmsg(sqlite_db);
+			const char* err_str = mysql_stmt_error(mysql_stmt);
 			if(err_str != NULL) err = err_str;
 		}
 	}
