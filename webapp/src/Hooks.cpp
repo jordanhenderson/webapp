@@ -64,6 +64,7 @@ void Template_SetIntValue(TemplateDictionary* dict, webapp_str_t* key,
 
 TemplateDictionary* Template_Get(RequestBase* worker, webapp_str_t* name)
 {
+	
 	TemplateDictionary* base = worker->baseTemplate;
 	if(name == NULL) return base;
 	auto tmpl = &worker->templates;
@@ -91,8 +92,12 @@ void Template_Load(webapp_str_t* page)
 
 webapp_str_t* Template_Render(RequestBase* worker, webapp_str_t* page)
 {
-	webapp_str_t dir = "content/";
-	return worker->RenderTemplate(dir + page);
+	RequestQueue* queue = static_cast<RequestQueue*>(worker);
+	if(queue != NULL) 
+	{
+		webapp_str_t dir = "content/";
+		return queue->RenderTemplate(dir + page);
+	}
 }
 
 /* Session */
@@ -111,17 +116,32 @@ void Session_SetValue(Session* session, webapp_str_t* key,
 
 Session* Session_GetFromCookies(RequestBase* worker, webapp_str_t* cookies)
 {
-	return worker->_sessions.get_cookie_session(cookies);
+	RequestQueue* queue = static_cast<RequestQueue*>(worker);
+	if(queue != NULL) 
+	{
+		return queue->_sessions.get_cookie_session(cookies);
+	}
+	return NULL;
 }
 
 Session* Session_Get(RequestBase* worker, webapp_str_t* id)
 {
-	return worker->_sessions.get_session(id);
+	RequestQueue* queue = static_cast<RequestQueue*>(worker);
+	if(queue != NULL) 
+	{
+		return worker->_sessions.get_session(id);
+	}
+	return NULL;
 }
 
 Session* Session_New(RequestBase* worker, webapp_str_t* uid)
 {
-	return worker->_sessions.new_session(uid);
+	RequestQueue* queue = static_cast<RequestQueue*>(worker);
+	if(queue != NULL)
+	{
+		return worker->_sessions.new_session(uid);
+	}
+	return NULL;
 }
 
 void Session_Destroy(Session* session)
@@ -132,7 +152,12 @@ void Session_Destroy(Session* session)
 
 Session* Session_GetRaw(RequestBase* worker)
 {
-	return worker->_sessions.get_raw_session();
+	RequestQueue* queue = static_cast<RequestQueue*>(worker);
+	if(queue != NULL)
+	{
+		return worker->_sessions.get_raw_session();
+	}
+	return NULL;
 }
 
 /* Script API */
@@ -141,33 +166,20 @@ webapp_str_t* Script_Compile(const char* file)
 	return app->CompileScript(file);
 }
 
-/* Parameter Store */
-void Param_Set(unsigned int key, int value)
-{
-	app->SetParamInt(key, value);
-}
-
-int Param_Get(unsigned int key)
-{
-	return app->GetParamInt(key);
-}
-
 /* Worker Handling */
+void Worker_Create(WorkerInit* init)
+{
+	app->CreateWorker(*init);
+}
+
 void Worker_ClearCache(RequestBase* worker)
 {
-	//Abort this lua vm.
-	worker->aborted = 1;
-	//Cleanup when this task completes.
-	worker->cleanupTask = 1;
+
 }
 
 void Worker_Shutdown(RequestBase* worker)
 {
-	//Abort this lua vm.
-	worker->aborted = 1;
-	worker->cleanupTask = 1;
-	//Shutdown when this task completes.
-	worker->shutdown = 1;
+
 }
 
 /* Requests */
@@ -180,41 +192,41 @@ void Request_Queue(RequestBase* worker, Request* r) {
 	worker->enqueue(r);
 }
 
-void Request_Finish(Request* r)
+void Request_Finish(RequestBase* worker, Request* r)
 {
 	r->reset();
-	r->s.socket.async_read_some(null_buffers(), bind(
-								  &Webapp::process_header_async,
-								  app, r, _1, _2));
+	worker->read_request(r, 0);
 }
 
 /* Socket API */
-void ConnectHandler(RequestBase* worker, Request* r, Socket* s, 
+void ConnectHandler(RequestBase* worker, Request* r, LuaSocket* s, 
 					const std::error_code& ec, 
 					tcp::resolver::iterator it)
 {
+	Socket& socket = s->socket;
 	if(!ec) {
 		worker->enqueue(r);
 	} else if (it != tcp::resolver::iterator()) {
 		//Try next endpoint.
-		s->abort();
+		socket.abort();
 		tcp::endpoint ep = *it;
-		s->async_connect(ep, bind(&ConnectHandler, worker, r, s, _1, ++it));
+		socket.async_connect(ep, bind(&ConnectHandler, worker, r, s, _1, ++it));
 	} else if(ec != asio::error::operation_aborted) {
-		s->abort();
+		socket.abort();
 		worker->enqueue(r);
 	}
 }
 
-void ResolveHandler(RequestBase* worker, Request* r, Socket* s,
+void ResolveHandler(RequestBase* worker, Request* r, LuaSocket* s,
 					const std::error_code& ec, 
 					tcp::resolver::iterator it)
 {
+	Socket& socket = s->socket;
 	if(!ec) {
 		tcp::endpoint ep = *it;
-		s->async_connect(ep, bind(&ConnectHandler, worker, r, s, _1, ++it));
+		socket.async_connect(ep, bind(&ConnectHandler, worker, r, s, _1, ++it));
 	} else if(ec != asio::error::operation_aborted) {
-		s->abort();
+		socket.abort();
 		worker->enqueue(r);
 	}
 }
@@ -224,8 +236,7 @@ LuaSocket* Socket_Connect(RequestBase* worker, Request* r,
 	tcp::resolver::query qry(tcp::v4(), *addr, *port);
 	tcp::resolver& resolver = app->get_resolver();
 	LuaSocket* s = app->create_socket();
-	Socket* socket = &s->socket;
-	resolver.async_resolve(qry, bind(&ResolveHandler, worker, r, socket, _1, _2));
+	resolver.async_resolve(qry, bind(&ResolveHandler, worker, r, s, _1, _2));
 	return s;
 }
 
@@ -233,70 +244,69 @@ void Socket_Destroy(LuaSocket* s) {
 	app->destroy_socket(s);
 }
 
-void WriteEvent(Socket* s, webapp_str_t* buf,
+void WriteEvent(LuaSocket* s, webapp_str_t* buf,
 				const std::error_code& error, size_t bytes_transferred)
 {
-	if(!error) {
-		s->waiting--;
-	}
+	Socket& socket = s->socket;
+	socket.waiting--;
 	delete buf;
 }
 
-void ReadEvent(Socket* socket, RequestBase* worker, Request* r, 
+void ReadEvent(LuaSocket* s, RequestBase* worker, Request* r, 
 	webapp_str_t* output, int timeout, const std::error_code& ec, size_t n_bytes)
 {
-	Socket& s = *socket;
+	Socket& socket = s->socket;
 	if(!ec) {
-		s.timer.cancel();
+		socket.timer.cancel();
 		try {
-			uint16_t& n = socket->ctr;
-			n += socket->read_some(buffer(output->data + n, output->len - n));
+			uint16_t& n = socket.ctr;
+			n += socket.read_some(buffer(output->data + n, output->len - n));
 			if(n == output->len) {
 				//read complete.
 				worker->enqueue(r);
 			} else {
-				s.timer.expires_from_now(chrono::seconds(timeout));
-				s.timer.async_wait(bind(&ReadEvent, socket, worker, r,
+				socket.timer.expires_from_now(chrono::seconds(timeout));
+				socket.timer.async_wait(bind(&ReadEvent, s, worker, r,
 											  output, timeout, _1, 0));
-				s.async_read_some(null_buffers(), bind(&ReadEvent, 
-					socket, worker, r, output, timeout, _1, 0));
+				socket.async_read_some(null_buffers(), bind(&ReadEvent, 
+					s, worker, r, output, timeout, _1, 0));
 			}
 		} catch (...) {
-			s.abort();
+			socket.abort();
 			output->len = 0;
 		}
 	} else if(ec != asio::error::operation_aborted) {
 		//Read failed/timeout.
-		s.abort();
+		socket.abort();
 		output->len = 0;
 	}
 }
 
 void Socket_Write(LuaSocket* s, webapp_str_t* buf)
 {
-	Socket* socket = &s->socket;
+	Socket& socket = s->socket;
 	//TODO: investigate leak here.
 	webapp_str_t* tmp_buf = new webapp_str_t(*buf);
-	socket->waiting++;
+	socket.waiting++;
 	
 	//No try/catch statement needed; async_write always succeeds.
 	//Errors handled in callback.
-	async_write(*socket, buffer(tmp_buf->data, tmp_buf->len),
-					  bind(&WriteEvent, socket, tmp_buf, _1, _2));
+	async_write(socket, buffer(tmp_buf->data, tmp_buf->len),
+					  bind(&WriteEvent, s, tmp_buf, _1, _2));
 }
 
-webapp_str_t* Socket_Read(LuaSocket* socket, RequestBase* worker, 
+webapp_str_t* Socket_Read(LuaSocket* s, RequestBase* worker, 
 						Request* r, int bytes, int timeout)
 {
 	//LuaSocket wraps the actual socket object.
-	Socket* s = &socket->socket;
+	Socket& socket = s->socket;
 	webapp_str_t* output = new webapp_str_t(bytes);
-	s->ctr = 0;
+	socket.ctr = 0;
 	
-	s->timer.expires_from_now(chrono::seconds(timeout));
-	s->timer.async_wait(bind(&ReadEvent, s, worker, r,
+	socket.timer.expires_from_now(chrono::seconds(timeout));
+	socket.timer.async_wait(bind(&ReadEvent, s, worker, r,
 								  output, timeout, _1, 0));
-	s->async_read_some(null_buffers(), bind(&ReadEvent, s, 
+	socket.async_read_some(null_buffers(), bind(&ReadEvent, s, 
 							worker, r, output, timeout, _1, _2));
 	return output;
 }

@@ -27,10 +27,13 @@ struct webapp_str_t : _webapp_str_t {
 	}
 	webapp_str_t(const char* s)
 	{
+		/* Assume null terminated string */
 		len = strlen(s);
 		allocated = 1;
-		data = new char[len];
+		data = new char[len + 1];
 		memcpy(data, s, len);
+		//Set null teminated byte
+		data[len] = '\0';
 	}
 	webapp_str_t(const std::string& other)
 	{

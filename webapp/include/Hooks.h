@@ -65,11 +65,8 @@ extern "C" {
 	APIEXPORT webapp_str_t* 
 				   Script_Compile(const char* file);
 
-/* Parameter Store */
-	APIEXPORT void Param_Set(unsigned int key, int value);
-	APIEXPORT int  Param_Get(unsigned int key);
-
 /* Worker Handling */
+	APIEXPORT void Worker_Create(WorkerInit* init);
 	APIEXPORT void Worker_ClearCache(RequestBase*);
 	APIEXPORT void Worker_Shutdown(RequestBase*);
 
@@ -77,7 +74,7 @@ extern "C" {
 	APIEXPORT Request* 
 				   Request_GetNext(RequestBase*);
 	APIEXPORT void Request_Queue(RequestBase*, Request*);
-	APIEXPORT void Request_Finish(Request*);
+	APIEXPORT void Request_Finish(RequestBase*, Request*);
 	APIEXPORT void Socket_Write(LuaSocket*, webapp_str_t* data);
 	APIEXPORT webapp_str_t* 
 				   Socket_Read(LuaSocket* socket, RequestBase* worker, 

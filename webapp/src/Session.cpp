@@ -110,6 +110,7 @@ Sessions::Sessions() :
 
 Sessions::~Sessions()
 {
+	CleanupSessions();
 }
 
 int32_t Sessions::session_expiry()
