@@ -22,9 +22,11 @@ class DB;
 
 extern webapp_str_t empty;
 
+class Sessions;
 struct DataStore {
 	std::vector<webapp_str_t*> vals;
-	DataStore() {}
+	Sessions* sessions;
+	DataStore(Sessions* sessions) : sessions(sessions) {}
 	~DataStore();
 	webapp_str_t* get(const webapp_str_t& key);
 	void put(const webapp_str_t& key, const webapp_str_t& value);
@@ -37,7 +39,7 @@ struct Session {
 	webapp_str_t id;
 	DataStore store;
 	
-	Session(const webapp_str_t& key);
+	Session(Sessions* sessions, const webapp_str_t& key);
 	~Session();
 	webapp_str_t* get(const webapp_str_t& key);
 	void put(const webapp_str_t& key, const webapp_str_t& value);
@@ -48,8 +50,11 @@ class Sessions {
 	std::mt19937_64 rng;
 	int32_t session_expiry();
 public:
+	leveldb::DB* db = NULL;
+
 	Sessions();
 	~Sessions();
+	void Init(const webapp_str_t& path);
 	void CleanupSessions();
 	Session* new_session(const webapp_str_t& uid);
 	Session* get_cookie_session(const webapp_str_t& cookies);

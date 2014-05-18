@@ -4,19 +4,10 @@
  * Written by Jordan Henderson <jordan.henderson@ioflame.com>, 2013
  */
 
-#include <leveldb/filter_policy.h>
 #include "Webapp.h"
 #include "Session.h"
 #include "Database.h"
 
-extern "C" {
-#include <lua.h>
-#include <lualib.h>
-#include <lauxlib.h>
-#include <lpeg.h>
-#include <cjson.h>
-#include <msgpack.h>
-}
 
 using namespace std;
 using namespace ctemplate;
@@ -54,23 +45,16 @@ void Webapp::Start() {
 		workers.Start();
 		//Clear workers
 		workers.Cleanup();
+		
+		for(auto it: scripts) delete it.second;
+		scripts.clear();
+		
+		for(auto it: databases) delete it.second;
+		databases.clear();
+		db_count = 0;
+		
+		templates.clear();
 	}
-}
-
-LuaSocket* Webapp::create_socket()
-{
-	return new LuaSocket(client_svc);
-}
-
-void Webapp::destroy_socket(LuaSocket* s)
-{
-	s->socket.abort();
-	delete s;
-}
-
-tcp::resolver& Webapp::get_resolver()
-{
-	return resolver;
 }
 
 /**
@@ -79,9 +63,6 @@ tcp::resolver& Webapp::get_resolver()
 Webapp::~Webapp()
 {
 	workers.Stop();
-
-	//Perform leveldb cleanup if necessary.
-	if(db != NULL) delete db;
 
 	for(auto db : databases) {
 		delete db.second;

@@ -14,10 +14,11 @@ struct Socket;
 struct Request;
 struct Session;
 struct RequestBase;
-
-class Webapp;
 struct Database;
 struct Query;
+
+class Sessions;
+class Webapp;
 class Image;
 class File;
 
@@ -51,11 +52,11 @@ extern "C" {
 	APIEXPORT void Session_SetValue(Session*, webapp_str_t* key, 
 								  webapp_str_t* val);
     APIEXPORT Session*
-                   Session_GetFromCookies(RequestBase*, webapp_str_t* cookies);
+				   Session_GetFromCookies(RequestBase*, webapp_str_t* cookies);
 	APIEXPORT Session* 
-                   Session_Get(RequestBase*, webapp_str_t* id);
+				   Session_Get(RequestBase*, webapp_str_t* id);
 	APIEXPORT Session* 
-                   Session_New(RequestBase*, webapp_str_t* uid);
+				   Session_New(RequestBase*, webapp_str_t* uid);
 	APIEXPORT void 
 				   Session_Destroy(Session*);
 	APIEXPORT Session* 
@@ -63,7 +64,7 @@ extern "C" {
 
 /* Script API */
 	APIEXPORT webapp_str_t* 
-				   Script_Compile(const char* file);
+				   Script_Compile(RequestBase* worker, const char* file);
 
 /* Worker Handling */
 	APIEXPORT void Worker_Create(WorkerInit* init);
@@ -75,7 +76,7 @@ extern "C" {
 				   Request_GetNext(RequestBase*);
 	APIEXPORT void Request_Queue(RequestBase*, Request*);
 	APIEXPORT void Request_Finish(RequestBase*, Request*);
-	APIEXPORT void Socket_Write(LuaSocket*, webapp_str_t* data);
+	APIEXPORT void Socket_Write(LuaSocket*, RequestBase*, webapp_str_t* data);
 	APIEXPORT webapp_str_t* 
 				   Socket_Read(LuaSocket* socket, RequestBase* worker, 
 							Request* r, int bytes, int timeout);
