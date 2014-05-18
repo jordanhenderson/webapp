@@ -39,6 +39,16 @@ void WebappTask::Stop()
 	if(_worker.joinable()) _worker.join();
 }
 
+RequestBase::~RequestBase()
+{
+	for(Request* r_pool: request_pools) {
+		for(int i = 0; i < request_pool_size; i++) {
+			r_pool[i].~Request();
+		}
+		delete[] r_pool;
+	}
+}
+
 /**
  * First connection stage. Called to provide an entry point for new
  * connections. Re-called after each async_accept callback is completed.
@@ -50,8 +60,13 @@ void RequestBase::accept_conn()
 		/* Create a new request. We may need to allocate a new pool here. */
 		if(current_request >= request_pool_size || current_request == 0) {
 			//Allocate a new pool, use that pool from now on.
-			request_pools.emplace_back();
-			request_pools.back().resize(request_pool_size);
+			char* pool = new char[request_pool_size * sizeof(Request)];
+			Request* r_pool = (Request*)pool;
+			for(int i = 0; i < request_pool_size; i++) {
+				new (r_pool + i) Request(svc);
+			}
+			request_pools.push_back(r_pool);
+			//request_pools.back().resize(request_pool_size, svc);
 			current_pool = request_pools.size() - 1;
 			current_request = 1;
 			r = &request_pools.back()[0];
@@ -183,12 +198,12 @@ LuaSocket* RequestBase::create_socket(Request* r, const webapp_str_t& addr,
 	tcp::resolver::query qry(tcp::v4(), addr, port);
 	LuaSocket* s = new LuaSocket(client_svc);
 	resolver.async_resolve(qry, bind(&RequestBase::resolve_handler,
-									 this, r, s, _1, _2));
+									 this, s, r, _1, _2));
 	return s;
 }
 
 /* Socket API */
-void RequestBase::connect_handler(Request* r, LuaSocket* s,
+void RequestBase::connect_handler(LuaSocket* s, Request* r,
 					const std::error_code& ec,
 					tcp::resolver::iterator it)
 {
@@ -200,14 +215,14 @@ void RequestBase::connect_handler(Request* r, LuaSocket* s,
 		socket.abort();
 		tcp::endpoint ep = *it;
 		socket.async_connect(ep, bind(&RequestBase::connect_handler,
-									  this, r, s, _1, ++it));
+									  this, s, r, _1, ++it));
 	} else if(ec != asio::error::operation_aborted) {
 		socket.abort();
 		enqueue(r);
 	}
 }
 
-void RequestBase::resolve_handler(Request *r, LuaSocket *s,
+void RequestBase::resolve_handler(LuaSocket *s, Request* r,
 								  const std::error_code &ec,
 								  tcp::resolver::iterator it)
 {
@@ -215,7 +230,7 @@ void RequestBase::resolve_handler(Request *r, LuaSocket *s,
 	if(!ec) {
 		tcp::endpoint ep = *it;
 		socket.async_connect(ep, bind(&RequestBase::connect_handler,
-									  this, r, s, _1, ++it));
+									  this, s, r, _1, ++it));
 	} else if(ec != asio::error::operation_aborted) {
 		socket.abort();
 		enqueue(r);
@@ -237,10 +252,10 @@ void RequestBase::read_handler(LuaSocket *s, Request *r, webapp_str_t *output,
 				enqueue(r);
 			} else {
 				socket.timer.expires_from_now(chrono::seconds(timeout));
-				socket.timer.async_wait(bind(&RequestBase::read_handler, this, r, s,
+				socket.timer.async_wait(bind(&RequestBase::read_handler, this, s, r,
 											  output, timeout, _1, 0));
 				socket.async_read_some(null_buffers(), bind(&RequestBase::read_handler,
-					this, r, s, output, timeout, _1, 0));
+					this, s, r, output, timeout, _1, 0));
 			}
 		} catch (...) {
 			socket.abort();
@@ -334,7 +349,7 @@ webapp_str_t* Worker::CompileScript(const webapp_str_t& filename) {
 	string filename_str = filename;
 
 	//Attempt to return an existing compiled script.
-	auto scripts = app->scripts;
+	auto& scripts = app->scripts;
 	auto it = scripts.find(filename_str);
 	if(it != scripts.end()) {
 		//Found an existing script. Return it.
@@ -342,7 +357,7 @@ webapp_str_t* Worker::CompileScript(const webapp_str_t& filename) {
 	}
 	
 	//Create a new lua state, with minimal libs for LuaMacro.
-	webapp_str_t actual_filename = "plugins/" + filename;
+	webapp_str_t actual_filename = "plugins/" + filename + "\0";
 	lua_State* L = luaL_newstate();
 	if(L == NULL) goto lua_fail;
 	luaL_openlibs(L);
@@ -392,7 +407,6 @@ void Worker::Cleanup()
 			ReloadAllIfChanged(TemplateCache::IMMEDIATE_RELOAD);
 	}
 
-	
 	if(!app->aborted) {
 		//Recompile scripts.
 		webapp_str_t* init = CompileScript("init.lua");
@@ -469,12 +483,12 @@ void Worker::Execute()
 void Worker::RunScript(LuaParam* params, int nArgs, 
 							 const webapp_str_t& file)
 {
-	auto scripts = app->scripts;
+	auto& scripts = app->scripts;
 	auto it = scripts.find(file);
 	if(it == scripts.end()) return;
 	
-	//Hold the actual file for lua. Null terminate just in case.
-	webapp_str_t actual_file = "plugins/" + file + "\0";	
+	//Hold the actual script file for lua.
+	webapp_str_t actual_file = "plugins/" + file + "\0";
 	
 	auto script = it->second;
 	//Initialize a lua state, loading appropriate libraries.

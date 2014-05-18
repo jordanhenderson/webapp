@@ -40,11 +40,17 @@ void Webapp::CreateWorker(const WorkerInit& init)
 	workers.Add(init);
 }
 
+
+
 void Webapp::Start() {
 	while(!aborted) {
+		WorkerInit init;
+		Worker w(init);
+		w.Cleanup();
+		
 		workers.Start();
-		//Clear workers
-		workers.Cleanup();
+
+		workers.Clear();
 		
 		for(auto it: scripts) delete it.second;
 		scripts.clear();

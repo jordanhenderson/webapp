@@ -64,6 +64,8 @@
 #include <cstdint>
 #include <cstdarg>
 #include <vector>
+#include <deque>
+#include <new>
 #include <queue>
 #include <thread>
 #include <mutex>

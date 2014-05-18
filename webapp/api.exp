@@ -22,6 +22,7 @@
 	
 	Script_Compile;
 	
+	Worker_Create;
 	Worker_ClearCache;
 	Worker_Shutdown;
 	

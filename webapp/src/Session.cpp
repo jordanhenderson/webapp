@@ -9,6 +9,7 @@
  */
 
 #include <leveldb/db.h>
+#include <leveldb/filter_policy.h>
 #include "Platform.h"
 #include "WebappString.h"
 #include "Session.h"
@@ -109,6 +110,23 @@ void Session::put(const webapp_str_t &key, const webapp_str_t &value)
 Sessions::Sessions() :
 	rng(std::random_device {}())
 {
+}
+
+void Sessions::Init(const webapp_str_t &path)
+{
+	auto& leveldb = app->leveldb_databases;
+	string path_str = path;
+	auto it = leveldb.find(path_str);
+	if(it != leveldb.end()) {
+		db = it->second;
+	} else {
+		//Not found. Create new levelDB connection.
+		leveldb::Options options;
+		options.filter_policy = leveldb::NewBloomFilterPolicy(10);
+		options.create_if_missing = true;
+		leveldb::DB::Open(options, path_str, &db);
+		leveldb.insert({path_str,db});
+	}
 }
 
 Sessions::~Sessions()

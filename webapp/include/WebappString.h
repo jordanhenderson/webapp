@@ -14,10 +14,12 @@ struct webapp_str_t : _webapp_str_t {
 	webapp_str_t() {}
 	webapp_str_t(const char* s, int32_t _len)
 	{
-		len = _len;
-		data = new char[_len];
-		allocated = 1;
-		memcpy(data, s, _len);
+		if(s != NULL) {
+			len = _len;
+			data = new char[_len];
+			allocated = 1;
+			memcpy(data, s, _len);
+		}
 	}
 	webapp_str_t(int32_t _len)
 	{
@@ -27,13 +29,15 @@ struct webapp_str_t : _webapp_str_t {
 	}
 	webapp_str_t(const char* s)
 	{
-		/* Assume null terminated string */
-		len = strlen(s);
-		allocated = 1;
-		data = new char[len + 1];
-		memcpy(data, s, len);
-		//Set null teminated byte
-		data[len] = '\0';
+		if(s != NULL) {
+			/* Assume null terminated string */
+			len = strlen(s);
+			allocated = 1;
+			data = new char[len + 1];
+			memcpy(data, s, len);
+			//Set null teminated byte
+			data[len] = '\0';
+		}
 	}
 	webapp_str_t(const std::string& other)
 	{
@@ -45,7 +49,6 @@ struct webapp_str_t : _webapp_str_t {
 	webapp_str_t(webapp_str_t* other)
 	{
 		if(other == NULL) {
-			data = new char[1];
 			len = 0;
 			allocated = 0;
 		} else {

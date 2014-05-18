@@ -48,16 +48,16 @@ struct LuaSocket {
 };
 
 struct WorkerInit {
-	const char* _script; //Worker script
-	int port; //Worker operating port
-	int request_method; //Worker request handling method
-	int request_size; //LuaRequest size
-	int queue_size; //Size of requests to handle per queue
-	int request_pool_size; //Size of requests to initialize in the pool
-	int static_strings; //Amount of static strings to create
-	int client_sockets; //Use client sockets
-	int templates_enabled; //Enable template engine
-	int templates_cache_enabled; //Enable template caching
+	const char* _script = NULL; //Worker script
+	int port = 5000; //Worker operating port
+	int request_method = 0; //Worker request handling method
+	int request_size = 1; //LuaRequest size
+	int queue_size = 100; //Size of requests to handle per queue
+	int request_pool_size = 100; //Size of requests to initialize in the pool
+	int static_strings = 4; //Amount of static strings to create
+	int client_sockets = 1; //Use client sockets
+	int templates_enabled = 1; //Enable template engine
+	int templates_cache_enabled = 0; //Enable template caching
 };
 
 struct RequestBase;
@@ -192,7 +192,8 @@ struct RequestBase : LockedQueue<Request> {
 	std::atomic<int> current_request {0};
 	/* Current request pool. */
 	std::atomic<int> current_pool {0};
-	std::vector<std::vector<Request>> request_pools;
+	//TODO: Use deque when asio implements proper move/copy semantics.
+	std::vector<Request*> request_pools;
 	unsigned int request_pool_size;
 	unsigned int request_size;
 
@@ -207,17 +208,17 @@ struct RequestBase : LockedQueue<Request> {
 									client_wrk(client_svc),
 									acceptor(svc),
 									resolver(client_svc) {}
-	~RequestBase() {}
+	~RequestBase();
 	
 	void accept_conn();
 	void accept_conn_async(Request* r, const std::error_code&);
 	void read_request(Request* r, int timeout_ms);
 	void process_msgpack_request(Request* r, const std::error_code&,
 							  std::size_t);
-	void resolve_handler(Request* r, LuaSocket* s,
+	void resolve_handler(LuaSocket* s, Request* r,
 						const std::error_code& ec,
 						asio::ip::tcp::resolver::iterator it);
-	void connect_handler(Request* r, LuaSocket* s,
+	void connect_handler(LuaSocket* s, Request* r,
 						 const std::error_code& ec,
 						 asio::ip::tcp::resolver::iterator it);
 	LuaSocket* create_socket(Request* r, const webapp_str_t& addr,
@@ -257,8 +258,6 @@ public:
 	webapp_str_t* CompileScript(const webapp_str_t& filename);
 	void RunScript(LuaParam* params, int n_params, const webapp_str_t& filename);
 	webapp_str_t* RenderTemplate(const webapp_str_t& tpl);
-	void ConnectSessions(const webapp_str_t& path);
-
 };
 
 template<class T>
@@ -271,7 +270,7 @@ struct WorkerArray {
 			delete it;
 		}
 	}
-	void Cleanup()
+	void Clear()
 	{
 		Stop();
 		for(auto it: workers) {
@@ -323,13 +322,11 @@ public:
 	Database* GetDatabase(size_t index);
 	void DestroyDatabase(Database*);
 
-	leveldb::DB* GetLevelDB();
-
 	//Worker methods
 	void StartCleanup();
 	void FinishCleanup();
 	void CreateWorker(const WorkerInit& init);
-	
+
 };
 
 #endif //WEBAPP_H
