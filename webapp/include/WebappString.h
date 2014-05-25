@@ -34,9 +34,7 @@ struct webapp_str_t : _webapp_str_t {
 			len = strlen(s);
 			allocated = 1;
 			data = new char[len + 1];
-			memcpy(data, s, len);
-			//Set null teminated byte
-			data[len] = '\0';
+			memcpy(data, s, len + 1);
 		}
 	}
 	webapp_str_t(const std::string& other)
@@ -90,14 +88,16 @@ struct webapp_str_t : _webapp_str_t {
 
 	webapp_str_t& operator +=(const webapp_str_t& other)
 	{
-		int32_t newlen = len + other.len;
-		char* r = new char[newlen];
-		memcpy(r, data, len);
-		memcpy(r + len, other.data, other.len);
-		if(allocated) delete[] data;
-		len = newlen;
-		data = r;
-		allocated = 1;
+		if(other.len > 0) {
+			int32_t newlen = len + other.len;
+			char* r = new char[newlen];
+			memcpy(r, data, len);
+			memcpy(r + len, other.data, other.len);
+			if(allocated) delete[] data;
+			len = newlen;
+			data = r;
+			allocated = 1;
+		}
 		return *this;
 	}
 	webapp_str_t& operator=(const webapp_str_t& other)

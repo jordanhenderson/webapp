@@ -47,6 +47,7 @@ extern "C" {
 						webapp_str_t* page);
 
 /* Session */
+	APIEXPORT void Session_Init(RequestBase* worker, webapp_str_t* path);
 	APIEXPORT webapp_str_t* 
 				   Session_GetValue(Session*, webapp_str_t*);
 	APIEXPORT void Session_SetValue(Session*, webapp_str_t* key, 

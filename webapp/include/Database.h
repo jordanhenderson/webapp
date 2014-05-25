@@ -63,6 +63,7 @@ struct Database {
 	sqlite3* sqlite_db = NULL;
 	MYSQL* mysql_db = NULL;
 	Database(size_t db_id) : db_id(db_id) {}
+	Database() {}
 	~Database();
 
 	int connect(int database_type, const char* host, const char* username,

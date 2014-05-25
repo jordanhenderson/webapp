@@ -114,10 +114,10 @@ Sessions::Sessions() :
 
 void Sessions::Init(const webapp_str_t &path)
 {
-	auto& leveldb = app->leveldb_databases;
+	auto& leveldbs = app->leveldb_databases;
 	string path_str = path;
-	auto it = leveldb.find(path_str);
-	if(it != leveldb.end()) {
+	auto it = leveldbs.find(path_str);
+	if(it != leveldbs.end()) {
 		db = it->second;
 	} else {
 		//Not found. Create new levelDB connection.
@@ -125,7 +125,7 @@ void Sessions::Init(const webapp_str_t &path)
 		options.filter_policy = leveldb::NewBloomFilterPolicy(10);
 		options.create_if_missing = true;
 		leveldb::DB::Open(options, path_str, &db);
-		leveldb.insert({path_str,db});
+		leveldbs.emplace(path_str, db);
 	}
 }
 

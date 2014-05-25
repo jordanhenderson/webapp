@@ -25,7 +25,7 @@ using namespace asio::ip;
 
 /* Helper methods */
 void String_Destroy(webapp_str_t* str) {
-	delete str;
+	if(str != NULL) delete str;
 }
 
 /* Template */
@@ -68,10 +68,10 @@ TemplateDictionary* Template_Get(RequestBase* worker, webapp_str_t* name)
 	if(w != NULL) {
 		TemplateDictionary* base = w->baseTemplate;
 		if(name == NULL) return base;
-		auto tmpl = &w->templates;
-		auto dict = tmpl->find(*name);
-		if(dict == tmpl->end()) return base;
-		return (*dict).second;
+		auto& tmpl = w->templates;
+		auto dict = tmpl.find(*name);
+		if(dict == tmpl.end()) return base;
+		return dict->second;
 	}
 	return NULL;
 }
@@ -84,7 +84,7 @@ void Template_Clear(TemplateDictionary* dict)
 
 void Template_Include(webapp_str_t* name, webapp_str_t* file)
 {
-	app->templates.insert({*name, *file});
+	app->templates.emplace(*name, *file);
 	LoadTemplate(*file, STRIP_WHITESPACE);
 }
 
@@ -193,11 +193,15 @@ void Worker_Create(WorkerInit* init)
 
 void Worker_ClearCache(RequestBase* worker)
 {
+	worker->aborted = 1;
+	worker->enqueue(NULL);
 }
 
 void Worker_Shutdown(RequestBase* worker)
 {
-
+	app->aborted = 1;
+	worker->aborted = 1;
+	worker->enqueue(NULL);
 }
 
 /* Requests */
@@ -207,7 +211,7 @@ Request* Request_GetNext(RequestBase* worker)
 }
 
 void Request_Queue(RequestBase* worker, Request* r) {
-	worker->enqueue(r);
+	worker->reenqueue(r);
 }
 
 void Request_Finish(RequestBase* worker, Request* r)
@@ -215,7 +219,6 @@ void Request_Finish(RequestBase* worker, Request* r)
 	r->reset();
 	worker->read_request(r, 0);
 }
-
 
 LuaSocket* Socket_Connect(RequestBase* worker, Request* r, 
 					  webapp_str_t* addr, webapp_str_t* port) {
@@ -255,25 +258,27 @@ int Socket_DataAvailable(LuaSocket* s)
 /* Database */
 Database* Database_Create()
 {
-	return app->CreateDatabase();
-}
-
-void Database_Destroy(Database* db)
-{
-	if(db == NULL) return;
-	return app->DestroyDatabase(db);
+	auto& databases = app->databases;
+	size_t id = databases.size() + 1;
+	return databases.emplace(id, id);
 }
 
 Database* Database_Get(size_t index)
 {
-	return app->GetDatabase(index);
+	auto& databases = app->databases;
+	return &databases[index];
+}
+
+void Database_Destroy(Database* db)
+{
+	auto& databases = app->databases;
+	databases.erase(db->db_id);
 }
 
 int Database_Connect(Database* db, int database_type, const char* host,
 					const char* username, const char* password,
 					const char* database)
 {
-	if(db == NULL) return 0;
 	return db->connect(database_type, host, username, password, database);
 }
 
@@ -351,7 +356,6 @@ void Time_Get(struct webapp_tm* output)
 	gmtime_r(&current_time, &tmp_tm);
 #endif
 	tm_to_webapp(&tmp_tm, output);
-
 }
 
 void Time_Update(struct webapp_tm* output)

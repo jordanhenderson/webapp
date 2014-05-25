@@ -39,17 +39,45 @@ void WebappTask::Stop()
 	if(_worker.joinable()) _worker.join();
 }
 
+Request::Request(io_service& svc) : s(svc), socket_ref(s)
+{
+	headers.resize(9);
+	reset();
+}
+
+RequestBase::RequestBase(unsigned int request_size,
+						 unsigned int queue_size,
+						 unsigned int request_pool_size) : 
+							LockedQueue(queue_size),
+							finished_requests(queue_size),
+							request_pool_size(request_pool_size),
+							request_size(request_size),
+							wrk(svc),
+							client_wrk(client_svc),
+							acceptor(svc),
+							resolver(client_svc)
+{
+	//RequestBase specific initialisation handling
+	if(request_pool_size == 0) {
+		this->request_pool_size = 100;
+	}
+	
+	if(request_size == 0) {
+		this->request_size = 1;
+	}
+}
+
 RequestBase::~RequestBase()
 {
 	for(Request* r_pool: request_pools) {
 		for(int i = 0; i < request_pool_size; i++) {
 			r_pool[i].~Request();
 		}
-		delete[] r_pool;
+		delete[] (char*)r_pool;
 	}
 }
 
-/**
+/**	
  * First connection stage. Called to provide an entry point for new
  * connections. Re-called after each async_accept callback is completed.
 */
@@ -66,7 +94,6 @@ void RequestBase::accept_conn()
 				new (r_pool + i) Request(svc);
 			}
 			request_pools.push_back(r_pool);
-			//request_pools.back().resize(request_pool_size, svc);
 			current_pool = request_pools.size() - 1;
 			current_request = 1;
 			r = &request_pools.back()[0];
@@ -102,6 +129,7 @@ void RequestBase::accept_conn_async(Request* r, const std::error_code& error)
 			accept_conn();
 		}
 	} else {
+		printf("Error accepting connection: %s\n", error.message().c_str()); 
 		accept_conn();
 	}
 }
@@ -304,19 +332,26 @@ void RequestBase::start_write(LuaSocket *s, const webapp_str_t &buf)
 					  bind(&RequestBase::write_handler, this, s, tmp_buf, _1, _2));
 }
 
+void RequestBase::reenqueue(Request* r) {
+	//Reenqueue a request to the requestbase using asio.
+	svc.post(bind(&RequestBase::enqueue, this, r));
+}
+
 Worker::Worker(const WorkerInit& init) :
 	WorkerInit(init), RequestBase(init.request_size, init.queue_size,
 								  init.request_pool_size),
 	endpoint(tcp::v4(), port),
 	script(_script)
 {
-	try {
-		acceptor.open(endpoint.protocol());
-		acceptor.set_option(ip::tcp::acceptor::reuse_address(true));
-		acceptor.bind(endpoint);
-		acceptor.listen();
-	} catch (...) {
-
+	if(port > 0) {
+		try {
+			acceptor.open(endpoint.protocol());
+			acceptor.set_option(ip::tcp::acceptor::reuse_address(true));
+			acceptor.bind(endpoint);
+			acceptor.listen();
+		} catch (system_error& ec) {
+			printf("Error: bind to %d failed: (%s)\n", port, ec.what());
+		}
 	}
 
 	if(templates_enabled) baseTemplate = new TemplateDictionary("");
@@ -339,9 +374,8 @@ int lua_writer(lua_State* L, const void* p, size_t sz, void* ud) {
 }
 
 webapp_str_t* Worker::CompileScript(const webapp_str_t& filename) {
-	webapp_str_t* chunk_str = NULL;
-
 	//Hold parsed lua code.
+	webapp_str_t* chunk_str = NULL;
 	const char* chunk = NULL;
 	size_t len = 0;
 
@@ -350,14 +384,16 @@ webapp_str_t* Worker::CompileScript(const webapp_str_t& filename) {
 
 	//Attempt to return an existing compiled script.
 	auto& scripts = app->scripts;
+	
 	auto it = scripts.find(filename_str);
+	
 	if(it != scripts.end()) {
 		//Found an existing script. Return it.
-		return it->second;
+		return &it->second;
 	}
 	
 	//Create a new lua state, with minimal libs for LuaMacro.
-	webapp_str_t actual_filename = "plugins/" + filename + "\0";
+	webapp_str_t actual_filename = "plugins/" + filename;
 	lua_State* L = luaL_newstate();
 	if(L == NULL) goto lua_fail;
 	luaL_openlibs(L);
@@ -369,34 +405,28 @@ webapp_str_t* Worker::CompileScript(const webapp_str_t& filename) {
 	//Provide the target filename to preprocess.
 	lua_pushlstring(L, actual_filename.data, actual_filename.len);
 	lua_setglobal(L, "file");
-
-	//Execute the VM, store the results.
-	chunk_str = new webapp_str_t();
-	chunk_str->allocated = 1;
-
+	
 	if(lua_pcall(L, 0, 1, 0) != 0) goto lua_error;
 	
 	chunk = lua_tolstring(L, -1, &len);
 	
 	//Load the preprocessed chunk into the vm.
-	if(luaL_loadbuffer(L, chunk, len, actual_filename.data))
+	if(luaL_loadbuffer(L, chunk, len, filename.data))
 		goto lua_error;
+	
+	
+	chunk_str = scripts.emplace(filename_str, webapp_str_t());
 	
 	if(lua_dump(L, lua_writer, chunk_str) != 0) goto lua_error;
 	
-	scripts.insert(make_pair(filename_str, chunk_str));
 	goto finish;
 lua_fail:
-	delete chunk_str;
-	return NULL;
+	return chunk_str;
 lua_error:
-	delete chunk_str;
-	chunk_str = NULL;
 	printf("Error: %s\n", lua_tostring(L, -1));
 finish:
 	lua_close(L);
 	return chunk_str;
-
 }
 
 void Worker::Cleanup()
@@ -407,7 +437,7 @@ void Worker::Cleanup()
 			ReloadAllIfChanged(TemplateCache::IMMEDIATE_RELOAD);
 	}
 
-	if(!app->aborted) {
+	if(!aborted) {
 		//Recompile scripts.
 		webapp_str_t* init = CompileScript("init.lua");
 		if(init != NULL) {
@@ -478,6 +508,9 @@ void Worker::Execute()
 	
 	LuaParam _v[] = { { "worker", (RequestBase*)this } };
 	RunScript(_v, sizeof(_v) / sizeof(LuaParam), script);
+	
+	//Signal the service to stop.
+	svc.stop();
 }
 
 void Worker::RunScript(LuaParam* params, int nArgs, 
@@ -488,9 +521,9 @@ void Worker::RunScript(LuaParam* params, int nArgs,
 	if(it == scripts.end()) return;
 	
 	//Hold the actual script file for lua.
-	webapp_str_t actual_file = "plugins/" + file + "\0";
+	webapp_str_t actual_file = "plugins/" + file;
 	
-	auto script = it->second;
+	auto& script = it->second;
 	//Initialize a lua state, loading appropriate libraries.
 	lua_State* L = luaL_newstate();
 	if(L == NULL) return;
@@ -499,11 +532,14 @@ void Worker::RunScript(LuaParam* params, int nArgs,
 	luaopen_cjson(L);
 
 	//Allocate memory for temporary string operations.
-	_webapp_str_t ss[static_strings];
+	_webapp_str_t ss[WEBAPP_STATIC_STRINGS];
 
 	//Provide and set temporary string memory global.
 	lua_pushlightuserdata(L, &ss);
 	lua_setglobal(L, "static_strings");
+	
+	lua_pushinteger(L, WEBAPP_STATIC_STRINGS);
+	lua_setglobal(L, "static_strings_count");
 
 	//Pass each param into the Lua state.
 	if(params != NULL) {
@@ -515,7 +551,7 @@ void Worker::RunScript(LuaParam* params, int nArgs,
 	}
 
 	//Load the lua buffer.
-	if(luaL_loadbuffer(L, script->data, script->len, actual_file.data))
+	if(luaL_loadbuffer(L, script.data, script.len, file.data))
 		goto lua_error;
 
 	if(lua_pcall(L, 0, 0, 0) != 0)

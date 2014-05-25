@@ -9,11 +9,17 @@
 
 #include <asio.hpp>
 #include <readerwriterqueue.h>
+#include <ctemplate/template.h>
+#include <ctemplate/template_emitter.h>
+#include <leveldb/db.h>
 #include "Platform.h"
 #include "WebappString.h"
 #include "Database.h"
 #include "Session.h"
 
+
+//Set to the maximum amount of strings required to be passed from Lua in a single call
+#define WEBAPP_STATIC_STRINGS 3
 extern Webapp* app;
 
 class Webapp;
@@ -49,18 +55,16 @@ struct LuaSocket {
 
 struct WorkerInit {
 	const char* _script = NULL; //Worker script
-	int port = 5000; //Worker operating port
+	int port = 0; //Worker operating port
 	int request_method = 0; //Worker request handling method
 	int request_size = 1; //LuaRequest size
-	int queue_size = 100; //Size of requests to handle per queue
-	int request_pool_size = 100; //Size of requests to initialize in the pool
-	int static_strings = 4; //Amount of static strings to create
 	int client_sockets = 1; //Use client sockets
 	int templates_enabled = 1; //Enable template engine
 	int templates_cache_enabled = 0; //Enable template caching
+	int queue_size = 100; //Size of requests to handle per queue
+	int request_pool_size = 100; //Size of requests to initialize in the pool
 };
 
-struct RequestBase;
 /**
  * @brief Required information per request.
  */
@@ -98,15 +102,64 @@ struct Request {
 	Request(asio::io_service& svc);
 };
 
+template<class Key, class Ty>
+class BaseLockedMap : public std::unordered_map<Key, Ty> {
+	std::mutex mtx;
+protected:
+	std::unordered_map<Key, Ty> map;
+public:
+	void lock() 
+	{
+		mtx.lock();
+	}
+	void unlock() 
+	{
+		mtx.unlock();
+	}
+	
+	template <class ...Args> 
+	Ty* emplace(Args&&... args)
+	{
+		lock();
+		auto p = std::unordered_map<Key, Ty>::emplace(std::forward<Args>(args)...);
+		auto ref = &p.first->second;
+		unlock();
+		return ref;
+	}
+};
+
 /**
  * @brief LockedMap is a basic std::unordered_map wrapper that provides
  * a locking mutex.
 */
-template<class Key, class Ty, class Hash, class Pred, class Alloc>
-struct LockedMap : public std::unordered_map<Key, Ty, Hash, Pred, Alloc>
+template<class Key, class Ty> 
+struct LockedMap : public BaseLockedMap<Key, Ty>
 {
 	LockedMap() {}
 	~LockedMap() {}
+};
+
+template<class Key, class Ty>
+struct LockedMap<Key, Ty*> : public BaseLockedMap<Key, Ty*>
+{
+	LockedMap() {}
+	~LockedMap()
+	{
+		this->lock();
+		for(auto it: this->map) {
+			delete it.second;
+		}
+		this->unlock();
+	}
+	void clear() {
+		this->lock();
+		for(auto it: this->map) {
+			delete it.second;
+		}
+		
+		BaseLockedMap<Key, Ty*>::clear();
+		this->unlock();
+	}
 };
 
 /**
@@ -120,7 +173,9 @@ struct LockedQueue {
 	std::atomic<unsigned int> aborted {0};
 	std::condition_variable cv;
 	std::mutex cv_mutex;
+	unsigned long count = 0;
 	moodycamel::ReaderWriterQueue<T*> queue;
+	unsigned int size;
 	
 	/* Procedures */
 	void notify() {
@@ -129,35 +184,42 @@ struct LockedQueue {
 	
 	void enqueue(T* i)
 	{
+		if(aborted) return;
+		queue.enqueue(i);
 		{
-			std::lock_guard<std::mutex> lk(cv_mutex);
-			queue.enqueue(i);
+			std::unique_lock<std::mutex> lk(cv_mutex);
+			++count;
+			cv.notify_one();
 		}
-		cv.notify_one();
 	}
 	
 	T* dequeue()
 	{
+		if(aborted) return NULL;
 		T* r = NULL;
 		{
 			std::unique_lock<std::mutex> lk(cv_mutex);
-			while (!queue.try_dequeue(r) && !aborted) cv.wait(lk);
+			while (!count) cv.wait(lk);
+			--count;
 		}
-		if(aborted) return NULL;
+		queue.try_dequeue(r);
 		return r;
 	}
 	
 	T* try_dequeue()
 	{
+		if(aborted) return NULL;
 		T* r = NULL;
-		{
+		queue.try_dequeue(r);
+		if(r != NULL) {
 			std::unique_lock<std::mutex> lk(cv_mutex);
-			queue.try_dequeue(r);
-			if(aborted) return NULL;
-			return r;
+			if(count) --count;
 		}
+		return r;
 	}
-	LockedQueue(unsigned int size) : queue(size) {}
+	LockedQueue(unsigned int sz) : size(sz == 0 ? 100 : sz),
+								   queue(size) 
+	{}
 };
 
 /**
@@ -194,20 +256,12 @@ struct RequestBase : LockedQueue<Request> {
 	std::atomic<int> current_pool {0};
 	//TODO: Use deque when asio implements proper move/copy semantics.
 	std::vector<Request*> request_pools;
-	unsigned int request_pool_size;
 	unsigned int request_size;
+	unsigned int request_pool_size;
 
 	RequestBase(unsigned int request_size,
 				unsigned int queue_size,
-				unsigned int request_pool_size) :
-									LockedQueue(queue_size),
-									request_size(request_size),
-									finished_requests(queue_size),
-									request_pool_size(request_pool_size),
-									wrk(svc),
-									client_wrk(client_svc),
-									acceptor(svc),
-									resolver(client_svc) {}
+				unsigned int request_pool_size);
 	~RequestBase();
 	
 	void accept_conn();
@@ -230,12 +284,13 @@ struct RequestBase : LockedQueue<Request> {
 					   const std::error_code& error,
 					   size_t bytes_transferred);
 	void start_write(LuaSocket* s, const webapp_str_t& buf);
+	void reenqueue(Request* r);
 };
 
 /**
  * @brief Worker holds an instance of a request queue and Lua VM.
  * Additionally, Worker can be extended to provide additional worker
- * functionality. For example, LevelDB support.
+ * functionality. For example, LevelDB (Sessions) support.
  */
 class Worker : public WorkerInit, public WebappTask, public RequestBase {
 	webapp_str_t script;
@@ -299,34 +354,22 @@ struct WorkerArray {
 };
 
 class Webapp {
-friend class Worker;
-	unsigned int aborted = 0;
 	WorkerArray<Worker> workers;
-	
-	std::mutex cleanupLock;
-	//Keep track of dynamic databases
-	std::unordered_map<size_t, Database*> databases;
-	size_t db_count = 0;
-	
 public:
-	//Keep track of templates
-	std::unordered_map<std::string, std::string> templates;
-	std::unordered_map<std::string, webapp_str_t*> scripts;
-	std::unordered_map<std::string, leveldb::DB*> leveldb_databases;
+	std::atomic<unsigned int> aborted {0};
+	//Hold objects shared between workers.
+	LockedMap<std::string, webapp_str_t> scripts;
+	LockedMap<std::string, std::string> templates;
+	LockedMap<size_t, Database> databases;
+	LockedMap<std::string, leveldb::DB*> leveldb_databases;
 /* Public Methods */
 	Webapp() {}
 	~Webapp();
 
 	void Start();
-	Database* CreateDatabase();
-	Database* GetDatabase(size_t index);
-	void DestroyDatabase(Database*);
-
+	
 	//Worker methods
-	void StartCleanup();
-	void FinishCleanup();
 	void CreateWorker(const WorkerInit& init);
-
 };
 
 #endif //WEBAPP_H
