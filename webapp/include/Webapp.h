@@ -57,12 +57,13 @@ struct WorkerInit {
 	const char* _script = NULL; //Worker script
 	int port = 0; //Worker operating port
 	int request_method = 0; //Worker request handling method
-	int request_size = 1; //LuaRequest size
-	int client_sockets = 1; //Use client sockets
-	int templates_enabled = 1; //Enable template engine
+	int request_size = 0; //LuaRequest size
+	int client_sockets = 0; //Use client sockets
+	int templates_enabled = 0; //Enable template engine
 	int templates_cache_enabled = 0; //Enable template caching
-	int queue_size = 100; //Size of requests to handle per queue
-	int request_pool_size = 100; //Size of requests to initialize in the pool
+	int queue_size = 1; //Size of requests to handle per queue
+	int request_pool_size = 1; //Size of requests to initialize in the pool
+	int is_init = 1; //Initialising worker
 };
 
 /**
@@ -102,29 +103,23 @@ struct Request {
 	Request(asio::io_service& svc);
 };
 
-template<class Key, class Ty>
-class BaseLockedMap : public std::unordered_map<Key, Ty> {
-	std::mutex mtx;
+class LockedMapLock;
+class BaseLockedMap {
 protected:
-	std::unordered_map<Key, Ty> map;
+	friend class LockedMapLock;
+	std::mutex mtx;
+};
+
+class LockedMapLock {
+	BaseLockedMap& map;
 public:
-	void lock() 
+	LockedMapLock(BaseLockedMap& map) : map(map)
 	{
-		mtx.lock();
+		map.mtx.lock();
 	}
-	void unlock() 
+	~LockedMapLock()
 	{
-		mtx.unlock();
-	}
-	
-	template <class ...Args> 
-	Ty* emplace(Args&&... args)
-	{
-		lock();
-		auto p = std::unordered_map<Key, Ty>::emplace(std::forward<Args>(args)...);
-		auto ref = &p.first->second;
-		unlock();
-		return ref;
+		map.mtx.unlock();
 	}
 };
 
@@ -133,32 +128,31 @@ public:
  * a locking mutex.
 */
 template<class Key, class Ty> 
-struct LockedMap : public BaseLockedMap<Key, Ty>
+struct LockedMap : public BaseLockedMap, public std::unordered_map<Key, Ty>
 {
 	LockedMap() {}
 	~LockedMap() {}
 };
 
 template<class Key, class Ty>
-struct LockedMap<Key, Ty*> : public BaseLockedMap<Key, Ty*>
+struct LockedMap<Key, Ty*> : public BaseLockedMap, public std::unordered_map<Key, Ty*>
 {
 	LockedMap() {}
 	~LockedMap()
 	{
-		this->lock();
-		for(auto it: this->map) {
+		this->mtx.lock();
+		for(auto it: *this) {
 			delete it.second;
 		}
-		this->unlock();
+		this->mtx.unlock();
 	}
 	void clear() {
-		this->lock();
-		for(auto it: this->map) {
+		this->mtx.lock();
+		for(auto it: *this) {
 			delete it.second;
 		}
-		
-		BaseLockedMap<Key, Ty*>::clear();
-		this->unlock();
+		std::unordered_map<Key,Ty*>::clear();
+		this->mtx.unlock();
 	}
 };
 
@@ -175,7 +169,6 @@ struct LockedQueue {
 	std::mutex cv_mutex;
 	unsigned long count = 0;
 	moodycamel::ReaderWriterQueue<T*> queue;
-	unsigned int size;
 	
 	/* Procedures */
 	void notify() {
@@ -217,8 +210,7 @@ struct LockedQueue {
 		}
 		return r;
 	}
-	LockedQueue(unsigned int sz) : size(sz == 0 ? 100 : sz),
-								   queue(size) 
+	LockedQueue(unsigned int sz) : queue(sz == 0 ? 100 : sz) 
 	{}
 };
 
@@ -236,10 +228,16 @@ public:
 };
 
 /**
- * @brief RequestBase provides a base request object (allows Hooks to use
- * mock Workeres without the need to start threads or VMs.)
-*/
-struct RequestBase : LockedQueue<Request> {
+ * @brief Worker holds an instance of a request queue and Lua VM.
+ * Additionally, Worker can be extended to provide additional worker
+ * functionality. For example, LevelDB (Sessions) support.
+ */
+class Worker : public WorkerInit, public WebappTask, public LockedQueue<Request> {
+	webapp_str_t script;
+	asio::ip::tcp::endpoint endpoint;
+	std::thread svc_thread;
+	std::thread client_socket_thread;
+	
 	asio::io_service svc;
 	asio::io_service::work wrk;
 	asio::ip::tcp::acceptor acceptor;
@@ -258,11 +256,22 @@ struct RequestBase : LockedQueue<Request> {
 	std::vector<Request*> request_pools;
 	unsigned int request_size;
 	unsigned int request_pool_size;
-
-	RequestBase(unsigned int request_size,
-				unsigned int queue_size,
-				unsigned int request_pool_size);
-	~RequestBase();
+public:
+	Sessions sessions;
+	ctemplate::TemplateCache* _cache = NULL;
+	ctemplate::TemplateDictionary* baseTemplate = NULL;
+	std::unordered_map<std::string, ctemplate::TemplateDictionary*> templates;
+	
+	Worker(const WorkerInit& init);
+	~Worker();
+	void Start();
+	void Stop();
+	void Execute();
+	void Cleanup();
+	
+	webapp_str_t* CompileScript(const webapp_str_t& filename);
+	void RunScript(LuaParam* params, int n_params, const webapp_str_t& filename);
+	webapp_str_t* RenderTemplate(const webapp_str_t& tpl);
 	
 	void accept_conn();
 	void accept_conn_async(Request* r, const std::error_code&);
@@ -285,34 +294,6 @@ struct RequestBase : LockedQueue<Request> {
 					   size_t bytes_transferred);
 	void start_write(LuaSocket* s, const webapp_str_t& buf);
 	void reenqueue(Request* r);
-};
-
-/**
- * @brief Worker holds an instance of a request queue and Lua VM.
- * Additionally, Worker can be extended to provide additional worker
- * functionality. For example, LevelDB (Sessions) support.
- */
-class Worker : public WorkerInit, public WebappTask, public RequestBase {
-	webapp_str_t script;
-	asio::ip::tcp::endpoint endpoint;
-	std::thread svc_thread;
-	std::thread client_socket_thread;
-public:
-	Sessions sessions;
-	ctemplate::TemplateCache* _cache = NULL;
-	ctemplate::TemplateDictionary* baseTemplate = NULL;
-	std::unordered_map<std::string, ctemplate::TemplateDictionary*> templates;
-	
-	Worker(const WorkerInit& init);
-	~Worker();
-	void Start();
-	void Stop();
-	void Execute();
-	void Cleanup();
-	
-	webapp_str_t* CompileScript(const webapp_str_t& filename);
-	void RunScript(LuaParam* params, int n_params, const webapp_str_t& filename);
-	webapp_str_t* RenderTemplate(const webapp_str_t& tpl);
 };
 
 template<class T>

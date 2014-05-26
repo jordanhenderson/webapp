@@ -62,18 +62,14 @@ void Template_SetIntValue(TemplateDictionary* dict, webapp_str_t* key,
 	dict->SetIntValue(*key, value);
 }
 
-TemplateDictionary* Template_Get(RequestBase* worker, webapp_str_t* name)
+TemplateDictionary* Template_Get(Worker* w, webapp_str_t* name)
 {
-	Worker* w = static_cast<Worker*>(worker);
-	if(w != NULL) {
-		TemplateDictionary* base = w->baseTemplate;
-		if(name == NULL) return base;
-		auto& tmpl = w->templates;
-		auto dict = tmpl.find(*name);
-		if(dict == tmpl.end()) return base;
-		return dict->second;
-	}
-	return NULL;
+	TemplateDictionary* base = w->baseTemplate;
+	if(name == NULL) return base;
+	auto& tmpl = w->templates;
+	auto dict = tmpl.find(*name);
+	if(dict == tmpl.end()) return base;
+	return dict->second;
 }
 
 void Template_Clear(TemplateDictionary* dict)
@@ -84,7 +80,11 @@ void Template_Clear(TemplateDictionary* dict)
 
 void Template_Include(webapp_str_t* name, webapp_str_t* file)
 {
-	app->templates.emplace(*name, *file);
+	auto& templates = app->templates;
+	LockedMapLock lock(templates);
+	templates.emplace(piecewise_construct,
+					  forward_as_tuple(*name), 
+					  forward_as_tuple(*file));
 	LoadTemplate(*file, STRIP_WHITESPACE);
 }
 
@@ -93,24 +93,19 @@ void Template_Load(webapp_str_t* page)
 	LoadTemplate(*page, STRIP_WHITESPACE);
 }
 
-webapp_str_t* Template_Render(RequestBase* worker, webapp_str_t* page)
+webapp_str_t* Template_Render(Worker* w, webapp_str_t* page)
 {
-	Worker* w = static_cast<Worker*>(worker);
-	if(w != NULL) 
-	{
-		webapp_str_t dir = "content/";
-		return w->RenderTemplate(dir + page);
-	}
-	return NULL;
+	webapp_str_t dir = "content/";
+	return w->RenderTemplate(dir + page);
 }
 
 /* Session */
-void Session_Init(RequestBase* worker, webapp_str_t* path)
+void Session_Init(Worker* w, webapp_str_t* path)
 {
-	Worker* w = static_cast<Worker*>(worker);
-	if(w != NULL) {
-		w->sessions.Init(*path);
-	}
+	if(path == NULL) {
+		w->sessions.Init("asdf");
+	} else
+	w->sessions.Init(*path);
 }
 
 webapp_str_t* Session_GetValue(Session* session, webapp_str_t* key)
@@ -126,35 +121,20 @@ void Session_SetValue(Session* session, webapp_str_t* key,
 	session->put(*key, *val);
 }
 
-Session* Session_GetFromCookies(RequestBase* worker, webapp_str_t* cookies)
+Session* Session_GetFromCookies(Worker* w, webapp_str_t* cookies)
 {
-	Worker* w = static_cast<Worker*>(worker);
-	if(w != NULL)
-	{
-		return w->sessions.get_cookie_session(cookies);
-	}
-	return NULL;
-
+	return w->sessions.get_cookie_session(cookies);
 }
 
-Session* Session_Get(RequestBase* worker, webapp_str_t* id)
+Session* Session_Get(Worker* w, webapp_str_t* id)
 {
-	Worker* w = static_cast<Worker*>(worker);
-	if(w != NULL)
-	{
-		return w->sessions.get_session(*id);
-	}
-	return NULL;
+
+	return w->sessions.get_session(*id);
 }
 
-Session* Session_New(RequestBase* worker, webapp_str_t* uid)
+Session* Session_New(Worker* w, webapp_str_t* uid)
 {
-	Worker* w = static_cast<Worker*>(worker);
-	if(w != NULL)
-	{
-		return w->sessions.new_session(uid);
-	}
-	return NULL;
+	return w->sessions.new_session(uid);
 }
 
 void Session_Destroy(Session* session)
@@ -163,26 +143,16 @@ void Session_Destroy(Session* session)
 	delete session;
 }
 
-Session* Session_GetRaw(RequestBase* worker)
+Session* Session_GetRaw(Worker* w)
 {
-	Worker* w = static_cast<Worker*>(worker);
-	if(w != NULL)
-	{
-		return w->sessions.get_raw_session();
-	}
-	return NULL;
+	return w->sessions.get_raw_session();
 }
 
 /* Script API */
-webapp_str_t* Script_Compile(RequestBase* worker,
+webapp_str_t* Script_Compile(Worker* w,
 							 const char* file)
 {
-	Worker* w = static_cast<Worker*>(worker);
-	if(w != NULL)
-	{
-		return w->CompileScript(file);
-	}
-	return NULL;
+	return w->CompileScript(file);
 }
 
 /* Worker Handling */
@@ -191,13 +161,13 @@ void Worker_Create(WorkerInit* init)
 	app->CreateWorker(*init);
 }
 
-void Worker_ClearCache(RequestBase* worker)
+void Worker_ClearCache(Worker* worker)
 {
 	worker->aborted = 1;
 	worker->enqueue(NULL);
 }
 
-void Worker_Shutdown(RequestBase* worker)
+void Worker_Shutdown(Worker* worker)
 {
 	app->aborted = 1;
 	worker->aborted = 1;
@@ -205,22 +175,22 @@ void Worker_Shutdown(RequestBase* worker)
 }
 
 /* Requests */
-Request* Request_GetNext(RequestBase* worker)
+Request* Request_GetNext(Worker* worker)
 {
 	return worker->dequeue();
 }
 
-void Request_Queue(RequestBase* worker, Request* r) {
+void Request_Queue(Worker* worker, Request* r) {
 	worker->reenqueue(r);
 }
 
-void Request_Finish(RequestBase* worker, Request* r)
+void Request_Finish(Worker* worker, Request* r)
 {
 	r->reset();
 	worker->read_request(r, 0);
 }
 
-LuaSocket* Socket_Connect(RequestBase* worker, Request* r, 
+LuaSocket* Socket_Connect(Worker* worker, Request* r, 
 					  webapp_str_t* addr, webapp_str_t* port) {
 
 	worker->create_socket(r, *addr, *port);
@@ -231,13 +201,13 @@ void Socket_Destroy(LuaSocket* s) {
 	delete s;
 }
 
-void Socket_Write(LuaSocket* s, RequestBase* worker,
+void Socket_Write(LuaSocket* s, Worker* worker,
 				  webapp_str_t* buf)
 {
 	worker->start_write(s, buf);
 }
 
-webapp_str_t* Socket_Read(LuaSocket* s, RequestBase* worker, 
+webapp_str_t* Socket_Read(LuaSocket* s, Worker* worker, 
 						Request* r, int bytes, int timeout)
 {
 	return worker->start_read(s, r, bytes, timeout);
@@ -259,19 +229,25 @@ int Socket_DataAvailable(LuaSocket* s)
 Database* Database_Create()
 {
 	auto& databases = app->databases;
+	LockedMapLock lock(databases);
 	size_t id = databases.size() + 1;
-	return databases.emplace(id, id);
+	databases.emplace(piecewise_construct,
+					  forward_as_tuple(id),
+					  forward_as_tuple());
+	return &databases[id];
 }
 
 Database* Database_Get(size_t index)
 {
 	auto& databases = app->databases;
+	LockedMapLock lock(databases);
 	return &databases[index];
 }
 
 void Database_Destroy(Database* db)
 {
 	auto& databases = app->databases;
+	LockedMapLock lock(databases);
 	databases.erase(db->db_id);
 }
 

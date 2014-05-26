@@ -26,14 +26,17 @@ void Webapp::CreateWorker(const WorkerInit& init)
 
 void Webapp::Start() {
 	while(!aborted) {
-		WorkerInit init;
-		Worker w(init);
-		w.Cleanup();
+		{
+			WorkerInit init;
+			Worker w(init);
+			w.Cleanup();
+		}
 		
 		workers.Start();
 
 		workers.Clear();
 		
+		/* Workers have all aborted at this stage (single thread) */
 		scripts.clear();
 		databases.clear();
 		templates.clear();

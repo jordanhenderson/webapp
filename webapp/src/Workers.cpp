@@ -45,43 +45,11 @@ Request::Request(io_service& svc) : s(svc), socket_ref(s)
 	reset();
 }
 
-RequestBase::RequestBase(unsigned int request_size,
-						 unsigned int queue_size,
-						 unsigned int request_pool_size) : 
-							LockedQueue(queue_size),
-							finished_requests(queue_size),
-							request_pool_size(request_pool_size),
-							request_size(request_size),
-							wrk(svc),
-							client_wrk(client_svc),
-							acceptor(svc),
-							resolver(client_svc)
-{
-	//RequestBase specific initialisation handling
-	if(request_pool_size == 0) {
-		this->request_pool_size = 100;
-	}
-	
-	if(request_size == 0) {
-		this->request_size = 1;
-	}
-}
-
-RequestBase::~RequestBase()
-{
-	for(Request* r_pool: request_pools) {
-		for(int i = 0; i < request_pool_size; i++) {
-			r_pool[i].~Request();
-		}
-		delete[] (char*)r_pool;
-	}
-}
-
 /**	
  * First connection stage. Called to provide an entry point for new
  * connections. Re-called after each async_accept callback is completed.
 */
-void RequestBase::accept_conn()
+void Worker::accept_conn()
 {
 	Request* r = finished_requests.try_dequeue();
 	if(r == NULL) {
@@ -106,7 +74,7 @@ void RequestBase::accept_conn()
 		r->reset();
 	}
 	acceptor.async_accept(r->s.socket,
-						   bind(&RequestBase::accept_conn_async, this,
+						   bind(&Worker::accept_conn_async, this,
 								r, _1));
 }
 
@@ -116,7 +84,7 @@ void RequestBase::accept_conn()
  * The next stage will be executed after async_read completes as necessary.
  * @param s the asio socket object of the accepted connection.
 */
-void RequestBase::accept_conn_async(Request* r, const std::error_code& error)
+void Worker::accept_conn_async(Request* r, const std::error_code& error)
 {
 	if(!error) {
 		Socket& s = r->s.socket;
@@ -134,16 +102,16 @@ void RequestBase::accept_conn_async(Request* r, const std::error_code& error)
 	}
 }
 
-void RequestBase::read_request(Request* r, int timeout_ms)
+void Worker::read_request(Request* r, int timeout_ms)
 {
 	Socket& s = r->s.socket;
 	if (timeout_ms > 0) {
 		s.timer.expires_from_now(chrono::milliseconds(timeout_ms));
-		s.timer.async_wait(bind(&RequestBase::process_msgpack_request, 
+		s.timer.async_wait(bind(&Worker::process_msgpack_request, 
 								this, r, _1, 0));
 	}
 	s.async_read_some(null_buffers(), bind(
-					  &RequestBase::process_msgpack_request,
+					  &Worker::process_msgpack_request,
 					  this, r, _1, _2));
 }
 
@@ -155,7 +123,7 @@ void RequestBase::read_request(Request* r, int timeout_ms)
  * @param ec the asio error code, if any
  * @param n_bytes the amount bytes transferred
 */
-void RequestBase::process_msgpack_request(Request* r,
+void Worker::process_msgpack_request(Request* r,
 										const std::error_code& ec, 
 										size_t n_bytes)
 {
@@ -220,18 +188,18 @@ void RequestBase::process_msgpack_request(Request* r,
 	} 
 }
 
-LuaSocket* RequestBase::create_socket(Request* r, const webapp_str_t& addr,
+LuaSocket* Worker::create_socket(Request* r, const webapp_str_t& addr,
 						 const webapp_str_t& port)
 {
 	tcp::resolver::query qry(tcp::v4(), addr, port);
 	LuaSocket* s = new LuaSocket(client_svc);
-	resolver.async_resolve(qry, bind(&RequestBase::resolve_handler,
+	resolver.async_resolve(qry, bind(&Worker::resolve_handler,
 									 this, s, r, _1, _2));
 	return s;
 }
 
 /* Socket API */
-void RequestBase::connect_handler(LuaSocket* s, Request* r,
+void Worker::connect_handler(LuaSocket* s, Request* r,
 					const std::error_code& ec,
 					tcp::resolver::iterator it)
 {
@@ -242,7 +210,7 @@ void RequestBase::connect_handler(LuaSocket* s, Request* r,
 		//Try next endpoint.
 		socket.abort();
 		tcp::endpoint ep = *it;
-		socket.async_connect(ep, bind(&RequestBase::connect_handler,
+		socket.async_connect(ep, bind(&Worker::connect_handler,
 									  this, s, r, _1, ++it));
 	} else if(ec != asio::error::operation_aborted) {
 		socket.abort();
@@ -250,14 +218,14 @@ void RequestBase::connect_handler(LuaSocket* s, Request* r,
 	}
 }
 
-void RequestBase::resolve_handler(LuaSocket *s, Request* r,
+void Worker::resolve_handler(LuaSocket *s, Request* r,
 								  const std::error_code &ec,
 								  tcp::resolver::iterator it)
 {
 	Socket& socket = s->socket;
 	if(!ec) {
 		tcp::endpoint ep = *it;
-		socket.async_connect(ep, bind(&RequestBase::connect_handler,
+		socket.async_connect(ep, bind(&Worker::connect_handler,
 									  this, s, r, _1, ++it));
 	} else if(ec != asio::error::operation_aborted) {
 		socket.abort();
@@ -265,7 +233,7 @@ void RequestBase::resolve_handler(LuaSocket *s, Request* r,
 	}
 }
 
-void RequestBase::read_handler(LuaSocket *s, Request *r, webapp_str_t *output,
+void Worker::read_handler(LuaSocket *s, Request *r, webapp_str_t *output,
 							   int timeout, const std::error_code &ec,
 							   size_t n_bytes)
 {
@@ -280,9 +248,9 @@ void RequestBase::read_handler(LuaSocket *s, Request *r, webapp_str_t *output,
 				enqueue(r);
 			} else {
 				socket.timer.expires_from_now(chrono::seconds(timeout));
-				socket.timer.async_wait(bind(&RequestBase::read_handler, this, s, r,
+				socket.timer.async_wait(bind(&Worker::read_handler, this, s, r,
 											  output, timeout, _1, 0));
-				socket.async_read_some(null_buffers(), bind(&RequestBase::read_handler,
+				socket.async_read_some(null_buffers(), bind(&Worker::read_handler,
 					this, s, r, output, timeout, _1, 0));
 			}
 		} catch (...) {
@@ -296,21 +264,21 @@ void RequestBase::read_handler(LuaSocket *s, Request *r, webapp_str_t *output,
 	}
 }
 
-webapp_str_t* RequestBase::start_read(LuaSocket* s, Request* r, int bytes, int timeout)
+webapp_str_t* Worker::start_read(LuaSocket* s, Request* r, int bytes, int timeout)
 {
 	Socket& socket = s->socket;
 	webapp_str_t* output = new webapp_str_t(bytes);
 	socket.ctr = 0;
 
 	socket.timer.expires_from_now(chrono::seconds(timeout));
-	socket.timer.async_wait(bind(&RequestBase::read_handler, this, s, r,
+	socket.timer.async_wait(bind(&Worker::read_handler, this, s, r,
 								  output, timeout, _1, 0));
-	socket.async_read_some(null_buffers(), bind(&RequestBase::read_handler, this, s,
+	socket.async_read_some(null_buffers(), bind(&Worker::read_handler, this, s,
 							r, output, timeout, _1, _2));
 	return output;
 }
 
-void RequestBase::write_handler(LuaSocket *s, webapp_str_t *buf,
+void Worker::write_handler(LuaSocket *s, webapp_str_t *buf,
 								const std::error_code& error,
 								size_t bytes_transferred)
 {
@@ -319,7 +287,7 @@ void RequestBase::write_handler(LuaSocket *s, webapp_str_t *buf,
 	delete buf;
 }
 
-void RequestBase::start_write(LuaSocket *s, const webapp_str_t &buf)
+void Worker::start_write(LuaSocket *s, const webapp_str_t &buf)
 {
 	Socket& socket = s->socket;
 	//TODO: investigate leak here.
@@ -329,20 +297,35 @@ void RequestBase::start_write(LuaSocket *s, const webapp_str_t &buf)
 	//No try/catch statement needed; async_write always succeeds.
 	//Errors handled in callback.
 	async_write(socket, buffer(tmp_buf->data, tmp_buf->len),
-					  bind(&RequestBase::write_handler, this, s, tmp_buf, _1, _2));
+					  bind(&Worker::write_handler, this, s, tmp_buf, _1, _2));
 }
 
-void RequestBase::reenqueue(Request* r) {
-	//Reenqueue a request to the requestbase using asio.
-	svc.post(bind(&RequestBase::enqueue, this, r));
+void Worker::reenqueue(Request* r) {
+	//Reenqueue a request to the Worker using asio.
+	svc.post(bind(&Worker::enqueue, this, r));
 }
 
 Worker::Worker(const WorkerInit& init) :
-	WorkerInit(init), RequestBase(init.request_size, init.queue_size,
-								  init.request_pool_size),
-	endpoint(tcp::v4(), port),
-	script(_script)
+	WorkerInit(init), LockedQueue(init.queue_size),
+					  finished_requests(init.queue_size),
+					  request_pool_size(init.request_pool_size),
+					  request_size(init.request_size),
+					  wrk(svc),
+					  client_wrk(client_svc),
+					  acceptor(svc),
+					  resolver(client_svc),
+					  endpoint(tcp::v4(), port),
+					  script(_script)
 {
+	//Worker specific initialisation handling
+	if(request_pool_size == 0) {
+		this->request_pool_size = 100;
+	}
+	
+	if(request_size == 0) {
+		this->request_size = 1;
+	}
+	
 	if(port > 0) {
 		try {
 			acceptor.open(endpoint.protocol());
@@ -359,6 +342,13 @@ Worker::Worker(const WorkerInit& init) :
 
 Worker::~Worker()
 {
+	for(Request* r_pool: request_pools) {
+		for(int i = 0; i < request_pool_size; i++) {
+			r_pool[i].~Request();
+		}
+		delete[] (char*)r_pool;
+	}
+	
 	if(_cache != NULL) delete _cache;
 	if(baseTemplate != NULL) delete baseTemplate;
 }
@@ -384,12 +374,15 @@ webapp_str_t* Worker::CompileScript(const webapp_str_t& filename) {
 
 	//Attempt to return an existing compiled script.
 	auto& scripts = app->scripts;
-	
-	auto it = scripts.find(filename_str);
-	
-	if(it != scripts.end()) {
-		//Found an existing script. Return it.
-		return &it->second;
+	LockedMapLock lock(scripts);
+	{
+		auto it = scripts.find(filename_str);
+		
+		if(it != scripts.end()) {
+			auto scr = &it->second;
+			//Found an existing script. Return it.
+			return &it->second;
+		}
 	}
 	
 	//Create a new lua state, with minimal libs for LuaMacro.
@@ -414,8 +407,12 @@ webapp_str_t* Worker::CompileScript(const webapp_str_t& filename) {
 	if(luaL_loadbuffer(L, chunk, len, filename.data))
 		goto lua_error;
 	
-	
-	chunk_str = scripts.emplace(filename_str, webapp_str_t());
+	//Insert script into collection.
+	scripts.emplace(piecewise_construct,
+					forward_as_tuple(filename_str),
+					forward_as_tuple());
+					
+	chunk_str = &scripts[filename_str];
 	
 	if(lua_dump(L, lua_writer, chunk_str) != 0) goto lua_error;
 	
@@ -432,6 +429,24 @@ finish:
 void Worker::Cleanup()
 {
 	if(templates_enabled) {
+		{
+			auto& templates = app->templates;
+			LockedMapLock lock(templates);
+			for(auto tmpl: templates) {
+				TemplateDictionary* dict = 
+					baseTemplate->AddIncludeDictionary(tmpl.first);
+				dict->SetFilename(tmpl.second);
+				this->templates.emplace(piecewise_construct,
+								  forward_as_tuple(tmpl.first),
+								  forward_as_tuple(dict));
+			}
+		}
+
+		if(templates_cache_enabled) {
+			_cache = mutable_default_template_cache()->Clone();
+			_cache->Freeze();
+		}
+	
 		//Clear templates
 		mutable_default_template_cache()->
 			ReloadAllIfChanged(TemplateCache::IMMEDIATE_RELOAD);
@@ -442,16 +457,15 @@ void Worker::Cleanup()
 		webapp_str_t* init = CompileScript("init.lua");
 		if(init != NULL) {
 			CompileScript(this->script);
+			if(is_init) {
+				//Create mock classes to allow init.lua to run functions 
+				//that require a request/request worker.
+				Request r(client_svc);
 
-			//Create mock classes to allow init.lua to run functions 
-			//that require a request/request worker.
-			RequestBase worker(1, 1, 1);
-			Request r(client_svc);
-
-			LuaParam _v[] = { { "request", &r },
-							  { "worker", &worker } };
-			RunScript(_v, sizeof(_v) / sizeof(LuaParam), "init.lua");
-
+				LuaParam _v[] = { { "request", &r },
+								  { "worker", this } };
+				RunScript(_v, sizeof(_v) / sizeof(LuaParam), "init.lua");
+			}
 			//Zero the init script (no need to hold in memory).
 			*init = webapp_str_t();
 		}
@@ -493,20 +507,8 @@ void Worker::Stop()
 void Worker::Execute()
 {
 	Cleanup();
-	if(templates_enabled) {
-		for(auto tmpl: app->templates) {
-			TemplateDictionary* dict = baseTemplate->AddIncludeDictionary(tmpl.first);
-			dict->SetFilename(tmpl.second);
-			templates.insert({tmpl.first, dict});
-		}
-
-		if(templates_cache_enabled) {
-			_cache = mutable_default_template_cache()->Clone();
-			_cache->Freeze();
-		}
-	}
 	
-	LuaParam _v[] = { { "worker", (RequestBase*)this } };
+	LuaParam _v[] = { { "worker", this } };
 	RunScript(_v, sizeof(_v) / sizeof(LuaParam), script);
 	
 	//Signal the service to stop.
@@ -517,13 +519,17 @@ void Worker::RunScript(LuaParam* params, int nArgs,
 							 const webapp_str_t& file)
 {
 	auto& scripts = app->scripts;
-	auto it = scripts.find(file);
-	if(it == scripts.end()) return;
+	webapp_str_t* script = NULL;
+	{
+		LockedMapLock lock(scripts);
+		auto it = scripts.find(file);
+		if(it == scripts.end()) return;
+		script = &it->second;
+	}
 	
 	//Hold the actual script file for lua.
 	webapp_str_t actual_file = "plugins/" + file;
 	
-	auto& script = it->second;
 	//Initialize a lua state, loading appropriate libraries.
 	lua_State* L = luaL_newstate();
 	if(L == NULL) return;
@@ -551,7 +557,7 @@ void Worker::RunScript(LuaParam* params, int nArgs,
 	}
 
 	//Load the lua buffer.
-	if(luaL_loadbuffer(L, script.data, script.len, file.data))
+	if(luaL_loadbuffer(L, script->data, script->len, file.data))
 		goto lua_error;
 
 	if(lua_pcall(L, 0, 0, 0) != 0)
@@ -564,7 +570,6 @@ lua_error:
 
 finish:
 	lua_close(L);
-
 }
 
 webapp_str_t* Worker::RenderTemplate(const webapp_str_t& page)

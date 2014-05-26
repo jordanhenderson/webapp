@@ -13,10 +13,10 @@ struct webapp_str_t;
 struct Socket;
 struct Request;
 struct Session;
-struct RequestBase;
 struct Database;
 struct Query;
 
+class Worker;
 class Sessions;
 class Webapp;
 class Image;
@@ -38,51 +38,51 @@ extern "C" {
 	APIEXPORT void Template_SetIntValue(ctemplate::TemplateDictionary* dict, 
 										webapp_str_t* key, long value);
 	APIEXPORT ctemplate::TemplateDictionary* 
-				   Template_Get(RequestBase*, webapp_str_t* name);
+				   Template_Get(Worker*, webapp_str_t* name);
 	APIEXPORT void Template_Clear(ctemplate::TemplateDictionary* dict);
 	APIEXPORT void Template_Include(webapp_str_t* name, webapp_str_t* file);
 	APIEXPORT void Template_Load(webapp_str_t* page);
 	APIEXPORT webapp_str_t* 
-				   Template_Render(RequestBase* worker, 
+				   Template_Render(Worker* worker, 
 						webapp_str_t* page);
 
 /* Session */
-	APIEXPORT void Session_Init(RequestBase* worker, webapp_str_t* path);
+	APIEXPORT void Session_Init(Worker* worker, webapp_str_t* path);
 	APIEXPORT webapp_str_t* 
 				   Session_GetValue(Session*, webapp_str_t*);
 	APIEXPORT void Session_SetValue(Session*, webapp_str_t* key, 
 								  webapp_str_t* val);
     APIEXPORT Session*
-				   Session_GetFromCookies(RequestBase*, webapp_str_t* cookies);
+				   Session_GetFromCookies(Worker*, webapp_str_t* cookies);
 	APIEXPORT Session* 
-				   Session_Get(RequestBase*, webapp_str_t* id);
+				   Session_Get(Worker*, webapp_str_t* id);
 	APIEXPORT Session* 
-				   Session_New(RequestBase*, webapp_str_t* uid);
+				   Session_New(Worker*, webapp_str_t* uid);
 	APIEXPORT void 
 				   Session_Destroy(Session*);
 	APIEXPORT Session* 
-				   Session_GetRaw(RequestBase*);
+				   Session_GetRaw(Worker*);
 
 /* Script API */
 	APIEXPORT webapp_str_t* 
-				   Script_Compile(RequestBase* worker, const char* file);
+				   Script_Compile(Worker* worker, const char* file);
 
 /* Worker Handling */
 	APIEXPORT void Worker_Create(WorkerInit* init);
-	APIEXPORT void Worker_ClearCache(RequestBase*);
-	APIEXPORT void Worker_Shutdown(RequestBase*);
+	APIEXPORT void Worker_ClearCache(Worker*);
+	APIEXPORT void Worker_Shutdown(Worker*);
 
 /* Requests */
 	APIEXPORT Request* 
-				   Request_GetNext(RequestBase*);
-	APIEXPORT void Request_Queue(RequestBase*, Request*);
-	APIEXPORT void Request_Finish(RequestBase*, Request*);
-	APIEXPORT void Socket_Write(LuaSocket*, RequestBase*, webapp_str_t* data);
+				   Request_GetNext(Worker*);
+	APIEXPORT void Request_Queue(Worker*, Request*);
+	APIEXPORT void Request_Finish(Worker*, Request*);
+	APIEXPORT void Socket_Write(LuaSocket*, Worker*, webapp_str_t* data);
 	APIEXPORT webapp_str_t* 
-				   Socket_Read(LuaSocket* socket, RequestBase* worker, 
+				   Socket_Read(LuaSocket* socket, Worker* worker, 
 							Request* r, int bytes, int timeout);
 	APIEXPORT LuaSocket* 
-				   Socket_Connect(RequestBase* worker, Request* r, 
+				   Socket_Connect(Worker* worker, Request* r, 
 								  webapp_str_t* addr, webapp_str_t* port);
 	APIEXPORT void Socket_Destroy(LuaSocket* socket);
 	APIEXPORT int  Socket_DataAvailable(LuaSocket* socket);

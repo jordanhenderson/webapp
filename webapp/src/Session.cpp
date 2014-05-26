@@ -115,6 +115,7 @@ Sessions::Sessions() :
 void Sessions::Init(const webapp_str_t &path)
 {
 	auto& leveldbs = app->leveldb_databases;
+	LockedMapLock lock(leveldbs);
 	string path_str = path;
 	auto it = leveldbs.find(path_str);
 	if(it != leveldbs.end()) {
@@ -124,8 +125,11 @@ void Sessions::Init(const webapp_str_t &path)
 		leveldb::Options options;
 		options.filter_policy = leveldb::NewBloomFilterPolicy(10);
 		options.create_if_missing = true;
+		string path_str = path;
 		leveldb::DB::Open(options, path_str, &db);
-		leveldbs.emplace(path_str, db);
+		leveldbs.emplace(piecewise_construct,
+				  forward_as_tuple(path_str), 
+				  forward_as_tuple(db));
 	}
 }
 
