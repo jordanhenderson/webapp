@@ -1,17 +1,6 @@
 {
 	String_Destroy;
 
-	Template_ShowGlobalSection;
-	Template_ShowSection;
-	Template_SetGlobalValue;
-	Template_SetValue;
-	Template_SetIntValue;
-	Template_Get;
-	Template_Clear;
-	Template_Include;
-	Template_Load;
-	Template_Render;
-
 	Session_Init;
 	Session_GetValue;
 	Session_SetValue;

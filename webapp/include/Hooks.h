@@ -26,26 +26,6 @@ extern "C" {
 /* Helper methods */
 	APIEXPORT void String_Destroy(webapp_str_t*);
 
-/* Template */
-	APIEXPORT void Template_ShowGlobalSection(ctemplate::TemplateDictionary*,
-			webapp_str_t* section);
-	APIEXPORT void Template_ShowSection(ctemplate::TemplateDictionary*,
-										webapp_str_t* section);
-	APIEXPORT void Template_SetGlobalValue(ctemplate::TemplateDictionary* dict,
-										   webapp_str_t* key, webapp_str_t* value);
-	APIEXPORT void Template_SetValue(ctemplate::TemplateDictionary* dict,
-									 webapp_str_t* key, webapp_str_t* value);
-	APIEXPORT void Template_SetIntValue(ctemplate::TemplateDictionary* dict, 
-										webapp_str_t* key, long value);
-	APIEXPORT ctemplate::TemplateDictionary* 
-				   Template_Get(Worker*, webapp_str_t* name);
-	APIEXPORT void Template_Clear(ctemplate::TemplateDictionary* dict);
-	APIEXPORT void Template_Include(webapp_str_t* name, webapp_str_t* file);
-	APIEXPORT void Template_Load(webapp_str_t* page);
-	APIEXPORT webapp_str_t* 
-				   Template_Render(Worker* worker, 
-						webapp_str_t* page);
-
 /* Session */
 	APIEXPORT void Session_Init(Worker* worker, webapp_str_t* path);
 	APIEXPORT webapp_str_t* 

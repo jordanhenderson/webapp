@@ -17,7 +17,6 @@ extern "C" {
 #include "FileSystem.h"
 #include "Hooks.h"
 
-using namespace ctemplate;
 using namespace std;
 using namespace std::placeholders;
 using namespace asio;
@@ -28,83 +27,9 @@ void String_Destroy(webapp_str_t* str) {
 	if(str != NULL) delete str;
 }
 
-/* Template */
-void Template_ShowGlobalSection(TemplateDictionary* dict, webapp_str_t* section)
-{
-	if(dict == NULL) return;
-	dict->ShowTemplateGlobalSection(*section);
-}
-
-void Template_ShowSection(TemplateDictionary* dict, webapp_str_t* section)
-{
-	if(dict == NULL) return;
-	dict->ShowSection(*section);
-}
-
-void Template_SetGlobalValue(TemplateDictionary* dict, webapp_str_t* key,
-							 webapp_str_t* value)
-{
-	if(dict == NULL) return;
-	dict->SetTemplateGlobalValue(*key, *value);
-}
-
-void Template_SetValue(TemplateDictionary* dict, webapp_str_t* key,
-					   webapp_str_t* value)
-{
-	if(dict == NULL) return;
-	dict->SetValue(*key, *value);
-}
-
-void Template_SetIntValue(TemplateDictionary* dict, webapp_str_t* key,
-						  long value)
-{
-	if(dict == NULL) return;
-	dict->SetIntValue(*key, value);
-}
-
-TemplateDictionary* Template_Get(Worker* w, webapp_str_t* name)
-{
-	TemplateDictionary* base = w->baseTemplate;
-	if(name == NULL) return base;
-	auto& tmpl = w->templates;
-	auto dict = tmpl.find(*name);
-	if(dict == tmpl.end()) return base;
-	return dict->second;
-}
-
-void Template_Clear(TemplateDictionary* dict)
-{
-	if(dict == NULL) return;
-	dict->Clear();
-}
-
-void Template_Include(webapp_str_t* name, webapp_str_t* file)
-{
-	auto& templates = app->templates;
-	LockedMapLock lock(templates);
-	templates.emplace(piecewise_construct,
-					  forward_as_tuple(*name), 
-					  forward_as_tuple(*file));
-	LoadTemplate(*file, STRIP_WHITESPACE);
-}
-
-void Template_Load(webapp_str_t* page)
-{
-	LoadTemplate(*page, STRIP_WHITESPACE);
-}
-
-webapp_str_t* Template_Render(Worker* w, webapp_str_t* page)
-{
-	webapp_str_t dir = "content/";
-	return w->RenderTemplate(dir + page);
-}
-
 /* Session */
 void Session_Init(Worker* w, webapp_str_t* path)
 {
-	if(path == NULL) {
-		w->sessions.Init("asdf");
-	} else
 	w->sessions.Init(*path);
 }
 

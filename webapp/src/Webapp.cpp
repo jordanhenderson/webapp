@@ -10,7 +10,6 @@
 
 
 using namespace std;
-using namespace ctemplate;
 using namespace asio;
 using namespace asio::ip;
 using namespace std::placeholders;
@@ -39,7 +38,6 @@ void Webapp::Start() {
 		/* Workers have all aborted at this stage (single thread) */
 		scripts.clear();
 		databases.clear();
-		templates.clear();
 		leveldb_databases.clear();
 	}
 }

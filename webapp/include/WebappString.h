@@ -1,7 +1,5 @@
 #ifndef WEBAPPSTRING_H
 #define WEBAPPSTRING_H
-#include <ctemplate/template.h>
-#include <ctemplate/template_emitter.h>
 #include <leveldb/db.h>
 
 struct _webapp_str_t {
@@ -77,10 +75,6 @@ struct webapp_str_t : _webapp_str_t {
 	{
 		return std::string(data, len);
 	}
-	operator ctemplate::TemplateString const () const
-	{
-		return ctemplate::TemplateString(data, len);
-	}
 	operator leveldb::Slice const () const
 	{
 		return leveldb::Slice(data, len);
@@ -143,27 +137,4 @@ struct webapp_data_t : webapp_str_t {
 	}
 };
 
-class  WebappStringEmitter : public ctemplate::ExpandEmitter {
-	webapp_str_t* const outbuf_;
-public:
-	WebappStringEmitter(webapp_str_t* outbuf) : outbuf_(outbuf) {}
-	virtual void Emit(char c)
-	{
-		char tmp[1];
-		tmp[0] = c;
-		*outbuf_ += webapp_str_t(tmp, 1);
-	}
-	virtual void Emit(const std::string& s)
-	{
-		*outbuf_ += s;
-	}
-	virtual void Emit(const char* s)
-	{
-		*outbuf_ += s;
-	}
-	virtual void Emit(const char* s, size_t slen)
-	{
-		*outbuf_ += webapp_str_t(s, slen);
-	}
-};
 #endif // WEBAPPSTRING_H

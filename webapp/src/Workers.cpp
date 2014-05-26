@@ -18,7 +18,6 @@ extern "C" {
 }
 
 using namespace std;
-using namespace ctemplate;
 using namespace asio;
 using namespace asio::ip;
 using namespace std::placeholders;
@@ -336,8 +335,6 @@ Worker::Worker(const WorkerInit& init) :
 			printf("Error: bind to %d failed: (%s)\n", port, ec.what());
 		}
 	}
-
-	if(templates_enabled) baseTemplate = new TemplateDictionary("");
 }
 
 Worker::~Worker()
@@ -348,9 +345,6 @@ Worker::~Worker()
 		}
 		delete[] (char*)r_pool;
 	}
-	
-	if(_cache != NULL) delete _cache;
-	if(baseTemplate != NULL) delete baseTemplate;
 }
 
 int lua_writer(lua_State* L, const void* p, size_t sz, void* ud) {
@@ -428,30 +422,6 @@ finish:
 
 void Worker::Cleanup()
 {
-	if(templates_enabled) {
-		{
-			auto& templates = app->templates;
-			LockedMapLock lock(templates);
-			for(auto tmpl: templates) {
-				TemplateDictionary* dict = 
-					baseTemplate->AddIncludeDictionary(tmpl.first);
-				dict->SetFilename(tmpl.second);
-				this->templates.emplace(piecewise_construct,
-								  forward_as_tuple(tmpl.first),
-								  forward_as_tuple(dict));
-			}
-		}
-
-		if(templates_cache_enabled) {
-			_cache = mutable_default_template_cache()->Clone();
-			_cache->Freeze();
-		}
-	
-		//Clear templates
-		mutable_default_template_cache()->
-			ReloadAllIfChanged(TemplateCache::IMMEDIATE_RELOAD);
-	}
-
 	if(!aborted) {
 		//Recompile scripts.
 		webapp_str_t* init = CompileScript("init.lua");
@@ -571,19 +541,3 @@ lua_error:
 finish:
 	lua_close(L);
 }
-
-webapp_str_t* Worker::RenderTemplate(const webapp_str_t& page)
-{
-	webapp_str_t* output = new webapp_str_t();
-	if(templates_enabled) {
-		WebappStringEmitter wse(output);
-		if(_cache != NULL)
-			_cache->ExpandNoLoad(page, STRIP_WHITESPACE, baseTemplate, NULL, &wse);
-		else {
-			mutable_default_template_cache()->ReloadAllIfChanged(TemplateCache::LAZY_RELOAD);
-			ExpandTemplate(page, STRIP_WHITESPACE, baseTemplate, &wse);
-		}
-	}
-	return output;
-}
-

@@ -9,8 +9,6 @@
 
 #include <asio.hpp>
 #include <readerwriterqueue.h>
-#include <ctemplate/template.h>
-#include <ctemplate/template_emitter.h>
 #include <leveldb/db.h>
 #include "Platform.h"
 #include "WebappString.h"
@@ -59,8 +57,6 @@ struct WorkerInit {
 	int request_method = 0; //Worker request handling method
 	int request_size = 0; //LuaRequest size
 	int client_sockets = 0; //Use client sockets
-	int templates_enabled = 0; //Enable template engine
-	int templates_cache_enabled = 0; //Enable template caching
 	int queue_size = 1; //Size of requests to handle per queue
 	int request_pool_size = 1; //Size of requests to initialize in the pool
 	int is_init = 1; //Initialising worker
@@ -258,10 +254,7 @@ class Worker : public WorkerInit, public WebappTask, public LockedQueue<Request>
 	unsigned int request_pool_size;
 public:
 	Sessions sessions;
-	ctemplate::TemplateCache* _cache = NULL;
-	ctemplate::TemplateDictionary* baseTemplate = NULL;
-	std::unordered_map<std::string, ctemplate::TemplateDictionary*> templates;
-	
+
 	Worker(const WorkerInit& init);
 	~Worker();
 	void Start();
@@ -271,7 +264,6 @@ public:
 	
 	webapp_str_t* CompileScript(const webapp_str_t& filename);
 	void RunScript(LuaParam* params, int n_params, const webapp_str_t& filename);
-	webapp_str_t* RenderTemplate(const webapp_str_t& tpl);
 	
 	void accept_conn();
 	void accept_conn_async(Request* r, const std::error_code&);
@@ -340,7 +332,6 @@ public:
 	std::atomic<unsigned int> aborted {0};
 	//Hold objects shared between workers.
 	LockedMap<std::string, webapp_str_t> scripts;
-	LockedMap<std::string, std::string> templates;
 	LockedMap<size_t, Database> databases;
 	LockedMap<std::string, leveldb::DB*> leveldb_databases;
 /* Public Methods */
