@@ -571,7 +571,7 @@ static void asm_setupresult(ASMState *as, IRIns *ir, const CCallInfo *ci)
       lua_assert(!irt_ispri(ir->t));
       ra_destreg(as, ir, RID_RET);
     }
-  } else if (LJ_32 && irt_isfp(ir->t)) {
+  } else if (LJ_32 && irt_isfp(ir->t) && !(ci->flags & CCI_CASTU64)) {
     emit_x87op(as, XI_FPOP);  /* Pop unused result from x87 st0. */
   }
 }
@@ -1089,7 +1089,7 @@ static void asm_hrefk(ASMState *as, IRIns *ir)
   int32_t ofs = (int32_t)(kslot->op2 * sizeof(Node));
   Reg dest = ra_used(ir) ? ra_dest(as, ir, RSET_GPR) : RID_NONE;
   Reg node = ra_alloc1(as, ir->op1, RSET_GPR);
-#if !LJ_64 || defined(LUAJIT_USE_VALGRIND)
+#if !LJ_64
   MCLabel l_exit;
 #endif
   lua_assert(ofs % sizeof(Node) == 0);
@@ -1104,7 +1104,7 @@ static void asm_hrefk(ASMState *as, IRIns *ir)
     }
   }
   asm_guardcc(as, CC_NE);
-#if LJ_64 && !defined(LUAJIT_USE_VALGRIND)
+#if LJ_64
   if (!irt_ispri(irkey->t)) {
     Reg key = ra_scratch(as, rset_exclude(RSET_GPR, node));
     emit_rmro(as, XO_CMP, key|REX_64, node,
