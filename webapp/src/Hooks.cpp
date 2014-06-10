@@ -118,7 +118,7 @@ void Request_Finish(Worker* worker, Request* r)
 LuaSocket* Socket_Connect(Worker* worker, Request* r, 
 					  webapp_str_t* addr, webapp_str_t* port) {
 
-	worker->create_socket(r, *addr, *port);
+	return worker->create_socket(r, *addr, *port);
 }
 
 void Socket_Destroy(LuaSocket* s) {
