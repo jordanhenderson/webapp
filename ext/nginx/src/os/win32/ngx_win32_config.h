@@ -137,13 +137,8 @@ typedef __int64             int64_t;
 typedef unsigned __int64    uint64_t;
 
 #ifndef __WATCOMC__
-#ifdef _WIN64 // [
-   typedef signed __int64    intptr_t;
-   typedef unsigned __int64  uintptr_t;
-#else // _WIN64 ][
-   typedef signed int   intptr_t;
-   typedef unsigned int uintptr_t;
-#endif // _WIN64 ]
+typedef int                 intptr_t;
+typedef u_int               uintptr_t;
 #endif
 
 

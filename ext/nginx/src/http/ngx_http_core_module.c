@@ -1245,10 +1245,8 @@ ngx_http_core_try_files_phase(ngx_http_request_t *r,
         if (!alias) {
             reserve = len > r->uri.len ? len - r->uri.len : 0;
 
-#if (NGX_PCRE)
-        } else if (clcf->regex) {
+        } else if (alias == NGX_MAX_SIZE_T_VALUE) {
             reserve = len;
-#endif
 
         } else {
             reserve = len > r->uri.len - alias ? len - (r->uri.len - alias) : 0;
@@ -1365,13 +1363,12 @@ ngx_http_core_try_files_phase(ngx_http_request_t *r,
         if (!alias) {
             r->uri = path;
 
-#if (NGX_PCRE)
-        } else if (clcf->regex) {
+        } else if (alias == NGX_MAX_SIZE_T_VALUE) {
             if (!test_dir) {
                 r->uri = path;
                 r->add_uri_to_alias = 1;
             }
-#endif
+
         } else {
             r->uri.len = alias + path.len;
             r->uri.data = ngx_pnalloc(r->pool, r->uri.len);
@@ -2006,16 +2003,12 @@ ngx_http_map_uri_to_path(ngx_http_request_t *r, ngx_str_t *path,
 
     } else {
 
-#if (NGX_PCRE)
-        ngx_uint_t  captures;
+        if (alias == NGX_MAX_SIZE_T_VALUE) {
+            reserved += r->add_uri_to_alias ? r->uri.len + 1 : 1;
 
-        captures = alias && clcf->regex;
-
-        reserved += captures ? r->add_uri_to_alias ? r->uri.len + 1 : 1
-                             : r->uri.len - alias + 1;
-#else
-        reserved += r->uri.len - alias + 1;
-#endif
+        } else {
+            reserved += r->uri.len - alias + 1;
+        }
 
         if (ngx_http_script_run(r, path, clcf->root_lengths->elts, reserved,
                                 clcf->root_values->elts)
@@ -2033,8 +2026,7 @@ ngx_http_map_uri_to_path(ngx_http_request_t *r, ngx_str_t *path,
         *root_length = path->len - reserved;
         last = path->data + *root_length;
 
-#if (NGX_PCRE)
-        if (captures) {
+        if (alias == NGX_MAX_SIZE_T_VALUE) {
             if (!r->add_uri_to_alias) {
                 *last = '\0';
                 return last;
@@ -2042,7 +2034,6 @@ ngx_http_map_uri_to_path(ngx_http_request_t *r, ngx_str_t *path,
 
             alias = 0;
         }
-#endif
     }
 
     last = ngx_cpystrn(last, r->uri.data + alias, r->uri.len - alias + 1);
@@ -2368,7 +2359,7 @@ equal:
 }
 
 
-ngx_uint_t
+static ngx_uint_t
 ngx_http_gzip_quantity(u_char *p, u_char *last)
 {
     u_char      c;
@@ -2627,6 +2618,14 @@ ngx_http_named_location(ngx_http_request_t *r, ngx_str_t *name)
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                       "rewrite or internal redirection cycle "
                       "while redirect to named location \"%V\"", name);
+
+        ngx_http_finalize_request(r, NGX_HTTP_INTERNAL_SERVER_ERROR);
+        return NGX_DONE;
+    }
+
+    if (r->uri.len == 0) {
+        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                      "empty URI in redirect to named location \"%V\"", name);
 
         ngx_http_finalize_request(r, NGX_HTTP_INTERNAL_SERVER_ERROR);
         return NGX_DONE;
@@ -3424,25 +3423,16 @@ ngx_http_core_init_main_conf(ngx_conf_t *cf, void *conf)
 {
     ngx_http_core_main_conf_t *cmcf = conf;
 
-    if (cmcf->server_names_hash_max_size == NGX_CONF_UNSET_UINT) {
-        cmcf->server_names_hash_max_size = 512;
-    }
-
-    if (cmcf->server_names_hash_bucket_size == NGX_CONF_UNSET_UINT) {
-        cmcf->server_names_hash_bucket_size = ngx_cacheline_size;
-    }
+    ngx_conf_init_uint_value(cmcf->server_names_hash_max_size, 512);
+    ngx_conf_init_uint_value(cmcf->server_names_hash_bucket_size,
+                             ngx_cacheline_size);
 
     cmcf->server_names_hash_bucket_size =
             ngx_align(cmcf->server_names_hash_bucket_size, ngx_cacheline_size);
 
 
-    if (cmcf->variables_hash_max_size == NGX_CONF_UNSET_UINT) {
-        cmcf->variables_hash_max_size = 512;
-    }
-
-    if (cmcf->variables_hash_bucket_size == NGX_CONF_UNSET_UINT) {
-        cmcf->variables_hash_bucket_size = 64;
-    }
+    ngx_conf_init_uint_value(cmcf->variables_hash_max_size, 1024);
+    ngx_conf_init_uint_value(cmcf->variables_hash_bucket_size, 64);
 
     cmcf->variables_hash_bucket_size =
                ngx_align(cmcf->variables_hash_bucket_size, ngx_cacheline_size);
@@ -3711,8 +3701,7 @@ ngx_http_core_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
                               prev->types_hash_max_size, 1024);
 
     ngx_conf_merge_uint_value(conf->types_hash_bucket_size,
-                              prev->types_hash_bucket_size,
-                              ngx_cacheline_size);
+                              prev->types_hash_bucket_size, 64);
 
     conf->types_hash_bucket_size = ngx_align(conf->types_hash_bucket_size,
                                              ngx_cacheline_size);
@@ -4279,6 +4268,11 @@ ngx_http_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 #endif
         }
 
+        if (ngx_strcmp(value[n].data, "proxy_protocol") == 0) {
+            lsopt.proxy_protocol = 1;
+            continue;
+        }
+
         ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
                            "invalid parameter \"%V\"", &value[n]);
         return NGX_CONF_ERROR;
@@ -4473,6 +4467,7 @@ ngx_http_core_root(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
 #if (NGX_PCRE)
     if (alias && clcf->regex) {
+        clcf->alias = NGX_MAX_SIZE_T_VALUE;
         n = 1;
     }
 #endif
@@ -4794,7 +4789,8 @@ ngx_http_core_try_files(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         tf[i].name = value[i + 1];
 
         if (tf[i].name.len > 0
-            && tf[i].name.data[tf[i].name.len - 1] == '/')
+            && tf[i].name.data[tf[i].name.len - 1] == '/'
+            && i + 2 < cf->args->nelts)
         {
             tf[i].test_dir = 1;
             tf[i].name.len--;

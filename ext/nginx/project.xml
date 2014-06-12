@@ -45,6 +45,8 @@
 	<source f="src/core/ngx_spinlock.c"/>
 	<source f="src/core/ngx_string.c"/>
 	<source f="src/core/ngx_times.c"/>
+	<source f="src/core/ngx_proxy_protocol.c"/>
+	<source f="src/core/ngx_syslog.c"/>
 	<source f="src/event/modules/ngx_iocp_module.c" os="win32"/>
 	<source f="src/event/modules/ngx_win32_select_module.c" os="win32"/>
 	<source f="src/event/modules/ngx_epoll_module.c" os="linux"/>
@@ -91,6 +93,7 @@
 	<source f="src/http/modules/ngx_http_userid_filter_module.c"/>
 	<source f="src/http/modules/ngx_http_uwsgi_module.c"/>
 	<source f="src/http/modules/ngx_http_sub_filter_module.c"/>
+	<source f="src/http/modules/ngx_http_upstream_hash_module.c"/>
 	<source f="src/http/ngx_http.c"/>
 	<source f="src/http/ngx_http_busy_lock.c"/>
 	<source f="src/http/ngx_http_copy_filter_module.c"/>

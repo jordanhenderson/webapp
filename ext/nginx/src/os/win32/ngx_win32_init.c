@@ -71,6 +71,10 @@ ngx_os_init(ngx_log_t *log)
     ngx_memzero(&osvi, sizeof(OSVERSIONINFOEX));
     osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
 
+#ifdef _MSC_VER
+#pragma warning(disable:4996)
+#endif
+
     osviex = GetVersionEx((OSVERSIONINFO *) &osvi);
 
     if (osviex == 0) {
@@ -81,6 +85,10 @@ ngx_os_init(ngx_log_t *log)
             return NGX_ERROR;
         }
     }
+
+#ifdef _MSC_VER
+#pragma warning(default:4996)
+#endif
 
     /*
      *  Windows 3.1 Win32s   0xxxxx
@@ -239,7 +247,7 @@ ngx_os_status(ngx_log_t *log)
 {
     ngx_osviex_stub_t  *osviex_stub;
 
-    ngx_log_error(NGX_LOG_NOTICE, log, 0, NGINX_VER);
+    ngx_log_error(NGX_LOG_NOTICE, log, 0, NGINX_VER_BUILD);
 
     if (osviex) {
 
